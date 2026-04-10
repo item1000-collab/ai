@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI exploration · Visual Style Engine</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>AI exploration · hub</title>
     <style>
         * {
             margin: 0;
@@ -12,58 +12,610 @@
         }
 
         body {
-            background: #f0f2f5;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #eef2f8;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 1.5rem;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 2rem;
         }
 
-        /* simple page title above button */
-        .page-title {
-            font-size: 2rem;
+        /* main grid container: left (resources) + right (developments) */
+        .main-grid {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* shared card style */
+        .card {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: 0.1s;
+            height: fit-content;
+        }
+
+        .card-header {
+            padding: 1rem 1.25rem 0.5rem 1.25rem;
+            border-bottom: 1px solid #eef2f8;
+        }
+
+        .card-header h2 {
+            font-size: 1.35rem;
             font-weight: 600;
-            background: linear-gradient(135deg, #1a73e8, #0d47a1);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #1f2e3a;
+        }
+
+        .card-header p {
+            font-size: 0.7rem;
+            color: #6f8eaa;
+            margin-top: 0.2rem;
+        }
+
+        .card-content {
+            padding: 1rem 1.25rem 1.25rem;
+        }
+
+        /* resources grid — compact links */
+        .resources-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .resource-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafd;
+            padding: 0.6rem 0.9rem;
+            border-radius: 1rem;
+            text-decoration: none;
+            transition: 0.15s;
+            border: 1px solid #e9edf2;
+        }
+
+        .resource-item:hover {
+            background: #eef3fc;
+            transform: translateX(3px);
+            border-color: #cbdde9;
+        }
+
+        .res-icon {
+            font-size: 1.2rem;
+            width: 28px;
             text-align: center;
         }
 
-        .btn {
-            display: inline-block;
+        .res-info {
+            flex: 1;
+        }
+
+        .res-name {
+            font-weight: 600;
+            color: #1a5d9c;
+            font-size: 0.85rem;
+        }
+
+        .res-url {
+            font-size: 0.6rem;
+            color: #8aa0b5;
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        /* developments card (right side) */
+        .dev-item {
+            background: linear-gradient(135deg, #f8fafd 0%, #ffffff 100%);
+            border-radius: 1rem;
+            border: 1px solid #e2edf5;
+            transition: 0.2s;
+            margin-bottom: 0.8rem;
+        }
+
+        .dev-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .dev-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -8px rgba(0, 0, 0, 0.1);
+            border-color: #cde0ed;
+        }
+
+        .dev-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 1rem;
+            text-decoration: none;
+        }
+
+        .dev-icon {
+            font-size: 1.6rem;
+            background: #eef3fc;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.9rem;
+        }
+
+        .dev-info {
+            flex: 1;
+        }
+
+        .dev-name {
+            font-weight: 700;
+            color: #1a5d9c;
+            font-size: 0.95rem;
+        }
+
+        .dev-desc {
+            font-size: 0.7rem;
+            color: #5f7f9e;
+            margin-top: 0.2rem;
+        }
+
+        .arrow {
+            color: #8ba5bc;
+            font-size: 1.1rem;
+            transition: 0.15s;
+        }
+
+        .dev-link:hover .arrow {
+            transform: translateX(3px);
+            color: #1a73e8;
+        }
+
+        /* compact feedback form */
+        .feedback-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .feedback-card {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
+            padding: 1rem 1.25rem 1.25rem;
+        }
+
+        .feedback-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid #eef2f8;
+            padding-bottom: 0.5rem;
+        }
+
+        .feedback-header h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #1f2e3a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .compact-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            align-items: flex-end;
+            margin-bottom: 1rem;
+        }
+
+        .form-field {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .form-field label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #4a627a;
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+
+        .form-field input, .form-field textarea {
+            width: 100%;
+            padding: 0.5rem 0.8rem;
+            border: 1px solid #d4e0ea;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: #fefefe;
+            transition: 0.15s;
+        }
+
+        .form-field input:focus, .form-field textarea:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26,115,232,0.1);
+        }
+
+        .form-field textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .submit-btn {
             background: #1a73e8;
             color: white;
-            font-size: 1.2rem;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
             font-weight: 600;
-            padding: 14px 32px;
-            border-radius: 40px;
-            text-decoration: none;
-            transition: 0.2s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.15s;
+            height: 38px;
+            white-space: nowrap;
         }
 
-        .btn:hover {
+        .submit-btn:hover {
             background: #1557b0;
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
         }
 
-        .btn:active {
-            transform: scale(0.98);
+        /* comments list (compact) */
+        .comments-compact {
+            margin-top: 0.8rem;
+            max-height: 220px;
+            overflow-y: auto;
+            border-top: 1px solid #eef2f8;
+            padding-top: 0.8rem;
+        }
+
+        .comment-item {
+            background: #f9fbfd;
+            border-radius: 0.9rem;
+            padding: 0.6rem 0.8rem;
+            margin-bottom: 0.6rem;
+            border-left: 3px solid #1a73e8;
+        }
+
+        .comment-head {
+            display: flex;
+            align-items: baseline;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.3rem;
+        }
+
+        .comment-name {
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #1a5d9c;
+        }
+
+        .comment-date {
+            font-size: 0.6rem;
+            color: #8ba0b2;
+        }
+
+        .comment-text {
+            font-size: 0.8rem;
+            color: #2c3e50;
+            word-break: break-word;
+            line-height: 1.35;
+        }
+
+        .delete-comment {
+            background: none;
+            border: none;
+            font-size: 0.65rem;
+            color: #b88;
+            cursor: pointer;
+            margin-left: auto;
+            opacity: 0.5;
+            padding: 0 0.2rem;
+        }
+
+        .delete-comment:hover {
+            opacity: 1;
+        }
+
+        .empty-msg {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #9bb0c2;
+            padding: 0.8rem;
+        }
+
+        .footer-note {
+            font-size: 0.65rem;
+            text-align: center;
+            color: #8ba0b2;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 780px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            body {
+                padding: 1rem;
+            }
+            .compact-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .submit-btn {
+                align-self: flex-start;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- page title: AI exploration -->
-    <div class="page-title">✨ AI exploration ✨</div>
-    
-    <a href="https://item1000-collab.github.io/ai/Visual%20Style%20Engine%20for%201000%20Styles.html" class="btn">
-        Visual Style Engine
-    </a>
+
+<div class="main-grid">
+    <!-- LEFT COLUMN: RESOURCES (compact links) -->
+    <div class="card">
+        <div class="card-header">
+            <h2>📚 Resources & AI tools</h2>
+            <p>curated AI platforms</p>
+        </div>
+        <div class="card-content">
+            <div class="resources-grid">
+                <a href="https://chat.deepseek.com/" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">🔍</span>
+                    <div class="res-info"><div class="res-name">DeepSeek Chat</div><div class="res-url">chat.deepseek.com</div></div>
+                </a>
+                <a href="https://chat.qwenlm.ai/" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">🐉</span>
+                    <div class="res-info"><div class="res-name">Qwen LM</div><div class="res-url">chat.qwenlm.ai</div></div>
+                </a>
+                <a href="https://app.sesame.com/" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">🔑</span>
+                    <div class="res-info"><div class="res-name">Sesame</div><div class="res-url">app.sesame.com</div></div>
+                </a>
+                <a href="http://aistudio.google.com/live" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">🤖</span>
+                    <div class="res-info"><div class="res-name">Google AI Studio (Live)</div><div class="res-url">aistudio.google.com/live</div></div>
+                </a>
+                <a href="https://grok.com/" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">🌌</span>
+                    <div class="res-info"><div class="res-name">Grok (xAI)</div><div class="res-url">grok.com</div></div>
+                </a>
+                <a href="https://chatgpt.com/" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">💬</span>
+                    <div class="res-info"><div class="res-name">ChatGPT</div><div class="res-url">chatgpt.com</div></div>
+                </a>
+                <a href="https://chatgpt.com/" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">✨</span>
+                    <div class="res-info"><div class="res-name">ChatGPT (alt)</div><div class="res-url">chatgpt.com</div></div>
+                </a>
+                <a href="https://notebooklm.google.com/" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">📓</span>
+                    <div class="res-info"><div class="res-name">NotebookLM</div><div class="res-url">notebooklm.google.com</div></div>
+                </a>
+                <a href="https://character.ai/" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">🎭</span>
+                    <div class="res-info"><div class="res-name">Character.AI</div><div class="res-url">character.ai</div></div>
+                </a>
+                <a href="https://lmarena.ai/" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">🏟️</span>
+                    <div class="res-info"><div class="res-name">LM Arena</div><div class="res-url">lmarena.ai</div></div>
+                </a>
+                <a href="https://vheer.com/dashboard" target="_blank" rel="noopener" class="resource-item">
+                    <span class="res-icon">⚡</span>
+                    <div class="res-info"><div class="res-name">Vheer Dashboard</div><div class="res-url">vheer.com/dashboard</div></div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: DEVELOPMENTS (visual style engine + future projects) -->
+    <div class="card">
+        <div class="card-header">
+            <h2>🛠️ Developments</h2>
+            <p>applied AI experiments</p>
+        </div>
+        <div class="card-content">
+            <div class="dev-item">
+                <a href="https://item1000-collab.github.io/ai/Visual%20Style%20Engine%20for%201000%20Styles.html" target="_blank" rel="noopener" class="dev-link">
+                    <div class="dev-icon">🎨</div>
+                    <div class="dev-info">
+                        <div class="dev-name">Visual Style Engine</div>
+                        <div class="dev-desc">1000+ styles · real-time style lab</div>
+                    </div>
+                    <div class="arrow">→</div>
+                </a>
+            </div>
+            <!-- placeholder for future developments (keeps compact layout) -->
+            <div class="dev-item" style="opacity:0.7">
+                <div class="dev-link" style="cursor:default">
+                    <div class="dev-icon">✨</div>
+                    <div class="dev-info">
+                        <div class="dev-name">More coming soon</div>
+                        <div class="dev-desc">new AI tools in development</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- COMPACT FEEDBACK FORM + COMMENTS (bottom) -->
+<div class="feedback-wrapper">
+    <div class="feedback-card">
+        <div class="feedback-header">
+            <h3>💬 feedback & comments</h3>
+            <span style="font-size:0.7rem; color:#7f9ab5;" id="commentsCountBadge">0 comments</span>
+        </div>
+        
+        <form id="compactCommentForm">
+            <div class="compact-form">
+                <div class="form-field">
+                    <label>name</label>
+                    <input type="text" id="compactName" placeholder="e.g., Alex" maxlength="40" required>
+                </div>
+                <div class="form-field">
+                    <label>comment</label>
+                    <textarea id="compactComment" placeholder="share your thoughts..." rows="1" maxlength="600" required></textarea>
+                </div>
+                <button type="submit" class="submit-btn">📝 publish</button>
+            </div>
+        </form>
+        
+        <div id="compactCommentsList" class="comments-compact">
+            <div class="empty-msg">✨ no comments yet — be the first to leave feedback</div>
+        </div>
+        <div class="footer-note">⚡ comments saved in your browser (local storage)</div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const STORAGE_KEY = 'ai_exploration_comments_compact';
+        
+        function loadComments() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    return JSON.parse(stored);
+                } catch(e) { return []; }
+            }
+            return [];
+        }
+        
+        function saveComments(comments) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
+        }
+        
+        function formatDateShort(date) {
+            const d = new Date(date);
+            return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit', hour12: false });
+        }
+        
+        function escapeHtml(str) {
+            if(!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        
+        function renderComments() {
+            const comments = loadComments();
+            const container = document.getElementById('compactCommentsList');
+            const badge = document.getElementById('commentsCountBadge');
+            if (!container) return;
+            
+            if (badge) badge.innerText = comments.length === 1 ? '1 comment' : `${comments.length} comments`;
+            
+            if (comments.length === 0) {
+                container.innerHTML = '<div class="empty-msg">✨ no comments yet — be the first to leave feedback</div>';
+                return;
+            }
+            
+            const sorted = [...comments].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            container.innerHTML = sorted.map((c, idx) => {
+                return `
+                    <div class="comment-item" data-comment-idx="${idx}">
+                        <div class="comment-head">
+                            <span class="comment-name">${escapeHtml(c.name)}</span>
+                            <span class="comment-date">${formatDateShort(c.timestamp)}</span>
+                            <button class="delete-comment" data-name="${escapeHtml(c.name)}" data-ts="${c.timestamp}">🗑️</button>
+                        </div>
+                        <div class="comment-text">${escapeHtml(c.text)}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            // attach delete events
+            document.querySelectorAll('.delete-comment').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const name = btn.getAttribute('data-name');
+                    const ts = btn.getAttribute('data-ts');
+                    deleteCommentByTimestamp(ts, name);
+                });
+            });
+        }
+        
+        function deleteCommentByTimestamp(timestamp, nameRaw) {
+            let comments = loadComments();
+            const originalLength = comments.length;
+            comments = comments.filter(c => !(c.timestamp === timestamp && c.name === nameRaw));
+            if (comments.length !== originalLength) {
+                saveComments(comments);
+                renderComments();
+                showMiniToast('🗑️ comment removed');
+            } else {
+                showMiniToast('could not delete');
+            }
+        }
+        
+        function addComment(name, text) {
+            if (!name.trim() || !text.trim()) {
+                showMiniToast('⚠️ both name and comment required');
+                return false;
+            }
+            const comments = loadComments();
+            comments.push({
+                name: name.trim().substring(0, 40),
+                text: text.trim().substring(0, 600),
+                timestamp: new Date().toISOString()
+            });
+            saveComments(comments);
+            renderComments();
+            return true;
+        }
+        
+        function showMiniToast(msg) {
+            let toast = document.getElementById('compactToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'compactToast';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.backgroundColor = '#1f2e3cee';
+                toast.style.color = 'white';
+                toast.style.padding = '6px 18px';
+                toast.style.borderRadius = '40px';
+                toast.style.fontSize = '0.75rem';
+                toast.style.zIndex = '999';
+                toast.style.fontWeight = '500';
+                toast.style.backdropFilter = 'blur(6px)';
+                toast.style.pointerEvents = 'none';
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.2s';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => { if(toast) toast.style.opacity = '0'; }, 1700);
+        }
+        
+        const form = document.getElementById('compactCommentForm');
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const nameField = document.getElementById('compactName');
+                const commentField = document.getElementById('compactComment');
+                if (addComment(nameField.value, commentField.value)) {
+                    nameField.value = '';
+                    commentField.value = '';
+                    showMiniToast('✅ comment added');
+                }
+            });
+        }
+        
+        renderComments();
+    })();
+</script>
 </body>
 </html>
