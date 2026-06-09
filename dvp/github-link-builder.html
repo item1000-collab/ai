@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>GitHub Link Builder · Clean Raw URL · Preserve Spaces</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f0f5fa 0%, #e6edf4 100%);
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, 'Roboto', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.8rem;
+        }
+
+        .converter-card {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: transform 0.2s ease;
+            border: 1px solid rgba(58, 110, 165, 0.2);
+        }
+
+        .converter-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .header {
+            background: #0a2a3b;
+            padding: 1.5rem 2rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 1.85rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 span {
+            background: #ffb85e;
+            font-size: 1.55rem;
+            width: 46px;
+            height: 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50px;
+            background: #f0a43a;
+            color: #1e2f3f;
+        }
+
+        .header p {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+
+        .content {
+            padding: 2rem 2rem 2rem 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 2rem;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 700;
+            color: #1a5d7a;
+            font-size: 0.85rem;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            background: #e4f0f7;
+            padding: 4px 14px;
+            border-radius: 32px;
+            display: inline-block;
+        }
+
+        .hint {
+            font-size: 0.7rem;
+            color: #5c87a3;
+            font-family: monospace;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: stretch;
+            background: white;
+            border-radius: 60px;
+            border: 1.5px solid #c8ddec;
+            transition: all 0.2s;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #2f73b0;
+            box-shadow: 0 0 0 3px rgba(47, 115, 176, 0.2);
+        }
+
+        .base-url-preview {
+            background: #f1f7fc;
+            padding: 0.9rem 1.2rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #1f6590;
+            border-right: 1px solid #d4e2ee;
+            font-weight: 600;
+            white-space: nowrap;
+            letter-spacing: -0.2px;
+            flex-shrink: 0;
+        }
+
+        #filenameInput {
+            flex: 1;
+            min-width: 220px;
+            width: 100%;
+            border: none;
+            padding: 0.9rem 1.3rem;
+            font-size: 1rem;
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            background: white;
+            outline: none;
+            color: #0c3146;
+            font-weight: 500;
+            letter-spacing: -0.2px;
+        }
+
+        #filenameInput::placeholder {
+            color: #b2cbd9;
+            font-weight: 450;
+            font-size: 0.9rem;
+        }
+
+        .result-area {
+            background: #f8fbfe;
+            border-radius: 1.6rem;
+            padding: 1.4rem 1.6rem;
+            margin: 1.5rem 0 1.8rem;
+            border: 1px solid #e2eef8;
+        }
+
+        .result-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 800;
+            color: #2679a8;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .generated-link {
+            background: #ffffff;
+            border-radius: 48px;
+            padding: 0.9rem 1.3rem;
+            word-break: break-all;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #00628b;
+            border: 1px solid #d2e3f0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+            margin-bottom: 1.2rem;
+            transition: all 0.1s;
+            font-weight: 480;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 1rem;
+        }
+
+        .copy-btn, .open-btn {
+            flex: 1;
+            background: linear-gradient(95deg, #1f5e8e, #134b72);
+            border: none;
+            padding: 0.85rem 1rem;
+            border-radius: 60px;
+            font-weight: 650;
+            font-size: 0.9rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .open-btn {
+            background: linear-gradient(95deg, #2c7a47, #1e5a38);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(95deg, #2c74a3, #1a5f86);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(27, 85, 125, 0.25);
+        }
+
+        .open-btn:hover {
+            background: linear-gradient(95deg, #359457, #246e42);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(33, 115, 70, 0.25);
+        }
+
+        .copy-btn:active, .open-btn:active {
+            transform: translateY(1px);
+        }
+
+        .info-note {
+            background: #eef6fc;
+            border-radius: 1rem;
+            padding: 0.7rem 1rem;
+            margin-top: 0.8rem;
+            font-size: 0.72rem;
+            color: #236f9b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 3px solid #3a8fd5;
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 1.2rem;
+            font-size: 0.66rem;
+            color: #6f99b5;
+            border-top: 1px solid #e2ecf5;
+            padding-top: 1.2rem;
+        }
+
+        .toast-msg {
+            visibility: hidden;
+            min-width: 220px;
+            background-color: #1f4e6e;
+            color: #fff;
+            text-align: center;
+            border-radius: 60px;
+            padding: 10px 20px;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            font-weight: 500;
+            z-index: 1100;
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+            pointer-events: none;
+            white-space: nowrap;
+            backdrop-filter: blur(4px);
+        }
+
+        .toast-msg.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media (max-width: 620px) {
+            .content {
+                padding: 1.5rem;
+            }
+            .base-url-preview {
+                font-size: 0.7rem;
+                padding: 0.7rem 0.9rem;
+            }
+            .generated-link {
+                font-size: 0.7rem;
+                padding: 0.7rem 1rem;
+            }
+            .toast-msg {
+                white-space: nowrap;
+                font-size: 0.7rem;
+            }
+            .action-buttons {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .copy-btn, .open-btn {
+                width: 100%;
+            }
+        }
+
+        button {
+            background: none;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="converter-card">
+        <div class="header">
+            <h1>
+                <span>🔗</span> 
+                GitHub Link Builder
+            </h1>
+            <p>Clean, human-readable URLs · Preserves folder and file names exactly as typed (spaces allowed, no %-encoding)</p>
+        </div>
+        <div class="content">
+            <div class="input-group">
+                <div class="label-row">
+                    <label>📂 File name / relative path</label>
+                    <span class="hint">e.g., News Clips/News Clips.html  or  assets/icon 256.png</span>
+                </div>
+                <div class="input-wrapper">
+                    <div class="base-url-preview">https://item1000-collab.github.io/ai/</div>
+                    <input type="text" id="filenameInput" placeholder="News Clips/News Clips.html" value="News Clips/News Clips.html" autocomplete="off">
+                </div>
+                <div style="font-size: 0.7rem; margin-top: 8px; color: #3c7faa; padding-left: 10px;">
+                    ✨ No URL encoding — spaces and special characters stay readable. Perfect for GitHub Pages.
+                </div>
+            </div>
+
+            <div class="result-area">
+                <div class="result-label">
+                    <span>✨</span> Generated URL (clean · no %20)
+                </div>
+                <div class="generated-link" id="generatedLinkDisplay">
+                    https://item1000-collab.github.io/ai/News Clips/News Clips.html
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="copyButton" class="copy-btn">
+                        <span>📋</span> Copy link
+                    </button>
+                    <button id="openBrowserBtn" class="open-btn">
+                        <span>🌐</span> Open in browser
+                    </button>
+                </div>
+                
+                <div class="info-note">
+                    <span>💡</span> 
+                    <span><strong>No %-encoding:</strong> Spaces → spaces, Cyrillic, emojis? Not recommended but kept raw. Most modern browsers handle nicely.</span>
+                </div>
+            </div>
+            <div class="footer-note">
+                🧩 Base URL: <strong>https://item1000-collab.github.io/ai/</strong> · preserves exact folder/filenames · click 🌐 to test
+            </div>
+        </div>
+    </div>
+
+    <div id="toastMessage" class="toast-msg">✅ Copied to clipboard</div>
+
+    <script>
+        (function() {
+            // DOM elements
+            const filenameInput = document.getElementById('filenameInput');
+            const generatedDisplay = document.getElementById('generatedLinkDisplay');
+            const copyBtn = document.getElementById('copyButton');
+            const openBrowserBtn = document.getElementById('openBrowserBtn');
+            const toastEl = document.getElementById('toastMessage');
+
+            // Fixed base URL (GitHub Pages subdirectory)
+            const BASE_URL = 'https://item1000-collab.github.io/ai/';
+            
+            /**
+             * IMPORTANT FIX: 
+             * Instead of encodeURIComponent() which replaces space with %20,
+             * we now build a clean, human-readable URL that preserves spaces and most special characters.
+             * Browsers automatically encode when making the request, but the displayed/copied URL 
+             * remains readable: "News Clips/News Clips.html" instead of "News%20Clips/News%20Clips.html".
+             * 
+             * Rules:
+             * - Remove dangerous path traversal (../, ..\)
+             * - Normalize slashes
+             * - Keep spaces, parentheses, apostrophes, etc. as raw characters
+             * - Only basic sanitization to avoid security issues, but no percent encoding.
+             * - This matches the requirement: https://item1000-collab.github.io/ai/News Clips/News Clips.html
+             */
+            function sanitizeAndKeepRaw(rawInput) {
+                let trimmed = (rawInput || '').trim();
+                if (trimmed === '') {
+                    return '';
+                }
+                
+                // Remove any leading './', '.\\', '/' or '\' to prevent absolute referencing
+                let cleaned = trimmed.replace(/^\.?[\/\\]+/, '');
+                
+                // Remove path traversal patterns (../ and ..\) completely for security
+                cleaned = cleaned.replace(/\.\.\//g, '');
+                cleaned = cleaned.replace(/\.\.\\/g, '');
+                cleaned = cleaned.replace(/\.\./g, '');       // additional safety
+                
+                // Replace Windows backslashes with forward slashes
+                cleaned = cleaned.replace(/\\/g, '/');
+                
+                // Collapse multiple consecutive slashes into single slash
+                cleaned = cleaned.replace(/\/+/g, '/');
+                
+                // Remove any leading slash that might have appeared again (just in case)
+                cleaned = cleaned.replace(/^\//, '');
+                
+                // Block any leftover '..' sequences that could escape root (double-check)
+                cleaned = cleaned.replace(/\.\.\//g, '');
+                
+                // Additional: trim trailing dot or spaces but preserve middle spaces
+                // We intentionally do NOT encode spaces or any special characters.
+                // This yields URLs like "folder name/file name.html"
+                return cleaned;
+            }
+            
+            /**
+             * Builds final URL without percent-encoding.
+             * Path segments are appended raw, preserving spaces, punctuation, etc.
+             * This matches GitHub Pages behavior: you can use unencoded spaces, and the browser will handle it.
+             * (Modern browsers automatically percent-encode the URL when sending the request,
+             *  but the user sees and copies a clean, readable link.)
+             */
+            function buildCleanUrl(userInput) {
+                const relativePath = sanitizeAndKeepRaw(userInput);
+                
+                // Ensure base URL ends with exactly one slash
+                let baseClean = BASE_URL.endsWith('/') ? BASE_URL : BASE_URL + '/';
+                
+                if (relativePath === '') {
+                    return baseClean;
+                }
+                
+                // Simply concatenate without any encodeURIComponent.
+                // This gives human-friendly format: spaces remain spaces, no %20.
+                // Example: base + "News Clips/News Clips.html" -> "https://.../ai/News Clips/News Clips.html"
+                let finalUrl = baseClean + relativePath;
+                
+                // Clean up any accidental double slashes (but preserve "://")
+                finalUrl = finalUrl.replace(/([^:]\/)\/+/g, '$1');
+                
+                return finalUrl;
+            }
+            
+            /**
+             * Updates the displayed link based on current input.
+             * Returns the full raw URL (spaces preserved).
+             */
+            function updateLinkDisplay() {
+                const rawValue = filenameInput.value;
+                const fullUrl = buildCleanUrl(rawValue);
+                generatedDisplay.textContent = fullUrl;
+                return fullUrl;
+            }
+            
+            /**
+             * Show toast message with custom text
+             */
+            function showToast(msg) {
+                if (!toastEl) return;
+                toastEl.textContent = msg || '✅ Copied to clipboard';
+                toastEl.classList.add('show');
+                setTimeout(() => {
+                    toastEl.classList.remove('show');
+                    setTimeout(() => {
+                        if (toastEl.textContent !== '✅ Copied to clipboard' && !toastEl.textContent.includes('Opened')) {
+                            toastEl.textContent = '✅ Copied to clipboard';
+                        } else if (toastEl.textContent.includes('Opened')) {
+                            toastEl.textContent = '✅ Copied to clipboard';
+                        }
+                    }, 400);
+                }, 1800);
+            }
+            
+            /**
+             * Copy the generated clean URL to clipboard
+             */
+            async function copyToClipboard() {
+                const currentUrl = generatedDisplay.textContent;
+                if (!currentUrl || currentUrl === BASE_URL && !filenameInput.value.trim()) {
+                    showToast('⚠️ No valid URL to copy');
+                    return;
+                }
+                
+                try {
+                    await navigator.clipboard.writeText(currentUrl);
+                    let shortPreview = currentUrl.length > 60 ? currentUrl.substring(0, 57) + '…' : currentUrl;
+                    showToast(`📎 Copied: ${shortPreview}`);
+                    copyBtn.style.transform = 'scale(0.96)';
+                    setTimeout(() => { copyBtn.style.transform = ''; }, 150);
+                } catch (err) {
+                    console.warn('Clipboard fallback', err);
+                    const textarea = document.createElement('textarea');
+                    textarea.value = currentUrl;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast('📋 Copied (fallback)');
+                    } catch (e) {
+                        showToast('❌ Copy failed, select manually');
+                    }
+                    document.body.removeChild(textarea);
+                }
+            }
+            
+            /**
+             * Open link in new tab. Uses raw unencoded URL — browsers handle encoding.
+             */
+            function openInBrowser() {
+                const currentUrl = generatedDisplay.textContent;
+                if (!currentUrl || currentUrl === BASE_URL && !filenameInput.value.trim()) {
+                    showToast('⚠️ Cannot open empty or invalid URL');
+                    return;
+                }
+                
+                if (!currentUrl.startsWith('http://') && !currentUrl.startsWith('https://')) {
+                    showToast('⚠️ Invalid URL format');
+                    return;
+                }
+                
+                try {
+                    // Open raw URL exactly as shown (spaces, etc). Browser will encode if needed.
+                    window.open(currentUrl, '_blank', 'noopener,noreferrer');
+                    let shortUrl = currentUrl.length > 55 ? currentUrl.substring(0, 52) + '…' : currentUrl;
+                    showToast(`🌐 Opened: ${shortUrl}`);
+                } catch (error) {
+                    console.error('Failed to open URL:', error);
+                    try {
+                        const win = window.open();
+                        if (win) {
+                            win.location.href = currentUrl;
+                            showToast('🌐 Opened new window');
+                        } else {
+                            showToast('❌ Popup blocked, allow popups');
+                        }
+                    } catch (e) {
+                        showToast('❌ Could not open browser tab');
+                    }
+                }
+            }
+            
+            // ---- Event binding ----
+            filenameInput.addEventListener('input', () => {
+                updateLinkDisplay();
+            });
+            
+            copyBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                copyToClipboard();
+            });
+            
+            openBrowserBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                openInBrowser();
+            });
+            
+            // Pressing Enter in input field copies the link (handy)
+            filenameInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    copyToClipboard();
+                }
+            });
+            
+            // Double-click on generated link copies
+            generatedDisplay.addEventListener('dblclick', () => {
+                copyToClipboard();
+            });
+            
+            // initial generation: set default example to match the required pattern "News Clips/News Clips.html"
+            // So users immediately see clean URL without percent encoding.
+            // If you want to demonstrate the exact issue:
+            // Before fix: "News%20Clips/News%20Clips.html" After fix: "News Clips/News Clips.html"
+            // The demo input value is preset exactly as "News Clips/News Clips.html"
+            updateLinkDisplay();
+            
+            // Optional: focus and select for convenience
+            filenameInput.focus();
+            filenameInput.select();
+            
+            // Additional info for console
+            console.log('GitHub Link Builder - RAW URL MODE: spaces preserved, no %20 encoding.');
+            console.log('Example: "News Clips/News Clips.html" -> ' + buildCleanUrl('News Clips/News Clips.html'));
+            console.log('Base URL: ' + BASE_URL);
+        })();
+    </script>
+</body>
+</html>

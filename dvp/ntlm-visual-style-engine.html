@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>NotebookLM Visual Style Engine | Persistent Style Memory · ESL Favorites</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5f3ef;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            color: #1a1a1a;
+            line-height: 1.4;
+            padding: 2rem 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Header with flex layout: title left, favorites right */
+        .header-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.2rem;
+            margin-bottom: 1.8rem;
+            border-bottom: 2px solid #e2dfd9;
+            padding-bottom: 1.2rem;
+        }
+
+        .header-left {
+            flex: 2;
+            min-width: 200px;
+        }
+
+        .header-left h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            background: linear-gradient(135deg, #1f2b2c, #2c4b4e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 0.3rem;
+        }
+
+        .sub {
+            color: #5c5a55;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            background: #eae7e1;
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #2f4b4e;
+        }
+
+        /* Favorites widget (right side) */
+        .favorites-widget {
+            background: #fffcf7;
+            border-radius: 24px;
+            border: 1px solid #e2d5c4;
+            padding: 0.8rem 1.2rem;
+            min-width: 260px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+        }
+
+        .favorites-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #3a4e47;
+            margin-bottom: 0.6rem;
+        }
+
+        .favorites-header span {
+            background: #e9dfd1;
+            padding: 0.2rem 0.6rem;
+            border-radius: 50px;
+            font-size: 0.65rem;
+            font-weight: 500;
+        }
+
+        .fav-select {
+            width: 100%;
+            padding: 0.5rem 0.7rem;
+            border-radius: 40px;
+            border: 1px solid #d9cdbb;
+            background: #fefaf5;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #2d443e;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .fav-select:hover {
+            border-color: #b89f7a;
+            background: white;
+        }
+
+        .fav-note-compact {
+            font-size: 0.65rem;
+            color: #8f826c;
+            margin-top: 0.5rem;
+            text-align: right;
+        }
+
+        .engine-panel {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.03), 0 2px 4px rgba(0,0,0,0.05);
+            padding: 1.5rem 1.8rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e7e3dc;
+        }
+
+        .selector-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .selector-category {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .selector-category label {
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #7b6e5d;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        select, .random-btn {
+            width: 100%;
+            padding: 0.7rem 0.9rem;
+            border-radius: 16px;
+            border: 1px solid #ddd8cf;
+            background: #fefcf9;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1f2b2c;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        select:hover, .random-btn:hover {
+            border-color: #b7aa98;
+            background: #fff;
+        }
+
+        .randomize-bar {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            border-top: 1px solid #eee8e0;
+            padding-top: 1.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .random-btn {
+            background: #2c4b4e;
+            color: white;
+            border: none;
+            font-weight: 600;
+            width: auto;
+            padding: 0.7rem 1.8rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .random-btn:hover {
+            background: #1f3a3c;
+            transform: scale(0.98);
+        }
+
+        .copy-btn {
+            background: #f0ede8;
+            border: 1px solid #ddd2c4;
+            color: #2b4a4d;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .copy-btn:active {
+            background: #e2d9cf;
+        }
+
+        .result-card {
+            background: #ffffff;
+            border-radius: 32px;
+            border: 1px solid #e9e2d8;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.02);
+        }
+
+        .style-name {
+            background: #faf8f4;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #efeadf;
+        }
+
+        .style-name h2 {
+            font-size: 1.6rem;
+            font-weight: 650;
+            letter-spacing: -0.2px;
+            color: #1f2f30;
+        }
+
+        .style-details {
+            padding: 1.6rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .desc-text {
+            background: #fefaf5;
+            padding: 1rem 1.2rem;
+            border-radius: 20px;
+            border-left: 4px solid #c0bcb0;
+            font-size: 0.95rem;
+            line-height: 1.45;
+            color: #2c3e3f;
+        }
+
+        .meta-bubbles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .meta-tag {
+            background: #f0ede6;
+            border-radius: 40px;
+            padding: 0.3rem 1rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #4c5a55;
+        }
+
+        .prompt-area {
+            background: #1e2829;
+            color: #e5e9e8;
+            padding: 1rem 1.4rem;
+            border-radius: 20px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-top: 0.5rem;
+            border: 1px solid #3b4b4a;
+        }
+
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.7rem;
+            flex-wrap: wrap;
+        }
+
+        .prompt-label {
+            font-weight: 600;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            color: #b9bfb2;
+        }
+
+        .info-section {
+            background: #fefcf9;
+            border-radius: 28px;
+            padding: 1.2rem 1.8rem;
+            border: 1px solid #e7e0d6;
+            margin-top: 1rem;
+        }
+
+        .info-section h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #3f524b;
+        }
+
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            font-size: 0.8rem;
+            color: #6f6a60;
+        }
+
+        hr {
+            margin: 0.8rem 0;
+            border: none;
+            border-top: 1px solid #e2dbd0;
+        }
+
+        @media (max-width: 760px) {
+            body {
+                padding: 1rem 0;
+            }
+            .container {
+                padding: 0 1rem;
+            }
+            .header-row {
+                flex-direction: column;
+            }
+            .favorites-widget {
+                width: 100%;
+            }
+            .selector-grid {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+            .style-details {
+                padding: 1rem;
+            }
+            .style-name h2 {
+                font-size: 1.3rem;
+            }
+        }
+
+        button {
+            background: none;
+            border: none;
+        }
+        footer {
+            text-align: center;
+            margin-top: 2.5rem;
+            font-size: 0.7rem;
+            color: #aa9f8f;
+        }
+        .accent-standard {
+            border-left: 4px solid #c0bcb0;
+        }
+        .memory-badge {
+            background: #e4e0d7;
+            border-radius: 40px;
+            padding: 0.2rem 0.8rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #3b5a5c;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .status-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header with title left and Favorites compact right -->
+    <div class="header-row">
+        <div class="header-left">
+            <h1>📘 NotebookLM Visual Style Engine</h1>
+            <div class="sub">Generate 1000+ unique presentation aesthetics · Rich expressive mediums · Inspired by NotebookLM style guide · <strong>Professional & Creative Presentation Modes</strong></div>
+            <div class="badge">⚡ 144,480+ combos · 💾 Persistent memory · 🌟 Cultural presets for ESL</div>
+        </div>
+        <!-- Enhanced Favorites dropdown: ESL PRESET is FIRST OPTION, followed by original favorites + new cultural worlds -->
+        <div class="favorites-widget">
+            <div class="favorites-header">
+                ⭐ FAVORITES
+            </div>
+            <select id="favoritesSelect" class="fav-select">
+                <option value="">— Choose aesthetic preset —</option>
+                <!-- 🆕 ESL FIRST OPTION - as requested: Colorful ESL slide deck with summary & comprehension check, B1-B2 focus but level not displayed -->
+                <option value="esl_classroom">📚 ESL CLASSROOM · Colorful Slides + Summary & True/False</option>
+                <option value="colonial">🏛️ COLONIAL · Expressive Cel-Shading</option>
+                <option value="victorian">👒 VICTORIAN · Industrial Grace & Poetry</option>
+                <option value="steampunk">⚙️ STEAMPUNK · Schematic Gears & Brass</option>
+                <option value="1950s">🎸 1950s · Retro Diner & Rock-and-Roll</option>
+                <option value="western">🤠 WESTERN · Dust, Sunsets & Frontier</option>
+                <option value="artdeco">✨ ART DECO · Gilded Glamour & Symmetrical Speed</option>
+                <option value="decadent1890s">🍸 DECADENT 1890s · Yellow Book & Green Absinthe</option>
+                <option value="prohibition">🥃 PROHIBITION ERA · Speakeasy Smoke & Bronze Details</option>
+                <option value="aviation">✈️ AVIATION · Riveted Aluminum & Cloud Reflections</option>
+                <option value="submarine">🌊 SUBMARINE · Porthole Light & Brass Valves</option>
+                <option value="museum">🏛️ MUSEUM · Velvet Ropes & Amber Specimens</option>
+                <option value="lighthouse">⚓ LIGHTHOUSE · Fresnel Lens & Salt-Crusted Windows</option>
+                <option value="anime">🇯🇵 ANIME · Digital Cel-Shading & Sun-Flare Lighting</option>
+                <option value="jazzage">🎺 JAZZ AGE · Cigarette Smoke & Brass Mutes</option>
+                <option value="deltablues">🎸 DELTA BLUES · Crossroad Guitar & Weeping Slide</option>
+                <option value="ancientrome">🏛️ ANCIENT ROME · Marble Togas & Aqueduct Shadows</option>
+                <option value="samurai">⚔️ SAMURAI · Lacquer Armor & Cherry Petals</option>
+                <option value="russianimperial">🥚 RUSSIAN IMPERIAL · Fabergé Eggs & Winter Palace Frost</option>
+                <option value="tibetan">🪷 TIBETAN · Butter Lamps & Prayer Wheel Squeaks</option>
+                <option value="braziliancarnaval">💃 BRAZILIAN CARNAVAL · Sequined Bikinis & Samba Drums</option>
+                <option value="mardigras">🎭 NEW ORLEANS MARDI GRAS · Purple-Green-Gold Beads</option>
+                <option value="tangoera">💋 TANGO ERA · Bandoneón Sighs & Red Shoes</option>
+                <option value="swingera">💃 SWING ERA · Zoot Suits & Lindy Hop Flips</option>
+                <option value="harlemrenaissance">📚 HARLEM RENAISSANCE · Jazz Suits & Library Cards</option>
+            </select>
+            <div class="fav-note-compact">▼ Instant style + custom ESL prompt · 24 immersive worlds (12 new added) + ESL Classroom First</div>
+        </div>
+    </div>
+
+    <div class="engine-panel">
+        <div class="selector-grid">
+            <div class="selector-category">
+                <label>🎯 1. CORE PURPOSE (Category)</label>
+                <select id="purposeSelect">
+                    <option value="Educational & Explainer: simplify, instruct, make information accessible">📘 Educational & Explainer</option>
+                    <option value="Technical & Engineering: show structure, precision, complex systems">⚙️ Technical & Engineering</option>
+                    <option value="Narrative & Strategic: tell a story, build a case, inspire action">📈 Narrative & Strategic</option>
+                    <option value="Playful & Tactile: engage, soften data, approachable">🧸 Playful & Tactile</option>
+                    <option value="Artistic & Expressive: evoke emotion, memorable, disruptive">🎭 Artistic & Expressive</option>
+                    <option value="Functional & UI/UX: clarity, usability, dashboard design">📊 Functional & UI/UX</option>
+                </select>
+            </div>
+            <div class="selector-category">
+                <label>🖌️ 2. BASE MEDIUM (Rich, Expressive & Vivid)</label>
+                <select id="mediumSelect"></select>
+            </div>
+            <div class="selector-category">
+                <label>✍️ 3. CORE TECHNIQUE (Line/Color)</label>
+                <select id="techniqueSelect"></select>
+            </div>
+            <div class="selector-category">
+                <label>✨ 4. MOOD & CONTEXT (Vibrant / Uplifting only)</label>
+                <select id="moodSelect"></select>
+            </div>
+        </div>
+        <div class="randomize-bar">
+            <button id="randomizeBtn" class="random-btn">🎲 Randomize style → generate prompt</button>
+            <div class="status-row">
+                <div class="memory-badge" id="memoryStatus">💾 Last selection saved</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="result-card" id="resultCard">
+        <div class="style-name">
+            <h2 id="styleTitle">Collage Photomontage · Neon + Botanical Eden</h2>
+        </div>
+        <div class="style-details">
+            <div class="desc-text" id="styleDesc">
+                A fusion of expressive collage and neon-drenched botanical motifs, radiating optimism and creative energy. Perfect for narrative storytelling with a lush, modern edge.
+            </div>
+            <div class="meta-bubbles" id="metaBubbles"></div>
+            <div class="prompt-area">
+                <div class="prompt-header">
+                    <span class="prompt-label" id="promptLabel">📋 READY-TO-USE PROMPT (16:9 · widescreen)</span>
+                    <button id="copyPromptBtn" class="copy-btn">📋 Copy prompt</button>
+                </div>
+                <div id="fullPrompt" style="font-family: monospace; white-space: pre-wrap;">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h3>🧩 Massive Style Library + High-Visual Impact Mediums + Radiant Moods + Favorites Presets</h3>
+        <div class="stats">
+            <span>🎯 6 core purposes</span> • 
+            <span>🖌️ 40+ expressive base mediums</span> • 
+            <span>✍️ 20 core techniques</span> • 
+            <span>✨ 28 radiant moods</span> • 
+            <span><strong>Total combos: 6×43×20×28 = 144,480+ inspiring styles</strong></span>
+        </div>
+        <hr>
+        <div style="font-size:0.8rem; line-height:1.4; color:#4f5a52;">
+            🌸 <strong>Open creative framework:</strong> All prompts are flexible, example-free, and designed to maximize AI creative interpretation for presentation design, slide decks, infographics, and expressive storytelling.<br>
+            💡 <strong>Professional & Academic ready:</strong> Tailored for educators, designers, and presenters seeking artistic, clear, or narrative-rich visuals.<br>
+            🔁 <strong>Persistent memory:</strong> Your last selected options are automatically saved in your browser and restored when you return.<br>
+            🧑‍🏫 <strong>⭐ FAVORITES (ESL + cultural immersion):</strong> Use the dropdown to instantly load 24 handcrafted aesthetics — from Anime cel-shading to Harlem Renaissance — each includes an extended custom prompt.
+        </div>
+    </div>
+    <footer>NotebookLM Style Engine v6 · Chroma Medium Library · ESL Cultural Presets · Persistent memory enabled · ✨ 12 new aesthetic worlds: Anime, Jazz Age, Delta Blues, Ancient Rome, Samurai, Russian Imperial, Tibetan, Brazilian Carnaval, Mardi Gras, Tango Era, Swing Era, Harlem Renaissance · 🆕 ESL Classroom first option</footer>
+</div>
+
+<script>
+    // ---------- 40+ EXPRESSIVE BASE MEDIUMS ----------
+    const expressiveMediums = [
+        "Collage Photomontage", "Mixed Media Assemblage", "Hand-Painted Gouache", "Vibrant Acrylic Pour", "Digital Fractal Art", 
+        "Stained Glass Mosaic", "Cyanotype & Indigo Wash", "Alcohol Ink Abstraction", "Watercolor Blooms", "Wet-on-Wet Oil Paint", 
+        "Pastel Chalk Smudge", "Risograph Layered Misregistration", "Screenprint Pop-Art", "Woodcut & Relief Print", 
+        "Lino Carve Intaglio", "Embroidery Thread on Canvas", "Paper Diorama Cutaway", "Kaleidoscopic Mirror Collage", 
+        "Neon Graffiti Tags", "Spray Paint & Stencil", "Charcoal & Acrylic Wash", "Ink Splatter & Drip", 
+        "Wax Resist Batik", "Scratchboard Etching", "Sand Animation Texture", "Light Painting Photography", 
+        "Glitch Weave Pixel-Sorting", "Data Bending Chromatic Aberration", "Halftone Comic Dot", "3D Render Claymation", 
+        "Voxel Block World", "Lenticular Holographic", "Prismacolor Pencil Blends", "Marker Doodle Zine", 
+        "Papercut Shadow Box", "Weathered Collage Ephemera", "Cracked Glass Mosaic", "Liquid Resin Art", 
+        "Fluid Acrylic Swirl", "Digital Matte Painting", "Copic Marker Concept Art", "Analog Film Grain (Cinestill)", 
+        "Torn Paper Scrapbook"
+    ];
+    
+    const techniques = [
+        "Cross-Hatching + variable ink", "Precise Technical Lines", "Geometric Shapes + bold geometry",
+        "Organic / Flowing Curves", "Stippling / Pointillism", "Sharp Angular Lines", "Calligraphic Strokes", "Dashed / Phantom Lines",
+        "Halftone Dots + grain", "Color Misregistration", "Metallic / Foil gradients", "Neon / Fluorescent accents",
+        "Monochromatic + high contrast", "Duotone overlay", "Rim Lighting & volumetric", "Ambient Glow / Bloom",
+        "Orthographic Projection", "Tilt-Shift / Narrow DoF", "Gradient Mesh", "Spline Wave Distortion"
+    ];
+
+    const radiantMoods = [
+        "Dreamy Pastel Skies", "Golden Hour Sunset", "Botanical Eden", "Candy Pop / Bubblegum", "Aurora Borealis Dreamscape",
+        "Tropical Breeze", "Seafoam Serenity", "Sunlit Mediterranean", "Mythic Fantasy Realm", "Velvet Opulence (Jewel Tones)",
+        "Honeycomb Glow", "Iridescent Pearl", "Spring Cherry Blossom", "Desert Mirage (Warm Terracotta)", "Lavender Fields",
+        "Midnight Bloom (Deep Blue + Stars)", "Celestial Hologram", "Mermaid Lagoon", "Rainbow Sherbet", "Citrus Zest",
+        "Rosewater & Cream", "Amber Alchemy", "Enchanted Forest (Moss & Gold)", "Festive Carnaval", "Electric Sakura",
+        "Cotton Candy Horizon", "Whispering Meadows", "Starlight Opulence"
+    ];
+
+    // ESL FAVORITES PRESETS (original 5 + 7 existing + 12 brand new = 24 total) + ESL CLASSROOM as first option
+    const favoritePresets = {
+        // 🆕 FIRST PRESET - ESL Classroom preset
+        esl_classroom: { purpose: "Educational & Explainer: simplify, instruct, make information accessible", medium: "Digital Matte Painting", technique: "Neon / Fluorescent accents", mood: "Candy Pop / Bubblegum", customPrompt: "Create a pictures slide deck for an English language class based on this material. Focus on the theme. Include a short summary and comprehension check (true/false or short answer). Suitable for intermediate and advanced (B1–B2) learners but not displayed for which level it is. Use bright, engaging visuals, friendly typography, and clear section breaks. 16:9 widescreen, presentation-friendly with space for text overlays." },
+        colonial: { purpose: "Narrative & Strategic: tell a story, build a case, inspire action", medium: "Digital Matte Painting", technique: "Rim Lighting & volumetric", mood: "Golden Hour Sunset", customPrompt: "Create a modern, high-production COLONIAL aesthetic. Use expressive character designs and clean digital cel-shading. Include dynamic 'sun-flare' lighting, highly detailed backgrounds with cinematic 'lens-blur' effects, and a bright, saturated color palette typical of a feature-film production. The scene evokes early American settlement with optimism and cinematic depth. 16:9 widescreen, suitable for ESL storytelling and historical discussion." },
+        victorian: { purpose: "Narrative & Strategic: tell a story, build a case, inspire action", medium: "Mixed Media Assemblage", technique: "Calligraphic Strokes", mood: "Velvet Opulence (Jewel Tones)", customPrompt: "Create a presentation slide in VICTORIAN ERA style. Balance industrial progress and refined social grace. Use a formal, poetic tone. Imagery includes steam engines, lace, gaslight, and grand architecture. Deep jewel tones, ornate borders, and vintage typography. Convey both innovation and elegance. 16:9 horizontal, ideal for literature or history ESL classes." },
+        steampunk: { purpose: "Technical & Engineering: show structure, precision, complex systems", medium: "Woodcut & Relief Print", technique: "Precise Technical Lines", mood: "Amber Alchemy", customPrompt: "Design a STEAMPUNK schematic aesthetic. An ornate, hand-drawn technical diagram on aged parchment, featuring brass and copper mechanical components, interlocking gears, and pressure gauges. Include elegant, calligraphic annotations and a warm, sepia-toned palette, blending 19th-century industrial design with visionary invention. 16:9 ratio, perfect for ESL vocabulary building around invention and mechanics." },
+        "1950s": { purpose: "Playful & Tactile: engage, soften data, approachable", medium: "Screenprint Pop-Art", technique: "Halftone Dots + grain", mood: "Candy Pop / Bubblegum", customPrompt: "Create a bold, retro 1950s-inspired visual aesthetic. Pastel colors, rock-and-roll motifs, diner imagery, poodle skirts, leather jackets, jukeboxes. Mix full-slide headlines and illustrated content. Keep a playful yet informative tone, blending nostalgia with analysis. Use checkerboard floors, neon signs, and vintage advertisements. 16:9 widescreen, excellent for ESL cultural discussions about post-war optimism." },
+        western: { purpose: "Narrative & Strategic: tell a story, build a case, inspire action", medium: "Weathered Collage Ephemera", technique: "Sharp Angular Lines", mood: "Desert Mirage (Warm Terracotta)", customPrompt: "Produce a WESTERN theme presentation. Gritty, dusty, sun-bleached aesthetic — sepia tones, desert landscapes, saloon fonts, cowboy hats, revolvers, wanted posters, tumbleweeds. Include full-slide headlines, image-heavy slides, and occasional blank slides for dramatic pacing. Evoke frontier justice and open plains. 16:9 landscape, suitable for ESL learners exploring American frontier myths and storytelling." },
+        artdeco: { purpose: "Artistic & Expressive: evoke emotion, memorable, disruptive", medium: "Lenticular Holographic", technique: "Geometric Shapes + bold geometry", mood: "Honeycomb Glow", customPrompt: "ART DECO opulence: Gilded glamour meets streamlined speed. Use symmetrical geometric patterns, sunburst motifs, chrome and black accents, ivory, and rich emerald. Metallic gradients, sharp angular elegance, and a sense of jazz-age dynamism. Incorporate stylized skyscrapers, fan motifs, and luxurious materials. 16:9 widescreen, ideal for ESL lessons about 1920s design, prosperity, and modernist aesthetics." },
+        decadent1890s: { purpose: "Artistic & Expressive: evoke emotion, memorable, disruptive", medium: "Cyanotype & Indigo Wash", technique: "Calligraphic Strokes", mood: "Midnight Bloom (Deep Blue + Stars)", customPrompt: "DECADENT 1890s aesthetic inspired by The Yellow Book and fin-de-siècle Paris. Deep indigo and absinthe-green tones, smoky cabaret lighting, peacock feathers, velvet, and opium-dream illustrations. Combine poetic melancholy with lush ornamentation, art nouveau curves, and a hint of forbidden elegance. Use textured paper, ink washes, and gilded details. Perfect for ESL discussions on Victorian decadence, Oscar Wilde, and artistic rebellion." },
+        prohibition: { purpose: "Narrative & Strategic: tell a story, build a case, inspire action", medium: "Mixed Media Assemblage", technique: "Metallic / Foil gradients", mood: "Amber Alchemy", customPrompt: "PROHIBITION ERA 1920s speakeasy style. Warm bronze, whiskey amber, and smoke-toned gradients. Hidden lounges, jazz silhouettes, fedoras, art deco bronze fixtures, and clandestine ambiance. Use rich wood textures, velvet ropes, and vintage newspaper clippings. Evoke underground glamour, secret doorways, and flapper silhouettes. 16:9 widescreen, great for ESL exploration of 1920s American history, jazz culture, and social change." },
+        aviation: { purpose: "Technical & Engineering: show structure, precision, complex systems", medium: "Digital Matte Painting", technique: "Precise Technical Lines", mood: "Celestial Hologram", customPrompt: "AVIATION theme: Riveted aluminum panels, polished steel, cloud reflections, cockpit instrumentation, and open skies. Combine vintage aircraft diagrams with modern soaring freedom. Use cool silvers, deep aviation blues, and glowing horizon gradients. Incorporate wing struts, altimeters, and wind-swept clouds. 16:9 widescreen, perfect for ESL lessons about flight history, engineering marvels, and exploration." },
+        submarine: { purpose: "Technical & Engineering: show structure, precision, complex systems", medium: "Stained Glass Mosaic", technique: "Rim Lighting & volumetric", mood: "Mermaid Lagoon", customPrompt: "SUBMARINE interior aesthetic: Circular portholes, glowing brass valves, deep turquoise water light, riveted bulkheads, and mysterious deep-sea shadows. Use bioluminescent touches, copper tones, and pressure gauge details. Incorporate marine charts, periscope views, and gentle aquatic reflections. 16:9 widescreen, excellent for ESL vocabulary about ocean exploration, submarines, and nautical engineering." },
+        museum: { purpose: "Educational & Explainer: simplify, instruct, make information accessible", medium: "Risograph Layered Misregistration", technique: "Ambient Glow / Bloom", mood: "Amber Alchemy", customPrompt: "MUSEUM diorama style: Velvet ropes, amber-lit fossil specimens, mahogany display cases, and parchment labels. Warm, scholarly ambiance with soft dust motes, brass nameplates, and preserved curiosities. Use gentle spotlighting, vintage classification charts, and natural history wonder. 16:9 horizontal, ideal for ESL learners exploring museums, paleontology, or curated knowledge." },
+        lighthouse: { purpose: "Narrative & Strategic: tell a story, build a case, inspire action", medium: "Papercut Shadow Box", technique: "Rim Lighting & volumetric", mood: "Sunlit Mediterranean", customPrompt: "LIGHTHOUSE keeper's world: Fresnel lens prismatic light beams, salt-crusted windows, weathered stone walls, roaring ocean spray, and brass mechanisms. Warm golden light piercing through stormy blues, seagulls, and nautical charts. Evoke isolation, guidance, and coastal resilience. 16:9 widescreen, perfect for ESL storytelling about maritime heritage, beacons, and natural forces." },
+        anime: { purpose: "Artistic & Expressive: evoke emotion, memorable, disruptive", medium: "Digital Matte Painting", technique: "Rim Lighting & volumetric", mood: "Electric Sakura", customPrompt: "Create a modern, high-production ANIME aesthetic. Use expressive character designs and clean digital cel-shading. Include dynamic 'sun-flare' lighting, highly detailed backgrounds with cinematic 'lens-blur' effects, and a bright, saturated color palette typical of a feature-film production. 16:9 widescreen, suitable for ESL storytelling, pop culture analysis, and creative visual narratives." },
+        jazzage: { purpose: "Narrative & Strategic: tell a story, build a case, inspire action", medium: "Mixed Media Assemblage", technique: "Metallic / Foil gradients", mood: "Honeycomb Glow", customPrompt: "JAZZ AGE aesthetic: Cigarette smoke curling around brass mutes, velvet lounge shadows, and gleaming saxophones. Warm sepia and gold tones, art deco typography, flapper silhouettes, and the syncopated rhythm of speakeasies. 16:9 widescreen, ideal for ESL exploration of 1920s jazz, cultural shift, and the Roaring Twenties." },
+        deltablues: { purpose: "Narrative & Strategic: tell a story, build a case, inspire action", medium: "Weathered Collage Ephemera", technique: "Calligraphic Strokes", mood: "Desert Mirage (Warm Terracotta)", customPrompt: "DELTA BLUES atmosphere: Crossroad guitar, weeping slide, dusty juke joints, and worn timber floors. Deep indigo nights, railroad tracks, and the raw soul of early blues. Use weathered textures, sepia stains, and haunting silhouettes. 16:9 widescreen, perfect for ESL lessons on American roots music and storytelling." },
+        ancientrome: { purpose: "Educational & Explainer: simplify, instruct, make information accessible", medium: "Marble Fresco & Mosaic", technique: "Precise Technical Lines", mood: "Golden Hour Sunset", customPrompt: "ANCIENT ROME aesthetic: Marble togas, aqueduct shadows, and monumental columns. Roman forums, laurel wreaths, and terracotta rooftops bathed in warm Mediterranean light. Incorporate classical proportions, Latin inscriptions, and grand architecture. 16:9 widescreen, ideal for ESL history and classical civilization topics." },
+        samurai: { purpose: "Artistic & Expressive: evoke emotion, memorable, disruptive", medium: "Ink Wash & Lacquer", technique: "Calligraphic Strokes", mood: "Spring Cherry Blossom", customPrompt: "SAMURAI world: Lacquer armor, drifting cherry petals, katana steel, and misty mountains. Sumi-e ink washes, gold leaf accents, and disciplined elegance. Bamboo forests, castle silhouettes, and the way of the warrior. 16:9 widescreen, excellent for ESL lessons on Japanese history, bushido, and visual poetry." },
+        russianimperial: { purpose: "Artistic & Expressive: evoke emotion, memorable, disruptive", medium: "Fabergé Enamel & Gold", technique: "Metallic / Foil gradients", mood: "Velvet Opulence (Jewel Tones)", customPrompt: "RUSSIAN IMPERIAL opulence: Fabergé eggs, Winter Palace frost, amber and malachite. Imperial double-headed eagles, ice-crystal chandeliers, and rich brocade. Deep emerald, sapphire, and ruby tones with gilded ornamentation. 16:9 widescreen, perfect for ESL cultural studies of Tsarist Russia and decorative arts." },
+        tibetan: { purpose: "Artistic & Expressive: evoke emotion, memorable, disruptive", medium: "Thangka & Sand Mandala", technique: "Organic / Flowing Curves", mood: "Celestial Hologram", customPrompt: "TIBETAN spiritual aesthetic: Butter lamps, prayer wheel squeaks, and fluttering prayer flags. Deep vermilion, saffron, and turquoise hues. Mandala geometry, snow lions, and Himalayan peaks. Meditative stillness and rich textile patterns. 16:9 widescreen, ideal for ESL lessons on Buddhist culture and high-altitude traditions." },
+        braziliancarnaval: { purpose: "Playful & Tactile: engage, soften data, approachable", medium: "Feather & Sequins Carnival", technique: "Neon / Fluorescent accents", mood: "Festive Carnaval", customPrompt: "BRAZILIAN CARNAVAL explosion: Sequined bikinis, samba drums, and feather headdresses. Explosive color — electric green, sun gold, and passionate pink. Rhythmic movement, street parties, and joyful chaos. 16:9 widescreen, excellent for ESL discussion of Brazilian culture, music, and celebration." },
+        mardigras: { purpose: "Playful & Tactile: engage, soften data, approachable", medium: "Mask & Bead Collage", technique: "Halftone Dots + grain", mood: "Purple-Green-Gold", customPrompt: "NEW ORLEANS MARDI GRAS aesthetic: Purple-green-gold beads, masquerade masks, and jazz brass. French Quarter balconies, king cake, and joyful decadence. Carnival royalty and second-line parades. 16:9 widescreen, ideal for ESL lessons on Louisiana Creole culture and festival traditions." },
+        tangoera: { purpose: "Narrative & Strategic: tell a story, build a case, inspire action", medium: "Charcoal & Red Wash", technique: "Sharp Angular Lines", mood: "Midnight Bloom (Deep Blue + Stars)", customPrompt: "TANGO ERA intensity: Bandoneón sighs, red shoes, and smoke-wrapped embraces. Buenos Aires cobblestones, fedoras, and dramatic chiaroscuro. Deep burgundy, midnight blue, and silver highlights. Passionate, melancholic, and utterly compelling. 16:9 widescreen, perfect for ESL storytelling about Argentine dance and emotion." },
+        swingera: { purpose: "Playful & Tactile: engage, soften data, approachable", medium: "Vintage Newsprint & Gloss", technique: "Geometric Shapes + bold geometry", mood: "Candy Pop / Bubblegum", customPrompt: "SWING ERA joy: Zoot suits, Lindy Hop flips, and big band exuberance. Checkered floors, feather boas, and vintage microphones. High-energy, playful, and rhythmically dynamic. Pastel and bold primary colors. 16:9 widescreen, ideal for ESL lessons on 1930s-40s dance, music, and social history." },
+        harlemrenaissance: { purpose: "Educational & Explainer: simplify, instruct, make information accessible", medium: "Linocut & Jazz Poster", technique: "Rim Lighting & volumetric", mood: "Starlight Opulence", customPrompt: "HARLEM RENAISSANCE brilliance: Jazz suits, library cards, and literary salons. Langston Hughes, Duke Ellington, and Zora Neale Hurston. Deep browns, cream, and gold leaf. Speakeasy intellect and artistic revolution. 16:9 widescreen, perfect for ESL exploration of Black American arts, poetry, and cultural awakening in 1920s New York." }
+    };
+
+    function generateStyleName(medium, techniqueRaw, moodRaw) {
+        let techShort = techniqueRaw.split('+')[0].trim();
+        if (techShort.length > 22) techShort = techShort.substring(0, 20);
+        let moodShort = moodRaw.split(' ')[0];
+        if (moodShort.includes('/')) moodShort = moodShort.split('/')[0];
+        return `${medium} · ${techShort} + ${moodShort}`;
+    }
+
+    function buildDescription(purpose, medium, technique, mood) {
+        const purposeText = purpose.split(':')[0];
+        return `A breathtaking ${medium.toLowerCase()} aesthetic enriched with ${technique.toLowerCase()}. Infused with ${mood.toLowerCase()} vibes, this style delivers a ${purposeText.toLowerCase()} visual language — balancing artistic depth and strategic clarity. Ideal for infographics, slide decks, and high-impact storytelling.`;
+    }
+
+    function buildStandardPrompt(medium, technique, mood, purposeRaw) {
+        let purposeHint = "";
+        if (purposeRaw.includes("Educational")) purposeHint = "designed for instructional clarity and academic tone.";
+        else if (purposeRaw.includes("Technical")) purposeHint = "engineered for precision and system architecture.";
+        else if (purposeRaw.includes("Narrative")) purposeHint = "focused on strategic narrative, journey maps, and stakeholder alignment.";
+        else if (purposeRaw.includes("Playful")) purposeHint = "approachable, friendly, with a human-centric tactile feel.";
+        else if (purposeRaw.includes("Artistic")) purposeHint = "expressive, memorable, high-impact creative direction.";
+        else purposeHint = "clean UI/UX, functional clarity and dashboard-ready composition.";
+
+        let extraTexture = "";
+        if (technique.includes("Halftone")) extraTexture = " visible halftone dots and paper grain.";
+        if (technique.includes("Neon")) extraTexture = " vibrant neon edge-lighting against rich backdrop.";
+        if (technique.includes("Rim Lighting")) extraTexture = " dramatic rim lighting with cinematic depth.";
+        if (medium.includes("Collage") || medium.includes("Photomontage")) extraTexture += " layered cut-paper textures, photo fragments, and expressive torn edges.";
+        
+        return `Create a high-quality illustration in a "${medium}" style, incorporating "${technique}" as the core visual technique. Infuse a "${mood}" mood and atmosphere. ${purposeHint}${extraTexture} Use dynamic, radiant composition, sophisticated color harmony, and professional-grade finish. Important: 16:9 widescreen aspect ratio, horizontal layout, suitable for presentation slides. Balance negative space for text overlay. Make it visually arresting and uplifting.`;
+    }
+
+    function generateTags(purpose, medium, technique, mood) {
+        let tags = [];
+        tags.push(purpose.split(':')[0]);
+        tags.push(medium.split(' ').slice(0,2).join(' '));
+        tags.push(technique.split('+')[0].substring(0, 20));
+        tags.push(mood.split(' ').slice(0,2).join(' '));
+        tags.push("16:9");
+        return tags.slice(0,5);
+    }
+
+    function updateStyle(customPromptOverride = null) {
+        const purpose = document.getElementById("purposeSelect").value;
+        const medium = document.getElementById("mediumSelect").value;
+        const technique = document.getElementById("techniqueSelect").value;
+        const mood = document.getElementById("moodSelect").value;
+
+        const styleName = generateStyleName(medium, technique, mood);
+        const description = buildDescription(purpose, medium, technique, mood);
+        let promptText = customPromptOverride !== null ? customPromptOverride : buildStandardPrompt(medium, technique, mood, purpose);
+        
+        const tags = generateTags(purpose, medium, technique, mood);
+        
+        document.getElementById("styleTitle").innerText = styleName;
+        document.getElementById("styleDesc").innerText = description;
+        document.getElementById("fullPrompt").innerText = promptText;
+        
+        const metaContainer = document.getElementById("metaBubbles");
+        metaContainer.innerHTML = tags.map(tag => `<span class="meta-tag">#${tag.replace(/\s/g, '_')}</span>`).join('');
+        
+        saveCurrentSelection();
+        updateMemoryBadge(true);
+    }
+
+    function applyFavoritePreset(presetKey) {
+        if (!presetKey) return;
+        const preset = favoritePresets[presetKey];
+        if (!preset) return;
+        
+        const purposeSelect = document.getElementById("purposeSelect");
+        if ([...purposeSelect.options].some(opt => opt.value === preset.purpose)) {
+            purposeSelect.value = preset.purpose;
+        }
+        
+        const mediumSelect = document.getElementById("mediumSelect");
+        if ([...mediumSelect.options].some(opt => opt.value === preset.medium)) {
+            mediumSelect.value = preset.medium;
+        } else {
+            const fallback = expressiveMediums.includes(preset.medium) ? preset.medium : expressiveMediums[0];
+            if([...mediumSelect.options].some(opt => opt.value === fallback)) mediumSelect.value = fallback;
+        }
+        
+        const techSelect = document.getElementById("techniqueSelect");
+        if ([...techSelect.options].some(opt => opt.value === preset.technique)) {
+            techSelect.value = preset.technique;
+        }
+        
+        const moodSelect = document.getElementById("moodSelect");
+        if ([...moodSelect.options].some(opt => opt.value === preset.mood)) {
+            moodSelect.value = preset.mood;
+        }
+        
+        updateStyle(preset.customPrompt);
+        
+        const favDropdown = document.getElementById("favoritesSelect");
+        if (favDropdown) favDropdown.value = "";
+    }
+
+    function saveCurrentSelection() {
+        try {
+            const selection = {
+                purpose: document.getElementById("purposeSelect").value,
+                medium: document.getElementById("mediumSelect").value,
+                technique: document.getElementById("techniqueSelect").value,
+                mood: document.getElementById("moodSelect").value,
+                timestamp: Date.now()
+            };
+            localStorage.setItem("chroma_last_style", JSON.stringify(selection));
+        } catch (e) {}
+    }
+
+    function loadSavedSelection() {
+        try {
+            const saved = localStorage.getItem("chroma_last_style");
+            if (!saved) return false;
+            const selection = JSON.parse(saved);
+            let changed = false;
+            const purposeSelect = document.getElementById("purposeSelect");
+            if (selection.purpose && [...purposeSelect.options].some(opt => opt.value === selection.purpose)) {
+                purposeSelect.value = selection.purpose; changed = true;
+            }
+            const mediumSelect = document.getElementById("mediumSelect");
+            if (selection.medium && [...mediumSelect.options].some(opt => opt.value === selection.medium)) {
+                mediumSelect.value = selection.medium; changed = true;
+            }
+            const techniqueSelect = document.getElementById("techniqueSelect");
+            if (selection.technique && [...techniqueSelect.options].some(opt => opt.value === selection.technique)) {
+                techniqueSelect.value = selection.technique; changed = true;
+            }
+            const moodSelect = document.getElementById("moodSelect");
+            if (selection.mood && [...moodSelect.options].some(opt => opt.value === selection.mood)) {
+                moodSelect.value = selection.mood; changed = true;
+            }
+            return changed;
+        } catch(e) { return false; }
+    }
+    
+    let memoryFlashTimeout = null;
+    function updateMemoryBadge(justSaved = false) {
+        const badge = document.getElementById("memoryStatus");
+        if (justSaved) {
+            badge.innerHTML = "💾 Saved to browser memory";
+            badge.style.backgroundColor = "#d4e2e0";
+            if (memoryFlashTimeout) clearTimeout(memoryFlashTimeout);
+            memoryFlashTimeout = setTimeout(() => {
+                if (badge) badge.innerHTML = "💾 Last selection saved";
+                if (badge) badge.style.backgroundColor = "#e4e0d7";
+            }, 2000);
+        } else {
+            const hasSaved = localStorage.getItem("chroma_last_style") !== null;
+            if (hasSaved) {
+                badge.innerHTML = "💾 Last selection restored";
+                badge.style.backgroundColor = "#d4e2e0";
+                setTimeout(() => { if(badge) badge.innerHTML = "💾 Last selection saved"; badge.style.backgroundColor = "#e4e0d7"; }, 2200);
+            } else {
+                badge.innerHTML = "💾 Selections auto-save";
+            }
+        }
+    }
+
+    function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function randomizeAll() {
+        const purposeOptions = document.getElementById("purposeSelect").options;
+        document.getElementById("purposeSelect").selectedIndex = Math.floor(Math.random() * purposeOptions.length);
+        const randomMedium = randomItem(expressiveMediums);
+        const randomTechnique = randomItem(techniques);
+        const randomMood = randomItem(radiantMoods);
+        const mediumSelect = document.getElementById("mediumSelect");
+        for (let i = 0; i < mediumSelect.options.length; i++) { if (mediumSelect.options[i].value === randomMedium) { mediumSelect.selectedIndex = i; break; } }
+        const techSelect = document.getElementById("techniqueSelect");
+        for (let i = 0; i < techSelect.options.length; i++) { if (techSelect.options[i].value === randomTechnique) { techSelect.selectedIndex = i; break; } }
+        const moodSelect = document.getElementById("moodSelect");
+        for (let i = 0; i < moodSelect.options.length; i++) { if (moodSelect.options[i].value === randomMood) { moodSelect.selectedIndex = i; break; } }
+        updateStyle(null);
+    }
+
+    function populateSelectors() {
+        const mediumSelect = document.getElementById("mediumSelect");
+        expressiveMediums.forEach(m => { const opt = document.createElement("option"); opt.value = m; opt.innerText = m; mediumSelect.appendChild(opt); });
+        const techniqueSelect = document.getElementById("techniqueSelect");
+        techniques.forEach(t => { const opt = document.createElement("option"); opt.value = t; opt.innerText = t; techniqueSelect.appendChild(opt); });
+        const moodSelect = document.getElementById("moodSelect");
+        radiantMoods.forEach(m => { const opt = document.createElement("option"); opt.value = m; opt.innerText = m; moodSelect.appendChild(opt); });
+        mediumSelect.value = expressiveMediums[0];
+        techniqueSelect.value = techniques[11];
+        moodSelect.value = radiantMoods[2];
+    }
+
+    function setupCopy() {
+        const copyBtn = document.getElementById("copyPromptBtn");
+        copyBtn.addEventListener("click", async () => {
+            const promptText = document.getElementById("fullPrompt").innerText;
+            try { await navigator.clipboard.writeText(promptText); copyBtn.innerText = "✅ Copied!"; setTimeout(() => { copyBtn.innerText = "📋 Copy prompt"; }, 1800); } catch(err) { alert("Manual copy: " + promptText); }
+        });
+    }
+
+    function initWithMemory() {
+        populateSelectors();
+        const loaded = loadSavedSelection();
+        if (!loaded) {
+            document.getElementById("purposeSelect").selectedIndex = 0;
+            document.getElementById("mediumSelect").value = expressiveMediums[0];
+            document.getElementById("techniqueSelect").value = techniques[11];
+            document.getElementById("moodSelect").value = radiantMoods[2];
+        }
+        updateStyle(null);
+        if (loaded) updateMemoryBadge(false);
+        else document.getElementById("memoryStatus").innerHTML = "💾 Selections auto-save";
+    }
+
+    document.getElementById("purposeSelect").addEventListener("change", () => updateStyle(null));
+    document.getElementById("mediumSelect").addEventListener("change", () => updateStyle(null));
+    document.getElementById("techniqueSelect").addEventListener("change", () => updateStyle(null));
+    document.getElementById("moodSelect").addEventListener("change", () => updateStyle(null));
+    document.getElementById("randomizeBtn").addEventListener("click", randomizeAll);
+    
+    const favDropdown = document.getElementById("favoritesSelect");
+    if (favDropdown) {
+        favDropdown.addEventListener("change", (e) => {
+            const selected = e.target.value;
+            if (selected) {
+                applyFavoritePreset(selected);
+            }
+        });
+    }
+    
+    setupCopy();
+    initWithMemory();
+</script>
+</body>
+</html>

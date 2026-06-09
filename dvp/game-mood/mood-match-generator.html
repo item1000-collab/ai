@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Mood Match – Generate Game from Photo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(145deg, #cfc2b0 0%, #f0e6dc 100%);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 { color: #b85c1a; margin-bottom: 0.5rem; }
+        .sub { color: #5e4b34; margin-bottom: 1.5rem; border-left: 3px solid #f4a261; padding-left: 1rem; }
+        .two-columns { display: flex; gap: 2rem; flex-wrap: wrap; margin: 1.5rem 0; }
+        .column { flex: 1; min-width: 280px; }
+        
+        .upload-area {
+            border: 3px dashed #d4c5b0;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            text-align: center;
+            background: #fef8f0;
+            transition: 0.2s;
+            margin-bottom: 1rem;
+        }
+        .upload-area:hover {
+            border-color: #b85c1a;
+            background: #fff8f0;
+        }
+        .file-input {
+            display: block;
+            width: 100%;
+            margin: 1rem 0 0 0;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            border: 1px solid #ddd0be;
+            border-radius: 0.8rem;
+            background: white;
+            cursor: pointer;
+        }
+        .file-input::-webkit-file-upload-button {
+            background: #b85c1a;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            margin-right: 1rem;
+        }
+        .preview-img { 
+            max-width: 100%; 
+            max-height: 260px; 
+            border-radius: 1rem; 
+            margin-top: 1rem; 
+            object-fit: contain; 
+        }
+        textarea {
+            width: 100%;
+            padding: 0.7rem;
+            margin: 0.5rem 0;
+            border: 1px solid #ddd0be;
+            border-radius: 1rem;
+            font-family: inherit;
+            min-height: 80px;
+            resize: vertical;
+        }
+        button {
+            background: #b85c1a;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem 0;
+            transition: 0.2s;
+        }
+        button:hover { background: #9a4a12; transform: translateY(-2px); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .info {
+            background: #fef3e0;
+            padding: 1rem;
+            border-radius: 1rem;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .game-output {
+            background: #1e2a2e;
+            color: #f0e6dc;
+            padding: 1rem;
+            border-radius: 1rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 500px;
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+        .inline-game iframe { width: 100%; height: 700px; border: none; border-radius: 1rem; }
+        .status { margin: 0.5rem 0; font-size: 0.85rem; padding: 0.5rem; border-radius: 0.8rem; }
+        .demo-badge {
+            background: #2a6f97;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            display: inline-block;
+            margin-left: 1rem;
+            vertical-align: middle;
+        }
+        .btn-group { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error { background: #ffe0d6; border-left: 4px solid #e76f51; color: #8b3a1c; }
+        .success { background: #d4f0e8; border-left: 4px solid #2a9d8f; color: #1a5c4a; }
+        input { width: 100%; padding: 0.7rem; margin: 0.5rem 0; border: 1px solid #ddd0be; border-radius: 1rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🤖 AI Mood Match — Generate Game from Any Photo</h1>
+    <div class="sub">
+        Upload any photo → AI analyzes mood → creates interactive game with 5 emotion options
+        <span class="demo-badge">DEMO MODE (No API Key Required)</span>
+    </div>
+
+    <div class="two-columns">
+        <div class="column">
+            <div class="upload-area">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📸</div>
+                <div><strong>Select a photo</strong></div>
+                <small>JPG, PNG, WEBP up to 10MB</small>
+                <input type="file" id="fileInput" class="file-input" accept="image/jpeg,image/png,image/webp">
+            </div>
+            <div id="previewContainer" style="text-align: center;"></div>
+            
+            <div class="info">
+                💡 <strong>How it works:</strong><br>
+                1. Click "Choose File" to select a photo<br>
+                2. AI analyzes your photo's colors and content<br>
+                3. Creates 5 emotion options based on visual analysis<br>
+                4. Generates a complete playable HTML game instantly!
+            </div>
+        </div>
+        
+        <div class="column">
+            <label><strong>🎭 Custom instructions (optional)</strong></label>
+            <textarea id="customPrompt" placeholder="Example: 'Focus on warm, nostalgic feelings' or 'Make emotions about adventure and discovery'"></textarea>
+            
+            <button id="generateBtn">✨ Generate Game</button>
+            <div id="statusMsg" class="status"></div>
+        </div>
+    </div>
+
+    <div id="resultArea" style="display:none">
+        <h2>🎮 Your AI-Generated Game</h2>
+        <div class="btn-group">
+            <button id="downloadBtn" style="background:#2a6f97">💾 Download as HTML</button>
+            <button id="playBtn" style="background:#2a6f97">▶️ Play inline</button>
+        </div>
+        <div id="gameOutput" class="game-output"></div>
+        <div id="inlineGameContainer" class="inline-game"></div>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const previewContainer = document.getElementById('previewContainer');
+    const generateBtn = document.getElementById('generateBtn');
+    const customPrompt = document.getElementById('customPrompt');
+    const statusMsg = document.getElementById('statusMsg');
+    const resultArea = document.getElementById('resultArea');
+    const gameOutput = document.getElementById('gameOutput');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const playBtn = document.getElementById('playBtn');
+    const inlineGameContainer = document.getElementById('inlineGameContainer');
+    
+    let currentImageDataUrl = null;
+    let currentGameHTML = null;
+    
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (!file.type.startsWith('image/')) {
+            showStatus('Please select an image file (JPG, PNG, WEBP)', 'error');
+            return;
+        }
+        
+        if (file.size > 10 * 1024 * 1024) {
+            showStatus('File too large. Max 10MB.', 'error');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            currentImageDataUrl = event.target.result;
+            previewContainer.innerHTML = '<img src="' + currentImageDataUrl + '" class="preview-img" alt="preview">';
+            showStatus('Photo loaded! Click "Generate Game" to create your game.', 'success');
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    function showStatus(message, type) {
+        statusMsg.innerHTML = message;
+        statusMsg.className = 'status';
+        if (type === 'error') statusMsg.classList.add('error');
+        else if (type === 'success') statusMsg.classList.add('success');
+    }
+    
+    function simulateAIAnalysis(imageDataUrl, userPrompt) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = Math.min(img.width, 100);
+                canvas.height = Math.min(img.height, 100);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const pixels = imageData.data;
+                
+                let r = 0, g = 0, b = 0, count = 0;
+                for (let i = 0; i < pixels.length; i += 4) {
+                    r += pixels[i];
+                    g += pixels[i+1];
+                    b += pixels[i+2];
+                    count++;
+                }
+                r = Math.floor(r / count);
+                g = Math.floor(g / count);
+                b = Math.floor(b / count);
+                
+                let mood = '';
+                if (r > g && r > b) mood = 'warm';
+                else if (g > r && g > b) mood = 'natural';
+                else if (b > r && b > g) mood = 'cool';
+                else mood = 'balanced';
+                
+                const emotionsList = {
+                    warm: ['Joyful Energy', 'Warm Nostalgia', 'Passionate Feelings', 'Cozy Comfort', 'Vibrant Spirit'],
+                    natural: ['Peaceful Calm', 'Fresh Renewal', 'Natural Harmony', 'Gentle Growth', 'Quiet Serenity'],
+                    cool: ['Deep Contemplation', 'Mysterious Depths', 'Calm Reflection', 'Cool Clarity', 'Quiet Strength'],
+                    balanced: ['Balanced Harmony', 'Gentle Joy', 'Quiet Wonder', 'Soft Nostalgia', 'Peaceful Hope']
+                };
+                
+                let emotions = [...emotionsList[mood]];
+                
+                if (userPrompt && userPrompt.trim()) {
+                    const promptLower = userPrompt.toLowerCase();
+                    if (promptLower.includes('nostalgia')) {
+                        emotions = ['Nostalgic Memory', 'Bittersweet Past', 'Warm Remembrance', 'Gentle Longing', 'Cherished Moment'];
+                    } else if (promptLower.includes('adventure')) {
+                        emotions = ['Bold Adventure', 'Curious Exploration', 'Wild Freedom', 'Brave Spirit', 'Endless Journey'];
+                    } else if (promptLower.includes('calm')) {
+                        emotions = ['Deep Peace', 'Quiet Calm', 'Gentle Stillness', 'Soft Serenity', 'Tranquil Mind'];
+                    } else if (promptLower.includes('energy')) {
+                        emotions = ['Energetic Buzz', 'Excited Thrill', 'Vibrant Life', 'Dynamic Power', 'Rush of Joy'];
+                    }
+                }
+                
+                const correctIndex = Math.floor(Math.random() * 5);
+                
+                const authorNotes = {
+                    warm: "The warm tones in this photo evoke feelings of comfort and joyful energy.",
+                    natural: "The natural greens and earth tones create a peaceful, grounding atmosphere.",
+                    cool: "The cool blue tones invite deep contemplation and quiet reflection.",
+                    balanced: "This balanced composition creates a harmonious, gentle emotional response."
+                };
+                
+                resolve({
+                    emotions: emotions,
+                    authorNote: authorNotes[mood],
+                    correctIndex: correctIndex
+                });
+            };
+            img.src = imageDataUrl;
+        });
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    function buildGameHTML(imageUrl, gameData) {
+        const emotions = gameData.emotions;
+        const authorNote = gameData.authorNote;
+        const correctIdx = gameData.correctIndex;
+        
+        return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>AI Mood Match Game</title>\n<style>\n*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(145deg,#cfc2b0,#f0e6dc);padding:1rem;min-height:100vh}.game-container{max-width:1300px;margin:0 auto;background:rgba(255,253,248,0.98);border-radius:2rem;padding:1.5rem;box-shadow:0 20px 35px rgba(0,0,0,0.1)}h1{color:#b85c1a;margin-bottom:0.5rem;font-size:1.5rem}.stats-bar{display:flex;gap:1rem;background:#f5ede4;padding:0.5rem 1rem;border-radius:60px;margin:1rem 0;flex-wrap:wrap}.stat-item{background:white;padding:0.2rem 1rem;border-radius:40px;font-weight:500}.game-layout{display:flex;gap:1.5rem;flex-wrap:wrap;margin:1rem 0}.photo-card{flex:0.4;background:#fcf8f2;border-radius:1rem;overflow:hidden}.game-img{width:100%;max-height:500px;object-fit:contain;background:#ddd0be;border-radius:0.5rem}.right-panel{flex:0.58;background:#fffaf0;border-radius:1rem;padding:1rem}.question{font-weight:700;font-size:1.2rem;text-align:center;margin-bottom:1rem}.emotion-grid{display:flex;flex-wrap:wrap;gap:0.6rem;margin:1rem 0;justify-content:center}.emotion-btn{background:#f0e6da;border:2px solid #e0cfbc;border-radius:60px;padding:0.5rem 1rem;font-weight:600;cursor:pointer;transition:0.2s;font-family:inherit}.emotion-btn.correct-answer{background:#2a9d8f;border-color:#1e7a6e;color:white}.emotion-btn.wrong-answer{background:#e76f51;border-color:#c45a3a;color:white}.emotion-btn.selected{background:#b85c1a;color:white;border-color:#8e4510}.author-note{background:#f5ede4;border-left:4px solid #2a9d8f;padding:0.7rem;margin:0.5rem 0;border-radius:0.8rem}.match-result{background:#e9e2d8;border-radius:0.8rem;padding:0.8rem;margin-top:0.5rem;line-height:1.4}.match-match{background:#2a9d8f20;border-left:4px solid #2a9d8f}.match-mismatch{background:#b85c1a15;border-left:4px solid #b85c1a}.action-buttons{display:flex;gap:1rem;justify-content:center;margin:1rem 0}.btn{background:#2a6f97;border:none;padding:0.4rem 1.5rem;border-radius:40px;color:white;cursor:pointer;font-weight:600}.feedback{text-align:center;background:#e9e2d8;border-radius:40px;padding:0.5rem;margin-top:0.5rem;font-size:0.9rem}footer{text-align:center;font-size:0.7rem;margin-top:1rem;color:#8b765c}@media(max-width:800px){.game-layout{flex-direction:column}.photo-card,.right-panel{flex:auto;width:100%}}\n</style>\n</head>\n<body>\n<div class="game-container">\n<h1>🎭 AI Mood Match Game</h1>\n<div class="stats-bar">\n<div class="stat-item">🎨 Completed: <span id="completedCount">0</span> / 1</div>\n<div class="stat-item">🎯 Matches: <span id="matchCount">0</span></div>\n</div>\n<div class="game-layout">\n<div class="photo-card"><img class="game-img" src="' + imageUrl + '" alt="photo"></div>\n<div class="right-panel">\n<div class="question">🎭 Which mood fits this photo best?</div>\n<div class="emotion-grid" id="emotionsGrid">\n' + emotions.map(function(e, idx) { return '<button class="emotion-btn" data-idx="' + idx + '">' + escapeHtml(e) + '</button>'; }).join('') + '\n</div>\n<div class="author-note" id="authorNoteBlock" style="display:none"><strong>📖 Author\'s note:</strong> ' + escapeHtml(authorNote) + '</div>\n<div id="resultArea"></div>\n</div>\n</div>\n<div class="action-buttons"><button id="resetBtn" class="btn">🔄 Reset Game</button></div>\n<div id="feedbackMessage" class="feedback">✨ Pick a mood. Green = correct answer, Red = wrong.</div>\n<footer>Generated by AI Mood Match</footer>\n</div>\n<script>\nconst emotions = ' + JSON.stringify(emotions) + ';\nconst correctIndex = ' + correctIdx + ';\nlet answered = false, selectedIdx = null;\nconst resultArea = document.getElementById("resultArea");\nconst feedbackDiv = document.getElementById("feedbackMessage");\nconst completedSpan = document.getElementById("completedCount");\nconst matchCountSpan = document.getElementById("matchCount");\nconst resetBtn = document.getElementById("resetBtn");\nconst authorNoteBlock = document.getElementById("authorNoteBlock");\nfunction updateUI() {\n    const btns = document.querySelectorAll(".emotion-btn");\n    for(let i = 0; i < btns.length; i++) {\n        btns[i].classList.remove("correct-answer", "wrong-answer", "selected");\n        if(answered) {\n            if(i === correctIndex) btns[i].classList.add("correct-answer");\n            if(i === selectedIdx && i !== correctIndex) btns[i].classList.add("wrong-answer");\n        }\n        if(selectedIdx === i && !answered) btns[i].classList.add("selected");\n    }\n    if(answered) {\n        authorNoteBlock.style.display = "block";\n        const isMatch = (selectedIdx === correctIndex);\n        let html = \'<div class="match-result \' + (isMatch ? "match-match" : "match-mismatch") + \'">\';\n        html += \'<strong>\' + (isMatch ? "✅ MATCH" : "❌ NO MATCH") + \'</strong><br>\';\n        html += \'<strong>Your choice:</strong> "\' + emotions[selectedIdx] + \'"<br>\';\n        html += \'<strong>Author\'s mood:</strong> "\' + emotions[correctIndex] + \'"<br>\';\n        html += \'<strong>📝 \' + (isMatch ? "Perfect! You felt the same as the author." : "The author\\\'s intended mood is different. Read the note above.") + \'</strong>\';\n        html += \'</div>\';\n        resultArea.innerHTML = html;\n        completedSpan.innerText = "1";\n        matchCountSpan.innerText = isMatch ? "1" : "0";\n    } else {\n        authorNoteBlock.style.display = "none";\n        resultArea.innerHTML = "";\n        completedSpan.innerText = "0";\n        matchCountSpan.innerText = "0";\n    }\n}\nconst btns = document.querySelectorAll(".emotion-btn");\nfor(let i = 0; i < btns.length; i++) {\n    btns[i].addEventListener("click", function() {\n        if(answered) { feedbackDiv.innerHTML = "⚠️ Game completed. Press Reset to play again."; return; }\n        selectedIdx = parseInt(this.getAttribute("data-idx"));\n        answered = true;\n        updateUI();\n        feedbackDiv.innerHTML = (selectedIdx === correctIndex) ? "🎉 CORRECT! You matched the author\\\'s mood!" : "🔍 INCORRECT. The correct answer is highlighted in green.";\n    });\n}\nresetBtn.addEventListener("click", function() { answered = false; selectedIdx = null; updateUI(); feedbackDiv.innerHTML = "✨ Game reset. Choose a mood — green = correct answer."; });\nupdateUI();\n<\/script>\n</body>\n</html>';
+    }
+    
+    generateBtn.addEventListener('click', async function() {
+        if (!currentImageDataUrl) {
+            showStatus('Please select a photo first! Click "Choose File" button above.', 'error');
+            return;
+        }
+        
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<span class="loading-spinner"></span> AI analyzing your photo...';
+        showStatus('🎨 AI is analyzing colors and mood... Generating game...', 'info');
+        
+        try {
+            const prompt = customPrompt.value.trim();
+            const gameData = await simulateAIAnalysis(currentImageDataUrl, prompt);
+            currentGameHTML = buildGameHTML(currentImageDataUrl, gameData);
+            gameOutput.textContent = currentGameHTML;
+            resultArea.style.display = 'block';
+            inlineGameContainer.innerHTML = '';
+            showStatus('✅ Game generated successfully! Download or play below.', 'success');
+        } catch (error) {
+            console.error(error);
+            showStatus('Error: ' + error.message, 'error');
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '✨ Generate Game';
+        }
+    });
+    
+    downloadBtn.addEventListener('click', function() {
+        if (!currentGameHTML) return;
+        const blob = new Blob([currentGameHTML], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ai-mood-match-game.html';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+    
+    playBtn.addEventListener('click', function() {
+        if (!currentGameHTML) return;
+        const blob = new Blob([currentGameHTML], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        inlineGameContainer.innerHTML = '<iframe src="' + url + '" style="width:100%; height:700px; border:none; border-radius:1rem"></iframe>';
+    });
+    
+    showStatus('📸 Ready! Select a photo and click "Generate Game".', 'success');
+</script>
+</body>
+</html>

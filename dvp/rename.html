@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Renamer - PowerShell Batch File Renamer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        /* Two-column layout */
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        /* Left column - Instructions */
+        .left-column {
+            flex: 1.2;
+            background: #f8fafc;
+            padding: 25px;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        /* Right column - Commands */
+        .right-column {
+            flex: 1.8;
+            padding: 25px;
+            background: white;
+        }
+
+        /* Headers */
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .left-column .section-title {
+            color: #2d3748;
+            border-bottom-color: #667eea;
+        }
+
+        .right-column .section-title {
+            color: #2d3748;
+            border-bottom-color: #48bb78;
+        }
+
+        /* PowerShell Guide - Compact */
+        .guide-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .method-tab {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .method-btn {
+            padding: 6px 12px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+
+        .method-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .method-content {
+            display: none;
+        }
+
+        .method-content.active {
+            display: block;
+        }
+
+        .guide-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 8px 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: #2d3748;
+        }
+
+        .step-desc {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 2px;
+        }
+
+        .shortcut {
+            background: #2d3748;
+            color: #fbbf24;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .info-note {
+            background: #e6fffa;
+            border-left: 3px solid #38b2ac;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            margin-top: 15px;
+            color: #234e52;
+        }
+
+        .warning-note {
+            background: #fef5e7;
+            border-left: 3px solid #f39c12;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            margin-top: 15px;
+            color: #7d6608;
+        }
+
+        /* Input field */
+        .folder-input {
+            margin-bottom: 20px;
+        }
+
+        .folder-input label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 6px;
+        }
+
+        .folder-input input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'Consolas', monospace;
+            background: #f7fafc;
+        }
+
+        .folder-input input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        /* Command boxes - Compact */
+        .command-box {
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .command-label {
+            color: #6a9955;
+            font-family: monospace;
+            font-size: 10px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .command-text {
+            color: #d4d4d4;
+            font-family: 'Consolas', monospace;
+            font-size: 11px;
+            word-break: break-all;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #5a67d8;
+        }
+
+        .copy-success {
+            background: #48bb78;
+        }
+
+        hr {
+            margin: 15px 0;
+            border: none;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .two-columns {
+                flex-direction: column;
+            }
+            .left-column {
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            body {
+                padding: 10px;
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header h1::before {
+            content: "📁";
+        }
+
+        .header-version {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        .footer {
+            background: #f1f5f9;
+            padding: 12px 25px;
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+<div class="main-wrapper">
+    <!-- Header -->
+    <div class="header">
+        <h1>File Renamer</h1>
+        <div class="header-version">PowerShell • 001-100 naming • {0:D3}</div>
+    </div>
+
+    <!-- Two columns -->
+    <div class="two-columns">
+        <!-- LEFT COLUMN: Instructions -->
+        <div class="left-column">
+            <div class="section-title">
+                <span>📘</span> How to Open PowerShell
+            </div>
+
+            <div class="guide-methods">
+                <div class="method-tab">
+                    <button class="method-btn active" onclick="showMethod(0)">Win 10/11</button>
+                    <button class="method-btn" onclick="showMethod(1)">⚡ Quick</button>
+                    <button class="method-btn" onclick="showMethod(2)">📂 From Folder</button>
+                    <button class="method-btn" onclick="showMethod(3)">🏃 Run</button>
+                </div>
+
+                <!-- Method 1 -->
+                <div id="method0" class="method-content active">
+                    <div class="guide-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Click Start or press <span class="shortcut">Win</span></div>
+                            <div class="step-desc">Windows icon in bottom-left corner</div>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Type <span class="shortcut">PowerShell</span></div>
+                            <div class="step-desc">Start typing into search bar</div>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Click "Windows PowerShell"</div>
+                            <div class="step-desc">Blue window opens → ready!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Method 2 -->
+                <div id="method1" class="method-content">
+                    <div class="guide-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Press <span class="shortcut">Win + R</span></div>
+                            <div class="step-desc">Opens Run dialog box</div>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Type <span class="shortcut">powershell</span></div>
+                            <div class="step-desc">All lowercase</div>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Press <span class="shortcut">Enter</span></div>
+                            <div class="step-desc">PowerShell opens immediately</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Method 3 -->
+                <div id="method2" class="method-content">
+                    <div class="guide-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Open your folder in Explorer</div>
+                            <div class="step-desc">Navigate to your files</div>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Click the address bar</div>
+                            <div class="step-desc">At the top of window</div>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Type <span class="shortcut">powershell</span> + Enter</div>
+                            <div class="step-desc">Opens directly in that folder!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Method 4 -->
+                <div id="method3" class="method-content">
+                    <div class="guide-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Right-click Start button</div>
+                            <div class="step-desc">Windows icon</div>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Select "Windows PowerShell"</div>
+                            <div class="step-desc">Or "Terminal" on Win11</div>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Ready to use!</div>
+                            <div class="step-desc">Blue window opens</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-note">
+                💡 <strong>PowerShell vs CMD:</strong> PowerShell = <span style="color:#2563eb;">blue</span> window, supports $ commands.<br>
+                CMD = black window. Make sure you're in PowerShell!
+            </div>
+
+            <hr>
+
+            <div class="section-title">
+                <span>📌</span> How it works
+            </div>
+            <div class="info-note" style="margin-top:0;">
+                • <code>{0:D3}</code> creates 3-digit numbers: 001, 002... 100<br>
+                • Files renamed in alphabetical order<br>
+                • Always preview before actual rename!
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Commands -->
+        <div class="right-column">
+            <div class="section-title">
+                <span>⚡</span> Commands
+            </div>
+
+            <!-- Folder input -->
+            <div class="folder-input">
+                <label>📂 Folder Path:</label>
+                <input type="text" id="folderPath" value="C:\Users\User\Documents\Cuba">
+            </div>
+
+            <!-- Navigate command -->
+            <div class="command-box">
+                <div class="command-label">
+                    <span>📁 NAVIGATE</span>
+                    <span class="badge">cd command</span>
+                </div>
+                <div class="command-text" id="navigateCommand">cd "C:\Users\User\Documents\Cuba"</div>
+                <button class="copy-btn" onclick="copyNavigateCommand()">📋 Copy</button>
+            </div>
+
+            <!-- Preview command -->
+            <div class="command-box">
+                <div class="command-label">
+                    <span>👁️ PREVIEW</span>
+                    <span class="badge">Safe - no changes</span>
+                </div>
+                <div class="command-text" id="previewCommand"></div>
+                <button class="copy-btn" onclick="copyPreviewCommand()">📋 Copy</button>
+            </div>
+
+            <!-- Rename command -->
+            <div class="command-box">
+                <div class="command-label">
+                    <span>✅ ACTUAL RENAME</span>
+                    <span class="badge">⚠️ Permanent</span>
+                </div>
+                <div class="command-text" id="renameCommand"></div>
+                <button class="copy-btn" onclick="copyRenameCommand()">📋 Copy</button>
+            </div>
+
+            <div class="warning-note">
+                ⚠️ <strong>WARNING:</strong> Actual rename permanently changes file names to 001.ext, 002.ext...
+                <strong>Run PREVIEW first!</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        PowerShell 5.1+ | Windows 10/11 | Copy command → Paste into PowerShell → Press Enter
+    </div>
+</div>
+
+<script>
+    const folderInput = document.getElementById('folderPath');
+    const PREVIEW_BASE = '$i=1; Get-ChildItem -File | ForEach-Object { $newName = "{0:D3}" -f $i + $_.Extension; Write-Host "$($_.Name) → $newName" -ForegroundColor Cyan; $i++ }';
+    const RENAME_BASE = '$i=1; Get-ChildItem -File | ForEach-Object { $newName = "{0:D3}" -f $i + $_.Extension; Rename-Item $_.Name -NewName $newName; $i++ }';
+
+    function updateCommands() {
+        let folderPath = folderInput.value.trim().replace(/^["']|["']$/g, '');
+        const navigate = `cd "${folderPath}"`;
+        
+        document.getElementById('navigateCommand').textContent = navigate;
+        document.getElementById('previewCommand').textContent = `${navigate}; ${PREVIEW_BASE}`;
+        document.getElementById('renameCommand').textContent = `${navigate}; ${RENAME_BASE}`;
+    }
+
+    async function copyToClipboard(text, btn) {
+        try {
+            await navigator.clipboard.writeText(text);
+            const original = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            btn.classList.add('copy-success');
+            setTimeout(() => {
+                btn.textContent = original;
+                btn.classList.remove('copy-success');
+            }, 1200);
+        } catch(e) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            const original = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                btn.textContent = original;
+            }, 1200);
+        }
+    }
+
+    function copyNavigateCommand() { copyToClipboard(document.getElementById('navigateCommand').textContent, event.target); }
+    function copyPreviewCommand() { copyToClipboard(document.getElementById('previewCommand').textContent, event.target); }
+    function copyRenameCommand() { copyToClipboard(document.getElementById('renameCommand').textContent, event.target); }
+
+    function showMethod(index) {
+        const btns = document.querySelectorAll('.method-btn');
+        const contents = document.querySelectorAll('.method-content');
+        btns.forEach((btn, i) => btn.classList.toggle('active', i === index));
+        contents.forEach((content, i) => content.classList.toggle('active', i === index));
+    }
+
+    folderInput.addEventListener('input', updateCommands);
+    updateCommands();
+</script>
+</body>
+</html>
