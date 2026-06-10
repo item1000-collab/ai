@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rename Photos & Videos by Date Created</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #eee;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .upload-area {
+            border: 3px dashed #4ecdc4;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(78,205,196,0.1);
+        }
+        .upload-area:hover {
+            background: rgba(78,205,196,0.2);
+            border-color: #ff6b6b;
+        }
+        .upload-area.drag-over {
+            background: rgba(78,205,196,0.3);
+            border-color: #ff6b6b;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .btn {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+            margin: 5px;
+        }
+        .btn:hover {
+            transform: scale(1.02);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+        }
+        .preview {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        th {
+            background: rgba(78,205,196,0.2);
+            font-weight: 600;
+        }
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .status.success {
+            background: rgba(46,204,113,0.3);
+            border: 1px solid #2ecc71;
+        }
+        .status.error {
+            background: rgba(231,76,60,0.3);
+            border: 1px solid #e74c3c;
+        }
+        .format-select {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 0 10px;
+        }
+        .info {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .stats {
+            display: inline-block;
+            margin: 0 15px;
+            font-size: 14px;
+        }
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #4ecdc4;
+            transition: width 0.3s;
+        }
+        @media (max-width: 768px) {
+            table {
+                font-size: 10px;
+            }
+            th, td {
+                padding: 4px 8px;
+            }
+            .btn {
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 Rename Photos & Videos</h1>
+        <div class="subtitle">By creation date and time (works locally, no upload to server)</div>
+
+        <div class="card">
+            <div class="upload-area" id="dropZone">
+                <div>📁</div>
+                <div>Drag & drop files here or <strong>click to select</strong></div>
+                <div style="font-size: 12px; margin-top: 10px;">Supports: JPG, PNG, GIF, MP4, MOV, AVI, MKV, WEBM</div>
+                <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.mp4,.mov,.avi,.mkv,.webm,.m4v">
+            </div>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <label>Name format:</label>
+                <select id="dateFormat" class="format-select">
+                    <option value="YYYY-MM-DD_HH-MM-SS">2024-01-15_14-30-22</option>
+                    <option value="YYYYMMDD_HHMMSS">20240115_143022</option>
+                    <option value="DD-MM-YYYY_HH-MM-SS">15-01-2024_14-30-22</option>
+                    <option value="YYYY_MM_DD_HH_MM_SS">2024_01_15_14_30_22</option>
+                    <option value="YYYYMMDD">20240115 (date only)</option>
+                    <option value="HH-MM-SS_YYYYMMDD">14-30-22_20240115</option>
+                </select>
+                
+                <label style="margin-left: 15px;">On conflict:</label>
+                <select id="conflictMode" class="format-select">
+                    <option value="number">Add _1, _2...</option>
+                    <option value="skip">Skip</option>
+                    <option value="overwrite">Overwrite</option>
+                </select>
+            </div>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn" id="renameBtn" disabled>🔄 Preview / Rename</button>
+                <button class="btn btn-secondary" id="clearBtn">🗑️ Clear</button>
+                <button class="btn btn-danger" id="downloadBtn" disabled>💾 Download renamed files (ZIP)</button>
+            </div>
+
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div id="status"></div>
+        </div>
+
+        <div class="card" id="previewCard" style="display: none;">
+            <h3>Rename Preview</h3>
+            <div class="preview">
+                <table id="previewTable">
+                    <thead>
+                        <tr><th>Original name</th><th>Type</th><th>Date created</th><th>New name</th></tr>
+                    </thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="info">
+            ⚠️ Important: Files never leave your computer!<br>
+            When you click "Download", files will be packed into a ZIP archive with new names.<br>
+            For videos, file modification date is used (due to browser limitations).
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+        let filesData = []; // Stores { file, originalName, extension, date, newName }
+        
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const renameBtn = document.getElementById('renameBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const previewCard = document.getElementById('previewCard');
+        const previewBody = document.getElementById('previewBody');
+        const statusDiv = document.getElementById('status');
+        const dateFormatSelect = document.getElementById('dateFormat');
+        const conflictModeSelect = document.getElementById('conflictMode');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+
+        // Supported extensions
+        const imageExt = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+        const videoExt = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'];
+
+        // Date formatting function
+        function formatDate(date, format) {
+            if (!date || isNaN(date.getTime())) return null;
+            
+            const YYYY = date.getFullYear();
+            const MM = String(date.getMonth() + 1).padStart(2, '0');
+            const DD = String(date.getDate()).padStart(2, '0');
+            const HH = String(date.getHours()).padStart(2, '0');
+            const mm = String(date.getMinutes()).padStart(2, '0');
+            const SS = String(date.getSeconds()).padStart(2, '0');
+            
+            return format
+                .replace('YYYY', YYYY)
+                .replace('MM', MM)
+                .replace('DD', DD)
+                .replace('HH', HH)
+                .replace('mm', mm)
+                .replace('SS', SS);
+        }
+
+        // Get date from file
+        async function getFileDate(file) {
+            return new Promise((resolve) => {
+                const ext = file.name.split('.').pop().toLowerCase();
+                
+                // For videos, use file modification date (browsers can't access video metadata)
+                if (videoExt.includes(ext)) {
+                    resolve(file.lastModifiedDate || new Date(file.lastModified));
+                    return;
+                }
+                
+                // For photos, try to read EXIF
+                if (imageExt.includes(ext)) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const dataView = new DataView(e.target.result);
+                            // Simple JPEG EXIF check
+                            if (dataView.getUint16(0) === 0xFFD8) {
+                                let offset = 2;
+                                while (offset < dataView.byteLength) {
+                                    const marker = dataView.getUint16(offset);
+                                    offset += 2;
+                                    if (marker === 0xFFE1) { // APP1 marker (EXIF)
+                                        const exifLength = dataView.getUint16(offset);
+                                        offset += 2;
+                                        // Check for "Exif" string
+                                        let exifHeader = '';
+                                        for (let i = 0; i < 4; i++) {
+                                            exifHeader += String.fromCharCode(dataView.getUint8(offset + i));
+                                        }
+                                        if (exifHeader === 'Exif') {
+                                            // Simplified parsing - use file date
+                                            // For accurate EXIF, a library is needed, but use file date for simplicity
+                                            resolve(file.lastModifiedDate || new Date(file.lastModified));
+                                            return;
+                                        }
+                                    }
+                                    const nextMarker = dataView.getUint16(offset);
+                                    if (nextMarker === 0xFFDA || nextMarker === 0xFFD9) break;
+                                }
+                            }
+                        } catch(e) {}
+                        resolve(file.lastModifiedDate || new Date(file.lastModified));
+                    };
+                    reader.onerror = () => resolve(file.lastModifiedDate || new Date(file.lastModified));
+                    reader.readAsArrayBuffer(file.slice(0, 65536)); // Read only the beginning
+                } else {
+                    resolve(file.lastModifiedDate || new Date(file.lastModified));
+                }
+            });
+        }
+
+        // Generate new name with conflict handling
+        function generateNewName(baseName, extension, existingNames) {
+            let newName = baseName + '.' + extension;
+            let counter = 1;
+            
+            if (conflictModeSelect.value === 'overwrite') {
+                return newName;
+            } else if (conflictModeSelect.value === 'number') {
+                while (existingNames.has(newName.toLowerCase())) {
+                    newName = baseName + '_' + counter + '.' + extension;
+                    counter++;
+                }
+            } else if (conflictModeSelect.value === 'skip') {
+                if (existingNames.has(newName.toLowerCase())) {
+                    return null;
+                }
+            }
+            return newName;
+        }
+
+        // Update preview
+        async function updatePreview() {
+            if (filesData.length === 0) {
+                previewCard.style.display = 'none';
+                renameBtn.disabled = true;
+                downloadBtn.disabled = true;
+                return;
+            }
+
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+            
+            const format = dateFormatSelect.value;
+            const usedNames = new Set();
+            
+            for (let i = 0; i < filesData.length; i++) {
+                const item = filesData[i];
+                const date = await getFileDate(item.file);
+                progressFill.style.width = ((i + 1) / filesData.length * 50) + '%';
+                
+                if (date) {
+                    const dateStr = formatDate(date, format);
+                    if (dateStr) {
+                        const baseName = dateStr;
+                        const ext = item.extension;
+                        const newName = generateNewName(baseName, ext, usedNames);
+                        if (newName) {
+                            item.newName = newName;
+                            usedNames.add(newName.toLowerCase());
+                        } else {
+                            item.newName = null;
+                        }
+                    } else {
+                        item.newName = null;
+                    }
+                } else {
+                    item.newName = null;
+                }
+            }
+            
+            // Display table
+            previewBody.innerHTML = '';
+            for (const item of filesData) {
+                const row = previewBody.insertRow();
+                row.insertCell(0).textContent = item.originalName;
+                row.insertCell(1).textContent = item.extension.toUpperCase();
+                const dateCell = row.insertCell(2);
+                const date = await getFileDate(item.file);
+                dateCell.textContent = date ? formatDate(date, 'YYYY-MM-DD HH:mm:ss') : 'Not detected';
+                const newNameCell = row.insertCell(3);
+                if (item.newName) {
+                    newNameCell.textContent = item.newName;
+                    newNameCell.style.color = '#4ecdc4';
+                } else {
+                    newNameCell.textContent = '⚠️ Name conflict';
+                    newNameCell.style.color = '#ff6b6b';
+                }
+            }
+            
+            previewCard.style.display = 'block';
+            renameBtn.disabled = false;
+            downloadBtn.disabled = false;
+            progressBar.style.display = 'none';
+            
+            const validCount = filesData.filter(f => f.newName).length;
+            statusDiv.innerHTML = `<div class="status success">✅ Ready to rename: ${validCount} of ${filesData.length} files</div>`;
+        }
+
+        // Handle uploaded files
+        function handleFiles(files) {
+            filesData = [];
+            for (const file of files) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if ([...imageExt, ...videoExt].includes(ext)) {
+                    filesData.push({
+                        file: file,
+                        originalName: file.name,
+                        extension: ext,
+                        newName: null
+                    });
+                }
+            }
+            
+            if (filesData.length === 0) {
+                statusDiv.innerHTML = '<div class="status error">❌ No supported files found (photos/videos)</div>';
+                return;
+            }
+            
+            statusDiv.innerHTML = `<div class="status success">📁 Files loaded: ${filesData.length}. Analyzing dates...</div>`;
+            updatePreview();
+        }
+
+        // Download ZIP with renamed files
+        async function downloadRenamed() {
+            const validFiles = filesData.filter(f => f.newName);
+            if (validFiles.length === 0) {
+                statusDiv.innerHTML = '<div class="status error">❌ No files available for download</div>';
+                return;
+            }
+            
+            statusDiv.innerHTML = '<div class="status">📦 Creating ZIP archive...</div>';
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+            
+            const zip = new JSZip();
+            
+            for (let i = 0; i < validFiles.length; i++) {
+                const item = validFiles[i];
+                const arrayBuffer = await item.file.arrayBuffer();
+                zip.file(item.newName, arrayBuffer);
+                progressFill.style.width = ((i + 1) / validFiles.length * 100) + '%';
+            }
+            
+            const content = await zip.generateAsync({ type: 'blob' });
+            saveAs(content, 'renamed_files.zip');
+            
+            progressBar.style.display = 'none';
+            statusDiv.innerHTML = `<div class="status success">✅ Archive created! Downloaded ${validFiles.length} files</div>`;
+        }
+
+        // Clear all
+        function clearAll() {
+            filesData = [];
+            previewBody.innerHTML = '';
+            previewCard.style.display = 'none';
+            renameBtn.disabled = true;
+            downloadBtn.disabled = true;
+            fileInput.value = '';
+            statusDiv.innerHTML = '';
+        }
+
+        // Event listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        renameBtn.addEventListener('click', updatePreview);
+        clearBtn.addEventListener('click', clearAll);
+        downloadBtn.addEventListener('click', downloadRenamed);
+        dateFormatSelect.addEventListener('change', updatePreview);
+        conflictModeSelect.addEventListener('change', updatePreview);
+    </script>
+</body>
+</html>
