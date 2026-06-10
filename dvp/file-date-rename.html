@@ -1,493 +1,437 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rename Photos & Videos by Date Created</title>
+    <title>Переименование файлов IMG/VID → только дата_время</title>
     <style>
         * {
             box-sizing: border-box;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            min-height: 100vh;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f1f5f9;
             margin: 0;
             padding: 20px;
-            color: #eee;
+            color: #0f172a;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 24px 28px 36px;
         }
         h1 {
-            text-align: center;
-            margin-bottom: 10px;
-            font-weight: 500;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0 0 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .subtitle {
-            text-align: center;
-            color: #aaa;
-            margin-bottom: 30px;
+        h1 small {
+            font-size: 0.8rem;
+            font-weight: normal;
+            background: #e2e8f0;
+            padding: 2px 10px;
+            border-radius: 30px;
+            color: #1e293b;
         }
-        .card {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
+        .sub {
+            color: #475569;
+            border-left: 4px solid #3b82f6;
+            padding-left: 14px;
+            margin: 12px 0 24px 0;
+            font-size: 0.95rem;
         }
         .upload-area {
-            border: 3px dashed #4ecdc4;
-            border-radius: 20px;
-            padding: 40px;
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 24px;
+            padding: 28px 20px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background: rgba(78,205,196,0.1);
+            transition: all 0.2s ease;
+            margin-bottom: 28px;
         }
         .upload-area:hover {
-            background: rgba(78,205,196,0.2);
-            border-color: #ff6b6b;
+            border-color: #3b82f6;
+            background: #f1f5fe;
         }
         .upload-area.drag-over {
-            background: rgba(78,205,196,0.3);
-            border-color: #ff6b6b;
+            border-color: #2563eb;
+            background: #eef2ff;
         }
-        input[type="file"] {
-            display: none;
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0 16px;
         }
-        .btn {
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        button {
+            background: #1e293b;
             border: none;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 30px;
+            padding: 10px 20px;
+            border-radius: 60px;
+            font-weight: 500;
+            font-size: 0.9rem;
             cursor: pointer;
-            font-size: 16px;
-            transition: transform 0.2s;
-            margin: 5px;
+            transition: 0.15s;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-        .btn:hover {
-            transform: scale(1.02);
+        button.primary {
+            background: #3b82f6;
+            box-shadow: 0 2px 6px rgba(59,130,246,0.3);
         }
-        .btn-danger {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        button.primary:hover {
+            background: #2563eb;
+            transform: scale(0.98);
         }
-        .btn-secondary {
-            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+        button.danger {
+            background: #ef4444;
         }
-        .preview {
-            margin-top: 20px;
-            overflow-x: auto;
+        button.danger:hover {
+            background: #dc2626;
+        }
+        button.secondary {
+            background: #475569;
+        }
+        button.secondary:hover {
+            background: #334155;
+        }
+        button:active {
+            transform: scale(0.97);
+        }
+        .stats {
+            background: #eef2ff;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
-        }
-        th, td {
-            padding: 8px 12px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         }
         th {
-            background: rgba(78,205,196,0.2);
+            text-align: left;
+            padding: 12px 8px;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
             font-weight: 600;
         }
-        .status {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eef2ff;
+            vertical-align: middle;
+            word-break: break-all;
         }
-        .status.success {
-            background: rgba(46,204,113,0.3);
-            border: 1px solid #2ecc71;
+        .file-row.ready td:first-child {
+            border-left: 3px solid #10b981;
         }
-        .status.error {
-            background: rgba(231,76,60,0.3);
-            border: 1px solid #e74c3c;
+        .old-name {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: #334155;
         }
-        .format-select {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin: 0 10px;
-        }
-        .info {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 20px;
-            text-align: center;
-        }
-        .stats {
+        .new-name {
+            font-family: monospace;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 12px;
             display: inline-block;
-            margin: 0 15px;
-            font-size: 14px;
+            font-size: 0.8rem;
         }
-        .progress-bar {
-            height: 4px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-            overflow: hidden;
-            margin: 15px 0;
+        .badge {
+            background: #d9f99d;
+            color: #3f6212;
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
         }
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: #4ecdc4;
-            transition: width 0.3s;
+        .badge.invalid {
+            background: #fee2e2;
+            color: #b91c1c;
         }
-        @media (max-width: 768px) {
-            table {
-                font-size: 10px;
-            }
-            th, td {
-                padding: 4px 8px;
-            }
-            .btn {
-                padding: 8px 16px;
-                font-size: 12px;
-            }
+        .actions {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .rename-icon {
+            cursor: pointer;
+            background: #3b82f6;
+            border: none;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        hr {
+            margin: 24px 0 16px;
+            border: none;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer-note {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-align: center;
+            margin-top: 24px;
+        }
+        @media (max-width: 700px) {
+            .container { padding: 16px; }
+            td, th { font-size: 0.7rem; }
+            .new-name { font-size: 0.7rem; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📸 Rename Photos & Videos</h1>
-        <div class="subtitle">By creation date and time (works locally, no upload to server)</div>
+<div class="container">
+    <h1>📸 Файлы IMG / VID → <span style="font-family: monospace;">дата_время.расширение</span> <small>HTML переименовщик</small></h1>
+    <div class="sub">
+        🔄 Автоматически извлекает <strong>YYYYMMDD_HHMMSS</strong> из имён IMG_*, VID_* и предлагает переименование.
+        <br>✅ Пример: <code>IMG_20260411_121547.jpg</code> → <code>20260411_121547.jpg</code>
+    </div>
 
-        <div class="card">
-            <div class="upload-area" id="dropZone">
-                <div>📁</div>
-                <div>Drag & drop files here or <strong>click to select</strong></div>
-                <div style="font-size: 12px; margin-top: 10px;">Supports: JPG, PNG, GIF, MP4, MOV, AVI, MKV, WEBM</div>
-                <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.mp4,.mov,.avi,.mkv,.webm,.m4v">
-            </div>
+    <div class="upload-area" id="dropZone">
+        📂 Перетащите файлы сюда или <strong>нажмите для выбора</strong><br>
+        <span style="font-size: 0.75rem; opacity: 0.7;">(поддерживаются .jpg, .jpeg, .png, .mp4, .mov, .gif)</span>
+        <input type="file" id="fileInput" multiple style="display: none;" accept=".jpg,.jpeg,.png,.mp4,.mov,.gif,.webm">
+    </div>
 
-            <div style="margin-top: 20px; text-align: center;">
-                <label>Name format:</label>
-                <select id="dateFormat" class="format-select">
-                    <option value="YYYY-MM-DD_HH-MM-SS">2024-01-15_14-30-22</option>
-                    <option value="YYYYMMDD_HHMMSS">20240115_143022</option>
-                    <option value="DD-MM-YYYY_HH-MM-SS">15-01-2024_14-30-22</option>
-                    <option value="YYYY_MM_DD_HH_MM_SS">2024_01_15_14_30_22</option>
-                    <option value="YYYYMMDD">20240115 (date only)</option>
-                    <option value="HH-MM-SS_YYYYMMDD">14-30-22_20240115</option>
-                </select>
-                
-                <label style="margin-left: 15px;">On conflict:</label>
-                <select id="conflictMode" class="format-select">
-                    <option value="number">Add _1, _2...</option>
-                    <option value="skip">Skip</option>
-                    <option value="overwrite">Overwrite</option>
-                </select>
-            </div>
-
-            <div style="margin-top: 20px; text-align: center;">
-                <button class="btn" id="renameBtn" disabled>🔄 Preview / Rename</button>
-                <button class="btn btn-secondary" id="clearBtn">🗑️ Clear</button>
-                <button class="btn btn-danger" id="downloadBtn" disabled>💾 Download renamed files (ZIP)</button>
-            </div>
-
-            <div class="progress-bar" id="progressBar" style="display: none;">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-
-            <div id="status"></div>
+    <div class="btn-group">
+        <div>
+            <button id="renameAllBtn" class="primary">✏️ Переименовать все подходящие файлы</button>
+            <button id="clearBtn" class="secondary">🗑 Очистить список</button>
         </div>
-
-        <div class="card" id="previewCard" style="display: none;">
-            <h3>Rename Preview</h3>
-            <div class="preview">
-                <table id="previewTable">
-                    <thead>
-                        <tr><th>Original name</th><th>Type</th><th>Date created</th><th>New name</th></tr>
-                    </thead>
-                    <tbody id="previewBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="info">
-            ⚠️ Important: Files never leave your computer!<br>
-            When you click "Download", files will be packed into a ZIP archive with new names.<br>
-            For videos, file modification date is used (due to browser limitations).
+        <div class="stats" id="statsPanel">
+            Файлов: 0 | Готово к переименованию: 0
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script>
-        let filesData = []; // Stores { file, originalName, extension, date, newName }
-        
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const renameBtn = document.getElementById('renameBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const previewCard = document.getElementById('previewCard');
-        const previewBody = document.getElementById('previewBody');
-        const statusDiv = document.getElementById('status');
-        const dateFormatSelect = document.getElementById('dateFormat');
-        const conflictModeSelect = document.getElementById('conflictMode');
-        const progressBar = document.getElementById('progressBar');
-        const progressFill = document.getElementById('progressFill');
+    <div style="overflow-x: auto;">
+        <table id="fileTable">
+            <thead>
+                <tr><th>Исходное имя</th><th>Новое имя</th><th>Статус</th><th style="width: 60px;"></th></tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="4" style="text-align: center; padding: 36px;">📎 Загрузите файлы (изображения / видео)</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <hr>
+    <div class="footer-note">
+        ⚠️ Внимание: переименование происходит <strong>только в памяти браузера</strong> (изменения не затрагивают реальные файлы на диске).<br>
+        Чтобы сохранить переименованные файлы — нажмите <strong>«Скачать ZIP-архив»</strong> после предпросмотра.
+        <div style="margin-top: 10px;">
+            <button id="downloadZipBtn" style="background:#0f172a;">📦 Скачать ZIP с переименованными файлами</button>
+        </div>
+    </div>
+</div>
 
-        // Supported extensions
-        const imageExt = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-        const videoExt = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'];
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+    // ---------- хранилище файлов ----------
+    let filesData = []; // каждый элемент: { file: File, oldName, newName, valid, newNameRaw }
 
-        // Date formatting function
-        function formatDate(date, format) {
-            if (!date || isNaN(date.getTime())) return null;
-            
-            const YYYY = date.getFullYear();
-            const MM = String(date.getMonth() + 1).padStart(2, '0');
-            const DD = String(date.getDate()).padStart(2, '0');
-            const HH = String(date.getHours()).padStart(2, '0');
-            const mm = String(date.getMinutes()).padStart(2, '0');
-            const SS = String(date.getSeconds()).padStart(2, '0');
-            
-            return format
-                .replace('YYYY', YYYY)
-                .replace('MM', MM)
-                .replace('DD', DD)
-                .replace('HH', HH)
-                .replace('mm', mm)
-                .replace('SS', SS);
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const tableBody = document.getElementById('tableBody');
+    const renameAllBtn = document.getElementById('renameAllBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const statsPanel = document.getElementById('statsPanel');
+    const downloadZipBtn = document.getElementById('downloadZipBtn');
+
+    // паттерны: IMG_20241105_123456.jpg  /  VID_20241105_123456.mp4
+    const pattern = /^(IMG|VID)_(\d{8}_\d{6})\.([a-zA-Z0-9]+)$/i;
+
+    function extractNewName(originalName) {
+        const match = originalName.match(pattern);
+        if (match) {
+            const dateTime = match[2];     // YYYYMMDD_HHMMSS
+            const ext = match[3];           // расширение
+            return { valid: true, newName: `${dateTime}.${ext}` };
+        }
+        return { valid: false, newName: null };
+    }
+
+    function updateTableAndStats() {
+        if (filesData.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 36px;">📎 Загрузите файлы (IMG_*, VID_*)</td></tr>`;
+            statsPanel.innerText = `Файлов: 0 | Готово к переименованию: 0`;
+            return;
         }
 
-        // Get date from file
-        async function getFileDate(file) {
-            return new Promise((resolve) => {
-                const ext = file.name.split('.').pop().toLowerCase();
-                
-                // For videos, use file modification date (browsers can't access video metadata)
-                if (videoExt.includes(ext)) {
-                    resolve(file.lastModifiedDate || new Date(file.lastModified));
-                    return;
-                }
-                
-                // For photos, try to read EXIF
-                if (imageExt.includes(ext)) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        try {
-                            const dataView = new DataView(e.target.result);
-                            // Simple JPEG EXIF check
-                            if (dataView.getUint16(0) === 0xFFD8) {
-                                let offset = 2;
-                                while (offset < dataView.byteLength) {
-                                    const marker = dataView.getUint16(offset);
-                                    offset += 2;
-                                    if (marker === 0xFFE1) { // APP1 marker (EXIF)
-                                        const exifLength = dataView.getUint16(offset);
-                                        offset += 2;
-                                        // Check for "Exif" string
-                                        let exifHeader = '';
-                                        for (let i = 0; i < 4; i++) {
-                                            exifHeader += String.fromCharCode(dataView.getUint8(offset + i));
-                                        }
-                                        if (exifHeader === 'Exif') {
-                                            // Simplified parsing - use file date
-                                            // For accurate EXIF, a library is needed, but use file date for simplicity
-                                            resolve(file.lastModifiedDate || new Date(file.lastModified));
-                                            return;
-                                        }
-                                    }
-                                    const nextMarker = dataView.getUint16(offset);
-                                    if (nextMarker === 0xFFDA || nextMarker === 0xFFD9) break;
-                                }
-                            }
-                        } catch(e) {}
-                        resolve(file.lastModifiedDate || new Date(file.lastModified));
-                    };
-                    reader.onerror = () => resolve(file.lastModifiedDate || new Date(file.lastModified));
-                    reader.readAsArrayBuffer(file.slice(0, 65536)); // Read only the beginning
-                } else {
-                    resolve(file.lastModifiedDate || new Date(file.lastModified));
+        let readyCount = 0;
+        let html = '';
+        for (let i = 0; i < filesData.length; i++) {
+            const item = filesData[i];
+            const isValid = item.valid;
+            const newNameDisplay = isValid ? item.newName : '❌ не соответствует формату IMG_*/VID_*';
+            const statusClass = isValid ? 'badge' : 'badge invalid';
+            const statusText = isValid ? '✓ можно переименовать' : '✗ формат не подходит';
+            if (isValid) readyCount++;
+
+            html += `<tr class="${isValid ? 'file-row ready' : ''}">
+                        <td class="old-name">📄 ${escapeHtml(item.oldName)}</td>
+                        <td><span class="new-name">${isValid ? escapeHtml(item.newName) : escapeHtml(newNameDisplay)}</span></td>
+                        <td><span class="${statusClass}">${statusText}</span></td>
+                        <td class="actions">
+                            ${isValid ? `<button class="rename-icon" data-index="${i}">✎ переименовать</button>` : '—'}
+                        </td>
+                     </tr>`;
+        }
+        tableBody.innerHTML = html;
+        statsPanel.innerText = `Файлов: ${filesData.length} | Готово к переименованию: ${readyCount}`;
+
+        // вешаем обработчики для кнопок индивидуального переименования (работают только в памяти для скачивания)
+        document.querySelectorAll('.rename-icon').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.getAttribute('data-index'), 10);
+                if (!isNaN(idx) && filesData[idx] && filesData[idx].valid) {
+                    // отмечаем файл как "переименованный" - но в нашей логике скачивания сразу используем newName
+                    alert(`Файл "${filesData[idx].oldName}" будет переименован в "${filesData[idx].newName}" при скачивании ZIP.`);
                 }
             });
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    function addFiles(newFileList) {
+        for (let i = 0; i < newFileList.length; i++) {
+            const file = newFileList[i];
+            const oldName = file.name;
+            const { valid, newName } = extractNewName(oldName);
+            filesData.push({
+                file: file,
+                oldName: oldName,
+                newName: valid ? newName : null,
+                valid: valid,
+            });
+        }
+        updateTableAndStats();
+    }
+
+    // Переименовать все валидные файлы (создать ZIP)
+    function downloadRenamedZip() {
+        const validItems = filesData.filter(item => item.valid === true);
+        if (validItems.length === 0) {
+            alert('Нет файлов, подходящих под формат IMG_*/VID_* с датой и временем.');
+            return;
         }
 
-        // Generate new name with conflict handling
-        function generateNewName(baseName, extension, existingNames) {
-            let newName = baseName + '.' + extension;
-            let counter = 1;
-            
-            if (conflictModeSelect.value === 'overwrite') {
-                return newName;
-            } else if (conflictModeSelect.value === 'number') {
-                while (existingNames.has(newName.toLowerCase())) {
-                    newName = baseName + '_' + counter + '.' + extension;
-                    counter++;
-                }
-            } else if (conflictModeSelect.value === 'skip') {
-                if (existingNames.has(newName.toLowerCase())) {
-                    return null;
-                }
-            }
-            return newName;
-        }
+        const zip = new JSZip();
+        let pending = validItems.length;
+        let hasError = false;
 
-        // Update preview
-        async function updatePreview() {
-            if (filesData.length === 0) {
-                previewCard.style.display = 'none';
-                renameBtn.disabled = true;
-                downloadBtn.disabled = true;
-                return;
-            }
+        for (let item of validItems) {
+            const newFileName = item.newName;
+            const oldFile = item.file;
 
-            progressBar.style.display = 'block';
-            progressFill.style.width = '0%';
-            
-            const format = dateFormatSelect.value;
-            const usedNames = new Set();
-            
-            for (let i = 0; i < filesData.length; i++) {
-                const item = filesData[i];
-                const date = await getFileDate(item.file);
-                progressFill.style.width = ((i + 1) / filesData.length * 50) + '%';
-                
-                if (date) {
-                    const dateStr = formatDate(date, format);
-                    if (dateStr) {
-                        const baseName = dateStr;
-                        const ext = item.extension;
-                        const newName = generateNewName(baseName, ext, usedNames);
-                        if (newName) {
-                            item.newName = newName;
-                            usedNames.add(newName.toLowerCase());
-                        } else {
-                            item.newName = null;
-                        }
-                    } else {
-                        item.newName = null;
+            // чтение файла как ArrayBuffer
+            const reader = new FileReader();
+            reader.onload = (function(fileObj, newName) {
+                return function(e) {
+                    if (!hasError) {
+                        const content = e.target.result;
+                        zip.file(newName, content, { binary: true });
                     }
-                } else {
-                    item.newName = null;
-                }
-            }
-            
-            // Display table
-            previewBody.innerHTML = '';
-            for (const item of filesData) {
-                const row = previewBody.insertRow();
-                row.insertCell(0).textContent = item.originalName;
-                row.insertCell(1).textContent = item.extension.toUpperCase();
-                const dateCell = row.insertCell(2);
-                const date = await getFileDate(item.file);
-                dateCell.textContent = date ? formatDate(date, 'YYYY-MM-DD HH:mm:ss') : 'Not detected';
-                const newNameCell = row.insertCell(3);
-                if (item.newName) {
-                    newNameCell.textContent = item.newName;
-                    newNameCell.style.color = '#4ecdc4';
-                } else {
-                    newNameCell.textContent = '⚠️ Name conflict';
-                    newNameCell.style.color = '#ff6b6b';
-                }
-            }
-            
-            previewCard.style.display = 'block';
-            renameBtn.disabled = false;
-            downloadBtn.disabled = false;
-            progressBar.style.display = 'none';
-            
-            const validCount = filesData.filter(f => f.newName).length;
-            statusDiv.innerHTML = `<div class="status success">✅ Ready to rename: ${validCount} of ${filesData.length} files</div>`;
+                    pending--;
+                    if (pending === 0 && !hasError) {
+                        zip.generateAsync({ type: "blob" }).then(function(blob) {
+                            const link = document.createElement('a');
+                            const url = URL.createObjectURL(blob);
+                            link.href = url;
+                            link.download = `renamed_files_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.zip`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                            alert(`✅ ZIP-архив создан! Внутри ${validItems.length} переименованных файлов.\nОригинальные файлы не изменены.`);
+                        }).catch(err => {
+                            alert('Ошибка создания ZIP: ' + err);
+                        });
+                    }
+                };
+            })(item, newFileName);
+            reader.onerror = () => {
+                hasError = true;
+                alert(`Ошибка чтения файла: ${item.oldName}`);
+            };
+            reader.readAsArrayBuffer(oldFile);
         }
+    }
 
-        // Handle uploaded files
-        function handleFiles(files) {
+    // Ручное переименование всех сразу (то же самое — создание ZIP, потому что браузер не может переименовать файлы на диске)
+    renameAllBtn.addEventListener('click', () => {
+        if (filesData.filter(f => f.valid).length === 0) {
+            alert('Нет подходящих файлов для переименования.');
+            return;
+        }
+        if (confirm('Внимание: переименование происходит только в ZIP-архиве (без изменения исходных файлов).\nСкачать архив с новыми именами?')) {
+            downloadRenamedZip();
+        }
+    });
+
+    clearBtn.addEventListener('click', () => {
+        if (filesData.length > 0 && confirm('Очистить список всех загруженных файлов?')) {
             filesData = [];
-            for (const file of files) {
-                const ext = file.name.split('.').pop().toLowerCase();
-                if ([...imageExt, ...videoExt].includes(ext)) {
-                    filesData.push({
-                        file: file,
-                        originalName: file.name,
-                        extension: ext,
-                        newName: null
-                    });
-                }
-            }
-            
-            if (filesData.length === 0) {
-                statusDiv.innerHTML = '<div class="status error">❌ No supported files found (photos/videos)</div>';
-                return;
-            }
-            
-            statusDiv.innerHTML = `<div class="status success">📁 Files loaded: ${filesData.length}. Analyzing dates...</div>`;
-            updatePreview();
+            updateTableAndStats();
         }
+    });
 
-        // Download ZIP with renamed files
-        async function downloadRenamed() {
-            const validFiles = filesData.filter(f => f.newName);
-            if (validFiles.length === 0) {
-                statusDiv.innerHTML = '<div class="status error">❌ No files available for download</div>';
-                return;
-            }
-            
-            statusDiv.innerHTML = '<div class="status">📦 Creating ZIP archive...</div>';
-            progressBar.style.display = 'block';
-            progressFill.style.width = '0%';
-            
-            const zip = new JSZip();
-            
-            for (let i = 0; i < validFiles.length; i++) {
-                const item = validFiles[i];
-                const arrayBuffer = await item.file.arrayBuffer();
-                zip.file(item.newName, arrayBuffer);
-                progressFill.style.width = ((i + 1) / validFiles.length * 100) + '%';
-            }
-            
-            const content = await zip.generateAsync({ type: 'blob' });
-            saveAs(content, 'renamed_files.zip');
-            
-            progressBar.style.display = 'none';
-            statusDiv.innerHTML = `<div class="status success">✅ Archive created! Downloaded ${validFiles.length} files</div>`;
+    downloadZipBtn.addEventListener('click', () => {
+        if (filesData.filter(f => f.valid).length === 0) {
+            alert('Нет валидных файлов (IMG_*, VID_* с маской даты) для упаковки.');
+            return;
         }
+        downloadRenamedZip();
+    });
 
-        // Clear all
-        function clearAll() {
-            filesData = [];
-            previewBody.innerHTML = '';
-            previewCard.style.display = 'none';
-            renameBtn.disabled = true;
-            downloadBtn.disabled = true;
-            fileInput.value = '';
-            statusDiv.innerHTML = '';
-        }
-
-        // Event listeners
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('drag-over');
-        });
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            handleFiles(e.dataTransfer.files);
-        });
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-        });
-        renameBtn.addEventListener('click', updatePreview);
-        clearBtn.addEventListener('click', clearAll);
-        downloadBtn.addEventListener('click', downloadRenamed);
-        dateFormatSelect.addEventListener('change', updatePreview);
-        conflictModeSelect.addEventListener('change', updatePreview);
-    </script>
+    // Drag & Drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const items = e.dataTransfer.files;
+        if (items.length) addFiles(items);
+    });
+    dropZone.addEventListener('click', () => {
+        fileInput.value = '';
+        fileInput.click();
+    });
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) addFiles(e.target.files);
+        fileInput.value = '';
+    });
+</script>
 </body>
 </html>
