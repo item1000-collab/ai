@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Переименование файлов IMG/VID → только дата_время</title>
+    <title>Rename IMG/VID files → date_time.extension</title>
     <style>
         * {
             box-sizing: border-box;
@@ -198,52 +198,51 @@
 </head>
 <body>
 <div class="container">
-    <h1>📸 Файлы IMG / VID → <span style="font-family: monospace;">дата_время.расширение</span> <small>HTML переименовщик</small></h1>
+    <h1>📸 IMG / VID Files → <span style="font-family: monospace;">date_time.extension</span> <small>Batch Renamer</small></h1>
     <div class="sub">
-        🔄 Автоматически извлекает <strong>YYYYMMDD_HHMMSS</strong> из имён IMG_*, VID_* и предлагает переименование.
-        <br>✅ Пример: <code>IMG_20260411_121547.jpg</code> → <code>20260411_121547.jpg</code>
+        🔄 Automatically extracts <strong>YYYYMMDD_HHMMSS</strong> from IMG_* and VID_* filenames.<br>
+        ✅ Example: <code>IMG_20260411_121547.jpg</code> → <code>20260411_121547.jpg</code>
     </div>
 
     <div class="upload-area" id="dropZone">
-        📂 Перетащите файлы сюда или <strong>нажмите для выбора</strong><br>
-        <span style="font-size: 0.75rem; opacity: 0.7;">(поддерживаются .jpg, .jpeg, .png, .mp4, .mov, .gif)</span>
+        📂 Drag & drop files here or <strong>click to select</strong><br>
+        <span style="font-size: 0.75rem; opacity: 0.7;">(supports .jpg, .jpeg, .png, .mp4, .mov, .gif, .webm)</span>
         <input type="file" id="fileInput" multiple style="display: none;" accept=".jpg,.jpeg,.png,.mp4,.mov,.gif,.webm">
     </div>
 
     <div class="btn-group">
         <div>
-            <button id="renameAllBtn" class="primary">✏️ Переименовать все подходящие файлы</button>
-            <button id="clearBtn" class="secondary">🗑 Очистить список</button>
+            <button id="renameAllBtn" class="primary">✏️ Rename all valid files</button>
+            <button id="clearBtn" class="secondary">🗑 Clear list</button>
         </div>
         <div class="stats" id="statsPanel">
-            Файлов: 0 | Готово к переименованию: 0
+            Files: 0 | Ready to rename: 0
         </div>
     </div>
 
     <div style="overflow-x: auto;">
         <table id="fileTable">
             <thead>
-                <tr><th>Исходное имя</th><th>Новое имя</th><th>Статус</th><th style="width: 60px;"></th></tr>
+                <tr><th>Original name</th><th>New name</th><th>Status</th><th style="width: 60px;"></th></tr>
             </thead>
             <tbody id="tableBody">
-                <tr><td colspan="4" style="text-align: center; padding: 36px;">📎 Загрузите файлы (изображения / видео)</td></tr>
+                <tr><td colspan="4" style="text-align: center; padding: 36px;">📎 Upload files (IMG_*, VID_* format)</td></tr>
             </tbody>
         </table>
     </div>
     <hr>
     <div class="footer-note">
-        ⚠️ Внимание: переименование происходит <strong>только в памяти браузера</strong> (изменения не затрагивают реальные файлы на диске).<br>
-        Чтобы сохранить переименованные файлы — нажмите <strong>«Скачать ZIP-архив»</strong> после предпросмотра.
+        ⚠️ Note: Renaming happens <strong>in browser memory only</strong> (original files on disk are not modified).<br>
+        To get renamed files — click <strong>«Download ZIP archive»</strong> after preview.
         <div style="margin-top: 10px;">
-            <button id="downloadZipBtn" style="background:#0f172a;">📦 Скачать ZIP с переименованными файлами</button>
+            <button id="downloadZipBtn" style="background:#0f172a;">📦 Download ZIP with renamed files</button>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script>
-    // ---------- хранилище файлов ----------
-    let filesData = []; // каждый элемент: { file: File, oldName, newName, valid, newNameRaw }
+    let filesData = [];
 
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
@@ -253,14 +252,13 @@
     const statsPanel = document.getElementById('statsPanel');
     const downloadZipBtn = document.getElementById('downloadZipBtn');
 
-    // паттерны: IMG_20241105_123456.jpg  /  VID_20241105_123456.mp4
     const pattern = /^(IMG|VID)_(\d{8}_\d{6})\.([a-zA-Z0-9]+)$/i;
 
     function extractNewName(originalName) {
         const match = originalName.match(pattern);
         if (match) {
-            const dateTime = match[2];     // YYYYMMDD_HHMMSS
-            const ext = match[3];           // расширение
+            const dateTime = match[2];
+            const ext = match[3];
             return { valid: true, newName: `${dateTime}.${ext}` };
         }
         return { valid: false, newName: null };
@@ -268,8 +266,8 @@
 
     function updateTableAndStats() {
         if (filesData.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 36px;">📎 Загрузите файлы (IMG_*, VID_*)</td></tr>`;
-            statsPanel.innerText = `Файлов: 0 | Готово к переименованию: 0`;
+            tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 36px;">📎 Upload files (IMG_*, VID_* format)</td></tr>`;
+            statsPanel.innerText = `Files: 0 | Ready to rename: 0`;
             return;
         }
 
@@ -278,9 +276,9 @@
         for (let i = 0; i < filesData.length; i++) {
             const item = filesData[i];
             const isValid = item.valid;
-            const newNameDisplay = isValid ? item.newName : '❌ не соответствует формату IMG_*/VID_*';
+            const newNameDisplay = isValid ? item.newName : '❌ Invalid format (need IMG_*/VID_*)';
             const statusClass = isValid ? 'badge' : 'badge invalid';
-            const statusText = isValid ? '✓ можно переименовать' : '✗ формат не подходит';
+            const statusText = isValid ? '✓ Ready' : '✗ Invalid pattern';
             if (isValid) readyCount++;
 
             html += `<tr class="${isValid ? 'file-row ready' : ''}">
@@ -288,20 +286,18 @@
                         <td><span class="new-name">${isValid ? escapeHtml(item.newName) : escapeHtml(newNameDisplay)}</span></td>
                         <td><span class="${statusClass}">${statusText}</span></td>
                         <td class="actions">
-                            ${isValid ? `<button class="rename-icon" data-index="${i}">✎ переименовать</button>` : '—'}
+                            ${isValid ? `<button class="rename-icon" data-index="${i}">✎ Rename</button>` : '—'}
                         </td>
-                     </tr>`;
+                      </tr>`;
         }
         tableBody.innerHTML = html;
-        statsPanel.innerText = `Файлов: ${filesData.length} | Готово к переименованию: ${readyCount}`;
+        statsPanel.innerText = `Files: ${filesData.length} | Ready to rename: ${readyCount}`;
 
-        // вешаем обработчики для кнопок индивидуального переименования (работают только в памяти для скачивания)
         document.querySelectorAll('.rename-icon').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(btn.getAttribute('data-index'), 10);
                 if (!isNaN(idx) && filesData[idx] && filesData[idx].valid) {
-                    // отмечаем файл как "переименованный" - но в нашей логике скачивания сразу используем newName
-                    alert(`Файл "${filesData[idx].oldName}" будет переименован в "${filesData[idx].newName}" при скачивании ZIP.`);
+                    alert(`File "${filesData[idx].oldName}" will be renamed to "${filesData[idx].newName}" when downloading ZIP.`);
                 }
             });
         });
@@ -314,8 +310,6 @@
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
         });
     }
 
@@ -334,11 +328,10 @@
         updateTableAndStats();
     }
 
-    // Переименовать все валидные файлы (создать ZIP)
     function downloadRenamedZip() {
         const validItems = filesData.filter(item => item.valid === true);
         if (validItems.length === 0) {
-            alert('Нет файлов, подходящих под формат IMG_*/VID_* с датой и временем.');
+            alert('No files match the IMG_*/VID_* pattern with date/time.');
             return;
         }
 
@@ -350,7 +343,6 @@
             const newFileName = item.newName;
             const oldFile = item.file;
 
-            // чтение файла как ArrayBuffer
             const reader = new FileReader();
             reader.onload = (function(fileObj, newName) {
                 return function(e) {
@@ -369,34 +361,33 @@
                             link.click();
                             document.body.removeChild(link);
                             URL.revokeObjectURL(url);
-                            alert(`✅ ZIP-архив создан! Внутри ${validItems.length} переименованных файлов.\nОригинальные файлы не изменены.`);
+                            alert(`✅ ZIP archive created! Contains ${validItems.length} renamed files.\nOriginal files unchanged.`);
                         }).catch(err => {
-                            alert('Ошибка создания ZIP: ' + err);
+                            alert('Error creating ZIP: ' + err);
                         });
                     }
                 };
             })(item, newFileName);
             reader.onerror = () => {
                 hasError = true;
-                alert(`Ошибка чтения файла: ${item.oldName}`);
+                alert(`Error reading file: ${item.oldName}`);
             };
             reader.readAsArrayBuffer(oldFile);
         }
     }
 
-    // Ручное переименование всех сразу (то же самое — создание ZIP, потому что браузер не может переименовать файлы на диске)
     renameAllBtn.addEventListener('click', () => {
         if (filesData.filter(f => f.valid).length === 0) {
-            alert('Нет подходящих файлов для переименования.');
+            alert('No valid files to rename.');
             return;
         }
-        if (confirm('Внимание: переименование происходит только в ZIP-архиве (без изменения исходных файлов).\nСкачать архив с новыми именами?')) {
+        if (confirm('Note: Renaming happens only in the ZIP archive (original files remain unchanged).\nDownload archive with new names?')) {
             downloadRenamedZip();
         }
     });
 
     clearBtn.addEventListener('click', () => {
-        if (filesData.length > 0 && confirm('Очистить список всех загруженных файлов?')) {
+        if (filesData.length > 0 && confirm('Clear all uploaded files?')) {
             filesData = [];
             updateTableAndStats();
         }
@@ -404,13 +395,12 @@
 
     downloadZipBtn.addEventListener('click', () => {
         if (filesData.filter(f => f.valid).length === 0) {
-            alert('Нет валидных файлов (IMG_*, VID_* с маской даты) для упаковки.');
+            alert('No valid files (IMG_*, VID_* with date pattern) to pack.');
             return;
         }
         downloadRenamedZip();
     });
 
-    // Drag & Drop
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('drag-over');
