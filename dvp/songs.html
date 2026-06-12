@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Selected Songs · Shared Playlist</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -20,6 +20,45 @@
       overflow: hidden;
     }
     .favorite-content { padding: 2rem; }
+    
+    /* top genius link bar */
+    .genius-top-link {
+      background: #fef5e6;
+      border-radius: 2rem;
+      padding: 0.75rem 1.2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      border: 1px solid #f0e2d0;
+    }
+    .genius-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #1f1a14;
+    }
+    .genius-brand span {
+      font-size: 1.3rem;
+    }
+    .genius-link-btn {
+      background: #121212;
+      color: #fff4e6;
+      padding: 0.4rem 1.1rem;
+      border-radius: 60px;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .genius-link-btn:hover {
+      background: #e07c3c;
+      transform: translateY(-1px);
+    }
+    
     .title-section {
       margin-bottom: 2rem;
       border-left: 5px solid #e07c3c;
@@ -118,7 +157,7 @@
     .song-item:hover { border-color: #e07c3c; transform: translateX(3px); }
     .song-title { font-size: 1.2rem; font-weight: 600; }
     .song-artist { font-size: 0.8rem; color: #8a7c6b; margin-top: 2px; }
-    .song-actions { display: flex; gap: 0.75rem; }
+    .song-actions { display: flex; gap: 0.75rem; align-items: center; }
     .listen-link {
       background: #181511;
       color: #fef5e6;
@@ -134,6 +173,7 @@
       border-radius: 40px;
       padding: 0.45rem 1rem;
       cursor: pointer;
+      transition: all 0.15s;
     }
     .btn-delete:hover { background: #fde8dd; border-color: #e07c3c; }
     .empty-message { text-align: center; padding: 2.5rem; color: #b8aa99; }
@@ -146,11 +186,74 @@
       border-radius: 40px;
       display: inline-block;
     }
+    /* Password modal overlay */
+    .password-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .password-modal.active {
+      display: flex;
+    }
+    .modal-card {
+      background: white;
+      border-radius: 2rem;
+      max-width: 380px;
+      width: 90%;
+      padding: 1.8rem;
+      text-align: center;
+      box-shadow: 0 25px 40px rgba(0,0,0,0.3);
+    }
+    .modal-card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .modal-card p {
+      color: #5e5343;
+      margin-bottom: 1rem;
+    }
+    .modal-card input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid #ddd2c4;
+      border-radius: 1.2rem;
+      font-size: 1rem;
+      margin-bottom: 1.2rem;
+      font-family: monospace;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+    }
+    .modal-buttons button {
+      padding: 0.5rem 1.4rem;
+      border-radius: 2rem;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .confirm-delete-btn {
+      background: #c2410c;
+      color: white;
+    }
+    .cancel-modal-btn {
+      background: #e9e2d8;
+      color: #2b241d;
+    }
     @media (max-width: 620px) {
       .favorite-content { padding: 1.5rem; }
-      .song-item { flex-direction: column; gap: 12px; }
+      .song-item { flex-direction: column; gap: 12px; align-items: stretch; }
+      .song-actions { justify-content: flex-start; }
       .url-input-wrapper { flex-direction: column; }
       .btn-add { width: 100%; justify-content: center; }
+      .genius-top-link { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -158,6 +261,18 @@
 <div class="container">
   <div class="gist-card">
     <div class="favorite-content">
+      <!-- TOP GENIUS LINK (direct to genius.com) -->
+      <div class="genius-top-link">
+        <div class="genius-brand">
+          <span>🎤</span> 
+          <span style="font-weight:600;">Genius</span>
+          <span style="font-size:0.8rem; color:#8a7c6b;">• song annotations & lyrics</span>
+        </div>
+        <a href="https://genius.com/" class="genius-link-btn" target="_blank" rel="noopener noreferrer">
+          🔗 Visit Genius.com →
+        </a>
+      </div>
+
       <div class="title-section">
         <h1>Selected Songs <span>🎵</span></h1>
         <div class="song-count" id="song-counter">0 songs</div>
@@ -186,15 +301,28 @@
   </div>
 </div>
 
+<!-- Password deletion modal -->
+<div id="deletePasswordModal" class="password-modal">
+  <div class="modal-card">
+    <h3>🔐 Confirm deletion</h3>
+    <p>Enter password to delete this song</p>
+    <input type="password" id="deletePasswordInput" placeholder="Password" autocomplete="off">
+    <div class="modal-buttons">
+      <button class="cancel-modal-btn" id="cancelDeleteBtn">Cancel</button>
+      <button class="confirm-delete-btn" id="confirmDeleteBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ========== YOUR JSONBin.io CONFIGURATION ==========
-  // Bin ID from your created bin
   const JSONBIN_BIN_ID = '6a2bba45f5f4af5e29e4dead';
-  // Your API Key
   const JSONBIN_API_KEY = '$2a$10$0Jg23.3TQdidpakvguzsKOlt/9e6obrZxt3nsjzUbHmWEx2y7m7Iq';
   // ==================================================
+  const REQUIRED_DELETE_PASSWORD = "321";    // Password required for deletion
 
   let songs = [];
+  let pendingDeleteIndex = null;      // store index of song to delete
 
   // Parse Genius URL to extract artist and track name
   function parseGeniusUrl(url) {
@@ -227,19 +355,16 @@
   // ========== JSONBin.io CLOUD STORAGE ==========
   async function loadSongsFromCloud() {
     const statusDiv = document.getElementById('status');
-    
     try {
       statusDiv.textContent = '🔄 Loading from cloud...';
       const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
         headers: { 'X-Master-Key': JSONBIN_API_KEY }
       });
-      
       if (response.status === 401) {
         statusDiv.textContent = '⚠️ Invalid API Key. Using local storage only.';
         loadFromLocalFallback();
         return;
       }
-      
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       songs = data.record.songs || [];
@@ -268,7 +393,6 @@
 
   async function saveSongsToCloud() {
     const statusDiv = document.getElementById('status');
-    
     try {
       statusDiv.textContent = '💾 Saving to cloud...';
       const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
@@ -279,13 +403,11 @@
         },
         body: JSON.stringify({ songs: songs })
       });
-      
       if (response.status === 401) {
         statusDiv.textContent = '⚠️ Invalid API Key. Saved to local storage only.';
         localStorage.setItem('selected_songs_fallback', JSON.stringify(songs));
         return;
       }
-      
       if (!response.ok) throw new Error('Save failed');
       statusDiv.textContent = '✅ Saved to cloud! All users see changes.';
       setTimeout(() => {
@@ -298,7 +420,7 @@
     }
   }
 
-  // ========== ADD & DELETE SONGS ==========
+  // ========== ADD & DELETE (with password guard) ==========
   async function addSongFromUrl(geniusUrl) {
     geniusUrl = geniusUrl.trim();
     if (!isValidGeniusUrl(geniusUrl)) {
@@ -325,10 +447,52 @@
     return true;
   }
 
-  async function deleteSong(index) {
+  // called after password validation
+  async function executeDeleteSong(index) {
+    if (index === undefined || index < 0 || index >= songs.length) return;
     songs.splice(index, 1);
     await saveSongsToCloud();
     renderSongs();
+  }
+
+  // Show password modal for deletion
+  function requestDeleteWithPassword(index) {
+    pendingDeleteIndex = index;
+    const modal = document.getElementById('deletePasswordModal');
+    const input = document.getElementById('deletePasswordInput');
+    input.value = '';
+    modal.classList.add('active');
+    input.focus();
+  }
+
+  function closePasswordModal() {
+    const modal = document.getElementById('deletePasswordModal');
+    modal.classList.remove('active');
+    pendingDeleteIndex = null;
+  }
+
+  function verifyAndDelete() {
+    const passwordInput = document.getElementById('deletePasswordInput').value;
+    if (passwordInput === REQUIRED_DELETE_PASSWORD) {
+      if (pendingDeleteIndex !== null) {
+        executeDeleteSong(pendingDeleteIndex);
+        closePasswordModal();
+      } else {
+        closePasswordModal();
+      }
+    } else {
+      // wrong password feedback
+      const errDiv = document.getElementById('form-error');
+      errDiv.textContent = '🔒 Wrong password! Deletion requires password: 321';
+      errDiv.classList.add('show');
+      setTimeout(() => errDiv.classList.remove('show'), 2500);
+      // shake input effect
+      const inp = document.getElementById('deletePasswordInput');
+      inp.style.border = '1px solid #c2410c';
+      setTimeout(() => inp.style.border = '', 500);
+      inp.value = '';
+      inp.focus();
+    }
   }
 
   // ========== RENDER UI ==========
@@ -353,12 +517,18 @@
         </div>
       </div>
     `).join('');
+    // attach delete event with password modal trigger
     document.querySelectorAll('.btn-delete').forEach(btn => {
-      btn.addEventListener('click', (e) => deleteSong(parseInt(btn.dataset.index)));
+      const idx = parseInt(btn.dataset.index);
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        requestDeleteWithPassword(idx);
+      });
     });
   }
 
   function escapeHtml(str) { 
+    if (!str) return '';
     return str.replace(/[&<>]/g, function(m) { 
       return m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'; 
     }); 
@@ -380,7 +550,7 @@
     const url = document.getElementById('genius-url').value.trim();
     if (isValidGeniusUrl(url)) {
       const parsed = parseGeniusUrl(url);
-      if (parsed) {
+      if (parsed && parsed.artist && parsed.track) {
         document.getElementById('preview-artist').textContent = parsed.artist;
         document.getElementById('preview-track').textContent = parsed.track;
         document.getElementById('preview-card').classList.add('show');
@@ -390,12 +560,32 @@
     document.getElementById('preview-card').classList.remove('show');
   }
 
+  // modal event binding
+  function bindModalEvents() {
+    const modal = document.getElementById('deletePasswordModal');
+    const cancelBtn = document.getElementById('cancelDeleteBtn');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    const passwordInput = document.getElementById('deletePasswordInput');
+    
+    cancelBtn.addEventListener('click', () => closePasswordModal());
+    confirmBtn.addEventListener('click', () => verifyAndDelete());
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closePasswordModal();
+    });
+    passwordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') verifyAndDelete();
+    });
+  }
+
   // Initialize
   document.addEventListener('DOMContentLoaded', () => {
+    bindModalEvents();
     loadSongsFromCloud();
-    document.getElementById('genius-url').addEventListener('input', updatePreview);
-    document.getElementById('add-song-btn').addEventListener('click', () => addSongFromUrl(document.getElementById('genius-url').value));
-    document.getElementById('genius-url').addEventListener('keypress', (e) => {
+    const urlInput = document.getElementById('genius-url');
+    const addBtn = document.getElementById('add-song-btn');
+    urlInput.addEventListener('input', updatePreview);
+    addBtn.addEventListener('click', () => addSongFromUrl(urlInput.value));
+    urlInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') addSongFromUrl(e.target.value);
     });
   });
