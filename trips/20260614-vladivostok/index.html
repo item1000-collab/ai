@@ -18,7 +18,7 @@
             line-height: 1.5;
         }
 
-        /* main container: max-width for very large screens, but inner split uses 50%/50% */
+        /* main container */
         .container {
             max-width: 1600px;
             margin: 0 auto;
@@ -26,16 +26,22 @@
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.02);
         }
 
-        /* header with title + language switcher */
+        /* header with title, PDF link, language switcher */
         .page-header {
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
-            align-items: baseline;
+            align-items: center;
             gap: 1rem;
-            padding: 1.8rem 2rem 1rem 2rem;
+            padding: 1.4rem 2rem 1rem 2rem;
             border-bottom: 1px solid #e2edf2;
             background: white;
+        }
+
+        .title-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
         }
 
         h1 {
@@ -46,6 +52,39 @@
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
+        }
+
+        .pdf-link-top {
+            background: #f0f6fc;
+            padding: 6px 18px;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #d4e2ed;
+            transition: 0.2s;
+        }
+
+        .pdf-link-top a {
+            text-decoration: none;
+            color: #006699;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pdf-link-top:hover {
+            background: #e8f0f8;
+            border-color: #bdd2e2;
+        }
+
+        .right-header {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            flex-wrap: wrap;
         }
 
         .lang-switch {
@@ -76,7 +115,7 @@
             background: #e2eaf1;
         }
 
-        /* gallery wrapper: each entry uses flex row: 50% image / 50% text */
+        /* gallery layout: each row 50% image / 50% text */
         .gallery {
             display: flex;
             flex-direction: column;
@@ -91,9 +130,9 @@
             transition: background 0.2s;
         }
 
-        /* LEFT SIDE: exactly 50% width, image fills the space but never cropped */
+        /* LEFT SIDE: exactly 50% width, image never cropped */
         .photo-left {
-            flex: 1;  /* 50% of parent because row has two flex:1 children */
+            flex: 1;
             background: #fafcfd;
             display: flex;
             align-items: center;
@@ -105,15 +144,15 @@
             width: 100%;
             height: auto;
             display: block;
-            object-fit: contain;  /* CRUCIAL: no cropping, full landscape visible */
+            object-fit: contain;
             border-radius: 18px;
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
             background: #f8fafc;
         }
 
-        /* RIGHT SIDE: exactly 50% width, descriptive text area */
+        /* RIGHT SIDE: 50% width, description text */
         .text-right {
-            flex: 1;  /* 50% width */
+            flex: 1;
             background: white;
             display: flex;
             flex-direction: column;
@@ -197,7 +236,7 @@
             text-decoration: underline;
         }
 
-        /* RESPONSIVE: on narrower screens, each row becomes column (image on top, text below) */
+        /* responsive: on narrow screens row becomes column */
         @media (max-width: 780px) {
             .photo-row {
                 flex-direction: column;
@@ -216,14 +255,18 @@
                 font-size: 1.05rem;
             }
             .page-header {
-                padding: 1.2rem 1.2rem 0.8rem 1.2rem;
+                flex-direction: column;
+                align-items: stretch;
+                padding: 1rem 1.2rem;
+            }
+            .right-header {
+                justify-content: space-between;
             }
             h1 {
                 font-size: 1.4rem;
             }
         }
 
-        /* For very large screens we keep perfect half/half with comfortable text width */
         @media (min-width: 1400px) {
             .text-content {
                 max-width: 85%;
@@ -233,7 +276,6 @@
             }
         }
 
-        /* subtle hover effect for rows */
         .photo-row:hover {
             background: #fefefe;
         }
@@ -251,10 +293,19 @@
 <body>
 <div class="container">
     <div class="page-header">
-        <h1 id="mainTitle">🌊 Vladivostok · June 13–14, 2026</h1>
-        <div class="lang-switch">
-            <button class="lang-btn active-lang" id="langEnBtn">🇬🇧 English</button>
-            <button class="lang-btn" id="langRuBtn">🇷🇺 Русский</button>
+        <div class="title-area">
+            <h1 id="mainTitle">🌊 Vladivostok · June 13–14, 2026</h1>
+            <div class="pdf-link-top">
+                <a href="https://item1000-collab.github.io/ai/trips/20260614-vladivostok/Vladivostok_Pacific_Gateway.pdf" target="_blank">
+                    📄 <span id="pdfLinkText">Vladivostok: Pacific Gateway (PDF)</span>
+                </a>
+            </div>
+        </div>
+        <div class="right-header">
+            <div class="lang-switch">
+                <button class="lang-btn active-lang" id="langEnBtn">🇬🇧 English</button>
+                <button class="lang-btn" id="langRuBtn">🇷🇺 Russian</button>
+            </div>
         </div>
     </div>
 
@@ -374,6 +425,7 @@
     const galleryContainer = document.getElementById('galleryContainer');
     const mainTitleElem = document.getElementById('mainTitle');
     const footerElem = document.getElementById('footerText');
+    const pdfLinkSpan = document.getElementById('pdfLinkText');
     const langEnBtn = document.getElementById('langEnBtn');
     const langRuBtn = document.getElementById('langRuBtn');
 
@@ -432,13 +484,15 @@
         }
         galleryContainer.innerHTML = rowsHtml;
         
-        // update global title & footer based on language
+        // update global title, footer & PDF link text based on language
         if (currentLang === 'en') {
             mainTitleElem.textContent = '🌊 Vladivostok · June 13–14, 2026';
             footerElem.textContent = 'Vladivostok — Pacific gateway | landscape originals, full width visible (no crop)';
+            pdfLinkSpan.textContent = 'Vladivostok: Pacific Gateway (PDF)';
         } else {
             mainTitleElem.textContent = '🌊 Владивосток · 13–14 июня 2026';
             footerElem.textContent = 'Владивосток — тихоокеанские ворота | фотографии в ландшафтном формате, без обрезки (полная ширина видна)';
+            pdfLinkSpan.textContent = 'Владивосток: Тихоокеанские ворота (PDF)';
         }
     }
     
