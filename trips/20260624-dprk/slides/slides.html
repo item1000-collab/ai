@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Быстрая презентация 868 фото</title>
+    <style>
+        /* Черный фон как в кино */
+        body {
+            margin: 0;
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            user-select: none;
+        }
+        .slider-container {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+        #slideshow {
+            max-width: 90vw;
+            max-height: 85vh;
+            border-radius: 12px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            display: block;
+            /* Убираем мерцание при смене фото */
+            background: #1a1a1a;
+        }
+        /* Панель управления */
+        .controls {
+            position: absolute;
+            bottom: -60px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            color: white;
+        }
+        button {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-size: 24px;
+            padding: 8px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(5px);
+        }
+        button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        #counter {
+            font-size: 18px;
+            min-width: 80px;
+            text-align: center;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+
+<div class="slider-container">
+    <!-- Наш единственный тег картинки -->
+    <img id="slideshow" src="" alt="Презентация">
+
+    <div class="controls">
+        <button id="prevBtn">◀ Назад</button>
+        <span id="counter">1 / 868</span>
+        <button id="nextBtn">Вперед ▶</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ==========================================
+        // 1. ГЕНЕРИРУЕМ МАССИВ ИЗ 868 ФОТО (в памяти)
+        // ==========================================
+        const totalPhotos = 868;
+        // Хитрость: не храним полные пути, а храним только номера,
+        // чтобы экономить память. Но для понимания представим как массив:
+        const photoList = [];
+        for (let i = 1; i <= totalPhotos; i++) {
+            photoList.push(`photos/${i}.webp`); // или .jpg
+        }
+
+        // ==========================================
+        // 2. СОСТОЯНИЕ ПЛЕЕРА
+        // ==========================================
+        let currentIndex = 0; // Индекс в массиве (0 = первое фото)
+
+        const imgElement = document.getElementById('slideshow');
+        const counterElement = document.getElementById('counter');
+
+        // ==========================================
+        // 3. ФУНКЦИЯ ОБНОВЛЕНИЯ КАРТИНКИ
+        // ==========================================
+        function updateSlide(index) {
+            // Защита от выхода за границы
+            if (index < 0) index = 0;
+            if (index >= totalPhotos) index = totalPhotos - 1;
+            
+            currentIndex = index;
+
+            // Меняем src у картинки - ЭТО ГЛАВНЫЙ МОМЕНТ!
+            // Страница НЕ перезагружается, меняется только одно свойство.
+            imgElement.src = photoList[currentIndex];
+            
+            // Обновляем счетчик
+            counterElement.textContent = `${currentIndex + 1} / ${totalPhotos}`;
+
+            // ==========================================
+            // 4. "МАГИЯ" - ПРЕДЗАГРУЗКА СЛЕДУЮЩЕГО ФОТО
+            // ==========================================
+            // Пока пользователь смотрит на текущее фото,
+            // браузер в фоне качает следующее.
+            const nextIndex = currentIndex + 1;
+            if (nextIndex < totalPhotos) {
+                const preloadImg = new Image();
+                preloadImg.src = photoList[nextIndex];
+                // Это фото ляжет в кэш браузера, и когда пользователь нажмет "Вперед" -
+                // оно появится мгновенно, без белого экрана.
+            }
+
+            // Также предзагружаем предыдущее (на случай, если нажмут "Назад")
+            const prevIndex = currentIndex - 1;
+            if (prevIndex >= 0) {
+                const preloadPrev = new Image();
+                preloadPrev.src = photoList[prevIndex];
+            }
+        }
+
+        // ==========================================
+        // 5. ОБРАБОТЧИКИ КНОПОК
+        // ==========================================
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (currentIndex < totalPhotos - 1) {
+                updateSlide(currentIndex + 1);
+            }
+        });
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (currentIndex > 0) {
+                updateSlide(currentIndex - 1);
+            }
+        });
+
+        // ==========================================
+        // 6. УПРАВЛЕНИЕ С КЛАВИАТУРЫ (Стрелки влево/вправо)
+        // ==========================================
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                document.getElementById('nextBtn').click();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                document.getElementById('prevBtn').click();
+            }
+        });
+
+        // ==========================================
+        // 7. ЗАПУСКАЕМ ПЕРВОЕ ФОТО
+        // ==========================================
+        updateSlide(0);
+
+        // Вывод в консоль для проверки (опционально)
+        console.log(`Презентация загружена. Фото в памяти: ${photoList.length}`);
+    })();
+</script>
+
+</body>
+</html>
