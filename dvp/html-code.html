@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webpage HTML Fetcher</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: linear-gradient(145deg, #1a2634 0%, #0f141a 100%);
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+    }
+    .card {
+      background: rgba(26, 32, 44, 0.85);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-radius: 2.5rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.06);
+      padding: 2rem 2rem 2.5rem;
+      max-width: 1100px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: all 0.2s;
+    }
+    h1 {
+      font-weight: 400;
+      font-size: 1.9rem;
+      letter-spacing: -0.5px;
+      color: #eef2f7;
+      margin-bottom: 0.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    h1 small {
+      font-size: 1rem;
+      font-weight: 300;
+      color: #8899b0;
+      margin-left: 0.5rem;
+      letter-spacing: 0;
+    }
+    .sub {
+      color: #9aadc9;
+      margin-bottom: 2rem;
+      border-left: 3px solid #3d7eff;
+      padding-left: 1rem;
+      font-weight: 300;
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 3rem;
+      padding: 0.4rem;
+      border: 1px solid #2c3a4b;
+      transition: border 0.15s;
+    }
+    .input-group:focus-within {
+      border-color: #4d7aff;
+      box-shadow: 0 0 0 3px rgba(61, 126, 255, 0.2);
+    }
+    .input-group input {
+      flex: 1;
+      min-width: 200px;
+      background: transparent;
+      border: none;
+      padding: 0.9rem 1.5rem;
+      font-size: 1rem;
+      color: #e3eaf3;
+      outline: none;
+      font-weight: 300;
+    }
+    .input-group input::placeholder {
+      color: #6b7f99;
+      font-weight: 300;
+      letter-spacing: 0.2px;
+    }
+    .input-group button {
+      background: #3d7eff;
+      border: none;
+      padding: 0.9rem 2.2rem;
+      border-radius: 3rem;
+      font-weight: 600;
+      font-size: 1rem;
+      color: white;
+      cursor: pointer;
+      transition: 0.15s;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(61, 126, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .input-group button:hover {
+      background: #2f6af0;
+      transform: scale(0.97);
+      box-shadow: 0 6px 16px rgba(61, 126, 255, 0.4);
+    }
+    .input-group button:active {
+      transform: scale(0.94);
+    }
+    .status {
+      margin: 1.2rem 0 0.8rem;
+      min-height: 2rem;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #b7cbdf;
+      flex-wrap: wrap;
+    }
+    .status .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #2f4b70;
+      border-top-color: #7ba1ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status .error {
+      color: #ff8a8a;
+      background: rgba(255, 70, 70, 0.1);
+      padding: 0.3rem 1rem;
+      border-radius: 2rem;
+      border-left: 2px solid #ff5e5e;
+    }
+    .status .success {
+      color: #8dffb0;
+      background: rgba(70, 255, 130, 0.07);
+      padding: 0.3rem 1rem;
+      border-radius: 2rem;
+      border-left: 2px solid #5eff8a;
+    }
+    .output-area {
+      margin-top: 1.5rem;
+      background: #0d121a;
+      border-radius: 1.6rem;
+      border: 1px solid #293646;
+      overflow: hidden;
+      box-shadow: inset 0 6px 12px rgba(0, 0, 0, 0.5);
+      transition: border 0.2s;
+    }
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.7rem 1.5rem;
+      background: #161f2b;
+      border-bottom: 1px solid #283545;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .output-header span {
+      color: #a1b7d1;
+      font-size: 0.85rem;
+      font-weight: 400;
+      letter-spacing: 0.2px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .output-header span i {
+      font-style: normal;
+      background: #283545;
+      padding: 0.2rem 0.8rem;
+      border-radius: 2rem;
+      font-size: 0.7rem;
+      color: #b7cee9;
+    }
+    .copy-btn {
+      background: #283848;
+      border: none;
+      color: #c7daf0;
+      padding: 0.4rem 1.2rem;
+      border-radius: 2.5rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #3f5268;
+    }
+    .copy-btn:hover {
+      background: #3a4f66;
+      color: white;
+      border-color: #5f7b9a;
+    }
+    .copy-btn.copied {
+      background: #1f6d3b;
+      border-color: #43b06b;
+      color: #d4ffe0;
+    }
+    #htmlContent {
+      width: 100%;
+      height: 460px;
+      padding: 1.5rem;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #d1def0;
+      background: #0d121a;
+      border: none;
+      resize: vertical;
+      outline: none;
+      tab-size: 2;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow: auto;
+    }
+    #htmlContent:focus {
+      box-shadow: inset 0 0 0 1px #3d6eff;
+    }
+    .footer-note {
+      margin-top: 1rem;
+      color: #5d738b;
+      font-size: 0.75rem;
+      text-align: right;
+      letter-spacing: 0.3px;
+      opacity: 0.7;
+    }
+    .footer-note a {
+      color: #6d8fc7;
+      text-decoration: none;
+    }
+    @media (max-width: 600px) {
+      .card { padding: 1.5rem; }
+      .input-group { border-radius: 2rem; }
+      .input-group button { padding: 0.8rem 1.5rem; }
+      #htmlContent { height: 340px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>
+      🌐 HTML Fetcher
+      <small>get page source code</small>
+    </h1>
+    <div class="sub">Enter a URL — we'll fetch the HTML source and make it copyable</div>
+
+    <div class="input-group">
+      <input type="text" id="urlInput" placeholder="https://example.com or any other URL" value="https://example.com">
+      <button id="fetchBtn">🔍 Fetch</button>
+    </div>
+
+    <div id="statusMessage" class="status">
+      <span>⚡ Enter a URL and click "Fetch"</span>
+    </div>
+
+    <div class="output-area">
+      <div class="output-header">
+        <span>📄 <span id="pageTitle">HTML source</span> <i id="sizeIndicator"></i></span>
+        <button id="copyBtn" class="copy-btn">📋 Copy</button>
+      </div>
+      <textarea id="htmlContent" spellcheck="false" readonly>Page HTML will appear here...</textarea>
+    </div>
+    <div class="footer-note">
+      ⚡ Uses <a href="#" id="corsInfo">CORS proxy</a> for cross-origin requests · no data is stored
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      "use strict";
+
+      // DOM references
+      const urlInput = document.getElementById('urlInput');
+      const fetchBtn = document.getElementById('fetchBtn');
+      const statusDiv = document.getElementById('statusMessage');
+      const htmlTextarea = document.getElementById('htmlContent');
+      const copyBtn = document.getElementById('copyBtn');
+      const pageTitleSpan = document.getElementById('pageTitle');
+      const sizeIndicator = document.getElementById('sizeIndicator');
+
+      // CORS proxy (free, reliable)
+      const CORS_PROXY = 'https://corsproxy.io/?';
+
+      // State
+      let lastFetchedHtml = '';
+
+      // --- Helper functions ---
+      function setStatus(message, type = 'info') {
+        statusDiv.innerHTML = '';
+        const wrapper = document.createElement('span');
+        if (type === 'loading') {
+          const spinner = document.createElement('span');
+          spinner.className = 'spinner';
+          statusDiv.appendChild(spinner);
+          wrapper.textContent = ' ' + message;
+        } else if (type === 'error') {
+          wrapper.className = 'error';
+          wrapper.textContent = '⚠ ' + message;
+        } else if (type === 'success') {
+          wrapper.className = 'success';
+          wrapper.textContent = '✓ ' + message;
+        } else {
+          wrapper.textContent = message;
+        }
+        statusDiv.appendChild(wrapper);
+      }
+
+      function updateSizeInfo(htmlString) {
+        const bytes = new Blob([htmlString]).size;
+        let sizeText = '';
+        if (bytes < 1024) sizeText = bytes + ' B';
+        else if (bytes < 1048576) sizeText = (bytes / 1024).toFixed(1) + ' KB';
+        else sizeText = (bytes / 1048576).toFixed(2) + ' MB';
+        sizeIndicator.textContent = sizeText;
+        pageTitleSpan.textContent = htmlString ? 'HTML source' : 'HTML source';
+      }
+
+      function sanitizeUrl(input) {
+        let url = input.trim();
+        if (!url) return null;
+        if (!/^https?:\/\//i.test(url)) {
+          url = 'https://' + url;
+        }
+        return url;
+      }
+
+      // --- Main fetch function ---
+      async function fetchPageHtml(rawUrl) {
+        const url = sanitizeUrl(rawUrl);
+        if (!url) {
+          setStatus('Please enter a valid URL', 'error');
+          return;
+        }
+
+        // Block localhost and internal IPs for security
+        try {
+          const parsed = new URL(url);
+          const hostname = parsed.hostname.toLowerCase();
+          if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || 
+              hostname.startsWith('192.168.') || hostname.startsWith('10.') || 
+              hostname.startsWith('172.16.') || hostname.startsWith('169.254.')) {
+            setStatus('❌ Local addresses are blocked for security', 'error');
+            return;
+          }
+        } catch {
+          setStatus('❌ Invalid URL format', 'error');
+          return;
+        }
+
+        setStatus(`Fetching ${url} ...`, 'loading');
+
+        const proxyUrl = CORS_PROXY + encodeURIComponent(url);
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+          const response = await fetch(proxyUrl, {
+            signal: controller.signal,
+            headers: {
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            },
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} ${response.statusText}`);
+          }
+
+          const html = await response.text();
+
+          if (!html || html.length < 10) {
+            throw new Error('Received empty or too short response');
+          }
+
+          // Success
+          lastFetchedHtml = html;
+          htmlTextarea.value = html;
+          updateSizeInfo(html);
+          setStatus(`✅ Loaded: ${url} (${html.length} characters)`, 'success');
+          pageTitleSpan.textContent = `HTML (${html.length} chars)`;
+
+        } catch (error) {
+          let errorMsg = error.message;
+          if (error.name === 'AbortError') {
+            errorMsg = 'Request timeout (30s)';
+          } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            errorMsg = 'Network error. Check your connection or try again.';
+          }
+          setStatus(`❌ Error: ${errorMsg}`, 'error');
+          if (!lastFetchedHtml) {
+            htmlTextarea.value = `// Fetch error: ${errorMsg}\n// Try a different URL or check your connection.`;
+            updateSizeInfo('');
+            pageTitleSpan.textContent = 'Error';
+          }
+        }
+      }
+
+      // --- Copy function ---
+      function copyHtmlContent() {
+        const text = htmlTextarea.value;
+        if (!text || text.startsWith('Page HTML will appear here') || text.includes('Fetch error')) {
+          setStatus('Nothing to copy — fetch a page first', 'error');
+          return;
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text)
+            .then(() => {
+              setStatus('✅ HTML copied to clipboard!', 'success');
+              copyBtn.classList.add('copied');
+              copyBtn.textContent = '✅ Copied!';
+              setTimeout(() => {
+                copyBtn.classList.remove('copied');
+                copyBtn.innerHTML = '📋 Copy';
+              }, 2500);
+            })
+            .catch(() => {
+              fallbackCopy(text);
+            });
+        } else {
+          fallbackCopy(text);
+        }
+      }
+
+      function fallbackCopy(text) {
+        htmlTextarea.select();
+        htmlTextarea.setSelectionRange(0, 9999999);
+        try {
+          const success = document.execCommand('copy');
+          if (success) {
+            setStatus('✅ Copied (fallback method)', 'success');
+            copyBtn.classList.add('copied');
+            copyBtn.textContent = '✅ Copied!';
+            setTimeout(() => {
+              copyBtn.classList.remove('copied');
+              copyBtn.innerHTML = '📋 Copy';
+            }, 2500);
+          } else {
+            setStatus('❌ Failed to copy, select text manually', 'error');
+          }
+        } catch {
+          setStatus('❌ Copy error, select manually', 'error');
+        }
+      }
+
+      // --- Event handlers ---
+      fetchBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        fetchPageHtml(urlInput.value);
+      });
+
+      urlInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          fetchBtn.click();
+        }
+      });
+
+      copyBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        copyHtmlContent();
+      });
+
+      document.getElementById('corsInfo').addEventListener('click', function(e) {
+        e.preventDefault();
+        setStatus('Using free CORS proxy to bypass browser restrictions', 'info');
+      });
+
+      // Auto-load example.com on page load
+      window.addEventListener('load', function() {
+        setTimeout(() => {
+          fetchPageHtml(urlInput.value);
+        }, 300);
+      });
+
+    })();
+  </script>
+</body>
+</html>
