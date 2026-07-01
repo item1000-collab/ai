@@ -89,23 +89,45 @@ except ImportError:
 
 
 # ============================================================
-# НОВАЯ ФУНКЦИЯ: КОНВЕРТАЦИЯ MP3 В WAV
+# ФУНКЦИЯ: КОНВЕРТАЦИЯ АУДИО В WAV (поддерживает MP3, M4A, FLAC, OGG, WMA)
 # ============================================================
-def convert_mp3_to_wav(mp3_path):
+def convert_audio_to_wav(audio_path):
     """
-    Конвертирует MP3 в WAV с помощью FFmpeg.
+    Конвертирует аудиофайл в WAV с помощью FFmpeg.
+    Поддерживает: MP3, M4A, FLAC, OGG, WMA и другие.
     Возвращает путь к WAV-файлу или None в случае ошибки.
     """
-    wav_path = mp3_path.with_suffix('.wav')
+    wav_path = audio_path.with_suffix('.wav')
     try:
+        # Проверяем, существует ли уже WAV-файл (чтобы не конвертировать повторно)
+        if wav_path.exists():
+            return wav_path
+            
         subprocess.run([
-            'ffmpeg', '-i', str(mp3_path), 
+            'ffmpeg', '-i', str(audio_path), 
             '-ar', '16000', '-ac', '1', '-y', str(wav_path)
         ], check=True, capture_output=True)
         return wav_path
     except subprocess.CalledProcessError as e:
-        st.error(f"Ошибка конвертации MP3: {e.stderr.decode() if e.stderr else 'Неизвестная ошибка'}")
+        st.error(f"Ошибка конвертации аудио: {e.stderr.decode() if e.stderr else 'Неизвестная ошибка'}")
         return None
+
+
+# ============================================================
+# РАСШИРЕННЫЙ СПИСОК ПОДДЕРЖИВАЕМЫХ ФОРМАТОВ
+# ============================================================
+SUPPORTED_FORMATS = [
+    # Видеоформаты
+    "mp4", "avi", "mov", "mkv", "webm", "flv", "wmv", "mpeg", "mpg",
+    # Аудиоформаты
+    "m4a", "mp3", "wav", "flac", "aac", "ogg", "wma", "opus", "amr"
+]
+
+# Расширения для поиска в папках
+SUPPORTED_GLOB_PATTERNS = [f"*.{fmt}" for fmt in SUPPORTED_FORMATS]
+
+# Список форматов, которые требуют конвертации в WAV (все, кроме WAV)
+AUDIO_FORMATS_NEEDING_CONVERSION = ["mp3", "m4a", "flac", "aac", "ogg", "wma", "opus", "amr"]
 # ============================================================
 
 
@@ -368,7 +390,7 @@ def render_sidebar():
 
 
 # ============================================================
-# ИЗМЕНЕННАЯ ФУНКЦИЯ: ДОБАВЛЕН ФОРМАТ MP3
+# ИЗМЕНЕННАЯ ФУНКЦИЯ: ПОДДЕРЖКА ВСЕХ ФОРМАТОВ
 # ============================================================
 def render_file_input():
     """Render the file input section with upload + folder browse tabs."""
@@ -377,14 +399,12 @@ def render_file_input():
     selected_file = None
 
     with upload_tab:
-        # --- ИЗМЕНЕНИЕ: Добавлен "mp3" в список разрешенных форматов ---
         uploaded_files = st.file_uploader(
             "Drag and drop your recordings here",
-            type=["mp4", "avi", "mov", "mkv", "m4a", "mp3"],  # <-- ДОБАВЛЕН MP3
+            type=SUPPORTED_FORMATS,  # <-- ИСПОЛЬЗУЕТСЯ РАСШИРЕННЫЙ СПИСОК
             accept_multiple_files=True,
             key="file_uploader",
         )
-        # --- КОНЕЦ ИЗМЕНЕНИЯ ---
         
         if uploaded_files:
             if len(uploaded_files) == 1:
@@ -415,13 +435,10 @@ def render_file_input():
             for error in env_errors:
                 st.warning(error)
         else:
-            # --- ИЗМЕНЕНИЕ: Добавлен "*.mp3" в список расширений ---
-            extensions = ["*.mp4", "*.avi", "*.mov", "*.mkv", "*.m4a", "*.mp3"]  # <-- ДОБАВЛЕН MP3
-            # --- КОНЕЦ ИЗМЕНЕНИЯ ---
             recordings = []
             glob_fn = base_path.rglob if st.session_state.recursive_search else base_path.glob
-            for ext in extensions:
-                recordings.extend(glob_fn(ext))
+            for pattern in SUPPORTED_GLOB_PATTERNS:  # <-- ИСПОЛЬЗУЕТСЯ РАСШИРЕННЫЙ СПИСОК
+                recordings.extend(glob_fn(pattern))
 
             if recordings:
                 chosen = st.selectbox(
@@ -432,7 +449,7 @@ def render_file_input():
                 )
                 selected_file = ("path", chosen)
             else:
-                st.info("No recordings found. Supported formats: MP4, AVI, MOV, MKV, M4A, MP3")
+                st.info(f"No recordings found. Supported formats: {', '.join(SUPPORTED_FORMATS).upper()}")
 
     return selected_file
 # ============================================================
@@ -470,23 +487,32 @@ def resolve_file_path(selected_file):
 
 
 # ============================================================
-# ИЗМЕНЕННАЯ ФУНКЦИЯ: ДОБАВЛЕНА КОНВЕРТАЦИЯ MP3
+# ИЗМЕНЕННАЯ ФУНКЦИЯ: КОНВЕРТАЦИЯ ЛЮБЫХ АУДИОФОРМАТОВ В WAV
 # ============================================================
 def process_recording(file_path, sidebar_opts):
     """Run the full processing pipeline with granular status updates."""
     results = {}
     start_time = time.time()
 
-    # --- ИЗМЕНЕНИЕ: Конвертация MP3 в WAV перед обработкой ---
+    # Конвертация аудиоформатов в WAV перед обработкой
     file_path = Path(file_path)
-    if file_path.suffix.lower() == '.mp3':
-        st.write("🎵 Обнаружен MP3-файл. Конвертируем в WAV для обработки...")
-        wav_path = convert_mp3_to_wav(file_path)
+    file_ext = file_path.suffix.lower().lstrip('.')
+    
+    # Если это аудиоформат (кроме WAV) — конвертируем
+    if file_ext in AUDIO_FORMATS_NEEDING_CONVERSION:
+        st.write(f"🎵 Обнаружен {file_ext.upper()}-файл. Конвертируем в WAV для обработки...")
+        wav_path = convert_audio_to_wav(file_path)
         if wav_path is None:
-            st.error("Не удалось конвертировать MP3 в WAV. Проверьте, что FFmpeg установлен.")
+            st.error(f"Не удалось конвертировать {file_ext.upper()} в WAV. Проверьте, что FFmpeg установлен.")
             return None
         file_path = wav_path
         st.write("✅ Конвертация завершена. Начинаем транскрипцию...")
+    # Если это WAV — используем как есть
+    elif file_ext == 'wav':
+        st.write("🎵 WAV-файл. Конвертация не требуется.")
+    # Если это видеоформат — извлекаем аудио (делает audio_processing.py)
+    else:
+        st.write(f"🎬 {file_ext.upper()}-файл. Извлекаем аудиодорожку...")
     # --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     try:
