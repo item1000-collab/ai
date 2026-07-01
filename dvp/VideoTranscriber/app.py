@@ -29,13 +29,46 @@ def install_ffmpeg():
     except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
         print("⚠️ FFmpeg не найден. Пытаемся установить...")
         try:
-            # Устанавливаем ffmpeg через apt-get (доступно в Streamlit Cloud)
-            os.system('apt-get update -qq && apt-get install -y -qq ffmpeg')
+            # Устанавливаем ffmpeg через apt-get
+            subprocess.run(
+                ['sudo', 'apt-get', 'update', '-qq'], 
+                check=True, 
+                capture_output=True
+            )
+            subprocess.run(
+                ['sudo', 'apt-get', 'install', '-y', '-qq', 'ffmpeg'], 
+                check=True, 
+                capture_output=True
+            )
             print("✅ FFmpeg успешно установлен!")
             return True
         except Exception as e:
             print(f"❌ Ошибка установки FFmpeg: {e}")
-            return False
+            # Пробуем альтернативный способ — установка в домашнюю директорию
+            try:
+                print("⚠️ Пытаемся установить FFmpeg альтернативным способом...")
+                # Скачиваем статическую сборку FFmpeg
+                subprocess.run([
+                    'wget', 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz',
+                    '-O', '/tmp/ffmpeg.tar.xz'
+                ], check=True, capture_output=True)
+                subprocess.run([
+                    'tar', '-xf', '/tmp/ffmpeg.tar.xz', '-C', '/tmp'
+                ], check=True, capture_output=True)
+                # Копируем ffmpeg в /usr/local/bin
+                import glob
+                ffmpeg_dir = glob.glob('/tmp/ffmpeg-*-amd64-static')[0]
+                subprocess.run([
+                    'cp', f'{ffmpeg_dir}/ffmpeg', '/usr/local/bin/'
+                ], check=True, capture_output=True)
+                subprocess.run([
+                    'cp', f'{ffmpeg_dir}/ffprobe', '/usr/local/bin/'
+                ], check=True, capture_output=True)
+                print("✅ FFmpeg успешно установлен в /usr/local/bin!")
+                return True
+            except Exception as e2:
+                print(f"❌ Альтернативная установка также не удалась: {e2}")
+                return False
 
 # Запускаем установку FFmpeg при старте приложения
 FFMPEG_INSTALLED = install_ffmpeg()
@@ -107,15 +140,29 @@ def convert_audio_to_wav(audio_path):
     # Проверяем, существует ли уже WAV-файл (чтобы не конвертировать повторно)
     if wav_path.exists():
         return wav_path
+    
+    # Проверяем, доступен ли ffmpeg
+    try:
+        subprocess.run(['ffmpeg', '-version'], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        st.error("❌ FFmpeg не найден. Попробуйте перезапустить приложение.")
+        return None
         
     try:
+        # Используем полный путь к ffmpeg для надежности
+        ffmpeg_path = '/usr/local/bin/ffmpeg'
+        if not os.path.exists(ffmpeg_path):
+            ffmpeg_path = 'ffmpeg'  # пробуем использовать системный
+            
         subprocess.run([
-            'ffmpeg', '-i', str(audio_path), 
+            ffmpeg_path, '-i', str(audio_path), 
             '-ar', '16000', '-ac', '1', '-y', str(wav_path)
         ], check=True, capture_output=True, timeout=300)  # таймаут 5 минут
+        
         return wav_path
     except subprocess.CalledProcessError as e:
-        st.error(f"Ошибка конвертации {audio_path.suffix}: {e.stderr.decode() if e.stderr else 'Неизвестная ошибка'}")
+        error_msg = e.stderr.decode() if e.stderr else 'Неизвестная ошибка'
+        st.error(f"Ошибка конвертации {audio_path.suffix}: {error_msg}")
         return None
     except subprocess.TimeoutExpired:
         st.error("Превышено время конвертации (5 минут)")
@@ -381,9 +428,6 @@ def render_sidebar():
     }
 
 
-# ============================================================
-# ИЗМЕНЕННАЯ ФУНКЦИЯ: ДОБАВЛЕН ФОРМАТ MP3
-# ============================================================
 def render_file_input():
     """Render the file input section with upload + folder browse tabs."""
     upload_tab, browse_tab = st.tabs(["Upload Files", "Browse Folder"])
@@ -391,14 +435,12 @@ def render_file_input():
     selected_file = None
 
     with upload_tab:
-        # --- ИЗМЕНЕНИЕ: Добавлен "mp3" в список разрешенных форматов ---
         uploaded_files = st.file_uploader(
             "Drag and drop your recordings here",
-            type=["mp4", "avi", "mov", "mkv", "m4a", "mp3"],  # <-- ДОБАВЛЕН MP3
+            type=["mp4", "avi", "mov", "mkv", "m4a", "mp3"],
             accept_multiple_files=True,
             key="file_uploader",
         )
-        # --- КОНЕЦ ИЗМЕНЕНИЯ ---
         
         if uploaded_files:
             if len(uploaded_files) == 1:
@@ -429,9 +471,7 @@ def render_file_input():
             for error in env_errors:
                 st.warning(error)
         else:
-            # --- ИЗМЕНЕНИЕ: Добавлен "*.mp3" в список расширений ---
-            extensions = ["*.mp4", "*.avi", "*.mov", "*.mkv", "*.m4a", "*.mp3"]  # <-- ДОБАВЛЕН MP3
-            # --- КОНЕЦ ИЗМЕНЕНИЯ ---
+            extensions = ["*.mp4", "*.avi", "*.mov", "*.mkv", "*.m4a", "*.mp3"]
             recordings = []
             glob_fn = base_path.rglob if st.session_state.recursive_search else base_path.glob
             for ext in extensions:
@@ -449,7 +489,6 @@ def render_file_input():
                 st.info("No recordings found. Supported formats: MP4, AVI, MOV, MKV, M4A, MP3")
 
     return selected_file
-# ============================================================
 
 
 def render_file_preview(selected_file):
@@ -483,25 +522,21 @@ def resolve_file_path(selected_file):
     return file_ref
 
 
-# ============================================================
-# ИЗМЕНЕННАЯ ФУНКЦИЯ: ДОБАВЛЕНА КОНВЕРТАЦИЯ MP3
-# ============================================================
 def process_recording(file_path, sidebar_opts):
     """Run the full processing pipeline with granular status updates."""
     results = {}
     start_time = time.time()
 
-    # --- ИЗМЕНЕНИЕ: Конвертация MP3 в WAV перед обработкой ---
+    # Конвертация MP3 в WAV перед обработкой
     file_path = Path(file_path)
     if file_path.suffix.lower() in ['.mp3', '.m4a', '.flac', '.ogg', '.wma', '.aac']:
         st.write(f"🎵 Обнаружен {file_path.suffix.upper()}-файл. Конвертируем в WAV для обработки...")
         wav_path = convert_audio_to_wav(file_path)
         if wav_path is None:
-            st.error(f"Не удалось конвертировать {file_path.suffix.upper()} в WAV. Проверьте, что FFmpeg установлен.")
+            st.error(f"Не удалось конвертировать {file_path.suffix.upper()} в WAV.")
             return None
         file_path = wav_path
         st.write("✅ Конвертация завершена. Начинаем транскрипцию...")
-    # --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     try:
         with st.status("Processing recording...", expanded=True) as status:
@@ -616,7 +651,6 @@ def process_recording(file_path, sidebar_opts):
         st.error(f"Processing error: {e}")
         logger.error(f"Processing error: {e}", exc_info=True)
         return None
-# ============================================================
 
 
 def render_results(results, sidebar_opts):
@@ -820,8 +854,6 @@ def main():
     # Проверка FFmpeg (дополнительная проверка через validate_environment)
     ffmpeg_errors = validate_environment()
     if ffmpeg_errors:
-        # Если validate_environment вернул ошибки, но у нас FFMPEG_INSTALLED == True,
-        # значит ошибка ложная, игнорируем
         if not FFMPEG_INSTALLED:
             for err in ffmpeg_errors:
                 st.warning(err)
