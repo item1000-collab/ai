@@ -88,6 +88,27 @@ except ImportError:
     KEYWORD_EXTRACTION_AVAILABLE = False
 
 
+# ============================================================
+# НОВАЯ ФУНКЦИЯ: КОНВЕРТАЦИЯ MP3 В WAV
+# ============================================================
+def convert_mp3_to_wav(mp3_path):
+    """
+    Конвертирует MP3 в WAV с помощью FFmpeg.
+    Возвращает путь к WAV-файлу или None в случае ошибки.
+    """
+    wav_path = mp3_path.with_suffix('.wav')
+    try:
+        subprocess.run([
+            'ffmpeg', '-i', str(mp3_path), 
+            '-ar', '16000', '-ac', '1', '-y', str(wav_path)
+        ], check=True, capture_output=True)
+        return wav_path
+    except subprocess.CalledProcessError as e:
+        st.error(f"Ошибка конвертации MP3: {e.stderr.decode() if e.stderr else 'Неизвестная ошибка'}")
+        return None
+# ============================================================
+
+
 def init_session_state():
     """Initialize session state with defaults for persistence across reruns."""
     defaults = {
@@ -346,6 +367,9 @@ def render_sidebar():
     }
 
 
+# ============================================================
+# ИЗМЕНЕННАЯ ФУНКЦИЯ: ДОБАВЛЕН ФОРМАТ MP3
+# ============================================================
 def render_file_input():
     """Render the file input section with upload + folder browse tabs."""
     upload_tab, browse_tab = st.tabs(["Upload Files", "Browse Folder"])
@@ -353,12 +377,15 @@ def render_file_input():
     selected_file = None
 
     with upload_tab:
+        # --- ИЗМЕНЕНИЕ: Добавлен "mp3" в список разрешенных форматов ---
         uploaded_files = st.file_uploader(
             "Drag and drop your recordings here",
-            type=["mp4", "avi", "mov", "mkv", "m4a"],
+            type=["mp4", "avi", "mov", "mkv", "m4a", "mp3"],  # <-- ДОБАВЛЕН MP3
             accept_multiple_files=True,
             key="file_uploader",
         )
+        # --- КОНЕЦ ИЗМЕНЕНИЯ ---
+        
         if uploaded_files:
             if len(uploaded_files) == 1:
                 selected_file = ("upload", uploaded_files[0])
@@ -388,7 +415,9 @@ def render_file_input():
             for error in env_errors:
                 st.warning(error)
         else:
-            extensions = ["*.mp4", "*.avi", "*.mov", "*.mkv", "*.m4a"]
+            # --- ИЗМЕНЕНИЕ: Добавлен "*.mp3" в список расширений ---
+            extensions = ["*.mp4", "*.avi", "*.mov", "*.mkv", "*.m4a", "*.mp3"]  # <-- ДОБАВЛЕН MP3
+            # --- КОНЕЦ ИЗМЕНЕНИЯ ---
             recordings = []
             glob_fn = base_path.rglob if st.session_state.recursive_search else base_path.glob
             for ext in extensions:
@@ -403,9 +432,10 @@ def render_file_input():
                 )
                 selected_file = ("path", chosen)
             else:
-                st.info("No recordings found. Supported formats: MP4, AVI, MOV, MKV, M4A")
+                st.info("No recordings found. Supported formats: MP4, AVI, MOV, MKV, M4A, MP3")
 
     return selected_file
+# ============================================================
 
 
 def render_file_preview(selected_file):
@@ -439,10 +469,25 @@ def resolve_file_path(selected_file):
     return file_ref
 
 
+# ============================================================
+# ИЗМЕНЕННАЯ ФУНКЦИЯ: ДОБАВЛЕНА КОНВЕРТАЦИЯ MP3
+# ============================================================
 def process_recording(file_path, sidebar_opts):
     """Run the full processing pipeline with granular status updates."""
     results = {}
     start_time = time.time()
+
+    # --- ИЗМЕНЕНИЕ: Конвертация MP3 в WAV перед обработкой ---
+    file_path = Path(file_path)
+    if file_path.suffix.lower() == '.mp3':
+        st.write("🎵 Обнаружен MP3-файл. Конвертируем в WAV для обработки...")
+        wav_path = convert_mp3_to_wav(file_path)
+        if wav_path is None:
+            st.error("Не удалось конвертировать MP3 в WAV. Проверьте, что FFmpeg установлен.")
+            return None
+        file_path = wav_path
+        st.write("✅ Конвертация завершена. Начинаем транскрипцию...")
+    # --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     try:
         with st.status("Processing recording...", expanded=True) as status:
@@ -557,6 +602,7 @@ def process_recording(file_path, sidebar_opts):
         st.error(f"Processing error: {e}")
         logger.error(f"Processing error: {e}", exc_info=True)
         return None
+# ============================================================
 
 
 def render_results(results, sidebar_opts):
