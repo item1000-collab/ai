@@ -13,67 +13,6 @@ import tempfile
 import subprocess
 import sys
 
-# ============================================================
-# АВТОМАТИЧЕСКАЯ УСТАНОВКА FFMPEG ДЛЯ STREAMLIT CLOUD
-# ============================================================
-def install_ffmpeg():
-    """Проверяет наличие ffmpeg и устанавливает его, если он отсутствует."""
-    try:
-        # Проверяем, есть ли ffmpeg в системе
-        result = subprocess.run(['ffmpeg', '-version'], 
-                               capture_output=True, 
-                               check=True,
-                               timeout=5)
-        print("✅ FFmpeg уже установлен")
-        return True
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
-        print("⚠️ FFmpeg не найден. Пытаемся установить...")
-        try:
-            # Устанавливаем ffmpeg через apt-get
-            subprocess.run(
-                ['sudo', 'apt-get', 'update', '-qq'], 
-                check=True, 
-                capture_output=True
-            )
-            subprocess.run(
-                ['sudo', 'apt-get', 'install', '-y', '-qq', 'ffmpeg'], 
-                check=True, 
-                capture_output=True
-            )
-            print("✅ FFmpeg успешно установлен!")
-            return True
-        except Exception as e:
-            print(f"❌ Ошибка установки FFmpeg: {e}")
-            # Пробуем альтернативный способ — установка в домашнюю директорию
-            try:
-                print("⚠️ Пытаемся установить FFmpeg альтернативным способом...")
-                # Скачиваем статическую сборку FFmpeg
-                subprocess.run([
-                    'wget', 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz',
-                    '-O', '/tmp/ffmpeg.tar.xz'
-                ], check=True, capture_output=True)
-                subprocess.run([
-                    'tar', '-xf', '/tmp/ffmpeg.tar.xz', '-C', '/tmp'
-                ], check=True, capture_output=True)
-                # Копируем ffmpeg в /usr/local/bin
-                import glob
-                ffmpeg_dir = glob.glob('/tmp/ffmpeg-*-amd64-static')[0]
-                subprocess.run([
-                    'cp', f'{ffmpeg_dir}/ffmpeg', '/usr/local/bin/'
-                ], check=True, capture_output=True)
-                subprocess.run([
-                    'cp', f'{ffmpeg_dir}/ffprobe', '/usr/local/bin/'
-                ], check=True, capture_output=True)
-                print("✅ FFmpeg успешно установлен в /usr/local/bin!")
-                return True
-            except Exception as e2:
-                print(f"❌ Альтернативная установка также не удалась: {e2}")
-                return False
-
-# Запускаем установку FFmpeg при старте приложения
-FFMPEG_INSTALLED = install_ffmpeg()
-# ============================================================
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -122,11 +61,11 @@ except ImportError:
 
 
 # ============================================================
-# ФУНКЦИЯ: КОНВЕРТАЦИЯ АУДИО В WAV (универсальная)
+# ФУНКЦИЯ: КОНВЕРТАЦИЯ АУДИО В WAV (без FFmpeg)
 # ============================================================
 def convert_audio_to_wav(audio_path):
     """
-    Конвертирует аудиофайл в WAV с помощью FFmpeg.
+    Конвертирует аудиофайл в WAV с помощью pydub.
     Поддерживает: MP3, M4A, FLAC, OGG, WMA и другие.
     Возвращает путь к WAV-файлу или None в случае ошибки.
     """
@@ -141,31 +80,37 @@ def convert_audio_to_wav(audio_path):
     if wav_path.exists():
         return wav_path
     
-    # Проверяем, доступен ли ffmpeg
     try:
-        subprocess.run(['ffmpeg', '-version'], check=True, capture_output=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        st.error("❌ FFmpeg не найден. Попробуйте перезапустить приложение.")
-        return None
+        from pydub import AudioSegment
         
-    try:
-        # Используем полный путь к ffmpeg для надежности
-        ffmpeg_path = '/usr/local/bin/ffmpeg'
-        if not os.path.exists(ffmpeg_path):
-            ffmpeg_path = 'ffmpeg'  # пробуем использовать системный
-            
-        subprocess.run([
-            ffmpeg_path, '-i', str(audio_path), 
-            '-ar', '16000', '-ac', '1', '-y', str(wav_path)
-        ], check=True, capture_output=True, timeout=300)  # таймаут 5 минут
+        # Загружаем аудиофайл
+        audio = AudioSegment.from_file(str(audio_path))
+        
+        # Конвертируем в mono, 16kHz, 16-bit PCM
+        audio = audio.set_channels(1).set_frame_rate(16000).set_sample_width(2)
+        
+        # Экспортируем в WAV
+        audio.export(str(wav_path), format='wav')
         
         return wav_path
-    except subprocess.CalledProcessError as e:
-        error_msg = e.stderr.decode() if e.stderr else 'Неизвестная ошибка'
-        st.error(f"Ошибка конвертации {audio_path.suffix}: {error_msg}")
-        return None
-    except subprocess.TimeoutExpired:
-        st.error("Превышено время конвертации (5 минут)")
+    except ImportError:
+        # Если pydub не установлен, пробуем альтернативный способ
+        try:
+            import librosa
+            import soundfile as sf
+            
+            # Загружаем аудио через librosa
+            y, sr = librosa.load(str(audio_path), sr=16000, mono=True)
+            
+            # Сохраняем как WAV
+            sf.write(str(wav_path), y, sr)
+            
+            return wav_path
+        except ImportError:
+            st.error("❌ Не установлены библиотеки для конвертации. Установите: pip install pydub librosa soundfile")
+            return None
+    except Exception as e:
+        st.error(f"Ошибка конвертации {audio_path.suffix}: {str(e)}")
         return None
 # ============================================================
 
@@ -527,7 +472,7 @@ def process_recording(file_path, sidebar_opts):
     results = {}
     start_time = time.time()
 
-    # Конвертация MP3 в WAV перед обработкой
+    # Конвертация аудио в WAV перед обработкой
     file_path = Path(file_path)
     if file_path.suffix.lower() in ['.mp3', '.m4a', '.flac', '.ogg', '.wma', '.aac']:
         st.write(f"🎵 Обнаружен {file_path.suffix.upper()}-файл. Конвертируем в WAV для обработки...")
@@ -850,13 +795,6 @@ def main():
     st.caption("AI-powered transcription, summarization, and analysis for video and audio recordings")
 
     sidebar_opts = render_sidebar()
-
-    # Проверка FFmpeg (дополнительная проверка через validate_environment)
-    ffmpeg_errors = validate_environment()
-    if ffmpeg_errors:
-        if not FFMPEG_INSTALLED:
-            for err in ffmpeg_errors:
-                st.warning(err)
 
     selected_file = render_file_input()
 
