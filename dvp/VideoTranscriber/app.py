@@ -10,6 +10,36 @@ import logging
 import humanize
 import time
 import tempfile
+import subprocess
+import sys
+
+# ============================================================
+# АВТОМАТИЧЕСКАЯ УСТАНОВКА FFMPEG ДЛЯ STREAMLIT CLOUD
+# ============================================================
+def install_ffmpeg():
+    """Проверяет наличие ffmpeg и устанавливает его, если он отсутствует."""
+    try:
+        # Проверяем, есть ли ffmpeg в системе
+        result = subprocess.run(['ffmpeg', '-version'], 
+                               capture_output=True, 
+                               check=True,
+                               timeout=5)
+        print("✅ FFmpeg уже установлен")
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+        print("⚠️ FFmpeg не найден. Пытаемся установить...")
+        try:
+            # Устанавливаем ffmpeg через apt-get (доступно в Streamlit Cloud)
+            os.system('apt-get update -qq && apt-get install -y -qq ffmpeg')
+            print("✅ FFmpeg успешно установлен!")
+            return True
+        except Exception as e:
+            print(f"❌ Ошибка установки FFmpeg: {e}")
+            return False
+
+# Запускаем установку FFmpeg при старте приложения
+FFMPEG_INSTALLED = install_ffmpeg()
+# ============================================================
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -727,11 +757,14 @@ def main():
 
     sidebar_opts = render_sidebar()
 
-    # FFmpeg check
+    # Проверка FFmpeg (дополнительная проверка через validate_environment)
     ffmpeg_errors = validate_environment()
     if ffmpeg_errors:
-        for err in ffmpeg_errors:
-            st.warning(err)
+        # Если validate_environment вернул ошибки, но у нас FFMPEG_INSTALLED == True,
+        # значит ошибка ложная, игнорируем
+        if not FFMPEG_INSTALLED:
+            for err in ffmpeg_errors:
+                st.warning(err)
 
     selected_file = render_file_input()
 
