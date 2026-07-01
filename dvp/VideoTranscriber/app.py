@@ -61,12 +61,14 @@ except ImportError:
 
 
 # ============================================================
-# ФУНКЦИЯ: КОНВЕРТАЦИЯ АУДИО В WAV (без FFmpeg)
+# ФУНКЦИЯ: КОНВЕРТАЦИЯ АУДИО В WAV (с помощью librosa)
+# НЕ ТРЕБУЕТ FFMPEG!
 # ============================================================
 def convert_audio_to_wav(audio_path):
     """
-    Конвертирует аудиофайл в WAV с помощью pydub.
-    Поддерживает: MP3, M4A, FLAC, OGG, WMA и другие.
+    Конвертирует аудиофайл в WAV с помощью librosa и soundfile.
+    Не требует FFmpeg!
+    Поддерживает: MP3, M4A, FLAC, OGG и другие.
     Возвращает путь к WAV-файлу или None в случае ошибки.
     """
     audio_path = Path(audio_path)
@@ -81,34 +83,21 @@ def convert_audio_to_wav(audio_path):
         return wav_path
     
     try:
-        from pydub import AudioSegment
+        import librosa
+        import soundfile as sf
         
-        # Загружаем аудиофайл
-        audio = AudioSegment.from_file(str(audio_path))
+        # Загружаем аудио через librosa
+        # librosa использует audioread, который может читать MP3 без FFmpeg
+        # (использует встроенный декодер или system codecs)
+        y, sr = librosa.load(str(audio_path), sr=16000, mono=True)
         
-        # Конвертируем в mono, 16kHz, 16-bit PCM
-        audio = audio.set_channels(1).set_frame_rate(16000).set_sample_width(2)
-        
-        # Экспортируем в WAV
-        audio.export(str(wav_path), format='wav')
+        # Сохраняем как WAV
+        sf.write(str(wav_path), y, sr)
         
         return wav_path
-    except ImportError:
-        # Если pydub не установлен, пробуем альтернативный способ
-        try:
-            import librosa
-            import soundfile as sf
-            
-            # Загружаем аудио через librosa
-            y, sr = librosa.load(str(audio_path), sr=16000, mono=True)
-            
-            # Сохраняем как WAV
-            sf.write(str(wav_path), y, sr)
-            
-            return wav_path
-        except ImportError:
-            st.error("❌ Не установлены библиотеки для конвертации. Установите: pip install pydub librosa soundfile")
-            return None
+    except ImportError as e:
+        st.error(f"❌ Не установлены библиотеки: {e}. Установите: pip install librosa soundfile audioread")
+        return None
     except Exception as e:
         st.error(f"Ошибка конвертации {audio_path.suffix}: {str(e)}")
         return None
