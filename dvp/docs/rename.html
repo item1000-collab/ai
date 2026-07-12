@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Renamer Pro - PowerShell Batch Renamer & Trimmer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
+        }
+
+        /* Two-column layout */
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        /* Left column - Instructions */
+        .left-column {
+            flex: 1.2;
+            background: #f8fafc;
+            padding: 28px;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        /* Right column - Commands */
+        .right-column {
+            flex: 1.8;
+            padding: 28px;
+            background: white;
+        }
+
+        /* Headers */
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .left-column .section-title {
+            color: #0f172a;
+            border-bottom-color: #3b82f6;
+        }
+
+        .right-column .section-title {
+            color: #0f172a;
+            border-bottom-color: #10b981;
+        }
+
+        /* PowerShell Guide */
+        .guide-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .method-tab {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .method-btn {
+            padding: 6px 14px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+            transition: all 0.2s;
+        }
+
+        .method-btn.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+        }
+
+        .method-content {
+            display: none;
+        }
+
+        .method-content.active {
+            display: block;
+        }
+
+        .guide-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.1s;
+        }
+
+        .step-number {
+            background: #3b82f6;
+            color: white;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-title {
+            font-weight: 700;
+            font-size: 13px;
+            color: #0f172a;
+        }
+
+        .step-desc {
+            font-size: 11px;
+            color: #475569;
+            margin-top: 3px;
+        }
+
+        .shortcut {
+            background: #1e293b;
+            color: #facc15;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .info-note {
+            background: #eef2ff;
+            border-left: 4px solid #3b82f6;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-top: 18px;
+            color: #1e3a8a;
+            line-height: 1.4;
+        }
+
+        .warning-note {
+            background: #fef9e3;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-top: 18px;
+            color: #78350f;
+        }
+
+        .success-note {
+            background: #ecfdf5;
+            border-left: 4px solid #10b981;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-top: 18px;
+            color: #065f46;
+        }
+
+        /* Folder input */
+        .folder-input {
+            margin-bottom: 24px;
+        }
+
+        .folder-input label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .folder-input input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 13px;
+            font-family: 'Consolas', monospace;
+            background: #f8fafc;
+            transition: 0.2s;
+        }
+
+        .folder-input input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        /* Command boxes */
+        .command-box {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            transition: transform 0.1s;
+        }
+
+        .command-label {
+            color: #10b981;
+            font-family: 'Consolas', monospace;
+            font-size: 11px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            letter-spacing: 0.5px;
+        }
+
+        .badge {
+            background: #334155;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .command-text {
+            color: #e2e8f0;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            background: #1e293b;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .copy-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #2563eb;
+            transform: scale(0.98);
+        }
+
+        .copy-success {
+            background: #10b981;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 2px dashed #cbd5e1;
+        }
+
+        .code-block {
+            background: #1e293b;
+            color: #cbd5e6;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .glow-text {
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        @media (max-width: 900px) {
+            .two-columns {
+                flex-direction: column;
+            }
+            .left-column {
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+        }
+
+        .header-version {
+            font-size: 12px;
+            background: #334155;
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+
+        .footer {
+            background: #f1f5f9;
+            padding: 14px 24px;
+            text-align: center;
+            font-size: 11px;
+            color: #475569;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+<div class="main-wrapper">
+    <div class="header">
+        <h1>📑 File Renamer Pro</h1>
+        <div class="header-version">PowerShell 7+ • 001–999 Naming • Trim First N Chars</div>
+    </div>
+
+    <div class="two-columns">
+        <!-- LEFT: Instructions & Explanation -->
+        <div class="left-column">
+            <div class="section-title">
+                <span>🧠</span> How to Open PowerShell
+            </div>
+
+            <div class="guide-methods">
+                <div class="method-tab">
+                    <button class="method-btn active" onclick="showMethod(0)">Win 10/11</button>
+                    <button class="method-btn" onclick="showMethod(1)">⚡ Quick (Run)</button>
+                    <button class="method-btn" onclick="showMethod(2)">📂 From Folder</button>
+                    <button class="method-btn" onclick="showMethod(3)">🏃 Power User</button>
+                </div>
+
+                <div id="method0" class="method-content active">
+                    <div class="guide-step"><div class="step-number">1</div><div class="step-content"><div class="step-title">Click Start or press <span class="shortcut">Win</span></div><div class="step-desc">Open Windows search</div></div></div>
+                    <div class="guide-step"><div class="step-number">2</div><div class="step-content"><div class="step-title">Type <span class="shortcut">PowerShell</span></div><div class="step-desc">See "Windows PowerShell" or "Terminal"</div></div></div>
+                    <div class="guide-step"><div class="step-number">3</div><div class="step-content"><div class="step-title">Click & Launch</div><div class="step-desc">Blue console appears ✅</div></div></div>
+                </div>
+                <div id="method1" class="method-content">
+                    <div class="guide-step"><div class="step-number">1</div><div class="step-content"><div class="step-title">Press <span class="shortcut">Win + R</span></div><div class="step-desc">Run dialog opens</div></div></div>
+                    <div class="guide-step"><div class="step-number">2</div><div class="step-content"><div class="step-title">Type <span class="shortcut">powershell</span></div><div class="step-desc">Lowercase</div></div></div>
+                    <div class="guide-step"><div class="step-number">3</div><div class="step-content"><div class="step-title">Press <span class="shortcut">Enter</span></div><div class="step-desc">Instant PowerShell</div></div></div>
+                </div>
+                <div id="method2" class="method-content">
+                    <div class="guide-step"><div class="step-number">1</div><div class="step-content"><div class="step-title">Navigate to folder in Explorer</div><div class="step-desc">Open target directory</div></div></div>
+                    <div class="guide-step"><div class="step-number">2</div><div class="step-content"><div class="step-title">Click address bar & type <span class="shortcut">powershell</span></div><div class="step-desc">Replace folder path</div></div></div>
+                    <div class="guide-step"><div class="step-number">3</div><div class="step-content"><div class="step-title">Hit <span class="shortcut">Enter</span></div><div class="step-desc">Opens PS in THAT exact folder</div></div></div>
+                </div>
+                <div id="method3" class="method-content">
+                    <div class="guide-step"><div class="step-number">1</div><div class="step-content"><div class="step-title">Right-click Start button</div><div class="step-desc">Or press Win+X</div></div></div>
+                    <div class="guide-step"><div class="step-number">2</div><div class="step-content"><div class="step-title">Select "Windows PowerShell" / "Terminal"</div><div class="step-desc">Admin or normal</div></div></div>
+                    <div class="guide-step"><div class="step-number">3</div><div class="step-content"><div class="step-title">Ready to execute commands</div><div class="step-desc">⚡</div></div></div>
+                </div>
+            </div>
+
+            <!-- EXPLANATION: Numbering system 001,002,003 -->
+            <div class="info-note">
+                <strong>🔢 HOW 001, 002, 003 NUMBERING WORKS</strong><br>
+                PowerShell uses the format operator <code class="code-block" style="background:#1e293b; padding:2px 6px;">{0:D3}</code><br>
+                • <span class="glow-text">D3</span> = Decimal with <strong>3 digits</strong> (padding zeros)<br>
+                • 1 becomes <strong>001</strong> → 10 becomes <strong>010</strong> → 100 becomes <strong>100</strong><br>
+                • Script loops through files alphabetically and assigns incrementing index.<br>
+                • <strong>Example:</strong> photo.jpg → 001.jpg, doc.pdf → 002.pdf, etc.<br>
+                • Perfect for albums, archives, and sorted lists!
+            </div>
+
+            <!-- NEW: Remove first 4 characters explanation -->
+            <div class="success-note">
+                <strong>✂️ REMOVE FIRST N CHARACTERS (e.g., first 4 chars)</strong><br>
+                Command: <code class="code-block" style="background:#065f46; color:#ccf0e6;">$_.Name.Substring(4)</code><br>
+                • <span class="glow-text">.Substring(4)</span> = removes characters at positions 0,1,2,3 → keeps from index 4 onward.<br>
+                • Example: <strong>"IMG_1234.png"</strong> → becomes <strong>"1234.png"</strong> (removes "IMG_")<br>
+                • Example: <strong>"VID_2024.mp4"</strong> → <strong>"2024.mp4"</strong><br>
+                • <strong>⚠️ Safe preview:</strong> Use <code>-WhatIf</code> flag to see changes without renaming.
+            </div>
+
+            <hr>
+
+            <div class="section-title">
+                <span>📌</span> PowerShell Essentials
+            </div>
+            <div class="info-note" style="margin-top:0;">
+                ✅ <strong>Preview before rename:</strong> Always test with <code>-WhatIf</code> or write-host previews.<br>
+                ✅ <strong>Ordering:</strong> Files are renamed in default alphabetical order (by name).<br>
+                ✅ <strong>Extensions preserved</strong> automatically via <code>$_.Extension</code>.
+            </div>
+            <div class="warning-note">
+                ⚠️ <strong>IRREVERSIBLE</strong> — actual rename commands permanently change names. Always run PREVIEW first.
+            </div>
+        </div>
+
+        <!-- RIGHT: Commands Section -->
+        <div class="right-column">
+            <div class="section-title">
+                <span>⚡</span> Ready-to-Use Commands
+            </div>
+
+            <div class="folder-input">
+                <label>📂 Target Folder Path (any directory)</label>
+                <input type="text" id="folderPath" value="C:\Users\User\Documents\Cuba">
+                <p style="font-size: 10px; margin-top: 5px; color:#475569;">🔁 Edit path → commands update instantly</p>
+            </div>
+
+            <!-- 1. Navigate Command -->
+            <div class="command-box">
+                <div class="command-label">
+                    <span>📍 1. NAVIGATE TO FOLDER</span>
+                    <span class="badge">cd "path"</span>
+                </div>
+                <div class="command-text" id="navigateCommand">cd "C:\Users\User\Documents\Cuba"</div>
+                <button class="copy-btn" onclick="copyNavigateCommand()">📋 Copy Navigate</button>
+            </div>
+
+            <!-- 2. PREVIEW numbering (001-XXX) -->
+            <div class="command-box">
+                <div class="command-label">
+                    <span>👁️ 2. PREVIEW NUMBERING (001, 002...)</span>
+                    <span class="badge">Safe preview, no changes</span>
+                </div>
+                <div class="command-text" id="previewCommand"></div>
+                <button class="copy-btn" onclick="copyPreviewCommand()">📋 Copy Preview</button>
+                <div style="font-size: 10px; color:#94a3b8; margin-top: 6px;">✨ Shows: old_name.ext → 001.ext, 002.ext ...</div>
+            </div>
+
+            <!-- 3. ACTUAL RENAME (001 numbering) -->
+            <div class="command-box">
+                <div class="command-label">
+                    <span>✅ 3. ACTUAL RENAME → 001, 002 ...</span>
+                    <span class="badge">Permanent rename</span>
+                </div>
+                <div class="command-text" id="renameCommand"></div>
+                <button class="copy-btn" onclick="copyRenameCommand()">📋 Copy Rename</button>
+                <div class="warning-note" style="margin-top: 8px; padding: 6px 10px;">⚠️ Executing this will rename ALL files to 001.ext, 002.ext ...</div>
+            </div>
+
+            <!-- NEW BLOCK: REMOVE FIRST 4 CHARACTERS -->
+            <div class="command-box" style="background: #0f172a; border-left: 4px solid #f97316;">
+                <div class="command-label">
+                    <span>✂️ REMOVE FIRST 4 CHARACTERS (TRIM)</span>
+                    <span class="badge">PowerShell Substring</span>
+                </div>
+                <div class="command-text" id="trimPreviewCommand"></div>
+                <button class="copy-btn" onclick="copyTrimPreview()">📋 Copy Preview (Trim 4)</button>
+                <div class="command-text" id="trimRenameCommand" style="margin-top: 12px;"></div>
+                <button class="copy-btn" onclick="copyTrimRename()">⚠️ Copy Actual Trim-Rename</button>
+                <div class="info-note" style="margin-top: 10px; font-size: 11px;">
+                    💡 <strong>How it works:</strong> <code>$_.Name.Substring(4)</code> removes the first 4 characters.
+                    Example: "PRFX_image.jpg" → "image.jpg". <strong>Adjust number:</strong> change '4' to any number (e.g., 6 to remove first 6 chars).
+                </div>
+            </div>
+
+            <!-- BONUS: remove first N chars dynamic explanation -->
+            <div class="success-note">
+                🧪 <strong>CUSTOM TRIM (any length):</strong> Replace number inside Substring(<span class="glow-text">X</span>)<br>
+                • <strong>Remove 2 chars:</strong> <code>$_.Name.Substring(2)</code><br>
+                • <strong>Remove 6 chars:</strong> <code>$_.Name.Substring(6)</code><br>
+                • Works with preview: just add <code>-WhatIf</code> to Rename-Item or print before.
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        🖥️ PowerShell 5.1+ / Windows 10/11 | Copy any command → Paste into PowerShell → Press ENTER | Always backup critical data
+    </div>
+</div>
+
+<script>
+    const folderInput = document.getElementById('folderPath');
+    
+    // Base commands
+    const PREVIEW_NUMBERING = '$i=1; Get-ChildItem -File | ForEach-Object { $newName = "{0:D3}" -f $i + $_.Extension; Write-Host "$($_.Name) → $newName" -ForegroundColor Cyan; $i++ }';
+    const RENAME_NUMBERING = '$i=1; Get-ChildItem -File | ForEach-Object { $newName = "{0:D3}" -f $i + $_.Extension; Rename-Item -LiteralPath $_.Name -NewName $newName; $i++ }';
+    
+    // TRIM commands (remove first 4 chars)
+    const TRIM_PREVIEW_BASE = 'Get-ChildItem -File | ForEach-Object { $newName = $_.Name.Substring(4); Write-Host "$($_.Name) ➜ $newName" -ForegroundColor Yellow }';
+    const TRIM_RENAME_BASE = 'Get-ChildItem -File | ForEach-Object { $newName = $_.Name.Substring(4); Rename-Item -LiteralPath $_.Name -NewName $newName -ErrorAction SilentlyContinue }';
+    
+    function escapePathForPS(p) {
+        // Ensure quotes handle spaces and special chars
+        let cleaned = p.trim().replace(/^["']|["']$/g, '');
+        return `"${cleaned}"`;
+    }
+
+    function updateCommands() {
+        let rawPath = folderInput.value.trim();
+        let quotedPath = rawPath.replace(/^["']|["']$/g, '');
+        // Wrap in double quotes
+        const navigateCmd = `cd "${quotedPath}"`;
+        
+        // Full preview & rename with numbering
+        const fullPreview = `${navigateCmd}; ${PREVIEW_NUMBERING}`;
+        const fullRename = `${navigateCmd}; ${RENAME_NUMBERING}`;
+        
+        // Trim commands: navigate first then trim operations
+        const trimPreviewFull = `${navigateCmd}; ${TRIM_PREVIEW_BASE}`;
+        const trimRenameFull = `${navigateCmd}; ${TRIM_RENAME_BASE}`;
+        
+        document.getElementById('navigateCommand').textContent = navigateCmd;
+        document.getElementById('previewCommand').textContent = fullPreview;
+        document.getElementById('renameCommand').textContent = fullRename;
+        document.getElementById('trimPreviewCommand').textContent = trimPreviewFull;
+        document.getElementById('trimRenameCommand').textContent = trimRenameFull;
+    }
+    
+    // Clipboard helper
+    async function copyToClipboard(text, btnElement) {
+        if (!btnElement) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            const original = btnElement.textContent;
+            btnElement.textContent = '✓ Copied!';
+            btnElement.classList.add('copy-success');
+            setTimeout(() => {
+                btnElement.textContent = original;
+                btnElement.classList.remove('copy-success');
+            }, 1500);
+        } catch(e) {
+            // fallback
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            const original = btnElement.textContent;
+            btnElement.textContent = '✓ Copied!';
+            setTimeout(() => {
+                btnElement.textContent = original;
+            }, 1500);
+        }
+    }
+    
+    function copyNavigateCommand() {
+        const btn = event.target;
+        copyToClipboard(document.getElementById('navigateCommand').textContent, btn);
+    }
+    function copyPreviewCommand() {
+        const btn = event.target;
+        copyToClipboard(document.getElementById('previewCommand').textContent, btn);
+    }
+    function copyRenameCommand() {
+        const btn = event.target;
+        copyToClipboard(document.getElementById('renameCommand').textContent, btn);
+    }
+    function copyTrimPreview() {
+        const btn = event.target;
+        copyToClipboard(document.getElementById('trimPreviewCommand').textContent, btn);
+    }
+    function copyTrimRename() {
+        const btn = event.target;
+        copyToClipboard(document.getElementById('trimRenameCommand').textContent, btn);
+    }
+    
+    function showMethod(index) {
+        const btns = document.querySelectorAll('.method-btn');
+        const contents = document.querySelectorAll('.method-content');
+        btns.forEach((btn, i) => {
+            if (i === index) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        contents.forEach((content, i) => {
+            if (i === index) content.classList.add('active');
+            else content.classList.remove('active');
+        });
+    }
+    
+    folderInput.addEventListener('input', updateCommands);
+    updateCommands();
+    
+    // Additional dynamic explanation regarding substring safety
+    console.log("File Renamer Pro ready — numbering 001-999 and trim first 4 chars available.");
+</script>
+</body>
+</html>
