@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlideClean Pro · light</title>
+
+  <!-- Core Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+
+  <!-- Fonts: Inter + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ———— LIGHT THEME ———— */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #f5f7fa;
+      color: #1e1e2a;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* subtle noise overlay (very light) */
+    .noise-layer {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.06;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* ———— HEADER ———— */
+    header {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      border-bottom: 1px solid #d0d7de;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #1e1e2a;
+    }
+
+    .brand-dot {
+      width: 8px; height: 8px;
+      background: #1e1e2a;
+      border-radius: 1px;
+    }
+
+    .nav-links a {
+      font-size: 13px;
+      color: #4a4a5a;
+      text-decoration: none;
+      margin-left: 24px;
+      transition: color 0.2s;
+      font-weight: 450;
+    }
+    .nav-links a:hover { color: #1e1e2a; }
+
+    /* ———— MAIN ———— */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 72px;
+    }
+
+    /* ———— HERO ———— */
+    .hero-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 36px;
+    }
+
+    .hero-text {
+      text-align: center;
+      max-width: 600px;
+    }
+
+    h1 {
+      font-size: 48px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      background: linear-gradient(145deg, #1e1e2a 0%, #3e3e52 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-desc {
+      font-size: 16px;
+      color: #4a4a5a;
+      line-height: 1.6;
+    }
+
+    /* ———— SPOTLIGHT UPLOAD ———— */
+    .spotlight-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      padding: 1px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
+      transition: box-shadow 0.25s;
+    }
+    .spotlight-wrapper:hover {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    }
+
+    .spotlight-wrapper::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(
+        600px circle at var(--x, 50%) var(--y, 50%),
+        rgba(255, 255, 255, 0.35),
+        transparent 40%
+      );
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .spotlight-wrapper:hover::before { opacity: 1; }
+
+    .drop-zone {
+      position: relative;
+      height: 340px;
+      background: #ffffff;
+      border-radius: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      cursor: pointer;
+      background-image: 
+        linear-gradient(#eef1f4 1px, transparent 1px),
+        linear-gradient(90deg, #eef1f4 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: center center;
+      transition: background 0.2s;
+      border: 1px solid transparent;
+    }
+    .drop-zone:hover {
+      background-color: #fafcfc;
+    }
+
+    .drop-zone::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, transparent 20%, #ffffff 100%);
+      pointer-events: none;
+      border-radius: 15px;
+    }
+
+    /* state UI */
+    .ui-state {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.97);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      z-index: 2;
+      border-radius: 15px;
+    }
+    .ui-state.active {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    .upload-icon {
+      width: 48px; height: 48px;
+      color: #8e8ea0;
+      margin-bottom: 24px;
+      transition: color 0.3s, transform 0.3s;
+    }
+    .drop-zone:hover .upload-icon {
+      color: #1e1e2a;
+      transform: translateY(-4px);
+    }
+
+    .hint-main {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #1e1e2a;
+    }
+
+    .hint-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #6e6e82;
+      background: rgba(0,0,0,0.03);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* scanning line */
+    .scan-line {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: #1e1e2a;
+      box-shadow: 0 0 20px rgba(30,30,42,0.25);
+      animation: scan 1.5s ease-in-out infinite;
+      display: none;
+    }
+    .ui-state.active .scan-line { display: block; }
+    @keyframes scan {
+      0%, 100% { transform: translateY(0); opacity: 0.2; }
+      50% { transform: translateY(160px); opacity: 1; }
+    }
+
+    .log-container {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #4a4a5a;
+      width: 280px;
+      text-align: left;
+      margin-top: 28px;
+      background: rgba(0,0,0,0.02);
+      padding: 8px 14px;
+      border-radius: 10px;
+    }
+    .log-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+      padding-bottom: 2px;
+      opacity: 0;
+      animation: fadeUp 0.25s forwards;
+    }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* success card */
+    .file-card {
+      background: #f0f2f5;
+      border: 1px solid #d0d7de;
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      width: 320px;
+      backdrop-filter: blur(2px);
+    }
+    .file-type-icon {
+      width: 40px; height: 40px;
+      background: #ffffff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #1e1e2a;
+      border: 1px solid #d0d7de;
+      font-weight: 600;
+    }
+    .btn {
+      height: 38px;
+      padding: 0 22px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-primary {
+      background: #1e1e2a;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .btn-primary:hover { background: #2e2e42; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-ghost {
+      background: transparent;
+      color: #4a4a5a;
+      border: 1px solid #d0d7de;
+    }
+    .btn-ghost:hover { border-color: #8e8ea0; color: #1e1e2a; background: #f5f7fa; }
+
+    /* ———— FEATURE GRID (bento) ———— */
+    .grid-section {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .grid-card {
+      background: #ffffff;
+      border: 1px solid #e2e6ec;
+      border-radius: 16px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 230px;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+    }
+
+    .grid-card:hover {
+      border-color: #b8c0cc;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.02);
+    }
+
+    .grid-card h3 {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #1e1e2a;
+    }
+
+    .grid-card p {
+      font-size: 13px;
+      color: #4a4a5a;
+      line-height: 1.6;
+      max-width: 90%;
+    }
+
+    .card-visual {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 12px;
+      opacity: 0.3;
+      transition: opacity 0.3s;
+    }
+    .grid-card:hover .card-visual { opacity: 0.6; }
+    .card-visual svg { width: 100%; height: 100%; max-height: 70px; stroke: #2e2e42; }
+
+    /* ———— FOOTER ———— */
+    footer {
+      border-top: 1px solid #d0d7de;
+      padding: 32px 0 28px;
+      margin-top: auto;
+      background: rgba(255,255,255,0.4);
+      backdrop-filter: blur(4px);
+    }
+
+    .footer-content {
+      max-width: 1080px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: #4a4a5a;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+    .footer-links a, .footer-links span {
+      color: #4a4a5a;
+      text-decoration: none;
+      transition: color 0.2s;
+      font-weight: 400;
+    }
+    .footer-links a:hover { color: #1e1e2a; text-decoration: underline; }
+    .credit-link {
+      background: rgba(0,0,0,0.02);
+      padding: 4px 12px;
+      border-radius: 24px;
+      font-size: 12px;
+      border: 1px solid #e2e6ec;
+    }
+    .credit-link a {
+      color: #1e1e2a;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .credit-link a:hover { text-decoration: underline; }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 36px; }
+      .grid-section { grid-template-columns: 1fr; }
+      .container { padding: 32px 16px; gap: 48px; }
+      .footer-content { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="noise-layer"></div>
+
+  <header>
+    <div class="brand">
+      <div class="brand-dot"></div>
+      SLIDECLEAN PRO
+    </div>
+    <nav class="nav-links">
+      <a href="https://github.com/aaronyang-ai/slideclean" target="_blank">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="container">
+
+    <!-- HERO -->
+    <section class="hero-section">
+      <div class="hero-text">
+        <h1>Remove Watermarks<br>With Precision.</h1>
+        <p class="hero-desc">Engineered for NotebookLM slides. Local processing engine ensures your data never leaves your device.</p>
+      </div>
+
+      <div class="spotlight-wrapper" id="cardWrapper" style="--x: 50%; --y: 50%;">
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" style="display: none;">
+
+          <!-- Idle -->
+          <div class="ui-state active" id="stateIdle">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 16.5V3.5m0 0L7 8.5m5-5l5 5M4 19.5v1.5a2.5 2.5 0 002.5 2.5h11a2.5 2.5 0 002.5-2.5v-1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <div class="hint-main">Drag &amp; Drop File</div>
+            <div class="hint-sub">PDF / IMAGE • MAX 50MB</div>
+          </div>
+
+          <!-- Processing -->
+          <div class="ui-state" id="stateProcessing">
+            <div class="scan-line"></div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; margin-bottom: 8px; color:#1e1e2a;">PROCESSING_QUEUE</div>
+            <div class="log-container" id="logContainer"></div>
+          </div>
+
+          <!-- Success -->
+          <div class="ui-state" id="stateSuccess">
+            <div class="file-card">
+              <div class="file-type-icon" id="resIcon">PDF</div>
+              <div style="flex:1">
+                <div style="font-size: 13px; font-weight: 500; color: #1e1e2a;" id="resName">filename.pdf</div>
+                <div style="font-size: 11px; color: #6e6e82; font-family: 'JetBrains Mono', monospace;" id="resSize">2.4 MB</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn btn-primary" id="downloadBtn">Download Clean File</button>
+              <button class="btn btn-ghost" id="resetBtn">Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURE GRID -->
+    <section class="grid-section">
+      <div class="grid-card">
+        <div>
+          <h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Privacy Native
+          </h3>
+          <p>No servers. No uploads. The entire cleaning pipeline runs inside your browser using WebAssembly.</p>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 100 60" fill="none" stroke="#2e2e42" stroke-width="1.2">
+            <rect x="20" y="20" width="60" height="40" rx="4" fill="#f0f2f5" stroke="#b8c0cc"></rect>
+            <path d="M35 20V12a15 15 0 0 1 30 0v8" stroke="#b8c0cc"></path>
+            <circle cx="50" cy="40" r="4" fill="#8e8ea0" stroke="none"></circle>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid-card">
+        <div>
+          <h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+            Lossless Engine
+          </h3>
+          <p>Smart pixel cloning algorithm only targets the watermark area, leaving your slide content 100% untouched.</p>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 100 60" fill="none">
+            <rect x="20" y="15" width="15" height="15" fill="#e2e6ec" stroke="#b8c0cc" stroke-width="0.5"></rect>
+            <rect x="40" y="15" width="15" height="15" fill="#d5dae0" stroke="#b8c0cc" stroke-width="0.5"></rect>
+            <rect x="60" y="15" width="15" height="15" fill="#e2e6ec" stroke="#b8c0cc" stroke-width="0.5"></rect>
+            <rect x="20" y="35" width="15" height="15" fill="#d5dae0" stroke="#b8c0cc" stroke-width="0.5"></rect>
+            <rect x="40" y="35" width="15" height="15" fill="#c8ced6" stroke="#b8c0cc" stroke-width="0.5"></rect>
+            <rect x="60" y="35" width="15" height="15" fill="#d5dae0" stroke="#b8c0cc" stroke-width="0.5"></rect>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid-card">
+        <div>
+          <h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            Open Source
+          </h3>
+          <p>Transparent and free. View the source code on GitHub to verify how we handle your files.</p>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 100 60" fill="none" stroke="#b8c0cc" stroke-width="2" stroke-linecap="round">
+            <line x1="20" y1="15" x2="60" y2="15"></line>
+            <line x1="20" y1="25" x2="80" y2="25"></line>
+            <line x1="20" y1="35" x2="50" y2="35"></line>
+            <line x1="20" y1="45" x2="70" y2="45"></line>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    <div class="footer-content">
+      <div>© 2025 SlideClean Pro · MIT License</div>
+      <div class="footer-links">
+        <span class="credit-link">
+          ✦ based on <a href="https://github.com/aaronyang-ai/slideclean" target="_blank">github.com/aaronyang-ai/slideclean</a>
+        </span>
+        <span style="color:#8e8ea0; font-size:12px;">— big thanks to the author</span>
+        <a href="#" id="downloadSourceBtn">download source</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // DOM refs
+    const wrapper = document.getElementById('cardWrapper');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const logContainer = document.getElementById('logContainer');
+
+    const uiStates = {
+      idle: document.getElementById('stateIdle'),
+      processing: document.getElementById('stateProcessing'),
+      success: document.getElementById('stateSuccess')
+    };
+
+    let processedBlob = null;
+    let originalName = '';
+
+    // spotlight
+    document.addEventListener('mousemove', (e) => {
+      const rect = wrapper.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      wrapper.style.setProperty('--x', `${x}px`);
+      wrapper.style.setProperty('--y', `${y}px`);
+    });
+
+    function switchState(state) {
+      Object.values(uiStates).forEach(el => el.classList.remove('active'));
+      uiStates[state].classList.add('active');
+    }
+
+    function log(msg, status = 'OK') {
+      const div = document.createElement('div');
+      div.className = 'log-item';
+      div.innerHTML = `<span>${msg}</span><span style="color:#1e1e2a; font-weight:500;">${status}</span>`;
+      logContainer.appendChild(div);
+      if (logContainer.children.length > 6) logContainer.removeChild(logContainer.firstChild);
+    }
+
+    // events
+    dropZone.addEventListener('click', () => {
+      if (uiStates.idle.classList.contains('active')) fileInput.click();
+    });
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer.files.length) start(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) start(e.target.files[0]);
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      fileInput.value = '';
+      processedBlob = null;
+      switchState('idle');
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!processedBlob) return;
+      const url = URL.createObjectURL(processedBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${originalName}_clean.${processedBlob.type.includes('pdf')?'pdf':'png'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    // self-download source
+    document.getElementById('downloadSourceBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      const htmlContent = document.documentElement.outerHTML;
+      const fullHtml = '<!DOCTYPE html>\n' + htmlContent;
+      const blob = new Blob([fullHtml], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'slideclean_pro.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    // ———— WATERMARK CONFIG ————
+    const WM_CONFIG = {
+      widthRatio: 0.0825, heightRatio: 0.0375,
+      marginRightRatio: 0.0025, marginBottomRatio: 0.0027,
+      featherSize: 12
+    };
+
+    async function start(file) {
+      originalName = file.name.replace(/\.[^/.]+$/, '');
+      logContainer.innerHTML = '';
+      switchState('processing');
+
+      try {
+        log('Initializing Pipeline');
+        await new Promise(r => setTimeout(r, 600));
+
+        if (file.type === 'application/pdf') {
+          await processPDF(file);
+        } else if (file.type.startsWith('image/')) {
+          await processImage(file);
+        } else {
+          throw new Error('Invalid file type');
+        }
+      } catch (err) {
+        alert(err.message);
+        switchState('idle');
+      }
+    }
+
+    async function processPDF(file) {
+      log('Parsing PDF Structure');
+      const data = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument(data).promise;
+      const total = pdf.numPages;
+      
+      const { jsPDF } = window.jspdf;
+      let doc = null;
+
+      for (let i = 1; i <= total; i++) {
+        log(`Rendering Page ${i}/${total}`);
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        removeWatermark(ctx, canvas.width, canvas.height);
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.9);
+        
+        if (i === 1) {
+          doc = new jsPDF({
+            orientation: viewport.width > viewport.height ? 'l' : 'p',
+            unit: 'px',
+            format: [viewport.width, viewport.height]
+          });
+        } else {
+          doc.addPage([viewport.width, viewport.height], viewport.width > viewport.height ? 'l' : 'p');
+        }
+        doc.addImage(imgData, 'JPEG', 0, 0, viewport.width, viewport.height);
+      }
+
+      log('Packing Final Document', 'DONE');
+      processedBlob = doc.output('blob');
+      updateSuccessUI(file.size, 'PDF');
+    }
+
+    async function processImage(file) {
+      log('Decoding Image Data');
+      const img = await new Promise((resolve) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.src = URL.createObjectURL(file);
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      log('Patching Watermark Area');
+      removeWatermark(ctx, canvas.width, canvas.height);
+
+      processedBlob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      updateSuccessUI(file.size, 'PNG');
+    }
+
+    function removeWatermark(ctx, w, h) {
+      const wmW = Math.round(w * WM_CONFIG.widthRatio);
+      const wmH = Math.round(h * WM_CONFIG.heightRatio);
+      const mr = Math.round(w * WM_CONFIG.marginRightRatio);
+      const mb = Math.round(h * WM_CONFIG.marginBottomRatio);
+      
+      const x = w - wmW - mr;
+      const y = h - wmH - mb;
+      const srcY = Math.max(0, y - wmH);
+      
+      if (srcY < 0) return;
+
+      const src = ctx.getImageData(x, srcY, wmW, wmH);
+      const dst = ctx.getImageData(x, y, wmW, wmH);
+      const res = ctx.createImageData(wmW, wmH);
+      
+      for (let i = 0; i < wmH; i++) {
+        for (let j = 0; j < wmW; j++) {
+          const idx = (i * wmW + j) * 4;
+          let a = 1.0;
+          if (i < 12) a = Math.min(a, i/12);
+          if (j < 12) a = Math.min(a, j/12);
+          
+          for (let c = 0; c < 4; c++) {
+            res.data[idx+c] = Math.round(dst.data[idx+c]*(1-a) + src.data[idx+c]*a);
+          }
+        }
+      }
+      ctx.putImageData(res, x, y);
+    }
+
+    function updateSuccessUI(size, type) {
+      setTimeout(() => {
+        document.getElementById('resName').innerText = `${originalName}_clean.${type.toLowerCase()}`;
+        document.getElementById('resSize').innerText = (processedBlob.size/1024/1024).toFixed(2) + ' MB';
+        document.getElementById('resIcon').innerText = type;
+        switchState('success');
+      }, 600);
+    }
+  </script>
+</body>
+</html>
