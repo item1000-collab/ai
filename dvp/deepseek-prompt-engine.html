@@ -93,6 +93,72 @@
             user-select: none;
         }
 
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.4rem 0;
+            flex-wrap: wrap;
+        }
+
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ccc;
+            transition: .3s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        .toggle input:checked + .slider {
+            background: #2c4b4e;
+        }
+
+        .toggle input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #1f2b2c;
+        }
+
+        .toggle-hint {
+            font-size: 0.75rem;
+            color: #7b6e5d;
+            margin-left: auto;
+        }
+
         textarea {
             min-height: 120px;
             resize: vertical;
@@ -150,26 +216,10 @@
             background: #e2d9cf;
         }
 
-        .badge {
-            display: inline-block;
-            background: #eae7e1;
-            padding: 0.2rem 0.8rem;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: #2f4b4e;
-        }
-
         .status {
             font-size: 0.8rem;
             color: #6f6a60;
             margin-top: 0.5rem;
-        }
-
-        .favorites-section {
-            border-top: 1px solid #eee8e0;
-            padding-top: 1.5rem;
-            margin-top: 1rem;
         }
     </style>
 </head>
@@ -218,6 +268,17 @@
             </div>
 
             <div class="selector-group">
+                <div class="toggle-row">
+                    <label class="toggle">
+                        <input type="checkbox" id="bilingualToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">📊 Двуязычный перевод (таблица)</span>
+                    <span class="toggle-hint">слева — исходный, справа — перевод</span>
+                </div>
+            </div>
+
+            <div class="selector-group">
                 <label>📝 Source Text (optional)</label>
                 <textarea id="sourceText" placeholder="Paste your text here or use the preset..."></textarea>
             </div>
@@ -236,15 +297,13 @@
     </div>
 
     <script>
-        // --- Prompt Presets ---
+        // --- Prompt Presets (with bilingual table support) ---
         const prompts = {
             standard: {
                 name: '📋 Standard Translation',
                 prompt: `DeepSeek: Translate the following text from {sourceLang} to {targetLang}. Provide a clear, accurate translation with a focus on natural language flow.
 
-SOURCE TEXT:
-{text}
-
+{bilingualSection}
 REQUIREMENTS:
 1. Provide a clean translation
 2. Highlight any advanced vocabulary
@@ -258,9 +317,7 @@ OUTPUT: Complete response only, no extra commentary.`
                 name: '🎓 Academic Style',
                 prompt: `DeepSeek: Translate the following academic text from {sourceLang} to {targetLang}. Maintain formal register and academic tone.
 
-SOURCE TEXT:
-{text}
-
+{bilingualSection}
 REQUIREMENTS:
 1. Use formal academic {targetLang}
 2. Preserve technical terminology
@@ -274,9 +331,7 @@ OUTPUT: Academic translation with proper formatting.`
                 name: '✍️ Creative Writing',
                 prompt: `DeepSeek: Translate the following creative text from {sourceLang} to {targetLang}. Capture the literary style, emotional tone, and artistic expression.
 
-SOURCE TEXT:
-{text}
-
+{bilingualSection}
 REQUIREMENTS:
 1. Preserve literary devices
 2. Maintain emotional impact
@@ -290,9 +345,7 @@ OUTPUT: Creative translation that reads naturally in {targetLang}.`
                 name: '⚙️ Technical Focus',
                 prompt: `DeepSeek: Translate the following technical documentation from {sourceLang} to {targetLang}. Ensure precise terminology and clear technical communication.
 
-SOURCE TEXT:
-{text}
-
+{bilingualSection}
 REQUIREMENTS:
 1. Use standard technical {targetLang} terminology
 2. Create a glossary of technical terms
@@ -306,9 +359,7 @@ OUTPUT: Technical translation with terminology reference.`
                 name: '🔧 Custom Prompt',
                 prompt: `DeepSeek: Translate the following text from {sourceLang} to {targetLang} according to your best judgment.
 
-SOURCE TEXT:
-{text}
-
+{bilingualSection}
 OUTPUT: Provide a complete, well-formatted translation.`
             }
         };
@@ -322,6 +373,7 @@ OUTPUT: Provide a complete, well-formatted translation.`
         const copyBtn = document.getElementById('copyBtn');
         const promptDisplay = document.getElementById('promptDisplay');
         const statusMessage = document.getElementById('statusMessage');
+        const bilingualToggle = document.getElementById('bilingualToggle');
 
         // --- Helper Functions ---
         function getCurrentText() {
@@ -331,6 +383,27 @@ OUTPUT: Provide a complete, well-formatted translation.`
         function getSelectedPrompt() {
             const key = favoritesSelect.value;
             return prompts[key] || null;
+        }
+
+        function buildBilingualSection(source, target, text) {
+            if (!bilingualToggle.checked) return '';
+
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) {
+                return `SOURCE TEXT:\n(No text provided for bilingual table)\n\n`;
+            }
+
+            let table = `BILINGUAL TABLE (${source} → ${target}):\n\n`;
+            table += `| ${source} | ${target} |\n`;
+            table += `|----------|----------|\n`;
+            
+            for (const line of lines) {
+                // Escape pipe characters to avoid breaking markdown table
+                const escaped = line.replace(/\|/g, '\\|');
+                table += `| ${escaped} | *(translation)* |\n`;
+            }
+            table += `\n(Replace *(translation)* with actual translated text)\n\n`;
+            return table;
         }
 
         function loadPrompt() {
@@ -345,22 +418,35 @@ OUTPUT: Provide a complete, well-formatted translation.`
 
             const source = sourceLang.value;
             const target = targetLang.value;
-            let text = getCurrentText();
+            const text = getCurrentText();
+            
+            let bilingualSection = '';
+            
+            if (bilingualToggle.checked && text !== '') {
+                bilingualSection = buildBilingualSection(source, target, text);
+            } else if (bilingualToggle.checked && text === '') {
+                bilingualSection = `BILINGUAL TABLE (${source} → ${target}):\n(Add source text to generate table)\n\n`;
+            } else {
+                // Bilingual off — show regular SOURCE TEXT
+                if (text !== '') {
+                    bilingualSection = `SOURCE TEXT:\n${text}\n\n`;
+                } else {
+                    bilingualSection = '';
+                }
+            }
             
             let filledPrompt = selected.prompt
                 .replace(/\{sourceLang\}/g, source)
-                .replace(/\{targetLang\}/g, target);
+                .replace(/\{targetLang\}/g, target)
+                .replace(/\{bilingualSection\}/g, bilingualSection);
             
-            if (text === '') {
-                filledPrompt = filledPrompt.replace(/SOURCE TEXT:\s*\n\s*\{text\}/g, '');
-                filledPrompt = filledPrompt.replace(/\{text\}/g, '');
-                filledPrompt = filledPrompt.replace(/\n{3,}/g, '\n\n').trim();
-            } else {
-                filledPrompt = filledPrompt.replace(/\{text\}/g, text);
-            }
+            // Clean up extra empty lines
+            filledPrompt = filledPrompt.replace(/\n{3,}/g, '\n\n').trim();
             
             promptDisplay.textContent = filledPrompt;
-            statusMessage.textContent = `✅ Loaded: ${selected.name} (${source} → ${target})`;
+            
+            const mode = bilingualToggle.checked ? '📊 bilingual table' : '📄 standard';
+            statusMessage.textContent = `✅ Loaded: ${selected.name} (${source} → ${target}) — ${mode}`;
             statusMessage.style.color = '#2c4b4e';
         }
 
@@ -425,8 +511,15 @@ OUTPUT: Provide a complete, well-formatted translation.`
             statusMessage.style.color = '#6f6a60';
         });
 
+        bilingualToggle.addEventListener('change', () => {
+            const mode = bilingualToggle.checked ? '📊 bilingual table mode' : '📄 standard mode';
+            statusMessage.textContent = `🔄 Switched to ${mode}. Click "Load Selected Prompt" to refresh.`;
+            statusMessage.style.color = '#6f6a60';
+        });
+
         // --- Load default on page load ---
-        // По умолчанию установлен English → Russian
+        // favoritesSelect.value = 'standard';
+        // loadPrompt();
     </script>
 </body>
 </html>
