@@ -277,9 +277,7 @@ OUTPUT: Provide a complete, well-formatted translation.`
 
         // --- Helper Functions ---
         function getCurrentText() {
-            const raw = sourceText.value.trim();
-            // If empty, return empty string – we'll handle placeholder in loadPrompt
-            return raw;
+            return sourceText.value.trim();
         }
 
         function getSelectedPrompt() {
@@ -298,12 +296,22 @@ OUTPUT: Provide a complete, well-formatted translation.`
             }
 
             let text = getCurrentText();
-            // If source text is empty, we use a clean short message instead of the long placeholder
-            if (text === '') {
-                text = '— No source text provided —';
-            }
             
-            const filledPrompt = selected.prompt.replace('{{text}}', text);
+            // Если поле пустое, заменяем {{text}} на пустую строку (ничего не вставляем)
+            // Вместо того чтобы показывать "No text provided"
+            let filledPrompt = selected.prompt;
+            
+            if (text === '') {
+                // Удаляем строку "SOURCE TEXT:" и заменяем {{text}} на пустоту
+                // Но лучше просто заменить {{text}} на пустую строку,
+                // а строку с "SOURCE TEXT:" уберем, если текст пустой
+                filledPrompt = filledPrompt.replace(/SOURCE TEXT:\s*\n\s*\{\{text\}\}/g, '');
+                filledPrompt = filledPrompt.replace(/\{\{text\}\}/g, '');
+                // Убираем лишние пустые строки
+                filledPrompt = filledPrompt.replace(/\n{3,}/g, '\n\n').trim();
+            } else {
+                filledPrompt = filledPrompt.replace(/\{\{text\}\}/g, text);
+            }
             
             promptDisplay.textContent = filledPrompt;
             statusMessage.textContent = `✅ Loaded: ${selected.name}`;
@@ -361,7 +369,8 @@ OUTPUT: Provide a complete, well-formatted translation.`
             statusMessage.style.color = '#6f6a60';
         });
 
-        // --- Load default on page load (optional) ---
+        // --- Load default on page load ---
+        // Раскомментируйте для автозагрузки
         // favoritesSelect.value = 'standard';
         // loadPrompt();
     </script>
