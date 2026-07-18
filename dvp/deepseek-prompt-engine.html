@@ -74,6 +74,25 @@
             background: #fff;
         }
 
+        .language-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .language-row select {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .arrow {
+            font-size: 1.2rem;
+            color: #7b6e5d;
+            font-weight: 300;
+            user-select: none;
+        }
+
         textarea {
             min-height: 120px;
             resize: vertical;
@@ -172,6 +191,33 @@
             </div>
 
             <div class="selector-group">
+                <label>🌐 Language Pair</label>
+                <div class="language-row">
+                    <select id="sourceLang">
+                        <option value="English">English</option>
+                        <option value="Russian">Russian</option>
+                        <option value="Spanish">Spanish</option>
+                        <option value="French">French</option>
+                        <option value="German">German</option>
+                        <option value="Chinese">Chinese</option>
+                        <option value="Japanese">Japanese</option>
+                        <option value="Korean">Korean</option>
+                    </select>
+                    <span class="arrow">→</span>
+                    <select id="targetLang">
+                        <option value="Russian">Russian</option>
+                        <option value="English">English</option>
+                        <option value="Spanish">Spanish</option>
+                        <option value="French">French</option>
+                        <option value="German">German</option>
+                        <option value="Chinese">Chinese</option>
+                        <option value="Japanese">Japanese</option>
+                        <option value="Korean">Korean</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="selector-group">
                 <label>📝 Source Text (optional)</label>
                 <textarea id="sourceText" placeholder="Paste your text here or use the preset..."></textarea>
             </div>
@@ -194,29 +240,29 @@
         const prompts = {
             standard: {
                 name: '📋 Standard Translation',
-                prompt: `DeepSeek: Translate the following text from English to Russian. Provide a clear, accurate translation with a focus on natural language flow.
+                prompt: `DeepSeek: Translate the following text from {sourceLang} to {targetLang}. Provide a clear, accurate translation with a focus on natural language flow.
 
 SOURCE TEXT:
-{{text}}
+{text}
 
 REQUIREMENTS:
 1. Provide a clean translation
 2. Highlight any advanced vocabulary
 3. Include a brief glossary of key terms
-4. Format as a table: English | Russian
+4. Format as a table: {sourceLang} | {targetLang}
 
 OUTPUT: Complete response only, no extra commentary.`
             },
             
             academic: {
                 name: '🎓 Academic Style',
-                prompt: `DeepSeek: Translate the following academic text from English to Russian. Maintain formal register and academic tone.
+                prompt: `DeepSeek: Translate the following academic text from {sourceLang} to {targetLang}. Maintain formal register and academic tone.
 
 SOURCE TEXT:
-{{text}}
+{text}
 
 REQUIREMENTS:
-1. Use formal academic Russian
+1. Use formal academic {targetLang}
 2. Preserve technical terminology
 3. Include footnotes for key concepts
 4. Provide a bibliography of translated terms
@@ -226,10 +272,10 @@ OUTPUT: Academic translation with proper formatting.`
             
             creative: {
                 name: '✍️ Creative Writing',
-                prompt: `DeepSeek: Translate the following creative text from English to Russian. Capture the literary style, emotional tone, and artistic expression.
+                prompt: `DeepSeek: Translate the following creative text from {sourceLang} to {targetLang}. Capture the literary style, emotional tone, and artistic expression.
 
 SOURCE TEXT:
-{{text}}
+{text}
 
 REQUIREMENTS:
 1. Preserve literary devices
@@ -237,18 +283,18 @@ REQUIREMENTS:
 3. Use poetic and expressive language
 4. Keep the original's artistic voice
 
-OUTPUT: Creative translation that reads naturally in Russian.`
+OUTPUT: Creative translation that reads naturally in {targetLang}.`
             },
             
             technical: {
                 name: '⚙️ Technical Focus',
-                prompt: `DeepSeek: Translate the following technical documentation from English to Russian. Ensure precise terminology and clear technical communication.
+                prompt: `DeepSeek: Translate the following technical documentation from {sourceLang} to {targetLang}. Ensure precise terminology and clear technical communication.
 
 SOURCE TEXT:
-{{text}}
+{text}
 
 REQUIREMENTS:
-1. Use standard technical Russian terminology
+1. Use standard technical {targetLang} terminology
 2. Create a glossary of technical terms
 3. Add notes for complex concepts
 4. Include code examples if present
@@ -258,10 +304,10 @@ OUTPUT: Technical translation with terminology reference.`
             
             custom: {
                 name: '🔧 Custom Prompt',
-                prompt: `DeepSeek: Translate the following text from English to Russian according to your best judgment.
+                prompt: `DeepSeek: Translate the following text from {sourceLang} to {targetLang} according to your best judgment.
 
 SOURCE TEXT:
-{{text}}
+{text}
 
 OUTPUT: Provide a complete, well-formatted translation.`
             }
@@ -269,6 +315,8 @@ OUTPUT: Provide a complete, well-formatted translation.`
 
         // --- DOM Elements ---
         const favoritesSelect = document.getElementById('favoritesSelect');
+        const sourceLang = document.getElementById('sourceLang');
+        const targetLang = document.getElementById('targetLang');
         const sourceText = document.getElementById('sourceText');
         const loadBtn = document.getElementById('loadBtn');
         const copyBtn = document.getElementById('copyBtn');
@@ -295,26 +343,24 @@ OUTPUT: Provide a complete, well-formatted translation.`
                 return;
             }
 
+            const source = sourceLang.value;
+            const target = targetLang.value;
             let text = getCurrentText();
             
-            // Если поле пустое, заменяем {{text}} на пустую строку (ничего не вставляем)
-            // Вместо того чтобы показывать "No text provided"
-            let filledPrompt = selected.prompt;
+            let filledPrompt = selected.prompt
+                .replace(/\{sourceLang\}/g, source)
+                .replace(/\{targetLang\}/g, target);
             
             if (text === '') {
-                // Удаляем строку "SOURCE TEXT:" и заменяем {{text}} на пустоту
-                // Но лучше просто заменить {{text}} на пустую строку,
-                // а строку с "SOURCE TEXT:" уберем, если текст пустой
-                filledPrompt = filledPrompt.replace(/SOURCE TEXT:\s*\n\s*\{\{text\}\}/g, '');
-                filledPrompt = filledPrompt.replace(/\{\{text\}\}/g, '');
-                // Убираем лишние пустые строки
+                filledPrompt = filledPrompt.replace(/SOURCE TEXT:\s*\n\s*\{text\}/g, '');
+                filledPrompt = filledPrompt.replace(/\{text\}/g, '');
                 filledPrompt = filledPrompt.replace(/\n{3,}/g, '\n\n').trim();
             } else {
-                filledPrompt = filledPrompt.replace(/\{\{text\}\}/g, text);
+                filledPrompt = filledPrompt.replace(/\{text\}/g, text);
             }
             
             promptDisplay.textContent = filledPrompt;
-            statusMessage.textContent = `✅ Loaded: ${selected.name}`;
+            statusMessage.textContent = `✅ Loaded: ${selected.name} (${source} → ${target})`;
             statusMessage.style.color = '#2c4b4e';
         }
 
@@ -369,10 +415,18 @@ OUTPUT: Provide a complete, well-formatted translation.`
             statusMessage.style.color = '#6f6a60';
         });
 
+        sourceLang.addEventListener('change', () => {
+            statusMessage.textContent = '🌐 Language changed. Click "Load Selected Prompt" to refresh.';
+            statusMessage.style.color = '#6f6a60';
+        });
+
+        targetLang.addEventListener('change', () => {
+            statusMessage.textContent = '🌐 Language changed. Click "Load Selected Prompt" to refresh.';
+            statusMessage.style.color = '#6f6a60';
+        });
+
         // --- Load default on page load ---
-        // Раскомментируйте для автозагрузки
-        // favoritesSelect.value = 'standard';
-        // loadPrompt();
+        // По умолчанию установлен English → Russian
     </script>
 </body>
 </html>
