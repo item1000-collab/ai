@@ -19,9 +19,9 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            padding: 0 2rem;
+            padding: 0 1.5rem;
         }
 
         .card {
@@ -40,6 +40,10 @@
         }
 
         .selector-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
             margin-bottom: 1.5rem;
         }
 
@@ -72,6 +76,31 @@
             outline: none;
             border-color: #b7aa98;
             background: #fff;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            border-radius: 16px;
+            border: 1px solid #ddd8cf;
+            background: #fefcf9;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            resize: vertical;
+            min-height: 180px;
+            line-height: 1.6;
+        }
+
+        textarea:hover {
+            border-color: #b7aa98;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #b7aa98;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(183, 170, 152, 0.15);
         }
 
         .prompt-display {
@@ -123,6 +152,12 @@
             color: #6f6a60;
             margin-top: 0.5rem;
         }
+
+        .hint {
+            font-size: 0.75rem;
+            color: #8f887d;
+            margin-top: 0.4rem;
+        }
     </style>
 </head>
 <body>
@@ -137,6 +172,12 @@
                     <option value="standard">📋 English-Russian Table</option>
                     <option value="methodist">📝 Статья для Дзен</option>
                 </select>
+            </div>
+
+            <div class="input-group">
+                <label>📝 Optional: Add your custom text</label>
+                <textarea id="customText" placeholder="Paste your text here (optional). It will be prepended to the prompt."></textarea>
+                <div class="hint">If filled, this text will appear at the beginning of the prompt, followed by a blank line and the selected prompt.</div>
             </div>
 
             <div class="button-group">
@@ -249,6 +290,7 @@ Very important: The whole translation must be presented as a table: English | Ru
 
         // --- DOM Elements ---
         const favoritesSelect = document.getElementById('favoritesSelect');
+        const customText = document.getElementById('customText');
         const copyBtn = document.getElementById('copyBtn');
         const promptDisplay = document.getElementById('promptDisplay');
         const statusMessage = document.getElementById('statusMessage');
@@ -259,19 +301,37 @@ Very important: The whole translation must be presented as a table: English | Ru
             return prompts[key] || null;
         }
 
-        function loadPrompt() {
+        function buildFullPrompt() {
             const selected = getSelectedPrompt();
+            const custom = customText.value.trim();
 
             if (!selected) {
+                return null;
+            }
+
+            let fullPrompt = selected.prompt;
+
+            if (custom) {
+                fullPrompt = custom + '\n\n' + fullPrompt;
+            }
+
+            return fullPrompt;
+        }
+
+        function loadPrompt() {
+            const fullPrompt = buildFullPrompt();
+
+            if (!fullPrompt) {
                 promptDisplay.textContent = '⚠️ Please select a prompt preset from the dropdown.';
                 statusMessage.textContent = 'ℹ️ No prompt selected.';
                 statusMessage.style.color = '#6f6a60';
                 return;
             }
 
-            promptDisplay.textContent = selected.prompt;
+            promptDisplay.textContent = fullPrompt;
 
-            statusMessage.textContent = `✅ Loaded: ${selected.name}`;
+            const selected = getSelectedPrompt();
+            statusMessage.textContent = `✅ Loaded: ${selected.name}` + (customText.value.trim() ? ' (with custom text)' : '');
             statusMessage.style.color = '#2c4b4e';
         }
 
@@ -315,6 +375,7 @@ Very important: The whole translation must be presented as a table: English | Ru
         // --- Event Listeners ---
         copyBtn.addEventListener('click', copyPrompt);
         favoritesSelect.addEventListener('change', autoUpdate);
+        customText.addEventListener('input', autoUpdate);
 
         // initial load
         autoUpdate();
