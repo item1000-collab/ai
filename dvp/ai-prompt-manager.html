@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prompt Manager · Local Prompt Manager</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: #f4f6fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.02);
+            padding: 28px 30px 34px;
+            transition: all 0.2s;
+        }
+
+        /* Header */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .app-header h1 {
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            background: linear-gradient(145deg, #1e293b, #3b4a5e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .app-header h1 small {
+            font-size: 15px;
+            font-weight: 400;
+            background: #eef2f6;
+            -webkit-text-fill-color: #2d3a4b;
+            padding: 2px 12px;
+            border-radius: 40px;
+            color: #1e293b;
+            background: #e9edf2;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: white;
+            border: 1px solid #dce2ea;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2a3a;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.15s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .btn-primary {
+            background: #1e293b;
+            border: 1px solid #1e293b;
+            color: white;
+            box-shadow: 0 4px 8px rgba(30, 41, 59, 0.08);
+        }
+
+        .btn-primary:hover {
+            background: #0f1a2b;
+            border-color: #0f1a2b;
+            transform: scale(0.98);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #d0d8e2;
+        }
+
+        .btn-outline:hover {
+            background: #f0f4fb;
+            border-color: #b0bccd;
+        }
+
+        .btn-danger-outline {
+            border: 1px solid #f1d7da;
+            color: #b13e4b;
+        }
+        .btn-danger-outline:hover {
+            background: #fff5f6;
+            border-color: #e3b3b9;
+        }
+
+        /* Search + filter */
+        .search-section {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 180px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 18px 12px 42px;
+            border: 1px solid #dce2ea;
+            border-radius: 60px;
+            font-size: 15px;
+            background: #fafcff;
+            transition: 0.15s;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: #1e293b;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.06);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            opacity: 0.5;
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .category-filter .filter-chip {
+            background: #f1f4f9;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #2b3a4e;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.1s;
+        }
+
+        .category-filter .filter-chip.active {
+            background: #1e293b;
+            color: white;
+            border-color: #1e293b;
+        }
+
+        .category-filter .filter-chip:hover:not(.active) {
+            background: #e5ebf3;
+        }
+
+        /* Prompt grid */
+        .prompt-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 6px;
+            max-height: 460px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .prompt-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+        .prompt-grid::-webkit-scrollbar-track {
+            background: #eef2f8;
+            border-radius: 8px;
+        }
+        .prompt-grid::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+
+        /* Prompt card */
+        .prompt-card {
+            background: white;
+            border: 1px solid #e6ecf3;
+            border-radius: 18px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+        }
+
+        .prompt-card:hover {
+            border-color: #cbd8e8;
+            background: #fbfdff;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.02);
+        }
+
+        .prompt-info {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .prompt-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #0f1a2b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .prompt-category {
+            background: #eef2f8;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 12px;
+            border-radius: 30px;
+            color: #2e405b;
+            letter-spacing: 0.2px;
+        }
+
+        .prompt-text-preview {
+            font-size: 14px;
+            color: #3d5068;
+            margin-top: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 420px;
+        }
+
+        .prompt-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .prompt-actions .btn-icon {
+            background: transparent;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 40px;
+            font-size: 16px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.08s;
+            color: #3b4f6a;
+        }
+
+        .prompt-actions .btn-icon:hover {
+            background: #eef3fc;
+        }
+
+        .prompt-actions .btn-icon.insert-btn {
+            background: #1e293b;
+            color: white;
+            width: auto;
+            padding: 0 18px;
+            font-weight: 500;
+            font-size: 13px;
+            gap: 4px;
+            border-radius: 40px;
+        }
+
+        .prompt-actions .btn-icon.insert-btn:hover {
+            background: #0f1a2b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #5b6f88;
+            background: #f9fbfe;
+            border-radius: 36px;
+            border: 1px dashed #d7e0ea;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.15);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.15s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: white;
+            max-width: 480px;
+            width: 90%;
+            border-radius: 32px;
+            padding: 32px 30px 28px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.12);
+            transform: scale(0.96);
+            transition: 0.15s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal h2 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #0f1a2b;
+        }
+
+        .modal label {
+            font-weight: 500;
+            font-size: 14px;
+            color: #1f2e42;
+            display: block;
+            margin: 16px 0 4px;
+        }
+
+        .modal input, .modal textarea, .modal select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d3dce8;
+            border-radius: 14px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.1s;
+            background: white;
+        }
+
+        .modal input:focus, .modal textarea:focus, .modal select:focus {
+            border-color: #1e293b;
+            box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.05);
+        }
+
+        .modal textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 26px;
+            justify-content: flex-end;
+        }
+
+        .modal-actions .btn {
+            padding: 10px 24px;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #1e293b;
+            color: white;
+            padding: 12px 28px;
+            border-radius: 60px;
+            font-size: 15px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.2s;
+            z-index: 1000;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Feature description section */
+        .feature-description {
+            background: #f8faff;
+            border-radius: 20px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e8edf5;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 32px;
+        }
+
+        .feature-description h3 {
+            grid-column: 1 / -1;
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f1a2b;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+            color: #1f2e42;
+            line-height: 1.5;
+        }
+
+        .feature-item .icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .feature-item strong {
+            font-weight: 600;
+            color: #0f1a2b;
+        }
+
+        @media (max-width: 650px) {
+            .app-container { padding: 20px; }
+            .prompt-card { flex-wrap: wrap; }
+            .prompt-actions { width: 100%; justify-content: flex-end; }
+            .prompt-text-preview { max-width: 100%; }
+            .feature-description {
+                grid-template-columns: 1fr;
+                padding: 16px 18px;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="app-header">
+        <h1>
+            🧠 AI Prompt Manager
+            <small>v1.2</small>
+        </h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" id="addPromptBtn">➕ New Prompt</button>
+            <button class="btn btn-outline" id="exportBtn">⬇️ Export</button>
+            <button class="btn btn-outline" id="importBtn">⬆️ Import</button>
+            <input type="file" id="importFileInput" accept=".json" style="display:none">
+        </div>
+    </div>
+
+    <!-- Feature Description -->
+    <div class="feature-description">
+        <h3>⚡ Prompt Management & Insertion</h3>
+        <div class="feature-item">
+            <span class="icon">📝</span>
+            <div><strong>Create & Manage:</strong> Click "New Prompt" to add a prompt with title, category, and text. Each card has Edit and Delete buttons.</div>
+        </div>
+        <div class="feature-item">
+            <span class="icon">🔍</span>
+            <div><strong>Search & Filter:</strong> Use the search bar to quickly find prompts by title or text. Category filters narrow down your list.</div>
+        </div>
+        <div class="feature-item">
+            <span class="icon">📋</span>
+            <div><strong>Insert Prompt:</strong> Click the "Insert" button on any card — the prompt text is copied to your clipboard with a notification. Simulates pasting into an AI platform input field.</div>
+        </div>
+        <div class="feature-item">
+            <span class="icon">💾</span>
+            <div><strong>Backup & Restore:</strong> Use Export and Import buttons to save all your prompts as a JSON file or restore them from a backup.</div>
+        </div>
+    </div>
+
+    <!-- Search + filters -->
+    <div class="search-section">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search prompts...">
+        </div>
+        <div class="category-filter" id="categoryFilterContainer">
+            <span class="filter-chip active" data-category="all">All</span>
+        </div>
+    </div>
+
+    <!-- Prompt list -->
+    <div id="promptList" class="prompt-grid">
+        <!-- rendered by JS -->
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <h2 id="modalTitle">➕ New Prompt</h2>
+        <label for="promptTitleInput">Title</label>
+        <input id="promptTitleInput" placeholder="e.g. Code Review" />
+        <label for="promptCategoryInput">Category</label>
+        <input id="promptCategoryInput" placeholder="Work, Learning, Creative..." />
+        <label for="promptTextInput">Prompt Text</label>
+        <textarea id="promptTextInput" placeholder="Enter your prompt text..."></textarea>
+        <div class="modal-actions">
+            <button class="btn btn-outline" id="modalCancelBtn">Cancel</button>
+            <button class="btn btn-primary" id="modalSaveBtn">💾 Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+    (function() {
+        // ----- State -----
+        let prompts = [];
+        let editingId = null;
+        let currentCategoryFilter = 'all';
+
+        // DOM
+        const promptListEl = document.getElementById('promptList');
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilterContainer = document.getElementById('categoryFilterContainer');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalTitle = document.getElementById('modalTitle');
+        const promptTitleInput = document.getElementById('promptTitleInput');
+        const promptCategoryInput = document.getElementById('promptCategoryInput');
+        const promptTextInput = document.getElementById('promptTextInput');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        const modalSaveBtn = document.getElementById('modalSaveBtn');
+        const addPromptBtn = document.getElementById('addPromptBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const importBtn = document.getElementById('importBtn');
+        const importFileInput = document.getElementById('importFileInput');
+        const toast = document.getElementById('toast');
+
+        // ----- Load / Save -----
+        function loadPrompts() {
+            try {
+                const stored = localStorage.getItem('ai_prompt_manager_data');
+                if (stored) {
+                    prompts = JSON.parse(stored);
+                } else {
+                    // Demo data
+                    prompts = [
+                        { id: '1', title: 'Tone Analysis', category: 'Marketing', text: 'Analyze the tone of this text: {text}. Highlight the emotional coloring.' },
+                        { id: '2', title: 'Code Review (JS)', category: 'Development', text: 'Perform a code review of this JavaScript snippet. Point out performance issues and suggest improvements.' },
+                        { id: '3', title: 'Post Outline', category: 'Content', text: 'Create a LinkedIn post outline on {topic}. Include an intro, 3 key points, and a call to action.' },
+                    ];
+                }
+            } catch (_) { prompts = []; }
+            renderCategories();
+            renderPrompts();
+        }
+
+        function savePrompts() {
+            localStorage.setItem('ai_prompt_manager_data', JSON.stringify(prompts));
+        }
+
+        // ----- Render -----
+        function renderCategories() {
+            const cats = new Set(prompts.map(p => p.category).filter(Boolean));
+            const allChip = `<span class="filter-chip active" data-category="all">All</span>`;
+            let chips = allChip;
+            for (let c of cats) {
+                const active = currentCategoryFilter === c ? 'active' : '';
+                chips += `<span class="filter-chip ${active}" data-category="${c}">${c}</span>`;
+            }
+            categoryFilterContainer.innerHTML = chips;
+            // Re-bind events
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.addEventListener('click', function(e) {
+                    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategoryFilter = this.dataset.category;
+                    renderPrompts();
+                });
+            });
+        }
+
+        function renderPrompts() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            let filtered = prompts;
+
+            // Category filter
+            if (currentCategoryFilter !== 'all') {
+                filtered = filtered.filter(p => p.category === currentCategoryFilter);
+            }
+
+            // Search
+            if (searchTerm) {
+                filtered = filtered.filter(p => 
+                    p.title.toLowerCase().includes(searchTerm) ||
+                    p.text.toLowerCase().includes(searchTerm) ||
+                    (p.category && p.category.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            if (filtered.length === 0) {
+                promptListEl.innerHTML = `<div class="empty-state">✨ No prompts. Create your first one!</div>`;
+                return;
+            }
+
+            let html = '';
+            for (let p of filtered) {
+                const preview = p.text.length > 60 ? p.text.slice(0, 60) + '…' : p.text;
+                html += `
+                    <div class="prompt-card" data-id="${p.id}">
+                        <div class="prompt-info">
+                            <div class="prompt-title">
+                                ${escapeHtml(p.title)}
+                                <span class="prompt-category">${escapeHtml(p.category || 'Uncategorized')}</span>
+                            </div>
+                            <div class="prompt-text-preview">${escapeHtml(preview)}</div>
+                        </div>
+                        <div class="prompt-actions">
+                            <button class="btn-icon insert-btn" data-id="${p.id}">📋 Insert</button>
+                            <button class="btn-icon" data-action="edit" data-id="${p.id}">✏️</button>
+                            <button class="btn-icon" data-action="delete" data-id="${p.id}">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }
+            promptListEl.innerHTML = html;
+
+            // Event handlers for card buttons (delegation)
+            promptListEl.querySelectorAll('[data-id]').forEach(el => {
+                const id = el.dataset.id;
+                if (el.classList.contains('insert-btn')) {
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        insertPrompt(id);
+                    });
+                } else if (el.dataset.action === 'edit') {
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openEditModal(id);
+                    });
+                } else if (el.dataset.action === 'delete') {
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deletePrompt(id);
+                    });
+                }
+            });
+        }
+
+        // Helper escape
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe.replace(/[&<>"]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                if (m === '"') return '&quot;';
+                return m;
+            });
+        }
+
+        // ----- CRUD -----
+        function addPrompt(title, category, text) {
+            const id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            prompts.push({ id, title, category, text });
+            savePrompts();
+            renderCategories();
+            renderPrompts();
+            showToast('✅ Prompt added');
+        }
+
+        function updatePrompt(id, title, category, text) {
+            const p = prompts.find(p => p.id === id);
+            if (!p) return;
+            p.title = title;
+            p.category = category;
+            p.text = text;
+            savePrompts();
+            renderCategories();
+            renderPrompts();
+            showToast('✅ Prompt updated');
+        }
+
+        function deletePrompt(id) {
+            if (!confirm('Delete this prompt?')) return;
+            prompts = prompts.filter(p => p.id !== id);
+            savePrompts();
+            renderCategories();
+            renderPrompts();
+            showToast('🗑️ Prompt deleted');
+        }
+
+        function insertPrompt(id) {
+            const p = prompts.find(p => p.id === id);
+            if (!p) return;
+            // Simulate insertion: copy text to clipboard and show toast
+            navigator.clipboard.writeText(p.text).then(() => {
+                showToast(`📋 Copied: "${p.title}"`);
+            }).catch(() => {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = p.text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast(`📋 Copied: "${p.title}"`);
+            });
+        }
+
+        // ----- Modal -----
+        function openModal(title = 'New Prompt', data = null) {
+            modalTitle.textContent = title;
+            if (data) {
+                promptTitleInput.value = data.title || '';
+                promptCategoryInput.value = data.category || '';
+                promptTextInput.value = data.text || '';
+                editingId = data.id;
+            } else {
+                promptTitleInput.value = '';
+                promptCategoryInput.value = '';
+                promptTextInput.value = '';
+                editingId = null;
+            }
+            modalOverlay.classList.add('active');
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            editingId = null;
+        }
+
+        function saveFromModal() {
+            const title = promptTitleInput.value.trim();
+            const category = promptCategoryInput.value.trim();
+            const text = promptTextInput.value.trim();
+            if (!title || !text) {
+                showToast('⚠️ Please fill in both title and prompt text');
+                return;
+            }
+            if (editingId) {
+                updatePrompt(editingId, title, category, text);
+            } else {
+                addPrompt(title, category, text);
+            }
+            closeModal();
+        }
+
+        function openEditModal(id) {
+            const p = prompts.find(p => p.id === id);
+            if (!p) return;
+            openModal('✏️ Edit Prompt', { id: p.id, title: p.title, category: p.category, text: p.text });
+        }
+
+        // ----- Export / Import -----
+        function exportData() {
+            const dataStr = JSON.stringify(prompts, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `prompts_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('⬇️ Export successful');
+        }
+
+        function importData(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        prompts = imported;
+                        savePrompts();
+                        renderCategories();
+                        renderPrompts();
+                        showToast('⬆️ Import successful');
+                    } else {
+                        showToast('⚠️ Invalid file format');
+                    }
+                } catch (_) {
+                    showToast('⚠️ Error during import');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ----- Toast -----
+        let toastTimer = null;
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+        }
+
+        // ----- Events -----
+        addPromptBtn.addEventListener('click', () => openModal('➕ New Prompt'));
+
+        modalCancelBtn.addEventListener('click', closeModal);
+        modalSaveBtn.addEventListener('click', saveFromModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+
+        exportBtn.addEventListener('click', exportData);
+        importBtn.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                importData(e.target.files[0]);
+                importFileInput.value = '';
+            }
+        });
+
+        // Search with debounce
+        let searchTimer;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => renderPrompts(), 180);
+        });
+
+        // Load
+        loadPrompts();
+
+        // Keyboard shortcuts in modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Enter' && modalOverlay.classList.contains('active') && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                saveFromModal();
+            }
+        });
+
+    })();
+</script>
+
+</body>
+</html>
