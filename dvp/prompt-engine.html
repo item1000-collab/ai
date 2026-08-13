@@ -44,7 +44,7 @@
         }
 
         .input-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.2rem;
         }
 
         label {
@@ -57,7 +57,8 @@
             margin-bottom: 0.5rem;
         }
 
-        select {
+        select,
+        input[type="text"] {
             width: 100%;
             padding: 0.8rem 1rem;
             border-radius: 16px;
@@ -68,11 +69,13 @@
             transition: all 0.2s ease;
         }
 
-        select:hover {
+        select:hover,
+        input[type="text"]:hover {
             border-color: #b7aa98;
         }
 
-        select:focus {
+        select:focus,
+        input[type="text"]:focus {
             outline: none;
             border-color: #b7aa98;
             background: #fff;
@@ -101,6 +104,17 @@
             border-color: #b7aa98;
             background: #fff;
             box-shadow: 0 0 0 3px rgba(183, 170, 152, 0.15);
+        }
+
+        .inline-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .inline-group .input-group {
+            flex: 1 1 200px;
+            margin-bottom: 1.2rem;
         }
 
         .prompt-display {
@@ -172,8 +186,21 @@
                     <option value="standard">📋 English-Russian Table (source optional: txt file)</option>
                     <option value="methodist">📝 Статья для Дзен (sources: txt and pdf files)</option>
                     <option value="newsclips">📰 News Clips Event (sources - text-file, additional information pdf-file)</option>
-                    <option value="indexofevent">📂 Index of Event (generate HTML page with PDF file list)</option>
+                    <option value="indexofevent">📂 Index of Event (generate HTML page with PDF file list) — (source - screen)</option>
+                    <option value="englishlesson">🇬🇧 English lesson (source - text-file)</option>
                 </select>
+            </div>
+
+            <!-- Teacher & Country inputs -->
+            <div class="inline-group">
+                <div class="input-group">
+                    <label>👩‍🏫 Teacher</label>
+                    <input type="text" id="teacherInput" placeholder="e.g. Mr. Smith" />
+                </div>
+                <div class="input-group">
+                    <label>🌍 Country</label>
+                    <input type="text" id="countryInput" placeholder="e.g. United Kingdom" />
+                </div>
             </div>
 
             <div class="input-group">
@@ -305,7 +332,7 @@ This is a complete, self-contained HTML document for a language learning session
             },
 
             indexofevent: {
-                name: '📂 Index of Event (generate HTML page with PDF file list)',
+                name: '📂 Index of Event (generate HTML page with PDF file list) — (source - screen)',
                 prompt: `Create a complete, self-contained HTML document that displays a list of PDF files based on a screenshot or a provided file list.
 
 ## INPUT DATA (extract from the screenshot or file list):
@@ -379,12 +406,31 @@ Output a complete HTML code that can be saved as a .html file and opened in a br
 - Preserve all visual details: spacing, font sizes, rounding, shadows, colors.
 
 Generate the HTML based on the attached screenshot.`
+            },
+
+            englishlesson: {
+                name: '🇬🇧 English lesson (source - text-file)',
+                prompt: `Create a complete, self-contained HTML document for an English lesson.
+Teacher: [TEACHER]
+Country: [COUNTRY]
+
+REQUIREMENTS:
+1. FULL-WIDTH layout: no margins/padding on body or main wrapper.
+2. TOP BAR: display Teacher, Country. Use light background and dark text with subtle border.
+3. PDF BUTTON BAR: two buttons styled with light background, dark text, border, and rounded corners.
+4. DIALOGUE as supporting element but important part of the page. Remove greetings/farewells/technical filler, private information.
+5. MAIN CONTENT: structured lesson description including target vocabulary, thematic blocks.
+6. Two-paragraph summary at the end. Do NOT number the paragraphs.
+7. Highlight advanced vocabulary / idioms (minimum 5 expressions with definitions).
+8. Clean HTML/CSS, responsive, Google Fonts optional.`
             }
         };
 
         // --- DOM Elements ---
         const favoritesSelect = document.getElementById('favoritesSelect');
         const customText = document.getElementById('customText');
+        const teacherInput = document.getElementById('teacherInput');
+        const countryInput = document.getElementById('countryInput');
         const copyBtn = document.getElementById('copyBtn');
         const promptDisplay = document.getElementById('promptDisplay');
         const statusMessage = document.getElementById('statusMessage');
@@ -398,12 +444,20 @@ Generate the HTML based on the attached screenshot.`
         function buildFullPrompt() {
             const selected = getSelectedPrompt();
             const custom = customText.value.trim();
+            const teacher = teacherInput.value.trim();
+            const country = countryInput.value.trim();
 
             if (!selected) {
                 return null;
             }
 
             let fullPrompt = selected.prompt;
+
+            // Replace placeholders for englishlesson
+            if (selected === prompts.englishlesson) {
+                fullPrompt = fullPrompt.replace('[TEACHER]', teacher || '[Teacher name]');
+                fullPrompt = fullPrompt.replace('[COUNTRY]', country || '[Country]');
+            }
 
             if (custom) {
                 fullPrompt = custom + '\n\n' + fullPrompt;
@@ -425,7 +479,13 @@ Generate the HTML based on the attached screenshot.`
             promptDisplay.textContent = fullPrompt;
 
             const selected = getSelectedPrompt();
-            statusMessage.textContent = `✅ Loaded: ${selected.name}` + (customText.value.trim() ? ' (with custom text)' : '');
+            let name = selected ? selected.name : '';
+            if (selected === prompts.englishlesson) {
+                const teacher = teacherInput.value.trim() || '[Teacher]';
+                const country = countryInput.value.trim() || '[Country]';
+                name = `🇬🇧 English lesson (${teacher}, ${country})`;
+            }
+            statusMessage.textContent = `✅ Loaded: ${name}` + (customText.value.trim() ? ' (with custom text)' : '');
             statusMessage.style.color = '#2c4b4e';
         }
 
@@ -470,6 +530,8 @@ Generate the HTML based on the attached screenshot.`
         copyBtn.addEventListener('click', copyPrompt);
         favoritesSelect.addEventListener('change', autoUpdate);
         customText.addEventListener('input', autoUpdate);
+        teacherInput.addEventListener('input', autoUpdate);
+        countryInput.addEventListener('input', autoUpdate);
 
         // initial load
         autoUpdate();
