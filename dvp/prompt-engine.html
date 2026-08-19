@@ -206,10 +206,11 @@
                     <option value="newsclips">📰 News Clips Event (sources - text-file, additional information pdf-file)</option>
                     <option value="indexofevent">📂 Index of Event (generate HTML page with PDF file list) — (source - screen)</option>
                     <option value="englishlesson">🇬🇧 English lesson (sources: text-file and screen)</option>
+                    <option value="englishlessonarticle">✍️ English lesson article (sources: txt, pdf and screen)</option>
                 </select>
             </div>
 
-            <!-- Teacher & Country inputs — visible only for englishlesson -->
+            <!-- Teacher & Country inputs — visible for englishlesson and englishlessonarticle -->
             <div id="teacherCountryGroup" class="hidden">
                 <div class="inline-group">
                     <div class="input-group">
@@ -614,6 +615,106 @@ REQUIREMENTS:
 The final output should be a single, self-contained HTML document with all the lesson elements.`,
                 showCustomText: false,
                 showTeacherCountry: true
+            },
+
+            // ════════════════════════════════════════════════════════════
+            // НОВЫЙ ПРОМПТ: English lesson article
+            // ════════════════════════════════════════════════════════════
+            englishlessonarticle: {
+                name: '✍️ English lesson article (sources: txt, pdf and screen)',
+                prompt: `Write an engaging, informative article in English based on the following source materials:
+- PDF presentation (slides)
+- Event transcript (text file)
+- Screenshot showing available lesson files
+
+The article should be interesting, educational, and suitable for an English-language blog (e.g., Medium, Substack).
+
+Teacher: [TEACHER]
+Country: [COUNTRY]
+
+REQUIREMENTS FOR THE ARTICLE:
+
+1. LANGUAGE:
+- The article must be written in English.
+- Use a conversational but polished style — inspiring and motivating.
+- All sentences must be DECLARATIVE (no questions of any kind: rhetorical, clarifying, or introductory). Use statements like: "It is important to understand that...", "Pay attention to...", "It should be noted that...", "Notice that...", "Interestingly...", "The key point is...", "Remember that...".
+
+2. USING SOURCE MATERIALS:
+- Insert slide numbers [SLIDE X] from the PDF presentation at appropriate places in the article. Slide numbers must not repeat.
+- If a slide contains English text, quote it directly and provide explanations in English.
+- If a slide contains non-English text, translate it into English and provide explanations.
+- If AI was used in the lesson (e.g., ChatGPT, Maya, or any AI assistant), quote the full AI-generated text in English and provide explanations and commentary in English.
+
+3. VOCABULARY SECTION:
+- Rely on vocabulary slides from the PDF.
+- Present vocabulary in plain text format (NO TABLES).
+- For each vocabulary item, provide:
+  — The English phrase/word.
+  — Literal meaning (if applicable).
+  — Figurative / contextual meaning.
+  — Example from the material (quote + explanation).
+  — How the material explains this vocabulary (quote from the slide + explanation).
+
+4. METAPHORS, SYMBOLS, AND KEY IDEAS:
+- Identify 3–4 key elements from the material (symbols, metaphors, core theses) based on the slides.
+- Explain their significance in English.
+- Quote the slide's interpretation.
+
+5. ARTICLE STRUCTURE:
+
+Title:
+— Clickable and informative — include the topic and a key learning goal.
+— Mention the source of the material (e.g., the TV show, event name, or platform).
+
+Introduction (1–2 paragraphs):
+— An interesting fact or observation related to the topic.
+— ALL SENTENCES MUST BE DECLARATIVE. NO QUESTIONS.
+— Write as a storyteller, not as a conversational partner.
+— Briefly introduce the material and its educational value (based on the introductory slides).
+
+Main Body — Section 1: Content and Context
+— Brief summary of the material's essence (2–3 paragraphs).
+— Key points important for language learning.
+— For each slide, provide a quote of the idea from the slide.
+— A real-life example from the lesson (teacher, student, or AI dialogue) that ILLUSTRATES this idea from the slide.
+— Practical advice for the reader that expands on the slide's idea.
+— Teacher's commentary from the transcript (if available).
+
+Main Body — Section 2: Vocabulary and Language Takeaways
+— Present key vocabulary with explanations as described above.
+— Show how these words/phrases are used in context.
+— Connect vocabulary to the overall theme of the material.
+
+Main Body — Section 3: Deeper Meaning — Metaphors and Symbols
+— Analyze 3–4 symbols or metaphors from the slides.
+— Explain their significance and how they enhance understanding of the topic.
+
+Conclusion (1–2 paragraphs):
+— An inspiring quote from the slides or material.
+— The main takeaway for language learners, based on the final slide.
+— A call to action (practice, review the original material, apply knowledge, etc.).
+
+6. FORMATTING:
+- Use subheadings (##) to separate sections.
+- Use **bold** for key phrases.
+- Use *italics* for quotes.
+- Use emojis (👩‍🏫, 💡, 📌, ⚠️) for visual variety.
+- Place slide references strictly in square brackets [SLIDE X].
+- For quotes:
+  — Quote the original in English.
+  — Provide explanations in English.
+  — Mark teacher's comments with 👩‍🏫 and put them in *italics*.
+- Do NOT use tables.
+
+7. CRITICAL REMINDERS:
+- Verify that slide numbers in the article match the numbers in the PDF.
+- Include teacher comments from the transcript to connect slide theory with live practice (if available).
+- If AI was used, provide the full AI-generated text in English and add explanations in English.
+- All text on the page MUST be in English only — no Russian, no other languages.
+
+The article should be a complete, self-contained piece ready for publication. Use the PDF slides, transcript, and screenshot to extract all necessary information.`,
+                showCustomText: false,
+                showTeacherCountry: true
             }
         };
 
@@ -646,8 +747,8 @@ The final output should be a single, self-contained HTML document with all the l
 
             let fullPrompt = selected.prompt;
 
-            // Replace placeholders for englishlesson
-            if (selected === prompts.englishlesson) {
+            // Replace placeholders for prompts that support teacher/country
+            if (selected === prompts.englishlesson || selected === prompts.englishlessonarticle) {
                 fullPrompt = fullPrompt.replace('[TEACHER]', teacher || '[Teacher name]');
                 fullPrompt = fullPrompt.replace('[COUNTRY]', country || '[Country]');
             }
@@ -695,10 +796,10 @@ The final output should be a single, self-contained HTML document with all the l
 
             const selected = getSelectedPrompt();
             let name = selected ? selected.name : '';
-            if (selected === prompts.englishlesson) {
+            if (selected === prompts.englishlesson || selected === prompts.englishlessonarticle) {
                 const teacher = teacherInput.value.trim() || '[Teacher]';
                 const country = countryInput.value.trim() || '[Country]';
-                name = `🇬🇧 English lesson (${teacher}, ${country}) — sources: text-file and screen`;
+                name = `${selected.name} (${teacher}, ${country})`;
             }
             statusMessage.textContent = `✅ Loaded: ${name}` + (customText.value.trim() ? ' (with custom text)' : '');
             statusMessage.style.color = '#2c4b4e';
