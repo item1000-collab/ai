@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Talk Radio Player</title>
+    <style>
+        /* Dark Theme Base */
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #player-container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        /* Player Styling */
+        .player-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #cover-image {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        #duration {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        /* Standard Audio Controls */
+        audio {
+            width: 100%;
+            margin-bottom: 30px;
+            outline: none;
+        }
+
+        /* Transcript Styling */
+        #transcript-list {
+            border-top: 1px solid #333;
+        }
+
+        .transcript-line {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .transcript-line:hover {
+            background-color: #2a2a2a;
+        }
+
+        .speaker {
+            font-weight: bold;
+            color: #cccccc;
+            margin-right: 5px;
+        }
+
+        /* Active Line Highlighting */
+        .transcript-line.active {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
+        .transcript-line.active .speaker {
+            color: #ffffff;
+        }
+
+        /* Error Message Styling */
+        #error-message {
+            color: #ff6b6b;
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #ff6b6b;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="player-container">
+        <div class="player-header">
+            <img id="cover-image" src="cover.png" alt="Show Cover" onerror="this.style.display='none'">
+            <h1 id="show-title">Loading Show...</h1>
+            <div id="duration"></div>
+        </div>
+
+        <audio id="audio-player" controls src="ai_radio.mp3"></audio>
+        
+        <div id="error-message">
+            <strong>Error:</strong> Could not load show_notes.json. Please check the file exists in the same directory.
+        </div>
+
+        <div id="transcript-list"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const audio = document.getElementById('audio-player');
+            const transcriptList = document.getElementById('transcript-list');
+            const titleEl = document.getElementById('show-title');
+            const durationEl = document.getElementById('duration');
+            const errorEl = document.getElementById('error-message');
+
+            let transcriptData = [];
+
+            // Fetch the JSON data
+            fetch('show_notes.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("HTTP error " + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update UI metadata
+                    titleEl.textContent = data.show_title;
+                    durationEl.textContent = `Duration: ${data.show_duration}`;
+                    
+                    // Format timestamps and render transcript
+                    processAndRenderTranscript(data.timecoded_transcript);
+                })
+                .catch(error => {
+                    console.error('Error loading JSON:', error);
+                    titleEl.style.display = 'none';
+                    durationEl.style.display = 'none';
+                    errorEl.style.display = 'block';
+                    transcriptList.style.display = 'none';
+                });
+
+            // Convert "M:SS" to seconds
+            function parseTimecode(timecode) {
+                const parts = timecode.split(':');
+                const minutes = parseInt(parts[0], 10);
+                const seconds = parseInt(parts[1], 10);
+                return (minutes * 60) + seconds;
+            }
+
+            function processAndRenderTranscript(lines) {
+                transcriptData = lines.map((line, index) => {
+                    const startSeconds = parseTimecode(line.timecode);
+                    // If there's a next line, end is the next start. Else, add 20 seconds.
+                    const nextLine = lines[index + 1];
+                    const endSeconds = nextLine ? parseTimecode(nextLine.timecode) : startSeconds + 20;
+
+                    return {
+                        ...line,
+                        start: startSeconds,
+                        end: endSeconds
+                    };
+                });
+
+                // Create DOM elements
+                transcriptData.forEach((line) => {
+                    const div = document.createElement('div');
+                    div.className = 'transcript-line';
+                    div.dataset.start = line.start;
+
+                    const speakerSpan = document.createElement('span');
+                    speakerSpan.className = 'speaker';
+                    speakerSpan.textContent = `${line.speaker}:`;
+
+                    const textNode = document.createTextNode(` ${line.text}`);
+
+                    div.appendChild(speakerSpan);
+                    div.appendChild(textNode);
+
+                    // Click to seek and play
+                    div.addEventListener('click', () => {
+                        audio.currentTime = line.start;
+                        audio.play();
+                    });
+
+                    transcriptList.appendChild(div);
+                });
+            }
+
+            // Synchronization on timeupdate
+            audio.addEventListener('timeupdate', () => {
+                const currentTime = audio.currentTime;
+                const lines = document.querySelectorAll('.transcript-line');
+                
+                let activeLineFound = false;
+
+                transcriptData.forEach((line, index) => {
+                    const lineEl = lines[index];
+                    
+                    if (currentTime >= line.start && currentTime < line.end) {
+                        if (!lineEl.classList.contains('active')) {
+                            // Remove active class from others
+                            lines.forEach(l => l.classList.remove('active'));
+                            
+                            // Add active class to current
+                            lineEl.classList.add('active');
+                            
+                            // Scroll into view
+                            lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        activeLineFound = true;
+                    }
+                });
+
+                // If no line is active (e.g., paused between lines or at the very end), clear active state
+                if (!activeLineFound) {
+                    lines.forEach(l => l.classList.remove('active'));
+                }
+            });
+        });
+    </script>
+</body>
+</html>
