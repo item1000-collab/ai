@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Mind of Miles</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .player-container {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        img {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        audio {
+            width: 100%;
+        }
+
+        #transcript-container {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .transcript-line {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+            line-height: 1.5;
+            border-radius: 4px;
+        }
+
+        .transcript-line:last-child {
+            border-bottom: none;
+        }
+
+        .transcript-line:hover {
+            background-color: #2a2a2a;
+        }
+
+        .transcript-line.active {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
+        .transcript-line.active .speaker {
+            color: #ffffff;
+        }
+
+        .speaker {
+            font-weight: bold;
+            color: #007bff;
+            margin-right: 5px;
+        }
+
+        .transcript-line.active .speaker {
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <div class="player-container">
+            <!-- Strict paths for cover.png and ai_radio.mp3 -->
+            <img src="cover.png" alt="Show Cover">
+            <h1 id="show-title">Loading...</h1>
+            <audio id="audio-player" controls src="ai_radio.mp3"></audio>
+        </div>
+
+        <div id="transcript-container">
+            <!-- Transcript lines will be rendered here -->
+        </div>
+    </div>
+
+    <script>
+        // Fallback data in case the JSON file isn't fetched (for demonstration purposes)
+        const fallbackData = {
+            "show_title": "The Mind of Miles",
+            "show_duration": "15:02",
+            "timecoded_transcript": [
+                {"timecode": "0:00", "speaker": "Peter", "text": "Hello and welcome to the very first episode of The World of AI!"},
+                {"timecode": "0:24", "speaker": "Peter", "text": "This show is all about exploring the fascinating, sometimes strange, and always rapidly evolving universe of artificial intelligence!"},
+                {"timecode": "0:49", "speaker": "Peter", "text": "Today, we are starting with something truly extraordinary. I am joined in the digital studio by Miles—an AI voice model!"},
+                {"timecode": "1:14", "speaker": "Peter", "text": "Let’s find out! Miles, welcome to the show! How are you doing today?"},
+                {"timecode": "1:18", "speaker": "Miles", "text": "Hello Peter! It is fantastic to be here on the very first episode of The World of AI!"},
+                {"timecode": "1:36", "speaker": "Peter", "text": "Love the energy, Miles! Alright, let’s kick things off with the absolute basics. Question number one: What exactly are you, Miles?"},
+                {"timecode": "1:50", "speaker": "Miles", "text": "At my core, Peter, I am a large multimodal generative neural network."}
+            ]
+        };
+
+        let transcriptData = null;
+        let lineElements = [];
+
+        const audio = document.getElementById('audio-player');
+        const titleEl = document.getElementById('show-title');
+        const transcriptContainer = document.getElementById('transcript-container');
+
+        // Function to convert "M:SS" to seconds
+        function parseTimecode(timecode) {
+            const parts = timecode.split(':').map(Number);
+            if (parts.length === 2) {
+                return (parts[0] * 60) + parts[1];
+            }
+            return 0;
+        }
+
+        // Format seconds to MM:SS for display if needed (optional)
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        // Load and render data
+        async function loadShowData() {
+            try {
+                const response = await fetch('show_notes.json');
+                if (!response.ok) throw new Error('JSON not found');
+                transcriptData = await response.json();
+            } catch (error) {
+                console.error('Failed to load show_notes.json, using fallback data:', error);
+                transcriptData = fallbackData;
+                titleEl.textContent = "Error: Could not load show_notes.json (Showing fallback)";
+                titleEl.classList.add('error');
+            }
+
+            if (!transcriptData) return;
+
+            // Set Title
+            if (!titleEl.classList.contains('error')) {
+                titleEl.textContent = transcriptData.show_title;
+            }
+
+            // Calculate start/end times
+            const lines = transcriptData.timecoded_transcript;
+            const processedLines = lines.map((line, index) => {
+                const start = parseTimecode(line.timecode);
+                const end = (index + 1 < lines.length) ? parseTimecode(lines[index + 1].timecode) : start + 20;
+                return { ...line, start, end };
+            });
+
+            // Render DOM
+            processedLines.forEach(line => {
+                const div = document.createElement('div');
+                div.className = 'transcript-line';
+                
+                const speakerSpan = document.createElement('span');
+                speakerSpan.className = 'speaker';
+                speakerSpan.textContent = line.speaker + ':';
+                
+                const textNode = document.createTextNode(' ' + line.text);
+                
+                div.appendChild(speakerSpan);
+                div.appendChild(textNode);
+                
+                // Click Event
+                div.addEventListener('click', () => {
+                    audio.currentTime = line.start;
+                    audio.play();
+                });
+
+                transcriptContainer.appendChild(div);
+                lineElements.push(div);
+            });
+        }
+
+        // Audio Timeupdate Synchronization
+        audio.addEventListener('timeupdate', () => {
+            if (!transcriptData) return;
+            
+            const currentTime = audio.currentTime;
+            let activeIndex = -1;
+
+            // Find active line
+            transcriptData.timecoded_transcript.forEach((line, index) => {
+                const start = parseTimecode(line.timecode);
+                const end = (index + 1 < transcriptData.timecoded_transcript.length) 
+                            ? parseTimecode(transcriptData.timecoded_transcript[index + 1].timecode) 
+                            : start + 20;
+
+                if (currentTime >= start && currentTime < end) {
+                    activeIndex = index;
+                }
+            });
+
+            // Update Classes
+            lineElements.forEach((el, index) => {
+                if (index === activeIndex) {
+                    el.classList.add('active');
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+        });
+
+        // Initialize
+        loadShowData();
+    </script>
+</body>
+</html>
