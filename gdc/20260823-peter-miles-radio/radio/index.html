@@ -57,6 +57,34 @@
             width: 100%;
         }
 
+        /* Subtle, discreet button */
+        .info-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #2a2a2a; /* Dark gray, almost blends with background */
+            color: #b0b0b0; /* Muted text color */
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            border: 1px solid #333;
+            transition: background-color 0.2s, color 0.2s;
+            opacity: 0;
+            pointer-events: none;
+            margin-top: 5px;
+        }
+
+        .info-btn.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .info-btn:hover {
+            background-color: #333;
+            color: #ffffff;
+        }
+
         #transcript-container {
             background-color: #1e1e1e;
             border-radius: 12px;
@@ -119,10 +147,14 @@
 
     <div id="app">
         <div class="player-container">
-            <!-- Strict paths for cover.png and ai_radio.mp3 -->
             <img src="cover.png" alt="Show Cover">
             <h1 id="show-title">Loading...</h1>
             <audio id="audio-player" controls src="ai_radio.mp3"></audio>
+            
+            <!-- Subtle button, hidden by default via CSS opacity: 0 -->
+            <a href="https://www.youtube.com/watch?v=9KxUe3NO-FE" target="_blank" rel="noopener noreferrer" class="info-btn" id="more-info-btn">
+                More info on YouTube
+            </a>
         </div>
 
         <div id="transcript-container">
@@ -131,7 +163,6 @@
     </div>
 
     <script>
-        // Fallback data in case the JSON file isn't fetched (for demonstration purposes)
         const fallbackData = {
             "show_title": "The Mind of Miles",
             "show_duration": "15:02",
@@ -152,8 +183,8 @@
         const audio = document.getElementById('audio-player');
         const titleEl = document.getElementById('show-title');
         const transcriptContainer = document.getElementById('transcript-container');
+        const moreInfoBtn = document.getElementById('more-info-btn');
 
-        // Function to convert "M:SS" to seconds
         function parseTimecode(timecode) {
             const parts = timecode.split(':').map(Number);
             if (parts.length === 2) {
@@ -162,14 +193,6 @@
             return 0;
         }
 
-        // Format seconds to MM:SS for display if needed (optional)
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
-            return `${mins}:${secs}`;
-        }
-
-        // Load and render data
         async function loadShowData() {
             try {
                 const response = await fetch('show_notes.json');
@@ -184,12 +207,10 @@
 
             if (!transcriptData) return;
 
-            // Set Title
             if (!titleEl.classList.contains('error')) {
                 titleEl.textContent = transcriptData.show_title;
             }
 
-            // Calculate start/end times
             const lines = transcriptData.timecoded_transcript;
             const processedLines = lines.map((line, index) => {
                 const start = parseTimecode(line.timecode);
@@ -197,7 +218,6 @@
                 return { ...line, start, end };
             });
 
-            // Render DOM
             processedLines.forEach(line => {
                 const div = document.createElement('div');
                 div.className = 'transcript-line';
@@ -211,7 +231,6 @@
                 div.appendChild(speakerSpan);
                 div.appendChild(textNode);
                 
-                // Click Event
                 div.addEventListener('click', () => {
                     audio.currentTime = line.start;
                     audio.play();
@@ -222,14 +241,12 @@
             });
         }
 
-        // Audio Timeupdate Synchronization
         audio.addEventListener('timeupdate', () => {
             if (!transcriptData) return;
             
             const currentTime = audio.currentTime;
             let activeIndex = -1;
 
-            // Find active line
             transcriptData.timecoded_transcript.forEach((line, index) => {
                 const start = parseTimecode(line.timecode);
                 const end = (index + 1 < transcriptData.timecoded_transcript.length) 
@@ -241,7 +258,6 @@
                 }
             });
 
-            // Update Classes
             lineElements.forEach((el, index) => {
                 if (index === activeIndex) {
                     el.classList.add('active');
@@ -252,7 +268,11 @@
             });
         });
 
-        // Initialize
+        // Show the button only when the audio has ended
+        audio.addEventListener('ended', () => {
+            moreInfoBtn.classList.add('show');
+        });
+
         loadShowData();
     </script>
 </body>
