@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Talk Radio Player</title>
+    <style>
+        /* Dark theme and base styling */
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /* Player Card Styling */
+        #player-card {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        #cover-img {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #show-title {
+            font-size: 1.5rem;
+            margin: 0 0 10px 0;
+            color: #ffffff;
+        }
+
+        #show-duration {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        /* Transcript Styling */
+        #transcript-container {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .transcript-line {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-radius: 4px;
+        }
+
+        .transcript-line:hover {
+            background-color: #333;
+        }
+
+        .speaker {
+            font-weight: bold;
+            color: #4da3ff;
+            margin-right: 5px;
+        }
+
+        /* Active State */
+        .transcript-line.active {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
+        .transcript-line.active .speaker {
+            color: #ffffff;
+        }
+
+        /* Error Styling */
+        #error-message {
+            color: #ff6b6b;
+            background-color: #2a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <div id="player-card">
+            <img id="cover-img" src="cover.png" alt="Cover Art" onerror="this.style.display='none'">
+            <h1 id="show-title">Loading...</h1>
+            <p id="show-duration">Duration: --:--</p>
+            <audio id="audio-player" controls preload="metadata">
+                <source src="ai_radio.mp3" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+
+        <div id="transcript-container"></div>
+        
+        <div id="error-message">
+            <h2>Error Loading Show Notes</h2>
+            <p>Could not find show_notes.json. Please ensure the file is uploaded to the same directory as this index.html.</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const audio = document.getElementById('audio-player');
+        const transcriptContainer = document.getElementById('transcript-container');
+        const showTitle = document.getElementById('show-title');
+        const showDurationEl = document.getElementById('show-duration');
+        const errorMessage = document.getElementById('error-message');
+
+        // State
+        let transcriptData = null;
+        let lines = []; // Array of transcript objects with startSec and endSec
+
+        // Helper: Convert "M:SS" or "MM:SS" to total seconds
+        function timeToSeconds(timeStr) {
+            if (!timeStr) return 0;
+            const parts = timeStr.split(':');
+            const minutes = parseInt(parts[0], 10);
+            const seconds = parseInt(parts[1], 10);
+            return (minutes * 60) + seconds;
+        }
+
+        // Helper: Format seconds back to MM:SS (for duration display if needed)
+        function formatTime(totalSeconds) {
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = totalSeconds % 60;
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Main Initialization
+        async function init() {
+            try {
+                const response = await fetch('show_notes.json');
+                if (!response.ok) {
+                    throw new Error('HTTP error ' + response.status);
+                }
+                const data = await response.json();
+
+                // Validate basic structure
+                if (!data.show_title || !data.timecoded_transcript) {
+                    throw new Error('Invalid JSON structure');
+                }
+
+                transcriptData = data;
+                showTitle.textContent = transcriptData.show_title;
+                showDurationEl.textContent = 'Duration: ' + transcriptData.show_duration;
+
+                renderTranscript();
+                setupEventListeners();
+
+            } catch (error) {
+                console.error('Error fetching show_notes.json:', error);
+                showTitle.style.display = 'none';
+                showDurationEl.style.display = 'none';
+                transcriptContainer.style.display = 'none';
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        // Render the transcript lines dynamically
+        function renderTranscript() {
+            const rawTranscript = transcriptData.timecoded_transcript;
+            
+            // Calculate start and end seconds for each line
+            lines = rawTranscript.map((item, index) => {
+                const startSec = timeToSeconds(item.timecode);
+                // End time is the next line's start time, or current + 20 if it's the last line
+                let endSec;
+                if (index < rawTranscript.length - 1) {
+                    endSec = timeToSeconds(rawTranscript[index + 1].timecode);
+                } else {
+                    endSec = startSec + 20; // Default 20 seconds for last line
+                }
+
+                return {
+                    ...item,
+                    startSec,
+                    endSec
+                };
+            });
+
+            // Build DOM elements
+            lines.forEach(line => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'transcript-line';
+                lineDiv.dataset.start = line.startSec;
+
+                // Format: <span class="speaker">Name:</span> Text
+                const speakerSpan = document.createElement('span');
+                speakerSpan.className = 'speaker';
+                speakerSpan.textContent = line.speaker + ':';
+
+                lineDiv.appendChild(speakerSpan);
+                lineDiv.appendChild(document.createTextNode(' ' + line.text));
+
+                transcriptContainer.appendChild(lineDiv);
+            });
+        }
+
+        // Event delegation for clicking on transcript lines
+        function setupEventListeners() {
+            transcriptContainer.addEventListener('click', (e) => {
+                // Find the actual transcript line clicked (using closest to handle clicks on nested spans)
+                const target = e.target.closest('.transcript-line');
+                if (target) {
+                    const startTime = parseFloat(target.dataset.start);
+                    audio.currentTime = startTime;
+                    audio.play();
+                }
+            });
+
+            // Timeupdate listener for synchronization
+            audio.addEventListener('timeupdate', () => {
+                const currentTime = audio.currentTime;
+                const activeLineIndex = lines.findIndex(line => 
+                    currentTime >= line.startSec && currentTime < line.endSec
+                );
+
+                // Remove active class from all lines
+                document.querySelectorAll('.transcript-line').forEach(el => {
+                    el.classList.remove('active');
+                });
+
+                // Add active class to the current line
+                if (activeLineIndex !== -1) {
+                    const activeLineEl = document.querySelectorAll('.transcript-line')[activeLineIndex];
+                    if (activeLineEl) {
+                        activeLineEl.classList.add('active');
+                        // Scroll into view smoothly, centered
+                        activeLineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
