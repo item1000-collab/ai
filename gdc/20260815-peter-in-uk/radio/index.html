@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Talk Radio - Digital Tour</title>
+    
+    <!-- Встроенные стили (CSS) -->
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .player-container {
+            width: 100%;
+            max-width: 700px;
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .cover-wrapper {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #cover {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .duration {
+            text-align: center;
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        audio {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        #transcript {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .transcript-line {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+            border-radius: 4px;
+        }
+
+        .transcript-line:hover {
+            background-color: #2a2a2a;
+        }
+
+        .transcript-line.active {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
+        .speaker {
+            font-weight: bold;
+            color: #4caf50;
+            margin-right: 8px;
+        }
+
+        .transcript-line.active .speaker {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="player-container">
+        <!-- Обложка -->
+        <div class="cover-wrapper">
+            <img id="cover" src="cover.png" alt="Show Cover">
+        </div>
+
+        <!-- Заголовок и длительность -->
+        <h1 id="show-title">Загрузка...</h1>
+        <p class="duration" id="show-duration"></p>
+
+        <!-- Аудио плеер -->
+        <audio id="audio-player" controls></audio>
+
+        <!-- Расшифровка -->
+        <div id="transcript" class="transcript"></div>
+    </div>
+
+    <!-- Встроенный скрипт (JavaScript) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const audio = document.getElementById('audio-player');
+            const transcriptDiv = document.getElementById('transcript');
+            const titleEl = document.getElementById('show-title');
+            const durationEl = document.getElementById('show-duration');
+            
+            let linesData = [];
+
+            function timecodeToSeconds(tc) {
+                const parts = tc.split(':').map(Number);
+                if (parts.length === 2) {
+                    return parts[0] * 60 + parts[1];
+                } else if (parts.length === 3) {
+                    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+                }
+                return 0;
+            }
+
+            fetch('show_notes.json')
+                .then(response => response.json())
+                .then(data => {
+                    titleEl.textContent = data.show_title;
+                    durationEl.textContent = "Длительность шоу: " + data.show_duration;
+
+                    linesData = data.timecoded_transcript;
+
+                    linesData.forEach((line, index) => {
+                        line.startSeconds = timecodeToSeconds(line.timecode);
+                        
+                        if (index < linesData.length - 1) {
+                            line.endSeconds = timecodeToSeconds(linesData[index + 1].timecode);
+                        } else {
+                            line.endSeconds = line.startSeconds + 20; 
+                        }
+                    });
+
+                    renderTranscript(linesData);
+                    audio.src = 'ai_radio.mp3';
+                })
+                .catch(error => console.error('Ошибка загрузки JSON:', error));
+
+            function renderTranscript(lines) {
+                transcriptDiv.innerHTML = ''; 
+                lines.forEach(line => {
+                    const div = document.createElement('div');
+                    div.className = 'transcript-line';
+                    div.dataset.start = line.startSeconds;
+
+                    div.innerHTML = `<span class="speaker">${line.speaker}:</span> ${line.text}`;
+
+                    div.addEventListener('click', () => {
+                        audio.currentTime = line.startSeconds;
+                        audio.play();
+                    });
+
+                    transcriptDiv.appendChild(div);
+                });
+            }
+
+            audio.addEventListener('timeupdate', () => {
+                const currentTime = audio.currentTime;
+                const allLines = document.querySelectorAll('.transcript-line');
+
+                allLines.forEach((el, index) => {
+                    const start = parseFloat(el.dataset.start);
+                    const end = linesData[index].endSeconds;
+
+                    if (currentTime >= start && currentTime < end) {
+                        allLines.forEach(l => l.classList.remove('active'));
+                        el.classList.add('active');
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
