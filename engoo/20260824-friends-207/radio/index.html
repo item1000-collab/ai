@@ -26,11 +26,12 @@
             max-width: 600px;
         }
 
+        /* ИЗМЕНЕНИЕ ЗДЕСЬ: Маленькая картинка */
         .cover-img {
-            width: 100%;
-            height: auto;
-            border-radius: 4px;
-            margin-bottom: 20px;
+            width: 200px;       /* Фиксированная маленькая ширина */
+            height: auto;       /* Высота подстраивается автоматически */
+            border-radius: 8px; /* Более заметное скругление */
+            margin-bottom: 15px;
             display: block;
         }
 
@@ -118,24 +119,20 @@
             const transcriptList = document.getElementById('transcript-list');
             const coverImg = document.getElementById('cover-img');
 
-            // Function to convert "M:SS" or "MM:SS" to seconds
             function timecodeToSeconds(timecode) {
                 const parts = timecode.split(':');
                 return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
             }
 
-            // Fetch and load JSON data
             try {
                 const response = await fetch('show_notes.json');
                 if (!response.ok) throw new Error('Failed to fetch show_notes.json');
                 
                 const data = await response.json();
 
-                // Populate static data
                 titleEl.textContent = data.show_title;
                 durationEl.textContent = `Duration: ${data.show_duration}`;
                 
-                // Build transcript with calculated end times
                 const lines = data.timecoded_transcript.map((line, index) => {
                     const startSeconds = timecodeToSeconds(line.timecode);
                     let endSeconds;
@@ -143,13 +140,12 @@
                     if (index < data.timecoded_transcript.length - 1) {
                         endSeconds = timecodeToSeconds(data.timecoded_transcript[index + 1].timecode);
                     } else {
-                        endSeconds = startSeconds + 20; // Default 20 seconds if last line
+                        endSeconds = startSeconds + 20;
                     }
                     
                     return { ...line, startSeconds, endSeconds };
                 });
 
-                // Render transcript lines
                 lines.forEach((line) => {
                     const div = document.createElement('div');
                     div.className = 'transcript-line';
@@ -164,7 +160,6 @@
                     div.appendChild(speakerSpan);
                     div.appendChild(textNode);
 
-                    // Click listener to seek and play
                     div.addEventListener('click', () => {
                         audio.currentTime = line.startSeconds;
                         audio.play();
@@ -173,23 +168,18 @@
                     transcriptList.appendChild(div);
                 });
 
-                // Synchronization logic
                 audio.addEventListener('timeupdate', () => {
                     const currentTime = audio.currentTime;
                     const allLines = transcriptList.querySelectorAll('.transcript-line');
                     
                     allLines.forEach(lineEl => {
                         const start = parseFloat(lineEl.dataset.start);
-                        // Find the line object matching this DOM element
                         const lineData = lines.find(l => l.startSeconds === start);
                         
                         if (currentTime >= lineData.startSeconds && currentTime < lineData.endSeconds) {
                             if (!lineEl.classList.contains('active')) {
-                                // Remove active from others
                                 allLines.forEach(el => el.classList.remove('active'));
-                                // Add active to current
                                 lineEl.classList.add('active');
-                                // Scroll into view smoothly
                                 lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }
                         }
