@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Talk Radio Player</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .player-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .cover-image {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            margin-bottom: 15px;
+        }
+
+        #show-title {
+            font-size: 1.5rem;
+            margin: 0 0 10px 0;
+            font-weight: bold;
+        }
+
+        #show-duration {
+            font-size: 1rem;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        audio {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        #transcript-list {
+            border-top: 1px solid #333;
+        }
+
+        .transcript-line {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            line-height: 1.5;
+        }
+
+        .transcript-line:hover {
+            background-color: #333;
+        }
+
+        .transcript-line.active {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
+        .transcript-line.active .speaker {
+            font-weight: bold;
+        }
+
+        .speaker {
+            font-weight: bold;
+            color: #aaa;
+            margin-right: 5px;
+        }
+
+        .transcript-line.active .speaker {
+            color: #ffffff;
+        }
+
+        #error-message {
+            color: #ff4d4d;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <div id="player-container" class="player-container">
+            <img id="cover-image" src="cover.png" alt="Show Cover" class="cover-image">
+            <h1 id="show-title">Loading...</h1>
+            <p id="show-duration">--:--</p>
+            <audio id="audio-player" controls preload="metadata">
+                <source src="ai_radio.mp3" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+
+        <div id="transcript-list"></div>
+        <div id="error-message"></div>
+    </div>
+
+    <script>
+        const audioPlayer = document.getElementById('audio-player');
+        const transcriptList = document.getElementById('transcript-list');
+        const showTitle = document.getElementById('show-title');
+        const showDuration = document.getElementById('show-duration');
+        const errorMessage = document.getElementById('error-message');
+
+        let transcriptData = [];
+
+        // Function to convert "M:SS" or "MM:SS" to seconds
+        function timecodeToSeconds(timecode) {
+            const parts = timecode.split(':');
+            const minutes = parseInt(parts[0], 10);
+            const seconds = parseInt(parts[1], 10);
+            if (isNaN(minutes) || isNaN(seconds)) return 0;
+            return (minutes * 60) + seconds;
+        }
+
+        // Function to format seconds back to MM:SS (for duration display)
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Fetch data
+        fetch('show_notes.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Set title and duration
+                showTitle.textContent = data.show_title;
+                showDuration.textContent = data.show_duration;
+                
+                // Prepare transcript data with end times
+                transcriptData = data.timecoded_transcript.map((line, index) => {
+                    const startTime = timecodeToSeconds(line.timecode);
+                    let endTime;
+                    
+                    // If it's the last line, add 20 seconds
+                    if (index === data.timecoded_transcript.length - 1) {
+                        endTime = startTime + 20;
+                    } else {
+                        // Otherwise, use the start time of the next line
+                        endTime = timecodeToSeconds(data.timecoded_transcript[index + 1].timecode);
+                    }
+
+                    return {
+                        ...line,
+                        start: startTime,
+                        end: endTime
+                    };
+                });
+
+                renderTranscript();
+            })
+            .catch(error => {
+                console.error('Error loading show notes:', error);
+                showTitle.textContent = 'Error';
+                showDuration.textContent = 'Failed to load data';
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'Error: Could not find show_notes.json. Please ensure the file is uploaded.';
+            });
+
+        // Render transcript lines
+        function renderTranscript() {
+            transcriptList.innerHTML = '';
+            
+            transcriptData.forEach((line, index) => {
+                const div = document.createElement('div');
+                div.classList.add('transcript-line');
+                div.dataset.index = index;
+
+                const speakerSpan = document.createElement('span');
+                speakerSpan.classList.add('speaker');
+                speakerSpan.textContent = `${line.speaker}:`;
+
+                const textNode = document.createTextNode(` ${line.text}`);
+
+                div.appendChild(speakerSpan);
+                div.appendChild(textNode);
+
+                // Click handler to seek and play
+                div.addEventListener('click', () => {
+                    audioPlayer.currentTime = line.start;
+                    audioPlayer.play();
+                });
+
+                transcriptList.appendChild(div);
+            });
+        }
+
+        // Synchronization logic
+        audioPlayer.addEventListener('timeupdate', () => {
+            const currentTime = audioPlayer.currentTime;
+            const lines = document.querySelectorAll('.transcript-line');
+
+            let activeLineFound = false;
+
+            transcriptData.forEach((line, index) => {
+                const lineElement = lines[index];
+                
+                if (currentTime >= line.start && currentTime < line.end) {
+                    if (!lineElement.classList.contains('active')) {
+                        // Remove active class from all
+                        lines.forEach(el => el.classList.remove('active'));
+                        
+                        // Add active class to current
+                        lineElement.classList.add('active');
+                        
+                        // Scroll into view
+                        lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    activeLineFound = true;
+                }
+            });
+
+            // Optional: If no line is active and we are past the end, clear highlights
+            if (!activeLineFound) {
+                lines.forEach(el => el.classList.remove('active'));
+            }
+        });
+    </script>
+</body>
+</html>
