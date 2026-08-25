@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>AI Radio · Transcript Player</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #121212;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      padding: 1.5rem 1rem 3rem;
+      min-height: 100vh;
+    }
+    .app {
+      max-width: 720px;
+      width: 100%;
+      background: #1e1e1e;
+      border-radius: 28px;
+      padding: 1.8rem 1.5rem 2rem;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+    }
+    /* cover – small & neat */
+    .cover-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.2rem;
+    }
+    .cover-wrapper img {
+      width: 200px;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+      background: #2a2a2a;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+    .show-title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      margin: 0.2rem 0 0.1rem;
+      line-height: 1.2;
+      color: #ffffff;
+      word-break: break-word;
+    }
+    .show-duration {
+      font-size: 0.95rem;
+      color: #b0b0b0;
+      margin-bottom: 0.6rem;
+      border-bottom: 1px solid #2c2c2c;
+      padding-bottom: 0.7rem;
+    }
+    .audio-controls {
+      margin: 0.6rem 0 1.5rem;
+    }
+    audio {
+      width: 100%;
+      height: 44px;
+      background: #2a2a2a;
+      border-radius: 60px;
+      outline: none;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+    }
+    audio::-webkit-media-controls-panel {
+      background: #2a2a2a;
+    }
+    .transcript-container {
+      margin-top: 1.2rem;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 4px;
+      scroll-behavior: smooth;
+      border-top: 1px solid #2c2c2c;
+      padding-top: 0.8rem;
+    }
+    .transcript-container::-webkit-scrollbar {
+      width: 5px;
+    }
+    .transcript-container::-webkit-scrollbar-track {
+      background: #1e1e1e;
+    }
+    .transcript-container::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 12px;
+    }
+    .line {
+      padding: 0.7rem 0.9rem;
+      margin: 0.2rem 0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.1s ease, color 0.1s;
+      border-left: 2px solid transparent;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.2rem 0.3rem;
+      word-break: break-word;
+    }
+    .line:hover {
+      background: #2a2a2a;
+    }
+    .line.active {
+      background: #007bff;
+      color: white;
+      border-left-color: #4dabff;
+      box-shadow: 0 2px 10px rgba(0, 123, 255, 0.25);
+    }
+    .line.active .speaker {
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .speaker {
+      font-weight: 600;
+      color: #b0b0ff;
+      margin-right: 0.25rem;
+      white-space: pre-wrap;
+    }
+    .line .text {
+      flex: 1;
+      min-width: 140px;
+    }
+    .error-banner {
+      background: #3a1a1a;
+      color: #ffb0b0;
+      padding: 1.2rem 1rem;
+      border-radius: 16px;
+      border-left: 4px solid #d44;
+      margin: 1.5rem 0;
+      font-weight: 500;
+    }
+    .transcript-placeholder {
+      color: #777;
+      text-align: center;
+      padding: 2rem 0;
+      font-style: italic;
+    }
+    .footer-meta {
+      font-size: 0.8rem;
+      color: #5a5a5a;
+      margin-top: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #262626;
+      padding-top: 0.9rem;
+    }
+    @media (max-width: 480px) {
+      .app { padding: 1.2rem 0.9rem; }
+      .show-title { font-size: 1.3rem; }
+      .cover-wrapper img { width: 160px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- cover -->
+  <div class="cover-wrapper">
+    <img src="cover.png" alt="show cover" id="coverImage" loading="lazy">
+  </div>
+
+  <!-- title & duration -->
+  <div class="show-title" id="showTitle">AI Talk Radio</div>
+  <div class="show-duration" id="showDuration">⏱ 0:00</div>
+
+  <!-- audio player -->
+  <div class="audio-controls">
+    <audio id="audioPlayer" controls preload="metadata">
+      <source src="ai_radio.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+  </div>
+
+  <!-- transcript list -->
+  <div class="transcript-container" id="transcriptContainer">
+    <div class="transcript-placeholder">Loading transcript …</div>
+  </div>
+
+  <div class="footer-meta">
+    <span>📝 time‑synced</span>
+    <span id="generationDate"></span>
+  </div>
+</div>
+
+<script>
+  (function() {
+    "use strict";
+
+    // DOM refs
+    const audio = document.getElementById('audioPlayer');
+    const titleEl = document.getElementById('showTitle');
+    const durationEl = document.getElementById('showDuration');
+    const container = document.getElementById('transcriptContainer');
+    const coverImg = document.getElementById('coverImage');
+    const genDateEl = document.getElementById('generationDate');
+
+    // state
+    let transcriptData = [];          // array of { timecode, speaker, text, startSec, endSec }
+    let showTitle = '';
+    let showDuration = '0:00';
+    let generationDate = '';
+
+    // helpers
+    function timecodeToSeconds(tc) {
+      if (!tc) return 0;
+      const parts = tc.split(':');
+      if (parts.length === 2) {
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      } else if (parts.length === 3) {
+        return parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
+      }
+      return parseInt(tc, 10) || 0;
+    }
+
+    function formatTime(sec) {
+      if (!sec || sec < 0) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // render transcript lines from data
+    function renderTranscript(linesArray) {
+      container.innerHTML = '';
+      if (!linesArray || linesArray.length === 0) {
+        container.innerHTML = '<div class="transcript-placeholder">No transcript lines available.</div>';
+        return;
+      }
+
+      // build DOM elements
+      const fragment = document.createDocumentFragment();
+      linesArray.forEach((line, index) => {
+        const div = document.createElement('div');
+        div.className = 'line';
+        div.dataset.index = index;
+        div.dataset.start = line.startSec;
+
+        const speakerSpan = document.createElement('span');
+        speakerSpan.className = 'speaker';
+        speakerSpan.textContent = (line.speaker ? line.speaker + ':' : 'Speaker:');
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'text';
+        textSpan.textContent = line.text || '';
+
+        div.appendChild(speakerSpan);
+        div.appendChild(textSpan);
+
+        // click seek
+        div.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const start = parseFloat(this.dataset.start);
+          if (!isNaN(start) && audio) {
+            audio.currentTime = start;
+            audio.play().catch(() => {});
+          }
+        });
+
+        fragment.appendChild(div);
+      });
+
+      container.appendChild(fragment);
+    }
+
+    // sync active line based on audio.currentTime
+    function syncActiveLine(currentTime) {
+      if (!transcriptData.length) return;
+
+      let activeIndex = -1;
+      for (let i = 0; i < transcriptData.length; i++) {
+        const line = transcriptData[i];
+        if (currentTime >= line.startSec && currentTime < line.endSec) {
+          activeIndex = i;
+          break;
+        }
+      }
+
+      // if none found, clear active
+      const lines = container.querySelectorAll('.line');
+      lines.forEach((el, idx) => {
+        if (idx === activeIndex) {
+          if (!el.classList.contains('active')) {
+            el.classList.add('active');
+            // scroll into view
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        } else {
+          el.classList.remove('active');
+        }
+      });
+
+      // if activeIndex === -1, all active removed
+    }
+
+    // load show_notes.json
+    async function loadShowNotes() {
+      try {
+        const response = await fetch('show_notes.json');
+        if (!response.ok) throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+        const json = await response.json();
+
+        // validate & extract
+        if (!json || typeof json !== 'object') throw new Error('Invalid JSON structure');
+        showTitle = json.show_title || 'Show Title';
+        showDuration = json.show_duration || '0:00';
+        generationDate = json.date_of_generation || '';
+
+        // set title & duration
+        titleEl.textContent = showTitle;
+        durationEl.textContent = `⏱ ${showDuration}`;
+        if (genDateEl) genDateEl.textContent = generationDate ? `📅 ${generationDate}` : '';
+
+        // transcript
+        let rawLines = json.timecoded_transcript;
+        if (!Array.isArray(rawLines) || rawLines.length === 0) {
+          container.innerHTML = '<div class="transcript-placeholder">No transcript entries.</div>';
+          return;
+        }
+
+        // compute start/end seconds
+        const computed = rawLines.map((item, idx, arr) => {
+          const startSec = timecodeToSeconds(item.timecode);
+          let endSec;
+          if (idx < arr.length - 1) {
+            const nextStart = timecodeToSeconds(arr[idx + 1].timecode);
+            endSec = nextStart;
+          } else {
+            // last line: start + 20 sec (or fallback)
+            endSec = startSec + 20;
+          }
+          // ensure endSec > startSec
+          if (endSec <= startSec) endSec = startSec + 10;
+          return {
+            timecode: item.timecode || '',
+            speaker: item.speaker || 'Speaker',
+            text: item.text || '',
+            startSec: startSec,
+            endSec: endSec
+          };
+        });
+
+        transcriptData = computed;
+        renderTranscript(transcriptData);
+
+        // set audio duration display if metadata loaded
+        if (audio) {
+          if (audio.duration && !isNaN(audio.duration)) {
+            durationEl.textContent = `⏱ ${formatTime(audio.duration)}`;
+          } else {
+            durationEl.textContent = `⏱ ${showDuration}`;
+          }
+        }
+
+        // initial sync
+        if (audio) {
+          syncActiveLine(audio.currentTime || 0);
+        }
+
+      } catch (err) {
+        console.warn('Transcript load error:', err);
+        // display error
+        container.innerHTML = `
+          <div class="error-banner">
+            ⚠️ Could not load show notes.<br>
+            <span style="font-weight:400;font-size:0.9rem;">${err.message || 'Please check show_notes.json'}</span>
+          </div>
+        `;
+        titleEl.textContent = '📻 AI Radio';
+        durationEl.textContent = '⏱ --:--';
+        if (genDateEl) genDateEl.textContent = '';
+      }
+    }
+
+    // ----- init -----
+    function init() {
+      // load json
+      loadShowNotes();
+
+      // audio events
+      if (audio) {
+        // when metadata loads, update duration
+        audio.addEventListener('loadedmetadata', function() {
+          if (audio.duration && !isNaN(audio.duration)) {
+            durationEl.textContent = `⏱ ${formatTime(audio.duration)}`;
+          }
+        });
+
+        // timeupdate: sync transcript
+        audio.addEventListener('timeupdate', function() {
+          if (transcriptData.length) {
+            syncActiveLine(audio.currentTime);
+          }
+        });
+
+        // if user clicks on timeline, we still sync after seek
+        audio.addEventListener('seeked', function() {
+          if (transcriptData.length) {
+            syncActiveLine(audio.currentTime);
+          }
+        });
+
+        // fallback: if play starts and we have no sync yet
+        audio.addEventListener('play', function() {
+          if (transcriptData.length) {
+            syncActiveLine(audio.currentTime);
+          }
+        });
+      }
+
+      // handle cover image fallback (silent)
+      if (coverImg) {
+        coverImg.onerror = function() {
+          // If cover fails, keep it as is (no broken icon)
+          this.style.display = 'none';
+        };
+      }
+    }
+
+    // run after DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>
+</body>
+</html>
