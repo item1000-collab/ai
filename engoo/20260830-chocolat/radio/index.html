@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chocolat · AI radio show</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #121212;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .app {
+            max-width: 720px;
+            width: 100%;
+            background: #1e1e1e;
+            border-radius: 2rem;
+            padding: 2rem 1.8rem 2.2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+            transition: all 0.1s ease;
+        }
+
+        /* cover – small & neat */
+        .cover-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .cover-image {
+            width: 200px;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            background: #2a2a2a;
+            object-fit: cover;
+        }
+
+        .show-title {
+            font-size: 1.7rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            text-align: center;
+            margin: 0.2rem 0 0.1rem;
+            color: #f0f0f0;
+        }
+
+        .duration {
+            text-align: center;
+            font-size: 0.95rem;
+            color: #aaa;
+            margin-bottom: 1.2rem;
+            border-bottom: 1px solid #2c2c2c;
+            padding-bottom: 0.7rem;
+        }
+
+        /* audio player */
+        audio {
+            width: 100%;
+            margin: 0.5rem 0 1.8rem;
+            background: #2a2a2a;
+            border-radius: 40px;
+            height: 48px;
+            display: block;
+        }
+
+        audio::-webkit-media-controls-panel {
+            background: #2a2a2a;
+        }
+
+        /* transcript */
+        .transcript-container {
+            max-height: 460px;
+            overflow-y: auto;
+            padding-right: 4px;
+            scroll-behavior: smooth;
+            border-radius: 12px;
+            background: #181818;
+            padding: 0.25rem 0.1rem 0.25rem 0.25rem;
+        }
+
+        .transcript-container::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .transcript-container::-webkit-scrollbar-track {
+            background: #252525;
+            border-radius: 8px;
+        }
+
+        .transcript-container::-webkit-scrollbar-thumb {
+            background: #3a3a3a;
+            border-radius: 8px;
+        }
+
+        .transcript-line {
+            padding: 0.7rem 0.9rem;
+            margin: 0.2rem 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.1s ease, color 0.1s ease;
+            border-bottom: 1px solid #282828;
+            line-height: 1.5;
+            font-size: 0.98rem;
+            word-break: break-word;
+        }
+
+        .transcript-line:last-of-type {
+            border-bottom: none;
+        }
+
+        .transcript-line:hover {
+            background: #2a2a2a;
+        }
+
+        .transcript-line.active {
+            background: #007bff;
+            color: white;
+            border-bottom-color: #007bff;
+            box-shadow: 0 2px 10px rgba(0, 123, 255, 0.3);
+        }
+
+        .transcript-line.active .speaker-name {
+            color: white;
+            font-weight: 600;
+        }
+
+        .speaker-name {
+            font-weight: 600;
+            color: #9bb7ff;
+            margin-right: 0.5rem;
+            letter-spacing: 0.2px;
+        }
+
+        .transcript-line .speaker-name::after {
+            content: ":";
+        }
+
+        .error-message {
+            background: #2a1a1a;
+            color: #ff8a80;
+            padding: 1.5rem 1rem;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            border: 1px solid #5a2a2a;
+            margin: 1rem 0;
+        }
+
+        .footnote {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #555;
+            margin-top: 1.4rem;
+            letter-spacing: 0.3px;
+            border-top: 1px solid #282828;
+            padding-top: 1rem;
+        }
+
+        @media (max-width: 550px) {
+            .app {
+                padding: 1.2rem 0.8rem;
+            }
+            .cover-image {
+                width: 160px;
+            }
+            .show-title {
+                font-size: 1.3rem;
+            }
+            .transcript-line {
+                font-size: 0.9rem;
+                padding: 0.6rem 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app" id="app">
+    <div class="cover-wrapper">
+        <img class="cover-image" src="cover.png" alt="Show cover" id="coverImg">
+    </div>
+    <h1 class="show-title" id="showTitle">Chocolat: Cinema Meets AI</h1>
+    <div class="duration" id="durationDisplay">⏱ 2:44</div>
+
+    <audio id="audioPlayer" controls preload="metadata">
+        <source src="ai_radio.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <div class="transcript-container" id="transcriptContainer">
+        <!-- lines injected by JS -->
+        <div class="error-message" id="errorMessage">⏳ loading transcript…</div>
+    </div>
+    <div class="footnote">🎧 click any line · auto‑sync</div>
+</div>
+
+<script>
+    (function() {
+        // ----- DOM refs -----
+        const audio = document.getElementById('audioPlayer');
+        const titleEl = document.getElementById('showTitle');
+        const durationDisplay = document.getElementById('durationDisplay');
+        const container = document.getElementById('transcriptContainer');
+        const errorMsg = document.getElementById('errorMessage');
+        const coverImg = document.getElementById('coverImg');
+
+        // ----- state -----
+        let transcriptData = [];          // array of { start, end, speaker, text, timecode }
+        let isDataLoaded = false;
+        let activeLineIndex = -1;
+        let lineElements = [];            // keep for click / active management
+
+        // ----- helpers -----
+        function timeToSeconds(timeStr) {
+            if (!timeStr) return 0;
+            const parts = timeStr.split(':').map(Number);
+            if (parts.length === 2) {
+                return parts[0] * 60 + parts[1];
+            } else if (parts.length === 3) {
+                return parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+            return 0;
+        }
+
+        // build transcript lines from JSON
+        function buildTranscript(entries) {
+            if (!entries || entries.length === 0) {
+                container.innerHTML = `<div class="error-message">⚠️ no transcript lines found</div>`;
+                return;
+            }
+
+            // compute end seconds for each line
+            const enriched = entries.map((item, idx, arr) => {
+                const start = timeToSeconds(item.timecode);
+                let end = start + 20; // fallback
+                if (idx < arr.length - 1) {
+                    const nextStart = timeToSeconds(arr[idx + 1].timecode);
+                    if (nextStart > start) {
+                        end = nextStart;
+                    }
+                }
+                return {
+                    ...item,
+                    start,
+                    end,
+                };
+            });
+
+            transcriptData = enriched;
+            renderLines(enriched);
+        }
+
+        // render lines into container
+        function renderLines(lines) {
+            container.innerHTML = '';   // clear
+            lineElements = [];
+
+            lines.forEach((line, index) => {
+                const div = document.createElement('div');
+                div.className = 'transcript-line';
+                div.dataset.index = index;
+                div.dataset.start = line.start;
+
+                const speakerSpan = document.createElement('span');
+                speakerSpan.className = 'speaker-name';
+                speakerSpan.textContent = line.speaker || 'Unknown';
+
+                const textSpan = document.createElement('span');
+                textSpan.className = 'line-text';
+                textSpan.textContent = line.text || '';
+
+                div.appendChild(speakerSpan);
+                div.appendChild(textSpan);
+
+                // click handler
+                div.addEventListener('click', function(e) {
+                    const startSec = parseFloat(this.dataset.start);
+                    if (!isNaN(startSec) && audio) {
+                        audio.currentTime = startSec;
+                        audio.play().catch(() => {});
+                        // remove active from all, then set active on this
+                        setActiveLine(parseInt(this.dataset.index));
+                    }
+                });
+
+                container.appendChild(div);
+                lineElements.push(div);
+            });
+
+            // if we had an error message, remove it
+            const err = document.getElementById('errorMessage');
+            if (err) err.remove();
+
+            // after render, sync with current audio time
+            if (audio && audio.currentTime > 0) {
+                syncTranscript(audio.currentTime);
+            }
+        }
+
+        // set active line by index, scroll into view
+        function setActiveLine(index) {
+            // remove active class from all
+            lineElements.forEach(el => el.classList.remove('active'));
+            activeLineIndex = -1;
+
+            if (index >= 0 && index < lineElements.length) {
+                const el = lineElements[index];
+                el.classList.add('active');
+                activeLineIndex = index;
+                // scroll into view (center)
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // sync transcript with currentTime
+        function syncTranscript(currentTime) {
+            if (!transcriptData.length || !lineElements.length) return;
+
+            let foundIndex = -1;
+            for (let i = 0; i < transcriptData.length; i++) {
+                const line = transcriptData[i];
+                if (currentTime >= line.start && currentTime < line.end) {
+                    foundIndex = i;
+                    break;
+                }
+            }
+
+            // if nothing found, but time is after last line, we can keep last active? 
+            // but we want to deactivate if we're past last line.
+            if (foundIndex === -1) {
+                // if currentTime is past the end of last line, remove active
+                const last = transcriptData[transcriptData.length - 1];
+                if (last && currentTime >= last.end) {
+                    // remove active class
+                    lineElements.forEach(el => el.classList.remove('active'));
+                    activeLineIndex = -1;
+                } else {
+                    // if we are before first line, also remove active
+                    const first = transcriptData[0];
+                    if (first && currentTime < first.start) {
+                        lineElements.forEach(el => el.classList.remove('active'));
+                        activeLineIndex = -1;
+                    }
+                }
+                return;
+            }
+
+            // if found index differs from active, update
+            if (foundIndex !== activeLineIndex) {
+                setActiveLine(foundIndex);
+            }
+        }
+
+        // ----- load JSON -----
+        function loadShowNotes() {
+            fetch('show_notes.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // validate basic structure
+                    if (!data || typeof data !== 'object') {
+                        throw new Error('Invalid JSON structure');
+                    }
+
+                    // set title & duration
+                    if (data.show_title) {
+                        titleEl.textContent = data.show_title;
+                    }
+                    if (data.show_duration) {
+                        durationDisplay.textContent = `⏱ ${data.show_duration}`;
+                    } else if (data.show_duration === undefined) {
+                        durationDisplay.textContent = '⏱ --:--';
+                    }
+
+                    // transcript
+                    if (data.timecoded_transcript && Array.isArray(data.timecoded_transcript)) {
+                        buildTranscript(data.timecoded_transcript);
+                        isDataLoaded = true;
+                    } else {
+                        container.innerHTML = `<div class="error-message">⚠️ missing timecoded_transcript array</div>`;
+                    }
+
+                    // optional: cover image already set in src, but if missing we keep default
+                    if (data.cover_image) {
+                        // but we follow strict: cover.png is fixed. we ignore json cover field.
+                        // keep cover.png as is.
+                    }
+                })
+                .catch(err => {
+                    console.warn('Fetch error:', err);
+                    container.innerHTML = `<div class="error-message">❌ Could not load show_notes.json<br><span style="font-size:0.8rem;color:#aa6a6a;">${err.message || 'network error'}</span></div>`;
+                    titleEl.textContent = '⚠️ show notes unavailable';
+                });
+        }
+
+        // ----- audio timeupdate -----
+        function onTimeUpdate() {
+            if (!isDataLoaded || transcriptData.length === 0) return;
+            const current = audio.currentTime;
+            syncTranscript(current);
+        }
+
+        // ----- audio metadata load (duration fallback) -----
+        function onLoadedMetadata() {
+            if (audio.duration && !isNaN(audio.duration)) {
+                // we can keep duration from json, but if not present we can set from audio
+                if (durationDisplay.textContent === '⏱ --:--' || durationDisplay.textContent === '⏱ 0:00') {
+                    const mins = Math.floor(audio.duration / 60);
+                    const secs = Math.floor(audio.duration % 60);
+                    durationDisplay.textContent = `⏱ ${mins}:${secs.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+
+        // ----- init -----
+        function init() {
+            // ensure cover is set (if missing, fallback)
+            coverImg.src = 'cover.png';
+            coverImg.alt = 'cover';
+
+            // load data
+            loadShowNotes();
+
+            // event listeners
+            audio.addEventListener('timeupdate', onTimeUpdate);
+            audio.addEventListener('loadedmetadata', onLoadedMetadata);
+
+            // if audio ends, remove active line (optional)
+            audio.addEventListener('ended', function() {
+                lineElements.forEach(el => el.classList.remove('active'));
+                activeLineIndex = -1;
+            });
+
+            // if user seeks, sync after a small delay (timeupdate covers it, but ensure)
+            audio.addEventListener('seeked', function() {
+                if (isDataLoaded) {
+                    syncTranscript(audio.currentTime);
+                }
+            });
+
+            // if any click on transcript lines we already handle via line click.
+            // also handle error case: if cover not found, it's okay.
+        }
+
+        // start when DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+    })();
+</script>
+</body>
+</html>
