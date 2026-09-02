@@ -57,7 +57,114 @@
             margin-bottom: 0.5rem;
         }
 
-        select,
+        /* ===== КАСТОМНЫЙ СЕЛЕКТ ===== */
+        .custom-select {
+            position: relative;
+            width: 100%;
+            user-select: none;
+        }
+
+        .custom-select-trigger {
+            width: 100%;
+            padding: 0.8rem 2.8rem 0.8rem 1rem;
+            border-radius: 16px;
+            border: 1px solid #ddd8cf;
+            background: #fefcf9;
+            font-size: 0.9rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            min-height: 52px;
+            word-break: break-word;
+        }
+
+        .custom-select-trigger:hover {
+            border-color: #b7aa98;
+        }
+
+        .custom-select-trigger .arrow {
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+            color: #7b6e5d;
+            font-size: 0.7rem;
+        }
+
+        .custom-select.open .custom-select-trigger .arrow {
+            transform: rotate(180deg);
+        }
+
+        .custom-select-trigger .selected-text {
+            flex: 1;
+            word-break: break-word;
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+        .custom-select-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #ddd8cf;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            padding: 0.4rem;
+        }
+
+        .custom-select.open .custom-select-dropdown {
+            display: block;
+        }
+
+        .custom-select-option {
+            padding: 0.7rem 0.9rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: background 0.15s ease;
+            word-break: break-word;
+            white-space: normal;
+            line-height: 1.4;
+            color: #1a1a1a;
+        }
+
+        .custom-select-option:hover {
+            background: #f0ede8;
+        }
+
+        .custom-select-option.selected {
+            background: #e8e0d6;
+            font-weight: 500;
+        }
+
+        .custom-select-option:not(:last-child) {
+            border-bottom: 1px solid #f0ede8;
+        }
+
+        .custom-select-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-select-dropdown::-webkit-scrollbar-track {
+            background: #f5f3ef;
+            border-radius: 8px;
+        }
+        .custom-select-dropdown::-webkit-scrollbar-thumb {
+            background: #ddd8cf;
+            border-radius: 8px;
+        }
+        .custom-select-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #b7aa98;
+        }
+
         input[type="text"] {
             width: 100%;
             padding: 0.8rem 1rem;
@@ -69,12 +176,10 @@
             transition: all 0.2s ease;
         }
 
-        select:hover,
         input[type="text"]:hover {
             border-color: #b7aa98;
         }
 
-        select:focus,
         input[type="text"]:focus {
             outline: none;
             border-color: #b7aa98;
@@ -177,17 +282,15 @@
             display: none !important;
         }
 
-        .badge-methodist {
-            display: inline-block;
-            background: #e8e0d6;
-            color: #4a3f33;
-            font-size: 0.65rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 0.2rem 0.7rem;
-            border-radius: 40px;
-            margin-left: 0.5rem;
+        @media (max-width: 600px) {
+            .custom-select-trigger {
+                font-size: 0.85rem;
+                padding: 0.7rem 2.5rem 0.7rem 0.9rem;
+            }
+            .custom-select-option {
+                font-size: 0.85rem;
+                padding: 0.6rem 0.8rem;
+            }
         }
     </style>
 </head>
@@ -198,20 +301,15 @@
 
             <div class="selector-group">
                 <label>⭐ Favorite Prompts</label>
-                <select id="favoritesSelect">
-                    <option value="">— Choose a preset —</option>
-                    <option value="standard">📋 English-Russian Table (source optional: txt file)</option>
-                    <option value="plaintext">📄 English-Russian Plain Text (source optional: txt file)</option>
-                    <option value="methodist">📝 Статья для Дзен (sources: txt and pdf files)</option>
-                    <option value="newsclips">📰 News Clips Event (sources - text-file, additional information pdf-file)</option>
-                    <option value="indexofevent">📂 Index of Event (generate HTML page with PDF file list) — (source - screen)</option>
-                    <option value="englishlesson">🇬🇧 English lesson (sources: text-file and screen)</option>
-                    <option value="englishlessonarticle">✍️ English lesson article (sources: txt, pdf and screen)</option>
-                    <option value="audioshow">🎙️ Interactive Audio Show (sources: mp3, json, png)</option>
-                </select>
+                <div class="custom-select" id="customSelect">
+                    <div class="custom-select-trigger" id="selectTrigger">
+                        <span class="selected-text">— Choose a preset —</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="custom-select-dropdown" id="selectDropdown"></div>
+                </div>
             </div>
 
-            <!-- Teacher & Country inputs — visible for englishlesson and englishlessonarticle -->
             <div id="teacherCountryGroup" class="hidden">
                 <div class="inline-group">
                     <div class="input-group">
@@ -225,7 +323,6 @@
                 </div>
             </div>
 
-            <!-- Custom text — visible only for standard and plaintext -->
             <div id="customTextGroup" class="hidden">
                 <div class="input-group">
                     <label>📝 Optional: Add your custom text</label>
@@ -247,7 +344,7 @@
     </div>
 
     <script>
-        // --- Prompt Presets ---
+        // ===== ПОЛНЫЕ ТЕКСТЫ ПРОМПТОВ =====
         const prompts = {
             standard: {
                 name: '📋 English-Russian Table (source optional: txt file)',
@@ -265,7 +362,6 @@ OUTPUT: Return only the table. No extra commentary, no introductory or concludin
                 showCustomText: true,
                 showTeacherCountry: false
             },
-
             plaintext: {
                 name: '📄 English-Russian Plain Text (source optional: txt file)',
                 prompt: `Translate the following text from English to Russian. Provide a clear, accurate translation with a focus on natural language flow.
@@ -284,7 +380,6 @@ OUTPUT: Return only the plain text translation with the glossary. No extra comme
                 showCustomText: true,
                 showTeacherCountry: false
             },
-
             methodist: {
                 name: '📝 Статья для Дзен (sources: txt and pdf files)',
                 prompt: `Напиши интересную статью для Дзен на основе вложенных файлов pdf-презентации и транскрипции мероприятия.
@@ -366,7 +461,6 @@ OUTPUT: Return only the plain text translation with the glossary. No extra comme
                 showCustomText: false,
                 showTeacherCountry: false
             },
-
             newsclips: {
                 name: '📰 News Clips Event (sources - text-file, additional information pdf-file)',
                 prompt: `Create a complete, self-contained HTML document about this session.
@@ -385,7 +479,6 @@ This is a complete, self-contained HTML document for a language learning session
                 showCustomText: false,
                 showTeacherCountry: false
             },
-
             indexofevent: {
                 name: '📂 Index of Event (generate HTML page with PDF file list) — (source - screen)',
                 prompt: `Create a complete, self-contained HTML document that displays a list of PDF files based on a screenshot or a provided file list.
@@ -468,7 +561,6 @@ Generate the HTML based on the attached screenshot.`,
                 showCustomText: false,
                 showTeacherCountry: false
             },
-
             englishlesson: {
                 name: '🇬🇧 English lesson (sources: text-file and screen)',
                 prompt: `Create a complete, self-contained HTML document for an English lesson.
@@ -617,7 +709,6 @@ The final output should be a single, self-contained HTML document with all the l
                 showCustomText: false,
                 showTeacherCountry: true
             },
-
             englishlessonarticle: {
                 name: '✍️ English lesson article (sources: txt, pdf and screen)',
                 prompt: `Write an engaging, informative article in English based on the following source materials:
@@ -752,7 +843,6 @@ Generate the complete HTML document with all styles embedded.`,
                 showCustomText: false,
                 showTeacherCountry: true
             },
-
             audioshow: {
                 name: '🎙️ Interactive Audio Show (sources: mp3, json, png)',
                 prompt: `Role: You are a senior frontend developer. Create a single-page web application (SPA) for listening to an audio show with interactive, time-synchronized transcripts, ready for immediate deployment on GitHub Pages.
@@ -822,12 +912,17 @@ Logic (JavaScript):
 
     File names: The code must use only ai_radio.mp3, cover.png, and show_notes.json. No other name variations (like audio.mp3) should be present.
 
-    Simplicity: The code should be concise, without unnecessary libraries (only pure HTML, CSS, Vanilla JS).`
+    Simplicity: The code should be concise, without unnecessary libraries (only pure HTML, CSS, Vanilla JS).`,
+                showCustomText: false,
+                showTeacherCountry: false
             }
         };
 
-        // --- DOM Elements ---
-        const favoritesSelect = document.getElementById('favoritesSelect');
+        // ===== ЛОГИКА =====
+        const selectTrigger = document.getElementById('selectTrigger');
+        const selectDropdown = document.getElementById('selectDropdown');
+        const customSelect = document.getElementById('customSelect');
+        const selectedText = selectTrigger.querySelector('.selected-text');
         const customText = document.getElementById('customText');
         const customTextGroup = document.getElementById('customTextGroup');
         const teacherInput = document.getElementById('teacherInput');
@@ -837,10 +932,63 @@ Logic (JavaScript):
         const promptDisplay = document.getElementById('promptDisplay');
         const statusMessage = document.getElementById('statusMessage');
 
-        // --- Helper Functions ---
+        let currentValue = '';
+
+        // Заполняем выпадающий список
+        function renderOptions() {
+            const keys = Object.keys(prompts);
+            let html = `<div class="custom-select-option" data-value="">— Choose a preset —</div>`;
+            keys.forEach(key => {
+                const p = prompts[key];
+                html += `<div class="custom-select-option" data-value="${key}">${p.name}</div>`;
+            });
+            selectDropdown.innerHTML = html;
+        }
+        renderOptions();
+
+        function toggleDropdown(open) {
+            if (open === undefined) {
+                customSelect.classList.toggle('open');
+            } else if (open) {
+                customSelect.classList.add('open');
+            } else {
+                customSelect.classList.remove('open');
+            }
+        }
+
+        function selectOption(value) {
+            currentValue = value;
+            const options = selectDropdown.querySelectorAll('.custom-select-option');
+            let label = '— Choose a preset —';
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === value) {
+                    opt.classList.add('selected');
+                    label = opt.textContent;
+                }
+            });
+            selectedText.textContent = label;
+            toggleDropdown(false);
+            loadPrompt();
+        }
+
+        selectTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDropdown();
+        });
+
+        selectDropdown.addEventListener('click', (e) => {
+            const option = e.target.closest('.custom-select-option');
+            if (!option) return;
+            selectOption(option.dataset.value);
+        });
+
+        document.addEventListener('click', () => {
+            toggleDropdown(false);
+        });
+
         function getSelectedPrompt() {
-            const key = favoritesSelect.value;
-            return prompts[key] || null;
+            return prompts[currentValue] || null;
         }
 
         function buildFullPrompt() {
@@ -849,13 +997,10 @@ Logic (JavaScript):
             const teacher = teacherInput.value.trim();
             const country = countryInput.value.trim();
 
-            if (!selected) {
-                return null;
-            }
+            if (!selected) return null;
 
             let fullPrompt = selected.prompt;
 
-            // Replace placeholders for prompts that support teacher/country
             if (selected === prompts.englishlesson || selected === prompts.englishlessonarticle) {
                 fullPrompt = fullPrompt.replace('[TEACHER]', teacher || '[Teacher name]');
                 fullPrompt = fullPrompt.replace('[COUNTRY]', country || '[Country]');
@@ -870,27 +1015,17 @@ Logic (JavaScript):
 
         function togglePanels() {
             const selected = getSelectedPrompt();
-
-            // Hide both panels by default
             customTextGroup.classList.add('hidden');
             teacherCountryGroup.classList.add('hidden');
 
-            if (!selected) {
-                return;
-            }
+            if (!selected) return;
 
-            if (selected.showCustomText) {
-                customTextGroup.classList.remove('hidden');
-            }
-
-            if (selected.showTeacherCountry) {
-                teacherCountryGroup.classList.remove('hidden');
-            }
+            if (selected.showCustomText) customTextGroup.classList.remove('hidden');
+            if (selected.showTeacherCountry) teacherCountryGroup.classList.remove('hidden');
         }
 
         function loadPrompt() {
             togglePanels();
-
             const fullPrompt = buildFullPrompt();
 
             if (!fullPrompt) {
@@ -915,10 +1050,7 @@ Logic (JavaScript):
 
         async function copyPrompt() {
             const text = promptDisplay.textContent;
-
-            if (!text ||
-                text === 'Select a preset to load a prompt template.' ||
-                text === '⚠️ Please select a preset from the dropdown.') {
+            if (!text || text === 'Select a preset to load a prompt template.' || text === '⚠️ Please select a preset from the dropdown.') {
                 statusMessage.textContent = '⚠️ Select a preset first to copy a prompt.';
                 statusMessage.style.color = '#a05252';
                 return;
@@ -929,9 +1061,7 @@ Logic (JavaScript):
                 statusMessage.textContent = '✅ Copied to clipboard!';
                 statusMessage.style.color = '#2c4b4e';
                 copyBtn.textContent = '✅ Copied!';
-                setTimeout(() => {
-                    copyBtn.textContent = '📋 Copy Prompt';
-                }, 2000);
+                setTimeout(() => { copyBtn.textContent = '📋 Copy Prompt'; }, 2000);
             } catch (err) {
                 const textarea = document.createElement('textarea');
                 textarea.value = text;
@@ -939,26 +1069,17 @@ Logic (JavaScript):
                 textarea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
-
                 statusMessage.textContent = '✅ Copied to clipboard!';
                 statusMessage.style.color = '#2c4b4e';
             }
         }
 
-        // --- auto-update on any change ---
-        function autoUpdate() {
-            loadPrompt();
-        }
-
-        // --- Event Listeners ---
         copyBtn.addEventListener('click', copyPrompt);
-        favoritesSelect.addEventListener('change', autoUpdate);
-        customText.addEventListener('input', autoUpdate);
-        teacherInput.addEventListener('input', autoUpdate);
-        countryInput.addEventListener('input', autoUpdate);
+        customText.addEventListener('input', loadPrompt);
+        teacherInput.addEventListener('input', loadPrompt);
+        countryInput.addEventListener('input', loadPrompt);
 
-        // initial load
-        autoUpdate();
+        selectOption('');
     </script>
 </body>
 </html>
