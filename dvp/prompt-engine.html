@@ -57,7 +57,6 @@
             margin-bottom: 0.5rem;
         }
 
-        /* ===== КАСТОМНЫЙ СЕЛЕКТ ===== */
         .custom-select {
             position: relative;
             width: 100%;
@@ -113,8 +112,8 @@
             border-radius: 16px;
             border: 1px solid #ddd8cf;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            max-height: 280px;
-            overflow-y: auto;
+            max-height: none;
+            overflow-y: visible;
             z-index: 1000;
             display: none;
             padding: 0.4rem;
@@ -148,21 +147,6 @@
 
         .custom-select-option:not(:last-child) {
             border-bottom: 1px solid #f0ede8;
-        }
-
-        .custom-select-dropdown::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-select-dropdown::-webkit-scrollbar-track {
-            background: #f5f3ef;
-            border-radius: 8px;
-        }
-        .custom-select-dropdown::-webkit-scrollbar-thumb {
-            background: #ddd8cf;
-            border-radius: 8px;
-        }
-        .custom-select-dropdown::-webkit-scrollbar-thumb:hover {
-            background: #b7aa98;
         }
 
         input[type="text"] {
@@ -282,6 +266,24 @@
             display: none !important;
         }
 
+        .output-options {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .output-options .btn {
+            font-size: 0.75rem;
+            padding: 0.4rem 1.2rem;
+        }
+
+        .output-options .btn.active {
+            background: #b7aa98;
+            color: white;
+            border-color: #9e8f7c;
+        }
+
         @media (max-width: 600px) {
             .custom-select-trigger {
                 font-size: 0.85rem;
@@ -331,6 +333,16 @@
                 </div>
             </div>
 
+            <div id="outputFormatGroup" class="hidden">
+                <label>📄 Output Format</label>
+                <div class="output-options">
+                    <button class="btn btn-secondary active" data-format="table">📊 Table</button>
+                    <button class="btn btn-secondary" data-format="gist">📝 Gist Markdown</button>
+                    <button class="btn btn-secondary" data-format="plaintext">📄 Plain Text</button>
+                </div>
+                <div class="hint">Choose how the translation should be formatted in the output.</div>
+            </div>
+
             <div class="button-group">
                 <button id="copyBtn" class="btn btn-secondary">📋 Copy Prompt</button>
             </div>
@@ -344,11 +356,10 @@
     </div>
 
     <script>
-        // ===== ПОЛНЫЕ ТЕКСТЫ ПРОМПТОВ =====
         const prompts = {
             standard: {
-                name: '📋 English-Russian Table (source optional: txt file)',
-                prompt: `Translate the following text from English to Russian. Provide a clear, accurate translation with a focus on natural language flow.
+                name: '📋 English-Russian Translation (source optional: txt file)',
+                basePrompt: `Translate the following text from English to Russian. Provide a clear, accurate translation with a focus on natural language flow.
 
 REQUIREMENTS:
 
@@ -356,33 +367,98 @@ REQUIREMENTS:
 
     Highlight in bold in the main text any advanced vocabulary – this includes both the English source text and the Russian translation. Every term that appears in the glossary must be bolded in both columns of the table (English and Russian).
 
-    Include a short glossary of key terms at the end of the table (as a separate mini-table).
+    Include a short glossary of key terms at the end.
 
-    The ENTIRE translation output must be formatted as a two‑column table:
-    | English (original) | Russian (translation) |
-    Every sentence, phrase, or segment from the source must appear in the left column, with its corresponding Russian version in the right column.
+    The source text must be divided into episodes (logical segments: chapters, scenes, time blocks, or thematic parts) — each episode must be translated separately.
 
-OUTPUT: Return only the table. No extra commentary, no introductory or concluding text.`,
+    In the output, each episode must start with a separator indicating the episode number and title (e.g., «— Episode 1: Title —» or «— Эпизод 1: Название —»).
+
+    Do NOT mix content from different episodes.
+
+    If the source contains clear episode markers (e.g., "Episode 1", "Part 2", "Scene 3", timestamps, or section headings), use them exactly as they appear.
+
+    If no explicit episode markers exist, divide the text into equal logical parts (by paragraphs, scenes, or every ~200–300 words) and label them as «Episode 1», «Episode 2», etc.`,
                 showCustomText: true,
-                showTeacherCountry: false
-            },
-            plaintext: {
-                name: '📄 English-Russian Plain Text (source optional: txt file)',
-                prompt: `Translate the following text from English to Russian. Provide a clear, accurate translation with a focus on natural language flow.
+                showTeacherCountry: false,
+                hasOutputFormat: true,
+                getPrompt: function(format) {
+                    if (format === 'gist') {
+                        return this.basePrompt + `
 
-REQUIREMENTS:
-1. Provide a complete translation of the entire source text.
-2. Format the translation as plain text, with each English phrase or sentence on one line and its Russian translation directly below it on the next line.
-3. Leave a blank line between each pair (English / translation) for readability.
-4. Do NOT use tables, bullet points, numbers, or any additional markers like "English:" or "Russian:".
-5. Just the text itself: one line in English, the next line — translation into Russian.
-6. In the Russian translation, highlight in bold any advanced or complex vocabulary (e.g., idioms, bookish words, terms).
-7. At the end of the translation, add a glossary of key terms — but format the glossary with English words/phrases and their Russian explanations (not with Russian terms).
-8. Separate the glossary from the main text with a blank line and the heading "Glossary of key terms:".
+OUTPUT FORMAT: Gist Markdown
 
-OUTPUT: Return only the plain text translation with the glossary. No extra commentary, no introductory or concluding text.`,
-                showCustomText: true,
-                showTeacherCountry: false
+Format the translation as a structured Markdown document suitable for a GitHub Gist:
+
+1. The entire output must be inside a single Markdown code block with \`\`\`markdown ... \`\`\` delimiters.
+
+2. Use this structure:
+   # Translation: [Title of the source text]
+
+   ## Episode 1: [Title]
+   | English (original) | Russian (translation) |
+   |---------------------|------------------------|
+   | ...                 | ...                    |
+
+   ## Episode 2: [Title]
+   | English (original) | Russian (translation) |
+   |---------------------|------------------------|
+   | ...                 | ...                    |
+
+   ## Glossary of Key Terms
+   | English term | Russian translation | Explanation |
+   |--------------|---------------------|-------------|
+   | ...          | ...                 | ...         |
+
+3. Each episode must be a separate Markdown section with its own table.
+
+4. The glossary must be a separate Markdown table at the end.
+
+5. Bold the advanced vocabulary in both the English and Russian columns using **bold** markers.
+
+6. Do NOT include any text outside the Markdown block. No introductory or concluding remarks.
+
+7. The output must be valid Markdown that renders correctly in a Gist.
+
+OUTPUT: Return only the Markdown block.`;
+                    } else if (format === 'plaintext') {
+                        return this.basePrompt + `
+
+OUTPUT FORMAT: Plain Text
+
+Format the translation as plain text (no tables, no Markdown).
+
+1. Each episode must start with a separator line:
+   — Episode 1: [Title] —
+   (followed by a blank line)
+
+2. For each sentence or phrase:
+   - Write the English original on one line.
+   - Write the Russian translation on the next line.
+   - Leave a blank line between each pair.
+
+3. Highlight advanced vocabulary in BOTH English and Russian using **bold** markers (e.g., **advanced word**).
+
+4. At the end of all episodes, add a glossary:
+   Glossary of Key Terms:
+   - English term — Russian translation — Explanation
+
+5. Do NOT use any tables, columns, or Markdown formatting (except bold).
+
+6. Do NOT include any introductory or concluding text — only the translation and glossary.
+
+OUTPUT: Return only the plain text translation with the glossary.`;
+                    } else {
+                        return this.basePrompt + `
+
+OUTPUT FORMAT: Table
+
+The ENTIRE translation output must be formatted as a two‑column table:
+| English (original) | Russian (translation) |
+Every sentence, phrase, or segment from the source must appear in the left column, with its corresponding Russian version in the right column.
+
+OUTPUT: Return only the table. No extra commentary, no introductory or concluding text.`;
+                    }
+                }
             },
             methodist: {
                 name: '📝 Article for Zen (sources: txt and pdf files)',
@@ -463,7 +539,8 @@ OUTPUT: Return only the plain text translation with the glossary. No extra comme
 
 Еще раз напоминаю - если использовался AI - приведи полностью текст AI на английском и дай перевод и пояснения на русском.`,
                 showCustomText: false,
-                showTeacherCountry: false
+                showTeacherCountry: false,
+                hasOutputFormat: false
             },
             newsclips: {
                 name: '📰 News Clips Event (sources - text-file, additional information pdf-file)',
@@ -481,7 +558,8 @@ REQUIREMENTS:
 
 This is a complete, self-contained HTML document for a language learning session. It structures news clips into a full-width lesson plan with vocabulary, thematic blocks, and a summary, including a link to the resource PDF.`,
                 showCustomText: false,
-                showTeacherCountry: false
+                showTeacherCountry: false,
+                hasOutputFormat: false
             },
             indexofevent: {
                 name: '📂 Index of Event (generate HTML page with PDF file list) — (source - screen)',
@@ -563,7 +641,8 @@ Output a complete HTML code that can be saved as a .html file and opened in a br
 
 Generate the HTML based on the attached screenshot.`,
                 showCustomText: false,
-                showTeacherCountry: false
+                showTeacherCountry: false,
+                hasOutputFormat: false
             },
             englishlessonarticle: {
                 name: '✍️ English lesson article (sources: txt, pdf and screen)',
@@ -701,7 +780,8 @@ Generate the complete HTML document with all styles embedded.
 - All links in the HTML must point to the SAME base URL path as shown in the screenshot for the PDFs.
 - Do NOT include links to any other files (TXT, HTML, etc.) unless they are explicitly requested in the instructions.`,
                 showCustomText: false,
-                showTeacherCountry: true
+                showTeacherCountry: true,
+                hasOutputFormat: false
             },
             audioshow: {
                 name: '🎙️ Radio Show (source: json)',
@@ -774,7 +854,8 @@ Logic (JavaScript):
 
     Simplicity: The code should be concise, without unnecessary libraries (only pure HTML, CSS, Vanilla JS).`,
                 showCustomText: false,
-                showTeacherCountry: false
+                showTeacherCountry: false,
+                hasOutputFormat: false
             },
             gistpresentation: {
                 name: '📝 Gist Presentation Overview (presentation slides analysis in md)',
@@ -833,7 +914,8 @@ Logic (JavaScript):
 
 ВЫХОДНОЙ ФОРМАТ: Только текст в формате Markdown (.md), готовый для вставки в Gist. Никакого дополнительного текста вне формата.`,
                 showCustomText: false,
-                showTeacherCountry: false
+                showTeacherCountry: false,
+                hasOutputFormat: false
             }
         };
 
@@ -847,13 +929,14 @@ Logic (JavaScript):
         const teacherInput = document.getElementById('teacherInput');
         const countryInput = document.getElementById('countryInput');
         const teacherCountryGroup = document.getElementById('teacherCountryGroup');
+        const outputFormatGroup = document.getElementById('outputFormatGroup');
         const copyBtn = document.getElementById('copyBtn');
         const promptDisplay = document.getElementById('promptDisplay');
         const statusMessage = document.getElementById('statusMessage');
 
         let currentValue = '';
+        let currentFormat = 'table';
 
-        // Заполняем выпадающий список
         function renderOptions() {
             const keys = Object.keys(prompts);
             let html = `<div class="custom-select-option" data-value="">— Choose a preset —</div>`;
@@ -906,6 +989,15 @@ Logic (JavaScript):
             toggleDropdown(false);
         });
 
+        document.querySelectorAll('.output-options .btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.output-options .btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFormat = this.dataset.format;
+                loadPrompt();
+            });
+        });
+
         function getSelectedPrompt() {
             return prompts[currentValue] || null;
         }
@@ -918,14 +1010,20 @@ Logic (JavaScript):
 
             if (!selected) return null;
 
-            let fullPrompt = selected.prompt;
+            let fullPrompt;
+
+            if (selected === prompts.standard && selected.getPrompt) {
+                fullPrompt = selected.getPrompt(currentFormat);
+            } else {
+                fullPrompt = selected.prompt;
+            }
 
             if (selected === prompts.englishlessonarticle) {
                 fullPrompt = fullPrompt.replace('[TEACHER]', teacher || '[Teacher name]');
                 fullPrompt = fullPrompt.replace('[COUNTRY]', country || '[Country]');
             }
 
-            if (custom) {
+            if (custom && selected.showCustomText) {
                 fullPrompt = custom + '\n\n' + fullPrompt;
             }
 
@@ -936,11 +1034,13 @@ Logic (JavaScript):
             const selected = getSelectedPrompt();
             customTextGroup.classList.add('hidden');
             teacherCountryGroup.classList.add('hidden');
+            outputFormatGroup.classList.add('hidden');
 
             if (!selected) return;
 
             if (selected.showCustomText) customTextGroup.classList.remove('hidden');
             if (selected.showTeacherCountry) teacherCountryGroup.classList.remove('hidden');
+            if (selected.hasOutputFormat) outputFormatGroup.classList.remove('hidden');
         }
 
         function loadPrompt() {
@@ -963,7 +1063,16 @@ Logic (JavaScript):
                 const country = countryInput.value.trim() || '[Country]';
                 name = `${selected.name} (${teacher}, ${country})`;
             }
-            statusMessage.textContent = `✅ Loaded: ${name}` + (customText.value.trim() ? ' (with custom text)' : '');
+            let formatLabel = '';
+            if (selected === prompts.standard) {
+                const formatNames = {
+                    'table': 'Table',
+                    'gist': 'Gist Markdown',
+                    'plaintext': 'Plain Text'
+                };
+                formatLabel = ` [${formatNames[currentFormat] || 'Table'}]`;
+            }
+            statusMessage.textContent = `✅ Loaded: ${name}${formatLabel}` + (customText.value.trim() ? ' (with custom text)' : '');
             statusMessage.style.color = '#2c4b4e';
         }
 
