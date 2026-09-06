@@ -289,6 +289,24 @@
             font-weight: 500;
         }
 
+        .mode-options {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+        }
+
+        .mode-options .btn {
+            font-size: 0.75rem;
+            padding: 0.4rem 1.2rem;
+        }
+
+        .mode-options .btn.active {
+            background: #b7aa98;
+            color: white;
+            border-color: #9e8f7c;
+        }
+
         @media (max-width: 600px) {
             .custom-select-trigger {
                 font-size: 0.85rem;
@@ -315,6 +333,15 @@
                     </div>
                     <div class="custom-select-dropdown" id="selectDropdown"></div>
                 </div>
+            </div>
+
+            <div id="methodistModeGroup" class="hidden">
+                <label>🌐 Language Mode</label>
+                <div class="mode-options">
+                    <button class="btn btn-secondary active" data-methodist-mode="ru-en">🇷🇺🇬🇧 Ru-En (default)</button>
+                    <button class="btn btn-secondary" data-methodist-mode="ru">🇷🇺 Ru only</button>
+                </div>
+                <div class="hint">Ru-En: for English slides with translation. Ru: for Russian-only slides (no English content).</div>
             </div>
 
             <div id="teacherCountryGroup" class="hidden">
@@ -363,7 +390,7 @@
 
     <script>
         // ============================================================
-        // 1. DEFINITION OF PROMPTS (FIXED — COMPLETE GLOSSARY IN EACH)
+        // 1. DEFINITION OF PROMPTS
         // ============================================================
         const prompts = {
             standard: {
@@ -489,7 +516,7 @@ OUTPUT: Return only the table and glossaries. No extra commentary, no introducto
             },
             methodist: {
                 name: '📝 Article for Zen (sources: txt and pdf files)',
-                prompt: `Напиши интересную статью для Дзен на основе вложенных файлов pdf-презентации и транскрипции мероприятия.
+                basePromptRuEn: `Напиши интересную статью для Дзен на основе вложенных файлов pdf-презентации и транскрипции мероприятия.
 
 ТРЕБОВАНИЯ К СТАТЬЕ:
 
@@ -565,9 +592,90 @@ OUTPUT: Return only the table and glossaries. No extra commentary, no introducto
 Добавляй комментарии учителя из транскрипции, чтобы связать теорию из слайдов с живой практикой (если есть).
 
 Еще раз напоминаю - если использовался AI - приведи полностью текст AI на английском и дай перевод и пояснения на русском.`,
+                basePromptRu: `Напиши интересную статью для Дзен на основе вложенных файлов pdf-презентации и транскрипции мероприятия.
+
+ТРЕБОВАНИЯ К СТАТЬЕ:
+
+Статья должна быть на русском языке.
+
+Использование исходного материала:
+В тексте статьи используй номера слайдов [SLIDE X] из презентации, которые надо вставить в определенные места статьи согласно ее содержанию. Номера слайдов во всем тексте не должны повторяться. Если на слайдах содержится текст на русском языке - используй его напрямую в статье. Если использовался AI - приведи полностью текст AI на русском.
+
+Требования для работы с русскоязычным исходным материалом:
+— Опираться на слайды с ключевыми понятиями и терминами.
+— Представить ключевые термины и определения в текстовом формате (НЕ ТАБЛИЦЫ).
+Для каждой единицы:
+— Сам термин/понятие на русском.
+— Определение или пояснение.
+— Пример из материала (цитата).
+— Как этот термин объясняется в методичке (цитата из слайда).
+
+Метафоры, символы и ключевые идеи
+— Опираться на слайды, где анализируются глубинные смыслы. Цитировать их.
+— 3-4 ключевых элемента из материала (символы, метафоры, основные тезисы).
+— Объяснение их значения на русском.
+— Цитата из слайда с трактовкой.
+
+Структура статьи:
+
+Заголовок
+Должен быть кликабельным и информативным — содержать название темы и ключевую познавательную цель. В заголовке обязательно указать источник материала (название мероприятия или тема).
+
+Структура
+Вступление (1-2 абзаца):
+— Интересный факт или наблюдение, связанное с темой материала.
+— ВСЕ ПРЕДЛОЖЕНИЯ — ТОЛЬКО УТВЕРДИТЕЛЬНЫЕ. ЗАПРЕЩЕНЫ ЛЮБЫЕ ВОПРОСЫ (в том числе риторические, уточняющие, вводные).
+— Излагай как рассказчик, а не как собеседник.
+— Краткое представление материала и его познавательная ценность (опираясь на вводные слайды).
+
+Основная часть:
+Раздел 1: Содержание и контекст
+— Краткое изложение сути материала (2-3 абзаца)
+— Ключевые моменты, важные для понимания темы.
+— По каждому слайду приведи цитату идеи из слайда.
+— Живой пример из урока (диалог учителя, ученика или AI), который ИЛЛЮСТРИРУЕТ эту идею из слайда.
+— Практический совет для читателя, развивающий мысль из слайда.
+— Комментарий учителя из транскрипции (если есть).
+
+Заключение (1-2 абзаца):
+— Вдохновляющая цитата из слайдов или материала.
+— Главный вывод, основанный на итоговом слайде.
+— Призыв к действию (практиковаться, применить знания и т.д.).
+
+ФОРМАТИРОВАНИЕ
+Для Дзена:
+— НЕ использовать таблицы (заменять на текст с маркированными списками или нумерованными списками).
+— НЕ использовать риторические вопросы. ЛЮБЫЕ ВОПРОСЫ В ТЕКСТЕ ЗАПРЕЩЕНЫ. Вместо вопросов используй утвердительные конструкции: «Важно понимать, что...», «Стоит обратить внимание на...», «Следует отметить, что...», «Обратите внимание на...», «Интересно, что...», «Ключевой момент заключается в том...», «Стоит запомнить...».
+— Использовать жирный шрифт для ключевых фраз.
+— Использовать курсив для цитат.
+— Разделять разделы подзаголовками (##).
+— Вставлять эмодзи (👩‍🏫, 💡, 📌, ⚠️) для визуального разнообразия.
+— Ссылки на слайды ставить строго в квадратных скобках: [SLIDE 5].
+
+Для цитат:
+— Цитаты выделять жирным или отдельным абзацем.
+— Комментарии учителя помечать 👩‍🏫 и выделять курсивом.
+
+СТИЛЬ ИЗЛОЖЕНИЯ
+— Разговорный, но грамотный.
+— Вдохновляющий и мотивирующий.
+— Повествовательный стиль: ИСКЛЮЧИТЕЛЬНО утвердительные предложения. Излагай материал как рассказчик, а не как собеседник. ЗАПРЕЩЕНЫ все виды вопросов: риторические, уточняющие, вводные («знаете ли вы», «задумывались ли вы», «почему», «как», «что если» и т.д.). Вместо вопросов используй формулировки: «Важно понимать, что...», «Стоит обратить внимание на...», «Следует отметить...», «Обратите внимание...», «Интересно, что...», «Ключевой момент заключается в том...», «Стоит запомнить...».
+
+ВАЖНОЕ НАПОМИНАНИЕ:
+ОБЯЗАТЕЛЬНО проверяй, что номера слайдов в статье соответствуют номерам в PDF.
+Добавляй комментарии учителя из транскрипции, чтобы связать теорию из слайдов с живой практикой (если есть).
+
+Еще раз напоминаю - если использовался AI - приведи полностью текст AI на русском.`,
                 showCustomText: false,
                 showTeacherCountry: false,
-                hasOutputFormat: false
+                hasOutputFormat: false,
+                hasModeSelector: true,
+                getPrompt: function(mode) {
+                    if (mode === 'ru') {
+                        return this.basePromptRu;
+                    }
+                    return this.basePromptRuEn;
+                }
             },
             indexofevent: {
                 name: '📂 Index of Event (generate HTML page with PDF file list) — (source - screen)',
@@ -938,12 +1046,14 @@ Logic (JavaScript):
         const countryInput = document.getElementById('countryInput');
         const teacherCountryGroup = document.getElementById('teacherCountryGroup');
         const outputFormatGroup = document.getElementById('outputFormatGroup');
+        const methodistModeGroup = document.getElementById('methodistModeGroup');
         const copyBtn = document.getElementById('copyBtn');
         const promptDisplay = document.getElementById('promptDisplay');
         const statusMessage = document.getElementById('statusMessage');
 
         let currentValue = '';
         let currentFormat = 'table';
+        let currentMethodistMode = 'ru-en';
 
         function renderOptions() {
             const keys = Object.keys(prompts);
@@ -1006,6 +1116,15 @@ Logic (JavaScript):
             });
         });
 
+        document.querySelectorAll('.mode-options .btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.mode-options .btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentMethodistMode = this.dataset.methodistMode;
+                loadPrompt();
+            });
+        });
+
         function getSelectedPrompt() {
             return prompts[currentValue] || null;
         }
@@ -1022,6 +1141,8 @@ Logic (JavaScript):
 
             if (selected === prompts.standard && selected.getPrompt) {
                 fullPrompt = selected.getPrompt(currentFormat);
+            } else if (selected === prompts.methodist && selected.getPrompt) {
+                fullPrompt = selected.getPrompt(currentMethodistMode);
             } else {
                 fullPrompt = selected.prompt;
             }
@@ -1043,12 +1164,14 @@ Logic (JavaScript):
             customTextGroup.classList.add('hidden');
             teacherCountryGroup.classList.add('hidden');
             outputFormatGroup.classList.add('hidden');
+            methodistModeGroup.classList.add('hidden');
 
             if (!selected) return;
 
             if (selected.showCustomText) customTextGroup.classList.remove('hidden');
             if (selected.showTeacherCountry) teacherCountryGroup.classList.remove('hidden');
             if (selected.hasOutputFormat) outputFormatGroup.classList.remove('hidden');
+            if (selected.hasModeSelector) methodistModeGroup.classList.remove('hidden');
         }
 
         function loadPrompt() {
@@ -1079,6 +1202,13 @@ Logic (JavaScript):
                     'plaintext': 'Plain Text'
                 };
                 formatLabel = ` [${formatNames[currentFormat] || 'Table'}]`;
+            }
+            if (selected === prompts.methodist) {
+                const modeNames = {
+                    'ru-en': '🇷🇺🇬🇧 Ru-En',
+                    'ru': '🇷🇺 Ru only'
+                };
+                formatLabel = ` [${modeNames[currentMethodistMode] || 'Ru-En'}]`;
             }
             statusMessage.textContent = `✅ Loaded: ${name}${formatLabel}` + (customText.value.trim() ? ' (with custom text)' : '');
             statusMessage.style.color = '#2c4b4e';
