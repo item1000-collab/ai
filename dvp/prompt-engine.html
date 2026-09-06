@@ -284,6 +284,11 @@
             border-color: #9e8f7c;
         }
 
+        .warning {
+            color: #a05252;
+            font-weight: 500;
+        }
+
         @media (max-width: 600px) {
             .custom-select-trigger {
                 font-size: 0.85rem;
@@ -323,6 +328,7 @@
                         <input type="text" id="countryInput" placeholder="e.g. Venezuela" />
                     </div>
                 </div>
+                <div class="hint">These fields are required for the English Lesson Article preset.</div>
             </div>
 
             <div id="customTextGroup" class="hidden">
@@ -356,6 +362,9 @@
     </div>
 
     <script>
+        // ============================================================
+        // 1. DEFINITION OF PROMPTS (FIXED — COMPLETE GLOSSARY IN EACH)
+        // ============================================================
         const prompts = {
             standard: {
                 name: '📋 English-Russian Translation (source optional: txt file)',
@@ -367,7 +376,7 @@ REQUIREMENTS:
 
     Highlight in bold in the main text any advanced vocabulary – this includes both the English source text and the Russian translation. Every term that appears in the glossary must be bolded in both columns of the table (English and Russian).
 
-    Include a short glossary of key terms at the end of each episode.
+    Include a short glossary of key terms at the end of each episode. The glossary should include ONLY idioms, fixed expressions, phrasal verbs, and complex collocations — NOT simple standalone words (e.g., include "to give away", "to work out", "can't get the monkey off your back", but NOT "monkey", "jungle", "sad").
 
     The source text must be divided into episodes (logical segments: chapters, scenes, time blocks, or thematic parts) — each episode must be translated separately.
 
@@ -420,7 +429,7 @@ Format the translation as a structured Markdown document suitable for a GitHub G
 
 4. Each episode must have its own glossary table immediately following the translation table.
 
-5. Bold the advanced vocabulary in both the English and Russian columns using **bold** markers.
+5. Bold the advanced vocabulary in both the English and Russian columns using **bold** markers. IMPORTANT: The bolded terms in the left (English) column and the right (Russian) column must match the terms listed in the glossary for that episode.
 
 6. Do NOT include any text outside the Markdown block. No introductory or concluding remarks.
 
@@ -443,7 +452,7 @@ Format the translation as plain text (no tables, no Markdown).
    - Write the Russian translation on the next line.
    - Leave a blank line between each pair.
 
-3. Highlight advanced vocabulary in BOTH English and Russian using **bold** markers (e.g., **advanced word**).
+3. Highlight advanced vocabulary in BOTH English and Russian using **bold** markers (e.g., **advanced word**). IMPORTANT: The bolded terms in the English text and the Russian text must match the terms listed in the glossary for that episode.
 
 4. At the end of each episode, add a glossary for that episode:
    Glossary for Episode X:
@@ -468,6 +477,8 @@ For each episode, add a glossary section after the translation table:
 | English term | Russian translation | Explanation |
 |--------------|---------------------|-------------|
 | ...          | ...                 | ...         |
+
+IMPORTANT: Every term listed in the glossary must be bolded in BOTH columns of the translation table — the English column AND the Russian column.
 
 OUTPUT: Return only the table and glossaries. No extra commentary, no introductory or concluding text.`;
                     }
@@ -1032,8 +1043,10 @@ Logic (JavaScript):
             }
 
             if (selected === prompts.englishlessonarticle) {
-                fullPrompt = fullPrompt.replace('[TEACHER]', teacher || '[Teacher name]');
-                fullPrompt = fullPrompt.replace('[COUNTRY]', country || '[Country]');
+                // Если поля Teacher или Country пустые — оставляем их как есть,
+                // чтобы пользователь сам заполнил в промпте
+                fullPrompt = fullPrompt.replace('[TEACHER]', teacher || '[Teacher name required]');
+                fullPrompt = fullPrompt.replace('[COUNTRY]', country || '[Country required]');
             }
 
             if (custom && selected.showCustomText) {
