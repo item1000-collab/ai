@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Peter Miles Pizza · Audio Show</title>
   <style>
-    /* ===== DARK THEME ===== */
     * {
       margin: 0;
       padding: 0;
@@ -32,7 +31,6 @@
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
     }
 
-    /* header */
     .show-header {
       display: flex;
       align-items: center;
@@ -73,7 +71,6 @@
       margin-top: 0.3rem;
     }
 
-    /* audio player */
     .audio-wrapper {
       margin: 1.2rem 0 1.6rem;
     }
@@ -88,7 +85,6 @@
       background: #2a2a2a;
     }
 
-    /* transcript */
     .transcript-container {
       max-height: 580px;
       overflow-y: auto;
@@ -172,54 +168,6 @@
       color: #fff;
     }
 
-    /* PDF links */
-    .pdf-section {
-      margin-top: 2.2rem;
-      border-top: 1px solid #2e2e2e;
-      padding-top: 1.5rem;
-    }
-
-    .pdf-section h3 {
-      font-size: 1rem;
-      font-weight: 500;
-      color: #aaa;
-      letter-spacing: 0.03em;
-      margin-bottom: 0.7rem;
-    }
-
-    .pdf-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem 1.2rem;
-      list-style: none;
-      padding: 0;
-    }
-
-    .pdf-list li {
-      font-size: 0.9rem;
-    }
-
-    .pdf-list a {
-      color: #7cb9ff;
-      text-decoration: none;
-      border-bottom: 1px solid transparent;
-      transition: border-color 0.2s, color 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    .pdf-list a:hover {
-      color: #b5d6ff;
-      border-bottom-color: #7cb9ff;
-    }
-
-    .pdf-list a::before {
-      content: "📄";
-      font-size: 0.85rem;
-      opacity: 0.7;
-    }
-
     .error-msg {
       background: #2a0f0f;
       color: #ffa8a8;
@@ -229,7 +177,6 @@
       margin: 1rem 0;
     }
 
-    /* responsive */
     @media (max-width: 600px) {
       .app {
         padding: 1.2rem;
@@ -259,42 +206,27 @@
         font-size: 0.65rem;
         min-width: 38px;
       }
-      .pdf-list {
-        flex-direction: column;
-        gap: 0.3rem;
-      }
     }
   </style>
 </head>
 <body>
   <div class="app" id="app">
-    <!-- header -->
     <div class="show-header">
-      <img class="cover-img" src="https://item1000-collab.github.io/ai/20260906-peter-miles-pizza/audio.jpg" alt="cover" />
+      <img class="cover-img" id="coverImg" src="https://item1000-collab.github.io/ai/gdc/20260906-peter-miles-pizza/audio.jpg" alt="cover" />
       <div class="title-group">
         <div class="show-title" id="showTitle">Peter Miles Pizza</div>
         <span class="show-duration" id="showDuration">⏱ 24:16</span>
       </div>
     </div>
 
-    <!-- audio -->
     <div class="audio-wrapper">
       <audio id="audioPlayer" controls preload="metadata">
-        <source src="https://item1000-collab.github.io/ai/20260906-peter-miles-pizza/ai_radio.mp3" type="audio/mpeg" />
+        <source src="https://item1000-collab.github.io/ai/gdc/20260906-peter-miles-pizza/audio.mp3" type="audio/mpeg" />
         Your browser does not support the audio element.
       </audio>
     </div>
 
-    <!-- transcript -->
     <div class="transcript-container" id="transcriptContainer"></div>
-
-    <!-- PDF links -->
-    <div class="pdf-section" id="pdfSection">
-      <h3>📎 Related materials</h3>
-      <ul class="pdf-list" id="pdfList"></ul>
-    </div>
-
-    <!-- hidden error placeholder -->
     <div id="errorContainer"></div>
   </div>
 
@@ -302,57 +234,42 @@
     (function() {
       'use strict';
 
-      const PATH = '20260906-peter-miles-pizza/';
+      const PATH = 'gdc/20260906-peter-miles-pizza/';
 
-      // ----- PDF files from screenshot -----
-      const PDF_FILES = [
-        'dough-and-data.pdf',
-        'summary-20260906171835ayhXbv.pdf'
-      ];
-
-      // ----- DOM refs -----
       const audioEl = document.getElementById('audioPlayer');
       const transcriptContainer = document.getElementById('transcriptContainer');
       const showTitleEl = document.getElementById('showTitle');
       const showDurationEl = document.getElementById('showDuration');
-      const pdfListEl = document.getElementById('pdfList');
       const errorContainer = document.getElementById('errorContainer');
 
-      // ----- state -----
-      let transcriptData = null;          // array of { timecode, speaker, text }
+      let transcriptData = null;
       let lineElements = [];
       let currentActiveIndex = -1;
       let lastScrollTime = 0;
 
-      // ----- helpers: timecode to seconds -----
       function timecodeToSeconds(tc) {
         if (!tc) return 0;
         const parts = tc.split(':').map(Number);
         if (parts.length === 2) {
-          // MM:SS
           return parts[0] * 60 + parts[1];
         } else if (parts.length === 3) {
-          // H:MM:SS
           return parts[0] * 3600 + parts[1] * 60 + parts[2];
         }
         return 0;
       }
 
-      // ----- parse transcript from JSON -----
       function loadTranscript(jsonData) {
         const data = jsonData;
         if (!data || !data.timecoded_transcript || !data.timecoded_transcript.length) {
           throw new Error('Invalid transcript data: missing timecoded_transcript array.');
         }
 
-        // set title & duration
         if (data.show_title) showTitleEl.textContent = data.show_title;
         if (data.show_duration) showDurationEl.textContent = '⏱ ' + data.show_duration;
 
-        // build lines with start/end seconds
         const lines = data.timecoded_transcript.map((item, idx, arr) => {
           const startSec = timecodeToSeconds(item.timecode);
-          let endSec = startSec + 20; // fallback
+          let endSec = startSec + 20;
           if (idx < arr.length - 1) {
             const nextStart = timecodeToSeconds(arr[idx + 1].timecode);
             if (nextStart > startSec) endSec = nextStart;
@@ -368,10 +285,8 @@
 
         transcriptData = lines;
         renderTranscript(lines);
-        buildPdfLinks();
       }
 
-      // ----- render transcript lines -----
       function renderTranscript(lines) {
         transcriptContainer.innerHTML = '';
         lineElements = [];
@@ -397,7 +312,6 @@
           div.appendChild(speakerSpan);
           div.appendChild(textSpan);
 
-          // click -> seek
           div.addEventListener('click', function(e) {
             const idx = parseInt(this.dataset.index, 10);
             if (!isNaN(idx) && transcriptData && transcriptData[idx]) {
@@ -413,19 +327,14 @@
         });
       }
 
-      // ----- highlight a specific line -----
       function highlightLine(index) {
         if (currentActiveIndex === index) return;
-        // remove active from previous
         if (currentActiveIndex >= 0 && currentActiveIndex < lineElements.length) {
           lineElements[currentActiveIndex].classList.remove('active');
         }
-        // add active to new
         if (index >= 0 && index < lineElements.length) {
           lineElements[index].classList.add('active');
           currentActiveIndex = index;
-
-          // scroll into view (throttled)
           const now = Date.now();
           if (now - lastScrollTime > 120) {
             lineElements[index].scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -436,7 +345,6 @@
         }
       }
 
-      // ----- find line by audio currentTime -----
       function updateHighlightFromTime(currentTime) {
         if (!transcriptData || transcriptData.length === 0) return;
 
@@ -452,12 +360,10 @@
         if (foundIndex !== -1) {
           highlightLine(foundIndex);
         } else {
-          // if beyond last line, highlight last
           const last = transcriptData.length - 1;
           if (currentTime >= transcriptData[last].start) {
             highlightLine(last);
           } else {
-            // if before first, clear
             if (currentActiveIndex !== -1) {
               if (currentActiveIndex >= 0 && currentActiveIndex < lineElements.length) {
                 lineElements[currentActiveIndex].classList.remove('active');
@@ -468,23 +374,6 @@
         }
       }
 
-      // ----- build PDF links -----
-      function buildPdfLinks() {
-        pdfListEl.innerHTML = '';
-        PDF_FILES.forEach(pdf => {
-          const li = document.createElement('li');
-          const a = document.createElement('a');
-          const url = `https://item1000-collab.github.io/ai/${PATH}${pdf}`;
-          a.href = url;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          a.textContent = pdf;
-          li.appendChild(a);
-          pdfListEl.appendChild(li);
-        });
-      }
-
-      // ----- fetch audio.json -----
       function fetchData() {
         const jsonUrl = `https://item1000-collab.github.io/ai/${PATH}audio.json`;
         fetch(jsonUrl)
@@ -503,37 +392,24 @@
                 <span style="font-size:0.85rem;color:#cc8888;">${err.message}</span>
               </div>
             `;
-            // fallback: show dummy PDFs anyway
-            buildPdfLinks();
           });
       }
 
-      // ----- audio timeupdate -----
       function onTimeUpdate() {
         if (!audioEl) return;
-        const currentTime = audioEl.currentTime;
-        updateHighlightFromTime(currentTime);
+        updateHighlightFromTime(audioEl.currentTime);
       }
 
-      // ----- init -----
       function init() {
-        // set audio source (redundant but explicit)
-        audioEl.src = `https://item1000-collab.github.io/ai/${PATH}ai_radio.mp3`;
+        audioEl.src = `https://item1000-collab.github.io/ai/${PATH}audio.mp3`;
         audioEl.load();
-
-        // load transcript
         fetchData();
-
-        // events
         audioEl.addEventListener('timeupdate', onTimeUpdate);
-
-        // also update on seeked (in case user clicks timeline)
         audioEl.addEventListener('seeked', function() {
           updateHighlightFromTime(audioEl.currentTime);
         });
       }
 
-      // go
       init();
     })();
   </script>
