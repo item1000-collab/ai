@@ -112,8 +112,8 @@
             border-radius: 16px;
             border: 1px solid #ddd8cf;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            max-height: none;
-            overflow-y: visible;
+            max-height: 400px;
+            overflow-y: auto;
             z-index: 1000;
             display: none;
             padding: 0.4rem;
@@ -284,11 +284,6 @@
             border-color: #9e8f7c;
         }
 
-        .warning {
-            color: #a05252;
-            font-weight: 500;
-        }
-
         .mode-options {
             display: flex;
             gap: 0.5rem;
@@ -315,6 +310,9 @@
             .custom-select-option {
                 font-size: 0.85rem;
                 padding: 0.6rem 0.8rem;
+            }
+            .card {
+                padding: 1.2rem;
             }
         }
     </style>
@@ -788,8 +786,8 @@ The article should be interesting, educational, and suitable for an English-lang
 - All content from the slides must be seamlessly integrated into the article without mentioning the slides themselves.
 
 **STRICT RULE FOR IMAGE PLACEMENT:**
-- To place an image in the HTML, use an HTML comment like \`<!-- SLIDE-IMAGE: slide-001.jpg -->\` directly above or below the paragraph that discusses the content of that slide.
-- The final HTML output must NOT contain the literal text \`[SLIDE X]\` or \`slide-001\` anywhere in the visible article text — it may only appear in the HTML comments or \`src\` attributes of the \`<img>\` tags.
+- To place an image in the HTML, use an HTML comment like <!-- SLIDE-IMAGE: slide-001.jpg --> directly above or below the paragraph that discusses the content of that slide.
+- The final HTML output must NOT contain the literal text [SLIDE X] or slide-001 anywhere in the visible article text — it may only appear in the HTML comments or src attributes of the <img> tags.
 - For each slide, include the corresponding image using the URL: https://item1000-collab.github.io/ai/[PATH]/slide-00X.jpg (with leading zeros, e.g., slide-001.jpg, slide-002.jpg, etc.)
 
 Teacher: [TEACHER]
@@ -874,7 +872,7 @@ Conclusion (1–2 paragraphs):
 - The article must be a complete, self-contained piece ready for publication.
 - The HTML page must include all slide images using the constructed URLs.
 - ONLY the PDF files from the screenshot should be referenced as downloads (no TXT or HTML files should be linked).
-- The final HTML must contain NO visible text like \`slide-001\` or \`[SLIDE 1]\` — only the \`<img src="...">\` tags and HTML comments for positioning.
+- The final HTML must contain NO visible text like slide-001 or [SLIDE 1] — only the <img src="..."> tags and HTML comments for positioning.
 
 **PATH FOR IMAGES AND PDFs:**
 Extract the path from the screenshot (the part after /ai/). For example, if the screenshot shows "engoo/20260818-friends-203/", use:
@@ -1033,9 +1031,6 @@ Logic (JavaScript):
                 showTeacherCountry: false,
                 hasOutputFormat: false
             },
-            // ============================================================
-            // ИСПРАВЛЕННЫЙ ПРОМПТ: Radio Show from Screenshot
-            // ============================================================
             audioshow_from_screenshot: {
                 name: '🎙️ Radio Show from Screenshot (source: screen + txt with timestamps)',
                 prompt: `Role: You are a senior frontend developer. Create a complete, self-contained web application for an audio radio show with synchronized transcripts, ready for deployment on GitHub Pages.
@@ -1043,8 +1038,25 @@ Logic (JavaScript):
 ## OUTPUT FILES
 
 You must generate **TWO files** with these EXACT names:
-1. **audio.json** — the parsed transcript data in JSON format
+1. **audio.json** — the parsed transcript data in JSON format (VALID JSON ONLY, no markers, no BOM)
 2. **audio.html** — the complete HTML document with all CSS and JS inside
+
+## CRITICAL RULES (MUST FOLLOW)
+
+### For audio.json:
+- The file MUST start with \`{\` and end with \`}\`
+- NO markdown code blocks, NO "\`\`\`json", NO "=== audio.json ===" markers
+- NO BOM (Byte Order Mark) at the beginning of the file
+- The file must be 100% valid JSON (use a JSON validator)
+- All strings must use double quotes \`"\`
+- No trailing commas
+
+### For audio.html:
+- The file MUST start with \`<!DOCTYPE html>\`
+- All resource URLs must use the EXACT path from the screenshot
+- The audio file name is \`audio.mp3\` (NOT \`ai_radio.mp3\`)
+- The cover image is \`audio.jpg\`
+- PDF links are OPTIONAL — only include if PDF files are visible in the screenshot
 
 ## INPUT DATA
 
@@ -1054,9 +1066,9 @@ You will receive:
 
 ## EXTRACT FROM SCREENSHOT
 
-- Extract the **PATH** from the screenshot (the part after \`/ai/\` in the URL, e.g., \`engoo/20260823-peter-miles-radio/\`).
-- Extract all **PDF files** visible in the screenshot (their full names with .pdf extension).
-- Determine the **show title** and **theme** from the screenshot (folder name, file names, or any visible text).
+- Extract the **PATH** from the screenshot (the part after \`/ai/\` in the URL, e.g., \`gdc/20260906-peter-miles-pizza/\`)
+- Extract all **PDF files** visible in the screenshot (their full names with .pdf extension) — if none, skip PDF section
+- Determine the **show title** and **theme** from the screenshot (folder name, file names, or any visible text)
 
 ## WHAT TO GENERATE
 
@@ -1080,15 +1092,28 @@ Parse the transcript text file and convert it to JSON with the following structu
 - If the transcript has no speaker names, use "Speaker" as default.
 - Calculate the duration from the last timecode.
 
+**JSON VALIDATION:**
+- After generating, verify the JSON is valid (use a JSON linter mentally)
+- The first character MUST be \`{\`
+- The last character MUST be \`}\`
+- No invisible characters before the first \`{\`
+
 ### 2. audio.html
 
 A complete, self-contained HTML document with the following features:
 
 **Page Structure:**
 - Header with show title and duration (from audio.json)
-- Cover image: Use \`audio.jpg\` (small, width: 200px, border-radius: 8px)
+- Cover image: Use \`audio.jpg\` (small, width: 120px, border-radius: 16px)
 - Standard HTML5 audio player with controls
 - Transcript list with synchronized highlighting
+- **NO PDF section** — PDF links are OPTIONAL and only included if PDF files are visible in the screenshot
+
+**Resource URLs (CRITICAL):**
+- Audio file: \`https://item1000-collab.github.io/ai/[PATH]/audio.mp3\`
+- Cover image: \`https://item1000-collab.github.io/ai/[PATH]/audio.jpg\`
+- JSON data: \`https://item1000-collab.github.io/ai/[PATH]/audio.json\`
+- If no path is visible in the screenshot, use base URLs without path
 
 **Design (Dark Theme):**
 - Background: #121212
@@ -1099,16 +1124,18 @@ A complete, self-contained HTML document with the following features:
 
 **JavaScript Logic:**
 - Fetch \`audio.json\` on load
+- Handle BOM removal: check \`text.charCodeAt(0) === 0xFEFF\` and remove if present
+- Handle JSON parsing errors with try/catch
 - Convert timecodes "M:SS" to seconds
 - Calculate end time for each line (next line's start, or start + 20s for last)
 - On \`timeupdate\`: find current line, highlight it, scroll into view
 - On click: seek to line's start time and play
-- Display error if JSON not found
+- Display error if JSON not found or invalid
 
 **STRICT REQUIREMENTS:**
 
 1. **File names (FIXED):**
-   - Audio file: MUST be \`ai_radio.mp3\`
+   - Audio file: MUST be \`audio.mp3\` (NOT \`ai_radio.mp3\`)
    - Cover image: MUST be \`audio.jpg\`
    - JSON data: MUST be \`audio.json\`
    - HTML file: MUST be \`audio.html\`
@@ -1116,17 +1143,18 @@ A complete, self-contained HTML document with the following features:
 
 2. **Path for resources:**
    - Build resource URLs using the path extracted from the screenshot:
-     \`https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/ai_radio.mp3\`
+     \`https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/audio.mp3\`
      \`https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/audio.jpg\`
    - If no path is visible in the screenshot, use:
-     \`https://item1000-collab.github.io/ai/ai_radio.mp3\`
+     \`https://item1000-collab.github.io/ai/audio.mp3\`
      \`https://item1000-collab.github.io/ai/audio.jpg\`
 
-3. **Links to PDF files:**
-   - Create download links for each PDF file found in the screenshot.
-   - Build links using: \`https://item1000-collab.github.io/ai/[PATH]/[PDF_NAME]\`
-   - Display PDF links as a list below the transcript or in a separate section.
-   - Each link should have \`target="_blank"\` and \`rel="noopener noreferrer"\`.
+3. **PDF files (OPTIONAL):**
+   - Only include if PDF files are actually visible in the screenshot
+   - If no PDF files, SKIP the PDF section entirely (do not create an empty section)
+   - If PDFs exist, create download links using: \`https://item1000-collab.github.io/ai/[PATH]/[PDF_NAME]\`
+   - Display PDF links as a list below the transcript
+   - Each link should have \`target="_blank"\` and \`rel="noopener noreferrer"\`
 
 4. **Code structure:**
    - ALL CSS inside \`<style>\` in \`<head>\`
@@ -1142,46 +1170,49 @@ A complete, self-contained HTML document with the following features:
 
 ## OUTPUT FORMAT
 
-Return the following:
-
-1. **audio.json** — the parsed JSON file content.
-2. **audio.html** — the complete HTML document.
-
-## EXAMPLE
-
-If the screenshot shows:
-- Path: \`engoo/20260823-peter-miles-radio/\`
-- PDF files: \`peter-miles-radio-show.pdf\`, \`summary-20260823165758.pdf\`
-- Folder name: \`20260823-peter-miles-radio\`
-
-And transcript contains:
-\`\`\`
-[00:00] Speaker 1: Yo, what's up?
-[00:02] Speaker 2: Hello. I'm back.
-\`\`\`
-
-Then generate:
-- audio.json with show_title: "Peter Miles Radio Show"
-- audio.html with audio src: \`https://item1000-collab.github.io/ai/engoo/20260823-peter-miles-radio/ai_radio.mp3\`
-- PDF links pointing to the same path.
-
-## IMPORTANT NOTES
-
-- If the screenshot shows a path, use it EXACTLY as shown.
-- If the transcript file contains a title, use it. Otherwise, derive from the folder name.
-- All file names are CASE SENSITIVE — copy exactly from the screenshot.
-- The transcript text file may contain timestamps in different formats — be flexible.
-- Do NOT include any extra commentary in the output — only the JSON and HTML.
-
-**CRITICAL: Your response MUST contain BOTH files — audio.json AND audio.html. Format your response as:**
+**CRITICAL: Your response MUST contain BOTH files. Format your response EXACTLY as:**
 
 \`\`\`
 === audio.json ===
-{ "show_title": "...", ... }
+{"show_title":"...", ...}
 
 === audio.html ===
 <!DOCTYPE html>...
 \`\`\`
+
+**IMPORTANT:**
+- The \`=== audio.json ===\` marker is ONLY for the response formatting, NOT part of the actual file
+- The actual \`audio.json\` file content must start with \`{\` and end with \`}\`
+- Do NOT wrap the JSON in markdown code blocks
+- Do NOT add any extra commentary before or after the files
+
+## EXAMPLE
+
+If the screenshot shows:
+- Path: \`gdc/20260906-peter-miles-pizza/\`
+- No PDF files visible
+- Folder name: \`20260906-peter-miles-pizza\`
+
+And transcript contains:
+\`\`\`
+[00:01] Speaker 1: Hey, what's good?
+[00:04] Speaker 2: Hello. Good morning.
+\`\`\`
+
+Then generate:
+- audio.json with \`show_title: "Peter Miles Pizza"\`
+- audio.html with audio src: \`https://item1000-collab.github.io/ai/gdc/20260906-peter-miles-pizza/audio.mp3\`
+- NO PDF section (since no PDFs in screenshot)
+
+## IMPORTANT NOTES
+
+- The audio file is \`audio.mp3\` (NOT \`ai_radio.mp3\`)
+- If the screenshot shows a path, use it EXACTLY as shown (including subdirectories like \`gdc/\`)
+- If the transcript file contains a title, use it. Otherwise, derive from the folder name.
+- All file names are CASE SENSITIVE — copy exactly from the screenshot.
+- The transcript text file may contain timestamps in different formats — be flexible.
+- Do NOT include any extra commentary in the output — only the JSON and HTML.
+- **Remember: audio.json must be PURE JSON — no markers, no BOM, no code blocks**
 
 Generate both files now based on the attached screenshot and transcript text file.`,
                 showCustomText: false,
