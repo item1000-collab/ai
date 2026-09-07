@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Prompt Engine</title>
     <style>
+        /* ... все стили без изменений ... */
         * {
             margin: 0;
             padding: 0;
@@ -1032,10 +1033,150 @@ Logic (JavaScript):
                 showCustomText: false,
                 showTeacherCountry: false,
                 hasOutputFormat: false
+            },
+            // ============================================================
+            // НОВЫЙ ПРОМПТ: Radio Show from Screenshot (ОБНОВЛЁН — audio.png)
+            // ============================================================
+            audioshow_from_screenshot: {
+                name: '🎙️ Radio Show from Screenshot (source: screen + txt with timestamps)',
+                prompt: `Role: You are a senior frontend developer. Create a complete, self-contained web application for an audio radio show with synchronized transcripts, ready for deployment on GitHub Pages.
+
+## INPUT DATA
+
+You will receive:
+1. A **screenshot** showing the file list in a directory (similar to the "Index of Event" structure).
+2. A **text file** containing the transcript with timestamps (format: \`[MM:SS] Speaker: Text\` or similar timecoded format).
+
+## EXTRACT FROM SCREENSHOT
+
+- Extract the **PATH** from the screenshot (the part after \`/ai/\` in the URL, e.g., \`engoo/20260823-peter-miles-radio/\`).
+- Extract all **PDF files** visible in the screenshot (their full names with .pdf extension).
+- Determine the **show title** and **theme** from the screenshot (folder name, file names, or any visible text).
+
+## WHAT TO GENERATE
+
+Generate **TWO files** ready for deployment:
+
+### 1. show_notes.json (from the transcript text file)
+
+Parse the transcript text file and convert it to JSON with the following structure:
+\`\`\`json
+{
+  "show_title": "Extracted from screenshot or transcript",
+  "show_duration": "MM:SS",
+  "timecoded_transcript": [
+    { "timecode": "M:SS", "speaker": "Speaker Name", "text": "Dialogue line" }
+  ]
+}
+\`\`\`
+
+**Parsing rules:**
+- Extract timecodes in format \`[MM:SS]\` or \`MM:SS\` from the transcript.
+- Extract speaker names (e.g., "Speaker 1:", "Peter:", "Miles:", etc.).
+- The text after the speaker name is the dialogue line.
+- If the transcript has no speaker names, use "Speaker" as default.
+- Calculate the duration from the last timecode.
+
+### 2. index.html
+
+A complete, self-contained HTML document with the following features:
+
+**Page Structure:**
+- Header with show title and duration (from show_notes.json)
+- Cover image: Use \`audio.png\` (small, width: 200px, border-radius: 8px)
+- Standard HTML5 audio player with controls
+- Transcript list with synchronized highlighting
+
+**Design (Dark Theme):**
+- Background: #121212
+- Active line: bright blue (#007bff) with white text
+- Each line shows: speaker name (bold, colored) + text
+- Pointer cursor on hover, hover highlighting
+- Dividers between lines
+
+**JavaScript Logic:**
+- Fetch \`show_notes.json\` on load
+- Convert timecodes "M:SS" to seconds
+- Calculate end time for each line (next line's start, or start + 20s for last)
+- On \`timeupdate\`: find current line, highlight it, scroll into view
+- On click: seek to line's start time and play
+- Display error if JSON not found
+
+**STRICT REQUIREMENTS:**
+
+1. **File names (FIXED):**
+   - Audio file: MUST be \`ai_radio.mp3\`
+   - Cover image: MUST be \`audio.png\`
+   - JSON: MUST be \`show_notes.json\`
+   - All links must use these exact names.
+
+2. **Path for resources:**
+   - Build resource URLs using the path extracted from the screenshot:
+     \`https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/ai_radio.mp3\`
+     \`https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/audio.png\`
+   - If no path is visible in the screenshot, use:
+     \`https://item1000-collab.github.io/ai/ai_radio.mp3\`
+     \`https://item1000-collab.github.io/ai/audio.png\`
+
+3. **Links to PDF files:**
+   - Create download links for each PDF file found in the screenshot.
+   - Build links using: \`https://item1000-collab.github.io/ai/[PATH]/[PDF_NAME]\`
+   - Display PDF links as a list below the transcript or in a separate section.
+   - Each link should have \`target="_blank"\` and \`rel="noopener noreferrer"\`.
+
+4. **Code structure:**
+   - ALL CSS inside \`<style>\` in \`<head>\`
+   - ALL JavaScript inside \`<script>\` at the end of \`<body>\`
+   - NO external files (except Google Fonts if needed)
+   - NO external libraries (pure HTML, CSS, Vanilla JS)
+
+5. **Transcript parsing:**
+   - Support format: \`[MM:SS] Speaker: Text\`
+   - Support format: \`MM:SS Speaker: Text\`
+   - Support format: \`MM:SS - Speaker: Text\`
+   - If timecode is in format \`H:MM:SS\`, convert correctly.
+
+## OUTPUT FORMAT
+
+Return the following:
+
+1. **show_notes.json** — the parsed JSON file content.
+2. **index.html** — the complete HTML document.
+
+## EXAMPLE
+
+If the screenshot shows:
+- Path: \`engoo/20260823-peter-miles-radio/\`
+- PDF files: \`peter-miles-radio-show.pdf\`, \`summary-20260823165758.pdf\`
+- Folder name: \`20260823-peter-miles-radio\`
+
+And transcript contains:
+\`\`\`
+[00:00] Speaker 1: Yo, what's up?
+[00:02] Speaker 2: Hello. I'm back.
+\`\`\`
+
+Then generate:
+- JSON with show_title: "Peter Miles Radio Show"
+- HTML with audio src: \`https://item1000-collab.github.io/ai/engoo/20260823-peter-miles-radio/ai_radio.mp3\`
+- PDF links pointing to the same path.
+
+## IMPORTANT NOTES
+
+- If the screenshot shows a path, use it EXACTLY as shown.
+- If the transcript file contains a title, use it. Otherwise, derive from the folder name.
+- All file names are CASE SENSITIVE — copy exactly from the screenshot.
+- The transcript text file may contain timestamps in different formats — be flexible.
+- Do NOT include any extra commentary in the output — only the JSON and HTML.
+
+Generate both files now based on the attached screenshot and transcript text file.`,
+                showCustomText: false,
+                showTeacherCountry: false,
+                hasOutputFormat: false
             }
         };
 
-        // ===== ЛОГИКА =====
+        // ===== ЛОГИКА (без изменений) =====
         const selectTrigger = document.getElementById('selectTrigger');
         const selectDropdown = document.getElementById('selectDropdown');
         const customSelect = document.getElementById('customSelect');
@@ -1144,7 +1285,7 @@ Logic (JavaScript):
             } else if (selected === prompts.methodist && selected.getPrompt) {
                 fullPrompt = selected.getPrompt(currentMethodistMode);
             } else {
-                fullPrompt = selected.prompt;
+                fullPrompt = selected.prompt || selected.basePrompt || '';
             }
 
             if (selected === prompts.englishlessonarticle) {
