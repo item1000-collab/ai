@@ -119,15 +119,6 @@ textarea:focus { outline: none; border-color: var(--input-border-hover); backgro
 
 // ============================================================
 // 1. БИБЛИОТЕКА ПРОМПТОВ (данные)
-// ------------------------------------------------------------
-// Схема пресета:
-//   name       — название в списке
-//   template   — базовый текст (может содержать {{ТОКЕНЫ}})
-//   customText — показывать поле «custom text» (префиксуется к промпту)
-//   inputs     — текстовые поля: {id, label, placeholder, token, fallback, inline}
-//   variants   — группы кнопок-вариантов:
-//                {id, label, hint, default, options: [{id, label, shortLabel,
-//                 template — заменяет базу | suffix — добавляется к базе}]}
 // ============================================================
 const PROMPTS = {
 
@@ -528,6 +519,7 @@ Generate the HTML based on the attached screenshot.`
   // ----------------------------------------------------------
   englishlessonarticle: {
     name: '✍️ English lesson article (sources: txt, pdf and screen)',
+    customText: true,
     template: `Write an engaging, informative article in English based on the following source materials:
 - PDF presentation (slides)
 - Event transcript (text file)
@@ -556,10 +548,7 @@ The article should be interesting, educational, and suitable for an English-lang
 **STRICT RULE FOR IMAGE PLACEMENT:**
 - To place an image in the HTML, use an HTML comment like <!-- SLIDE-IMAGE: slide-001.jpg --> directly above or below the paragraph that discusses the content of that slide.
 - The final HTML output must NOT contain the literal text [SLIDE X] or slide-001 anywhere in the visible article text — it may only appear in the HTML comments or src attributes of the <img> tags.
-- For each slide, include the corresponding image using the URL: https://item1000-collab.github.io/ai/[PATH]/slide-00X.jpg (with leading zeros, e.g., slide-001.jpg, slide-002.jpg, etc.)
-
-Teacher: {{TEACHER}}
-Country: {{COUNTRY}}
+- For each slide, include the corresponding image using the URL: https://item1000-collab.github.io/ai/[PATH]/slide-00X.jpg (with leading zeros, e.g., slide-001.jpg, slide-002.jpg, etc.){{TEACHER_BLOCK}}{{COUNTRY_BLOCK}}
 
 REQUIREMENTS FOR THE ARTICLE:
 
@@ -662,8 +651,26 @@ Generate the complete HTML document with all styles embedded.
 - All links in the HTML must point to the SAME base URL path as shown in the screenshot for the PDFs.
 - Do NOT include links to any other files (TXT, HTML, etc.) unless they are explicitly requested in the instructions.`,
     inputs: [
-      { id: 'teacher', label: '👩‍🏫 Teacher', placeholder: 'e.g. Rosie',    token: '{{TEACHER}}', fallback: '[Teacher name required]', inline: true },
-      { id: 'country', label: '🌍 Country', placeholder: 'e.g. Venezuela', token: '{{COUNTRY}}', fallback: '[Country required]',      inline: true }
+      { 
+        id: 'teacher', 
+        label: '👩‍🏫 Teacher (optional)', 
+        placeholder: 'e.g. Rosie — leave blank to skip', 
+        token: '{{TEACHER_BLOCK}}', 
+        fallback: '', 
+        inline: true,
+        optional: true,
+        template: function(val) { return val ? '\n\nTeacher: ' + val : ''; }
+      },
+      { 
+        id: 'country', 
+        label: '🌍 Country (optional)', 
+        placeholder: 'e.g. Venezuela — leave blank to skip', 
+        token: '{{COUNTRY_BLOCK}}', 
+        fallback: '', 
+        inline: true,
+        optional: true,
+        template: function(val) { return val ? '\nCountry: ' + val : ''; }
+      }
     ]
   },
 
@@ -1044,7 +1051,7 @@ function loadState() {
 }
 
 // ============================================================
-// 5. СБОРКА ПРОМПТА (единственный универсальный конструктор)
+// 5. СБОРКА ПРОМПТА (обновленная версия)
 // ============================================================
 function buildPrompt() {
   const p = getPreset();
@@ -1059,10 +1066,19 @@ function buildPrompt() {
     else if (opt.suffix != null)   text = text + opt.suffix;
   });
 
-  // Подстановка полей (заменяет ВСЕ вхождения токена)
+  // Подстановка полей — теперь с поддержкой optional и кастомных шаблонов
   (p.inputs || []).forEach(f => {
     const val = (state.inputs[f.id] || '').trim();
-    text = text.split(f.token).join(val || f.fallback || '');
+    
+    // Если у поля есть template-функция — используем её для генерации значения
+    if (f.template && typeof f.template === 'function') {
+      const replacement = f.template(val);
+      text = text.split(f.token).join(replacement);
+    } else {
+      // Стандартное поведение: fallback, если поле обязательное
+      const fallback = f.optional ? '' : (f.fallback || '');
+      text = text.split(f.token).join(val || fallback);
+    }
   });
 
   // Пользовательский текст — в начало
