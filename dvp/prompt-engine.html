@@ -1,399 +1,141 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Prompt Engine</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #f5f3ef;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            color: #1a1a1a;
-            padding: 2rem 0;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-        }
-
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 2rem;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e7e3dc;
-        }
-
-        h1 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: #1f2b2c;
-            margin-bottom: 1.5rem;
-        }
-
-        .selector-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .input-group {
-            margin-bottom: 1.2rem;
-        }
-
-        label {
-            display: block;
-            font-weight: 600;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #7b6e5d;
-            margin-bottom: 0.5rem;
-        }
-
-        .custom-select {
-            position: relative;
-            width: 100%;
-            user-select: none;
-        }
-
-        .custom-select-trigger {
-            width: 100%;
-            padding: 0.8rem 2.8rem 0.8rem 1rem;
-            border-radius: 16px;
-            border: 1px solid #ddd8cf;
-            background: #fefcf9;
-            font-size: 0.9rem;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.5rem;
-            min-height: 52px;
-            word-break: break-word;
-        }
-
-        .custom-select-trigger:hover {
-            border-color: #b7aa98;
-        }
-
-        .custom-select-trigger .arrow {
-            flex-shrink: 0;
-            transition: transform 0.2s ease;
-            color: #7b6e5d;
-            font-size: 0.7rem;
-        }
-
-        .custom-select.open .custom-select-trigger .arrow {
-            transform: rotate(180deg);
-        }
-
-        .custom-select-trigger .selected-text {
-            flex: 1;
-            word-break: break-word;
-            white-space: normal;
-            line-height: 1.4;
-        }
-
-        .custom-select-dropdown {
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            right: 0;
-            background: white;
-            border-radius: 16px;
-            border: 1px solid #ddd8cf;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            max-height: 400px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-            padding: 0.4rem;
-        }
-
-        .custom-select.open .custom-select-dropdown {
-            display: block;
-        }
-
-        .custom-select-option {
-            padding: 0.7rem 0.9rem;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-family: inherit;
-            transition: background 0.15s ease;
-            word-break: break-word;
-            white-space: normal;
-            line-height: 1.4;
-            color: #1a1a1a;
-        }
-
-        .custom-select-option:hover {
-            background: #f0ede8;
-        }
-
-        .custom-select-option.selected {
-            background: #e8e0d6;
-            font-weight: 500;
-        }
-
-        .custom-select-option:not(:last-child) {
-            border-bottom: 1px solid #f0ede8;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border-radius: 16px;
-            border: 1px solid #ddd8cf;
-            background: #fefcf9;
-            font-size: 0.9rem;
-            font-family: inherit;
-            transition: all 0.2s ease;
-        }
-
-        input[type="text"]:hover {
-            border-color: #b7aa98;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #b7aa98;
-            background: #fff;
-        }
-
-        textarea {
-            width: 100%;
-            padding: 1rem 1.2rem;
-            border-radius: 16px;
-            border: 1px solid #ddd8cf;
-            background: #fefcf9;
-            font-size: 0.95rem;
-            font-family: inherit;
-            transition: all 0.2s ease;
-            resize: vertical;
-            min-height: 120px;
-            line-height: 1.6;
-        }
-
-        textarea:hover {
-            border-color: #b7aa98;
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: #b7aa98;
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(183, 170, 152, 0.15);
-        }
-
-        .inline-group {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .inline-group .input-group {
-            flex: 1 1 200px;
-            margin-bottom: 1.2rem;
-        }
-
-        .prompt-display {
-            background: #1e2829;
-            color: #e5e9e8;
-            padding: 1.2rem;
-            border-radius: 16px;
-            font-family: 'SF Mono', 'Fira Code', monospace;
-            font-size: 0.8rem;
-            white-space: pre-wrap;
-            word-break: break-word;
-            margin: 1rem 0;
-            border: 1px solid #3b4b4a;
-            min-height: 100px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin: 1rem 0;
-        }
-
-        .btn {
-            padding: 0.7rem 1.8rem;
-            border-radius: 40px;
-            border: none;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-
-        .btn-secondary {
-            background: #f0ede8;
-            color: #2b4a4d;
-            border: 1px solid #ddd2c4;
-        }
-
-        .btn-secondary:hover {
-            background: #e2d9cf;
-        }
-
-        .status {
-            font-size: 0.8rem;
-            color: #6f6a60;
-            margin-top: 0.5rem;
-        }
-
-        .hint {
-            font-size: 0.75rem;
-            color: #8f887d;
-            margin-top: 0.4rem;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .output-options {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-        }
-
-        .output-options .btn {
-            font-size: 0.75rem;
-            padding: 0.4rem 1.2rem;
-        }
-
-        .output-options .btn.active {
-            background: #b7aa98;
-            color: white;
-            border-color: #9e8f7c;
-        }
-
-        .mode-options {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 0.5rem;
-        }
-
-        .mode-options .btn {
-            font-size: 0.75rem;
-            padding: 0.4rem 1.2rem;
-        }
-
-        .mode-options .btn.active {
-            background: #b7aa98;
-            color: white;
-            border-color: #9e8f7c;
-        }
-
-        @media (max-width: 600px) {
-            .custom-select-trigger {
-                font-size: 0.85rem;
-                padding: 0.7rem 2.5rem 0.7rem 0.9rem;
-            }
-            .custom-select-option {
-                font-size: 0.85rem;
-                padding: 0.6rem 0.8rem;
-            }
-            .card {
-                padding: 1.2rem;
-            }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt Engine</title>
+<style>
+:root {
+  --bg: #f5f3ef;
+  --card-bg: #ffffff;
+  --card-border: #e7e3dc;
+  --text: #1a1a1a;
+  --heading: #1f2b2c;
+  --label: #7b6e5d;
+  --hint: #8f887d;
+  --input-bg: #fefcf9;
+  --input-border: #ddd8cf;
+  --input-border-hover: #b7aa98;
+  --accent: #b7aa98;
+  --accent-dark: #9e8f7c;
+  --btn-bg: #f0ede8;
+  --btn-bg-hover: #e2d9cf;
+  --btn-text: #2b4a4d;
+  --btn-border: #ddd2c4;
+  --display-bg: #1e2829;
+  --display-text: #e5e9e8;
+  --display-border: #3b4b4a;
+  --status-info: #6f6a60;
+  --status-success: #2c4b4e;
+  --status-error: #a05252;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); font-family: 'Inter', system-ui, -apple-system, sans-serif; color: var(--text); padding: 2rem 0; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+.card { background: var(--card-bg); border-radius: 28px; padding: 2rem; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border: 1px solid var(--card-border); }
+h1 { font-size: 1.8rem; font-weight: 600; color: var(--heading); margin-bottom: 1.5rem; }
+.selector-group { margin-bottom: 1.5rem; }
+.input-group { margin-bottom: 1.2rem; }
+label { display: block; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--label); margin-bottom: 0.5rem; }
+.custom-select { position: relative; width: 100%; user-select: none; }
+.custom-select-trigger { width: 100%; padding: 0.8rem 2.8rem 0.8rem 1rem; border-radius: 16px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 0.9rem; font-family: inherit; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; min-height: 52px; word-break: break-word; }
+.custom-select-trigger:hover { border-color: var(--input-border-hover); }
+.custom-select-trigger .arrow { flex-shrink: 0; transition: transform 0.2s ease; color: var(--label); font-size: 0.7rem; }
+.custom-select.open .custom-select-trigger .arrow { transform: rotate(180deg); }
+.custom-select-trigger .selected-text { flex: 1; word-break: break-word; white-space: normal; line-height: 1.4; }
+.custom-select-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border-radius: 16px; border: 1px solid var(--input-border); box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 400px; overflow-y: auto; z-index: 1000; display: none; padding: 0.4rem; }
+.custom-select.open .custom-select-dropdown { display: block; }
+.custom-select-option { padding: 0.7rem 0.9rem; border-radius: 12px; cursor: pointer; font-size: 0.9rem; font-family: inherit; transition: background 0.15s ease; word-break: break-word; white-space: normal; line-height: 1.4; color: var(--text); }
+.custom-select-option:hover { background: #f0ede8; }
+.custom-select-option.selected { background: #e8e0d6; font-weight: 500; }
+.custom-select-option:not(:last-child) { border-bottom: 1px solid #f0ede8; }
+input[type="text"] { width: 100%; padding: 0.8rem 1rem; border-radius: 16px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 0.9rem; font-family: inherit; transition: all 0.2s ease; }
+input[type="text"]:hover { border-color: var(--input-border-hover); }
+input[type="text"]:focus { outline: none; border-color: var(--input-border-hover); background: #fff; }
+textarea { width: 100%; padding: 1rem 1.2rem; border-radius: 16px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 0.95rem; font-family: inherit; transition: all 0.2s ease; resize: vertical; min-height: 120px; line-height: 1.6; }
+textarea:hover { border-color: var(--input-border-hover); }
+textarea:focus { outline: none; border-color: var(--input-border-hover); background: #fff; box-shadow: 0 0 0 3px rgba(183,170,152,0.15); }
+.inline-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+.inline-group .input-group { flex: 1 1 200px; margin-bottom: 1.2rem; }
+.dynamic-group { margin-bottom: 1.2rem; }
+.group-options { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.group-options .btn { font-size: 0.75rem; padding: 0.4rem 1.2rem; }
+.group-options .btn.active { background: var(--accent); color: white; border-color: var(--accent-dark); }
+.prompt-display { background: var(--display-bg); color: var(--display-text); padding: 1.2rem; border-radius: 16px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; margin: 1rem 0; border: 1px solid var(--display-border); min-height: 100px; max-height: 400px; overflow-y: auto; }
+.button-group { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
+.btn { padding: 0.7rem 1.8rem; border-radius: 40px; border: none; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+.btn-secondary { background: var(--btn-bg); color: var(--btn-text); border: 1px solid var(--btn-border); }
+.btn-secondary:hover { background: var(--btn-bg-hover); }
+.status { font-size: 0.8rem; margin-top: 0.5rem; }
+.status--info { color: var(--status-info); }
+.status--success { color: var(--status-success); }
+.status--error { color: var(--status-error); }
+.hint { font-size: 0.75rem; color: var(--hint); margin-top: 0.4rem; }
+.hidden { display: none !important; }
+@media (max-width: 600px) {
+  .custom-select-trigger { font-size: 0.85rem; padding: 0.7rem 2.5rem 0.7rem 0.9rem; }
+  .custom-select-option { font-size: 0.85rem; padding: 0.6rem 0.8rem; }
+  .card { padding: 1.2rem; }
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>⚙️ Prompt Engine</h1>
+<div class="container">
+  <div class="card">
+    <h1>⚙️ Prompt Engine</h1>
 
-            <div class="selector-group">
-                <label>⭐ Favorite Prompts</label>
-                <div class="custom-select" id="customSelect">
-                    <div class="custom-select-trigger" id="selectTrigger">
-                        <span class="selected-text">— Choose a preset —</span>
-                        <span class="arrow">▼</span>
-                    </div>
-                    <div class="custom-select-dropdown" id="selectDropdown"></div>
-                </div>
-            </div>
-
-            <div id="methodistModeGroup" class="hidden">
-                <label>🌐 Language Mode</label>
-                <div class="mode-options">
-                    <button class="btn btn-secondary active" data-methodist-mode="ru-en">🇷🇺🇬🇧 Ru-En (default)</button>
-                    <button class="btn btn-secondary" data-methodist-mode="ru">🇷🇺 Ru only</button>
-                </div>
-                <div class="hint">Ru-En: for English slides with translation. Ru: for Russian-only slides (no English content).</div>
-            </div>
-
-            <div id="teacherCountryGroup" class="hidden">
-                <div class="inline-group">
-                    <div class="input-group">
-                        <label>👩‍🏫 Teacher</label>
-                        <input type="text" id="teacherInput" placeholder="e.g. Rosie" />
-                    </div>
-                    <div class="input-group">
-                        <label>🌍 Country</label>
-                        <input type="text" id="countryInput" placeholder="e.g. Venezuela" />
-                    </div>
-                </div>
-                <div class="hint">These fields are required for the English Lesson Article preset.</div>
-            </div>
-
-            <div id="customTextGroup" class="hidden">
-                <div class="input-group">
-                    <label>📝 Optional: Add your custom text</label>
-                    <textarea id="customText" placeholder="Paste your text here (optional). It will be prepended to the prompt."></textarea>
-                    <div class="hint">If filled, this text will appear at the beginning of the prompt, followed by a blank line and the selected prompt.</div>
-                </div>
-            </div>
-
-            <div id="outputFormatGroup" class="hidden">
-                <label>📄 Output Format</label>
-                <div class="output-options">
-                    <button class="btn btn-secondary active" data-format="table">📊 Table</button>
-                    <button class="btn btn-secondary" data-format="gist">📝 Gist Markdown</button>
-                    <button class="btn btn-secondary" data-format="plaintext">📄 Plain Text</button>
-                </div>
-                <div class="hint">Choose how the translation should be formatted in the output.</div>
-            </div>
-
-            <div class="button-group">
-                <button id="copyBtn" class="btn btn-secondary">📋 Copy Prompt</button>
-            </div>
-
-            <div class="prompt-display" id="promptDisplay">
-                Select a preset to load a prompt template.
-            </div>
-
-            <div class="status" id="statusMessage">💡 Choose a preset from the dropdown above</div>
+    <div class="selector-group">
+      <label>⭐ Favorite Prompts</label>
+      <div class="custom-select" id="customSelect">
+        <div class="custom-select-trigger" id="selectTrigger" role="button" aria-haspopup="listbox" aria-expanded="false" tabindex="0">
+          <span class="selected-text">— Choose a preset —</span>
+          <span class="arrow">▼</span>
         </div>
+        <div class="custom-select-dropdown" id="selectDropdown" role="listbox"></div>
+      </div>
     </div>
 
-    <script>
-        // ============================================================
-        // 1. DEFINITION OF PROMPTS
-        // ============================================================
-        const prompts = {
-            enrutranslator: {
-                name: '📋 English-Russian Translation (source optional: txt file)',
-                basePrompt: `Translate the following text from English to Russian. Provide a clear, accurate translation with a focus on natural language flow.
+    <div id="dynamicControls"></div>
+
+    <div id="customTextGroup" class="hidden">
+      <div class="input-group">
+        <label>📝 Optional: Add your custom text</label>
+        <textarea id="customText" placeholder="Paste your text here (optional). It will be prepended to the prompt."></textarea>
+        <div class="hint">If filled, this text will appear at the beginning of the prompt, followed by a blank line and the selected prompt.</div>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button id="copyBtn" class="btn btn-secondary">📋 Copy Prompt</button>
+    </div>
+
+    <div class="prompt-display" id="promptDisplay">Select a preset to load a prompt template.</div>
+    <div class="status status--info" id="statusMessage">💡 Choose a preset from the dropdown above</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ============================================================
+// 1. БИБЛИОТЕКА ПРОМПТОВ (данные)
+// ------------------------------------------------------------
+// Схема пресета:
+//   name       — название в списке
+//   template   — базовый текст (может содержать {{ТОКЕНЫ}})
+//   customText — показывать поле «custom text» (префиксуется к промпту)
+//   inputs     — текстовые поля: {id, label, placeholder, token, fallback, inline}
+//   variants   — группы кнопок-вариантов:
+//                {id, label, hint, default, options: [{id, label, shortLabel,
+//                 template — заменяет базу | suffix — добавляется к базе}]}
+// ============================================================
+const PROMPTS = {
+
+  // ----------------------------------------------------------
+  enrutranslator: {
+    name: '📊 English-Russian Translation (source optional: txt file)',
+    customText: true,
+    template: `Translate the following text from English to Russian. Provide a clear, accurate translation with a focus on natural language flow.
 
 REQUIREMENTS:
 
@@ -414,13 +156,41 @@ REQUIREMENTS:
     If no explicit episode markers exist, divide the text into equal logical parts (by paragraphs, scenes, or every ~200–300 words) and label them as «Episode 1», «Episode 2», etc.
 
 CRITICAL FORMATTING RULE — BOLD IN BOTH COLUMNS:
+
     For EVERY term listed in the glossary for a given episode, you MUST bold that term in BOTH the English column AND the Russian column of the translation table for that episode. This applies to ALL episodes, not just the first one. Every occurrence of every glossary term in the translation table must be enclosed in **bold** markers (e.g., **to give away** in English and **отдать** in Russian). If a term appears multiple times in the table, bold it each time.`,
-                showCustomText: true,
-                showTeacherCountry: false,
-                hasOutputFormat: true,
-                getPrompt: function(format) {
-                    if (format === 'gist') {
-                        return this.basePrompt + `
+    variants: [{
+      id: 'format',
+      label: '📄 Output Format',
+      hint: 'Choose how the translation should be formatted in the output.',
+      default: 'table',
+      options: [
+        {
+          id: 'table',
+          label: '📊 Table',
+          shortLabel: 'Table',
+          suffix: `
+
+OUTPUT FORMAT: Table
+
+The ENTIRE translation output must be formatted as a two-column table:
+| English (original) | Russian (translation) |
+Every sentence, phrase, or segment from the source must appear in the left column, with its corresponding Russian version in the right column.
+
+For each episode, add a glossary section after the translation table:
+### Glossary for Episode X
+| English term | Russian translation | Explanation |
+|--------------|---------------------|-------------|
+| ... | ... | ... |
+
+IMPORTANT: Every term listed in the glossary must be bolded in BOTH columns of the translation table — the English column AND the Russian column. This applies to ALL episodes, not just the first one. Every occurrence of each glossary term in the table must be bolded.
+
+OUTPUT: Return only the table and glossaries. No extra commentary, no introductory or concluding text.`
+        },
+        {
+          id: 'gist',
+          label: '📝 Gist Markdown',
+          shortLabel: 'Gist Markdown',
+          suffix: `
 
 OUTPUT FORMAT: Gist Markdown
 
@@ -429,29 +199,29 @@ Format the translation as a structured Markdown document suitable for a GitHub G
 1. The entire output must be inside a single Markdown code block with \`\`\`markdown ... \`\`\` delimiters.
 
 2. Use this structure:
-   # Translation: [Title of the source text]
+    # Translation: [Title of the source text]
 
-   ## Episode 1: [Title]
-   | English (original) | Russian (translation) |
-   |---------------------|------------------------|
-   | ...                 | ...                    |
+    ## Episode 1: [Title]
+    | English (original) | Russian (translation) |
+    |---------------------|------------------------|
+    | ... | ... |
 
-   ### Glossary for Episode 1
-   | English term | Russian translation | Explanation |
-   |--------------|---------------------|-------------|
-   | ...          | ...                 | ...         |
+    ### Glossary for Episode 1
+    | English term | Russian translation | Explanation |
+    |--------------|---------------------|-------------|
+    | ... | ... | ... |
 
-   ## Episode 2: [Title]
-   | English (original) | Russian (translation) |
-   |---------------------|------------------------|
-   | ...                 | ...                    |
+    ## Episode 2: [Title]
+    | English (original) | Russian (translation) |
+    |---------------------|------------------------|
+    | ... | ... |
 
-   ### Glossary for Episode 2
-   | English term | Russian translation | Explanation |
-   |--------------|---------------------|-------------|
-   | ...          | ...                 | ...         |
+    ### Glossary for Episode 2
+    | English term | Russian translation | Explanation |
+    |--------------|---------------------|-------------|
+    | ... | ... | ... |
 
-   (Continue this pattern for all episodes)
+    (Continue this pattern for all episodes)
 
 3. Each episode must be a separate Markdown section with its own table.
 
@@ -463,58 +233,57 @@ Format the translation as a structured Markdown document suitable for a GitHub G
 
 7. The output must be valid Markdown that renders correctly in a Gist.
 
-OUTPUT: Return only the Markdown block.`;
-                    } else if (format === 'plaintext') {
-                        return this.basePrompt + `
+OUTPUT: Return only the Markdown block.`
+        },
+        {
+          id: 'plaintext',
+          label: '📄 Plain Text',
+          shortLabel: 'Plain Text',
+          suffix: `
 
 OUTPUT FORMAT: Plain Text
 
 Format the translation as plain text (no tables, no Markdown).
 
 1. Each episode must start with a separator line:
-   — Episode 1: [Title] —
-   (followed by a blank line)
+    — Episode 1: [Title] —
+    (followed by a blank line)
 
 2. For each sentence or phrase:
-   - Write the English original on one line.
-   - Write the Russian translation on the next line.
-   - Leave a blank line between each pair.
+    - Write the English original on one line.
+    - Write the Russian translation on the next line.
+    - Leave a blank line between each pair.
 
 3. Highlight advanced vocabulary in BOTH English and Russian using **bold** markers (e.g., **advanced word**). IMPORTANT: The bolded terms in the English text and the Russian text must match the terms listed in the glossary for that episode. This must be done for EVERY episode, not just the first one.
 
 4. At the end of each episode, add a glossary for that episode:
-   Glossary for Episode X:
-   - English term — Russian translation — Explanation
+    Glossary for Episode X:
+    - English term — Russian translation — Explanation
 
 5. Do NOT use any tables, columns, or Markdown formatting (except bold).
 
 6. Do NOT include any introductory or concluding text — only the translation and glossaries.
 
-OUTPUT: Return only the plain text translation with glossaries after each episode.`;
-                    } else {
-                        return this.basePrompt + `
+OUTPUT: Return only the plain text translation with glossaries after each episode.`
+        }
+      ]
+    }]
+  },
 
-OUTPUT FORMAT: Table
-
-The ENTIRE translation output must be formatted as a two‑column table:
-| English (original) | Russian (translation) |
-Every sentence, phrase, or segment from the source must appear in the left column, with its corresponding Russian version in the right column.
-
-For each episode, add a glossary section after the translation table:
-### Glossary for Episode X
-| English term | Russian translation | Explanation |
-|--------------|---------------------|-------------|
-| ...          | ...                 | ...         |
-
-IMPORTANT: Every term listed in the glossary must be bolded in BOTH columns of the translation table — the English column AND the Russian column. This applies to ALL episodes, not just the first one. Every occurrence of each glossary term in the table must be bolded.
-
-OUTPUT: Return only the table and glossaries. No extra commentary, no introductory or concluding text.`;
-                    }
-                }
-            },
-            zenwriter: {
-                name: '📝 Article for Zen (sources: txt and pdf files)',
-                basePromptRuEn: `Напиши интересную статью для Дзен на основе вложенных файлов pdf-презентации и транскрипции мероприятия.
+  // ----------------------------------------------------------
+  zenwriter: {
+    name: '📝 Article for Zen (sources: txt and pdf files)',
+    variants: [{
+      id: 'mode',
+      label: '🌐 Language Mode',
+      hint: 'Ru-En: for English slides with translation. Ru: for Russian-only slides (no English content).',
+      default: 'ru-en',
+      options: [
+        {
+          id: 'ru-en',
+          label: '🇷🇺🇬🇧 Ru-En (default)',
+          shortLabel: '🇷🇺🇬🇧 Ru-En',
+          template: `Напиши интересную статью для Дзен на основе вложенных файлов pdf-презентации и транскрипции мероприятия.
 
 ТРЕБОВАНИЯ К СТАТЬЕ:
 
@@ -572,13 +341,13 @@ OUTPUT: Return only the table and glossaries. No extra commentary, no introducto
 — Использовать жирный шрифт для ключевых фраз.
 — Использовать курсив для цитат на русском.
 — Разделять разделы подзаголовками (##).
-— Вставлять эмодзи (👩‍🏫, 💡, 📌, ⚠️) для визуального разнообразия.
+— Вставлять эмодзи (📚, 💡, 📌, ⚠️) для визуального разнообразия.
 — Ссылки на слайды ставить строго в квадратных скобках: [SLIDE 5].
 
 Для цитат:
 — Оригинал на английском → перевод на русском.
 — Перевод выделять жирным или отдельным абзацем.
-— Комментарии учителя помечать 👩‍🏫 и выделять курсивом.
+— Комментарии учителя помечать 🎓 и выделять курсивом.
 
 СТИЛЬ ИЗЛОЖЕНИЯ
 — Разговорный, но грамотный.
@@ -589,8 +358,13 @@ OUTPUT: Return only the table and glossaries. No extra commentary, no introducto
 ОБЯЗАТЕЛЬНО проверяй, что номера слайдов в статье соответствуют номерам в PDF.
 Добавляй комментарии учителя из транскрипции, чтобы связать теорию из слайдов с живой практикой (если есть).
 
-Еще раз напоминаю - если использовался AI - приведи полностью текст AI на английском и дай перевод и пояснения на русском.`,
-                basePromptRu: `Напиши интересную статью для Дзен на основе вложенных файлов pdf-презентации и транскрипции мероприятия (или расшифровки доклада).
+Еще раз напоминаю - если использовался AI - приведи полностью текст AI на английском и дай перевод и пояснения на русском.`
+        },
+        {
+          id: 'ru',
+          label: '🇷🇺 Ru only',
+          shortLabel: '🇷🇺 Ru only',
+          template: `Напиши интересную статью для Дзен на основе вложенных файлов pdf-презентации и транскрипции мероприятия (или расшифровки доклада).
 
 ТРЕБОВАНИЯ К СТАТЬЕ:
 
@@ -647,7 +421,7 @@ OUTPUT: Return only the table and glossaries. No extra commentary, no introducto
 — Использовать жирный шрифт для ключевых фраз.
 — Использовать курсив для цитат.
 — Разделять разделы подзаголовками (##).
-— Вставлять эмодзи (📌, 💡, 🔍, ⚠️, 🎯) для визуального разнообразия.
+— Вставлять эмодзи (📚, 💡, 🔍, ⚠️, 🎯) для визуального разнообразия.
 — Ссылки на слайды ставить строго в квадратных скобках: [SLIDE 5].
 
 Для цитат:
@@ -663,21 +437,16 @@ OUTPUT: Return only the table and glossaries. No extra commentary, no introducto
 ОБЯЗАТЕЛЬНО проверяй, что номера слайдов в статье соответствуют номерам в PDF.
 Добавляй комментарии спикера из транскрипции, чтобы связать теорию из слайдов с живой практикой (если есть).
 
-Еще раз напоминаю — если использовался AI, приведи полностью текст AI на русском.`,
-                showCustomText: false,
-                showTeacherCountry: false,
-                hasOutputFormat: false,
-                hasModeSelector: true,
-                getPrompt: function(mode) {
-                    if (mode === 'ru') {
-                        return this.basePromptRu;
-                    }
-                    return this.basePromptRuEn;
-                }
-            },
-            indexofevent: {
-                name: '📂 Index of Event (generate HTML page with PDF file list) — (source - screen)',
-                prompt: `Create a complete, self-contained HTML document that displays a list of PDF files based on a screenshot or a provided file list.
+Еще раз напоминаю — если использовался AI, приведи полностью текст AI на русском.`
+        }
+      ]
+    }]
+  },
+
+  // ----------------------------------------------------------
+  indexofevent: {
+    name: '📋 Index of Event (generate HTML page with PDF file list) — (source - screen)',
+    template: `Create a complete, self-contained HTML document that displays a list of PDF files based on a screenshot or a provided file list.
 
 ## INPUT DATA (extract from the screenshot or file list):
 - Extract all PDF files visible in the screenshot (their full names with .pdf extension). Include ONLY files with .pdf extension — ignore folders, directories, and files without .pdf extension.
@@ -689,7 +458,7 @@ OUTPUT: Return only the table and glossaries. No extra commentary, no introducto
 A complete HTML document with the following features:
 
 ### 1. PAGE STRUCTURE:
-- Header with logo (📖 icon), title "Resources", subtitle with lesson theme (extracted from the screenshot — e.g., series name, season, episode).
+- Header with logo (📄 icon), title "Resources", subtitle with lesson theme (extracted from the screenshot — e.g., series name, season, episode).
 - Badge on the right with a pulsing dot indicator and label "PDF Files" (without a count).
 - Main block with a card containing a grid of PDF files.
 - Footer with text "Powered by AI Exploration Hub".
@@ -753,14 +522,13 @@ Output a complete HTML code that can be saved as a .html file and opened in a br
 - No comments or explanations in the final code, only clean HTML.
 - Preserve all visual details: spacing, font sizes, rounding, shadows, colors.
 
-Generate the HTML based on the attached screenshot.`,
-                showCustomText: false,
-                showTeacherCountry: false,
-                hasOutputFormat: false
-            },
-            englishlessonarticle: {
-                name: '✍️ English lesson article (sources: txt, pdf and screen)',
-                prompt: `Write an engaging, informative article in English based on the following source materials:
+Generate the HTML based on the attached screenshot.`
+  },
+
+  // ----------------------------------------------------------
+  englishlessonarticle: {
+    name: '✍️ English lesson article (sources: txt, pdf and screen)',
+    template: `Write an engaging, informative article in English based on the following source materials:
 - PDF presentation (slides)
 - Event transcript (text file)
 - Screenshot showing available lesson files
@@ -790,8 +558,8 @@ The article should be interesting, educational, and suitable for an English-lang
 - The final HTML output must NOT contain the literal text [SLIDE X] or slide-001 anywhere in the visible article text — it may only appear in the HTML comments or src attributes of the <img> tags.
 - For each slide, include the corresponding image using the URL: https://item1000-collab.github.io/ai/[PATH]/slide-00X.jpg (with leading zeros, e.g., slide-001.jpg, slide-002.jpg, etc.)
 
-Teacher: [TEACHER]
-Country: [COUNTRY]
+Teacher: {{TEACHER}}
+Country: {{COUNTRY}}
 
 REQUIREMENTS FOR THE ARTICLE:
 
@@ -808,11 +576,11 @@ REQUIREMENTS FOR THE ARTICLE:
 - Rely on vocabulary slides from the PDF.
 - Present vocabulary in plain text format (NO TABLES).
 - For each vocabulary item, provide:
-  — The English phrase/word.
-  — Literal meaning (if applicable).
-  — Figurative / contextual meaning.
-  — Example from the material (quote + explanation).
-  — How the material explains this vocabulary (quote from the slide + explanation).
+   — The English phrase/word.
+   — Literal meaning (if applicable).
+   — Figurative / contextual meaning.
+   — Example from the material (quote + explanation).
+   — How the material explains this vocabulary (quote from the slide + explanation).
 
 4. METAPHORS, SYMBOLS, AND KEY IDEAS:
 - Identify 3–4 key elements from the material (symbols, metaphors, core theses) based on the slides.
@@ -857,11 +625,11 @@ Conclusion (1–2 paragraphs):
 - Use subheadings (##) to separate sections.
 - Use **bold** for key phrases.
 - Use *italics* for quotes.
-- Use emojis (👩‍🏫, 💡, 📌, ⚠️) for visual variety.
+- Use emojis (📚, 💡, 📌, ⚠️) for visual variety.
 - For quotes:
-  — Quote the original in English.
-  — Provide explanations in English.
-  — Mark teacher's comments with 👩‍🏫 and put them in *italics*.
+   — Quote the original in English.
+   — Provide explanations in English.
+   — Mark teacher's comments with 🎓 and put them in *italics*.
 - Do NOT use tables.
 
 7. CRITICAL REMINDERS:
@@ -893,13 +661,16 @@ Generate the complete HTML document with all styles embedded.
 - If the screenshot shows a file with a specific name, copy it VERBATIM (including capital letters, numbers, and extensions). Do NOT change "Inn4Px" to "lnn4Px" or any other variation.
 - All links in the HTML must point to the SAME base URL path as shown in the screenshot for the PDFs.
 - Do NOT include links to any other files (TXT, HTML, etc.) unless they are explicitly requested in the instructions.`,
-                showCustomText: false,
-                showTeacherCountry: true,
-                hasOutputFormat: false
-            },
-            radioshow: {
-                name: '🎙️ Radio Show (source: json)',
-                prompt: `Role: You are a senior frontend developer. Create a single-page web application (SPA) for listening to an audio show with interactive, time-synchronized transcripts, ready for immediate deployment on GitHub Pages.
+    inputs: [
+      { id: 'teacher', label: '👩‍🏫 Teacher', placeholder: 'e.g. Rosie',    token: '{{TEACHER}}', fallback: '[Teacher name required]', inline: true },
+      { id: 'country', label: '🌍 Country', placeholder: 'e.g. Venezuela', token: '{{COUNTRY}}', fallback: '[Country required]',      inline: true }
+    ]
+  },
+
+  // ----------------------------------------------------------
+  radioshow: {
+    name: '🎧 Radio Show (source: json)',
+    template: `Role: You are a senior frontend developer. Create a single-page web application (SPA) for listening to an audio show with interactive, time-synchronized transcripts, ready for immediate deployment on GitHub Pages.
 
 1. INPUT DATA (Files)
 
@@ -966,14 +737,13 @@ Logic (JavaScript):
 
     File names: The code must use only ai_radio.mp3, cover.png, and show_notes.json. No other name variations (like audio.mp3) should be present.
 
-    Simplicity: The code should be concise, without unnecessary libraries (only pure HTML, CSS, Vanilla JS).`,
-                showCustomText: false,
-                showTeacherCountry: false,
-                hasOutputFormat: false
-            },
-            gistpresentation: {
-                name: '📝 Gist Presentation Overview (presentation slides analysis in md)',
-                prompt: `По этой презентации дай общую информацию на русском языке, а затем объяснение и трактовку каждого слайда включая текст отдельных слов и фраз на английском языке и их перевод на русский язык и комментарии.
+    Simplicity: The code should be concise, without unnecessary libraries (only pure HTML, CSS, Vanilla JS).`
+  },
+
+  // ----------------------------------------------------------
+  gistpresentation: {
+    name: '📑 Gist Presentation Overview (presentation slides analysis in md)',
+    template: `По этой презентации дай общую информацию на русском языке, а затем объяснение и трактовку каждого слайда включая текст отдельных слов и фраз на английском языке и их перевод на русский язык и комментарии.
 
 ТРЕБОВАНИЯ:
 
@@ -1002,16 +772,16 @@ Logic (JavaScript):
 
 4. Структура документа:
    # Название презентации
-   
+
    ## Общая информация
    ...
-   
+
    ## Слайд 1
    ### Заголовок слайда
    Описание...
    - **английская фраза** — перевод — комментарий
    ...
-   
+
    ## Слайд 2
    ...
 
@@ -1026,14 +796,13 @@ Logic (JavaScript):
    — Для каждого слайда указывать все значимые слова и фразы
    — Комментарии должны быть полезными и информативными
 
-ВЫХОДНОЙ ФОРМАТ: Только текст в формате Markdown (.md), готовый для вставки в Gist. Никакого дополнительного текста вне формата.`,
-                showCustomText: false,
-                showTeacherCountry: false,
-                hasOutputFormat: false
-            },
-            audioshow: {
-                name: '🎙️ Radio Show from Screenshot (source: screen + txt with timestamps)',
-                prompt: `Role: You are a senior frontend developer. Create a complete, self-contained web application for an audio radio show with synchronized transcripts, ready for deployment on GitHub Pages.
+ВЫХОДНОЙ ФОРМАТ: Только текст в формате Markdown (.md), готовый для вставки в Gist. Никакого дополнительного текста вне формата.`
+  },
+
+  // ----------------------------------------------------------
+  audioshow: {
+    name: '🎙 Radio Show from Screenshot (source: screen + txt with timestamps)',
+    template: `Role: You are a senior frontend developer. Create a complete, self-contained web application for an audio radio show with synchronized transcripts, ready for deployment on GitHub Pages.
 
 ## OUTPUT FILES
 
@@ -1214,224 +983,313 @@ Then generate:
 - Do NOT include any extra commentary in the output — only the JSON and HTML.
 - **Remember: audio.json must be PURE JSON — no markers, no BOM, no code blocks**
 
-Generate both files now based on the attached screenshot and transcript text file.`,
-                showCustomText: false,
-                showTeacherCountry: false,
-                hasOutputFormat: false
-            }
-        };
+Generate both files now based on the attached screenshot and transcript text file.`
+  }
+};
 
-        // ===== LOGIC =====
-        const selectTrigger = document.getElementById('selectTrigger');
-        const selectDropdown = document.getElementById('selectDropdown');
-        const customSelect = document.getElementById('customSelect');
-        const selectedText = selectTrigger.querySelector('.selected-text');
-        const customText = document.getElementById('customText');
-        const customTextGroup = document.getElementById('customTextGroup');
-        const teacherInput = document.getElementById('teacherInput');
-        const countryInput = document.getElementById('countryInput');
-        const teacherCountryGroup = document.getElementById('teacherCountryGroup');
-        const outputFormatGroup = document.getElementById('outputFormatGroup');
-        const methodistModeGroup = document.getElementById('methodistModeGroup');
-        const copyBtn = document.getElementById('copyBtn');
-        const promptDisplay = document.getElementById('promptDisplay');
-        const statusMessage = document.getElementById('statusMessage');
+// ============================================================
+// 2. СОСТОЯНИЕ
+// ============================================================
+const STORAGE_KEY = 'promptEngineState';
+const state = {
+  presetId: '',   // выбранный пресет
+  variants: {},   // groupId -> optionId
+  inputs: {},     // inputId -> значение
+  customText: ''
+};
 
-        let currentValue = '';
-        let currentFormat = 'table';
-        let currentMethodistMode = 'ru-en';
+// ============================================================
+// 3. DOM
+// ============================================================
+const $ = id => document.getElementById(id);
+const customSelect    = $('customSelect');
+const selectTrigger   = $('selectTrigger');
+const selectDropdown  = $('selectDropdown');
+const selectedText    = selectTrigger.querySelector('.selected-text');
+const dynamicControls = $('dynamicControls');
+const customTextGroup = $('customTextGroup');
+const customTextInput = $('customText');
+const copyBtn         = $('copyBtn');
+const promptDisplay   = $('promptDisplay');
+const statusMessage   = $('statusMessage');
 
-        function renderOptions() {
-            const keys = Object.keys(prompts);
-            let html = `<div class="custom-select-option" data-value="">— Choose a preset —</div>`;
-            keys.forEach(key => {
-                const p = prompts[key];
-                html += `<div class="custom-select-option" data-value="${key}">${p.name}</div>`;
-            });
-            selectDropdown.innerHTML = html;
-        }
-        renderOptions();
+// ============================================================
+// 4. ХЕЛПЕРЫ
+// ============================================================
+function getPreset() { return PROMPTS[state.presetId] || null; }
 
-        function toggleDropdown(open) {
-            if (open === undefined) {
-                customSelect.classList.toggle('open');
-            } else if (open) {
-                customSelect.classList.add('open');
-            } else {
-                customSelect.classList.remove('open');
-            }
-        }
+function getVariantOption(group) {
+  const id = state.variants[group.id] || group.default;
+  return group.options.find(o => o.id === id) || group.options[0];
+}
 
-        function selectOption(value) {
-            currentValue = value;
-            const options = selectDropdown.querySelectorAll('.custom-select-option');
-            let label = '— Choose a preset —';
-            options.forEach(opt => {
-                opt.classList.remove('selected');
-                if (opt.dataset.value === value) {
-                    opt.classList.add('selected');
-                    label = opt.textContent;
-                }
-            });
-            selectedText.textContent = label;
-            toggleDropdown(false);
-            loadPrompt();
-        }
+function setStatus(msg, type = 'info') {
+  statusMessage.textContent = msg;
+  statusMessage.className = 'status status--' + type;
+}
 
-        selectTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleDropdown();
-        });
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
 
-        selectDropdown.addEventListener('click', (e) => {
-            const option = e.target.closest('.custom-select-option');
-            if (!option) return;
-            selectOption(option.dataset.value);
-        });
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (s && typeof s === 'object') Object.assign(state, s);
+  } catch (e) {}
+  if (!state.variants || typeof state.variants !== 'object') state.variants = {};
+  if (!state.inputs  || typeof state.inputs  !== 'object') state.inputs  = {};
+  if (typeof state.customText !== 'string') state.customText = '';
+  if (!PROMPTS[state.presetId]) state.presetId = '';
+}
 
-        document.addEventListener('click', () => {
-            toggleDropdown(false);
-        });
+// ============================================================
+// 5. СБОРКА ПРОМПТА (единственный универсальный конструктор)
+// ============================================================
+function buildPrompt() {
+  const p = getPreset();
+  if (!p) return null;
 
-        document.querySelectorAll('.output-options .btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.output-options .btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentFormat = this.dataset.format;
-                loadPrompt();
-            });
-        });
+  let text = p.template || '';
 
-        document.querySelectorAll('.mode-options .btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.mode-options .btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentMethodistMode = this.dataset.methodistMode;
-                loadPrompt();
-            });
-        });
+  // Варианты: template заменяет базу, suffix добавляется к ней
+  (p.variants || []).forEach(g => {
+    const opt = getVariantOption(g);
+    if (opt.template != null)      text = opt.template;
+    else if (opt.suffix != null)   text = text + opt.suffix;
+  });
 
-        function getSelectedPrompt() {
-            return prompts[currentValue] || null;
-        }
+  // Подстановка полей (заменяет ВСЕ вхождения токена)
+  (p.inputs || []).forEach(f => {
+    const val = (state.inputs[f.id] || '').trim();
+    text = text.split(f.token).join(val || f.fallback || '');
+  });
 
-        function buildFullPrompt() {
-            const selected = getSelectedPrompt();
-            const custom = customText.value.trim();
-            const teacher = teacherInput.value.trim();
-            const country = countryInput.value.trim();
+  // Пользовательский текст — в начало
+  const custom = state.customText.trim();
+  if (custom && p.customText) text = custom + '\n\n' + text;
 
-            if (!selected) return null;
+  return text;
+}
 
-            let fullPrompt;
+// ============================================================
+// 6. ОТРИСОВКА
+// ============================================================
+function renderDropdownOptions() {
+  selectDropdown.innerHTML = '';
+  const add = (value, labelText) => {
+    const el = document.createElement('div');
+    el.className = 'custom-select-option';
+    el.dataset.value = value;
+    el.setAttribute('role', 'option');
+    el.textContent = labelText;
+    selectDropdown.appendChild(el);
+  };
+  add('', '— Choose a preset —');
+  Object.keys(PROMPTS).forEach(key => add(key, PROMPTS[key].name));
+}
 
-            if (selected === prompts.enrutranslator && selected.getPrompt) {
-                fullPrompt = selected.getPrompt(currentFormat);
-            } else if (selected === prompts.zenwriter && selected.getPrompt) {
-                fullPrompt = selected.getPrompt(currentMethodistMode);
-            } else {
-                fullPrompt = selected.prompt || selected.basePrompt || '';
-            }
+function renderDropdownSelection() {
+  let label = '— Choose a preset —';
+  selectDropdown.querySelectorAll('.custom-select-option').forEach(opt => {
+    const active = opt.dataset.value === state.presetId;
+    opt.classList.toggle('selected', active);
+    opt.setAttribute('aria-selected', active);
+    if (active) label = opt.textContent;
+  });
+  selectedText.textContent = label;
+}
 
-            if (selected === prompts.englishlessonarticle) {
-                fullPrompt = fullPrompt.replace('[TEACHER]', teacher || '[Teacher name required]');
-                fullPrompt = fullPrompt.replace('[COUNTRY]', country || '[Country required]');
-            }
+function renderControls() {
+  const p = getPreset();
+  dynamicControls.innerHTML = '';
+  if (!p) return;
 
-            if (custom && selected.showCustomText) {
-                fullPrompt = custom + '\n\n' + fullPrompt;
-            }
+  // Группы вариантов (кнопки)
+  (p.variants || []).forEach(g => {
+    const wrap = document.createElement('div');
+    wrap.className = 'dynamic-group';
+    const label = document.createElement('label');
+    label.textContent = g.label;
+    wrap.appendChild(label);
 
-            return fullPrompt;
-        }
+    const row = document.createElement('div');
+    row.className = 'group-options';
+    const activeId = state.variants[g.id] || g.default;
+    g.options.forEach(o => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-secondary' + (o.id === activeId ? ' active' : '');
+      b.dataset.group = g.id;
+      b.dataset.option = o.id;
+      b.textContent = o.label;
+      row.appendChild(b);
+    });
+    wrap.appendChild(row);
 
-        function togglePanels() {
-            const selected = getSelectedPrompt();
-            customTextGroup.classList.add('hidden');
-            teacherCountryGroup.classList.add('hidden');
-            outputFormatGroup.classList.add('hidden');
-            methodistModeGroup.classList.add('hidden');
+    if (g.hint) {
+      const h = document.createElement('div');
+      h.className = 'hint';
+      h.textContent = g.hint;
+      wrap.appendChild(h);
+    }
+    dynamicControls.appendChild(wrap);
+  });
 
-            if (!selected) return;
+  // Текстовые поля (inline-поля группируются в одну строку)
+  let inlineWrap = null;
+  (p.inputs || []).forEach(f => {
+    if (f.inline && !inlineWrap) {
+      inlineWrap = document.createElement('div');
+      inlineWrap.className = 'inline-group';
+      dynamicControls.appendChild(inlineWrap);
+    }
+    if (!f.inline) inlineWrap = null;
+    const target = f.inline ? inlineWrap : dynamicControls;
 
-            if (selected.showCustomText) customTextGroup.classList.remove('hidden');
-            if (selected.showTeacherCountry) teacherCountryGroup.classList.remove('hidden');
-            if (selected.hasOutputFormat) outputFormatGroup.classList.remove('hidden');
-            if (selected.hasModeSelector) methodistModeGroup.classList.remove('hidden');
-        }
+    const g = document.createElement('div');
+    g.className = 'input-group';
+    const label = document.createElement('label');
+    label.textContent = f.label;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.placeholder = f.placeholder || '';
+    inp.value = state.inputs[f.id] || '';
+    inp.dataset.input = f.id;
+    g.appendChild(label);
+    g.appendChild(inp);
+    target.appendChild(g);
+  });
+}
 
-        function loadPrompt() {
-            togglePanels();
-            const fullPrompt = buildFullPrompt();
+function renderVisibility() {
+  const p = getPreset();
+  customTextGroup.classList.toggle('hidden', !(p && p.customText));
+  customTextInput.value = state.customText;
+}
 
-            if (!fullPrompt) {
-                promptDisplay.textContent = '⚠️ Please select a prompt preset from the dropdown.';
-                statusMessage.textContent = 'ℹ️ No prompt selected.';
-                statusMessage.style.color = '#6f6a60';
-                return;
-            }
+function renderPrompt() {
+  const p = getPreset();
+  const full = buildPrompt();
 
-            promptDisplay.textContent = fullPrompt;
+  if (!full) {
+    promptDisplay.textContent = '⚠️ Please select a prompt preset from the dropdown.';
+    setStatus('📌 No prompt selected.', 'info');
+    return;
+  }
+  promptDisplay.textContent = full;
 
-            const selected = getSelectedPrompt();
-            let name = selected ? selected.name : '';
-            if (selected === prompts.englishlessonarticle) {
-                const teacher = teacherInput.value.trim() || '[Teacher]';
-                const country = countryInput.value.trim() || '[Country]';
-                name = `${selected.name} (${teacher}, ${country})`;
-            }
-            let formatLabel = '';
-            if (selected === prompts.enrutranslator) {
-                const formatNames = {
-                    'table': 'Table',
-                    'gist': 'Gist Markdown',
-                    'plaintext': 'Plain Text'
-                };
-                formatLabel = ` [${formatNames[currentFormat] || 'Table'}]`;
-            }
-            if (selected === prompts.zenwriter) {
-                const modeNames = {
-                    'ru-en': '🇷🇺🇬🇧 Ru-En',
-                    'ru': '🇷🇺 Ru only'
-                };
-                formatLabel = ` [${modeNames[currentMethodistMode] || 'Ru-En'}]`;
-            }
-            statusMessage.textContent = `✅ Loaded: ${name}${formatLabel}` + (customText.value.trim() ? ' (with custom text)' : '');
-            statusMessage.style.color = '#2c4b4e';
-        }
+  // Статусная строка собирается автоматически из метаданных
+  const extra = [];
+  (p.variants || []).forEach(g => {
+    const o = getVariantOption(g);
+    extra.push(o.shortLabel || o.label);
+  });
+  (p.inputs || []).forEach(f => {
+    const v = (state.inputs[f.id] || '').trim();
+    if (v) extra.push(v);
+  });
+  let label = p.name + (extra.length ? ' (' + extra.join(', ') + ')' : '');
+  if (state.customText.trim()) label += ' (with custom text)';
+  setStatus('✅ Loaded: ' + label, 'success');
+}
 
-        async function copyPrompt() {
-            const text = promptDisplay.textContent;
-            if (!text || text === 'Select a preset to load a prompt template.' || text === '⚠️ Please select a preset from the dropdown.') {
-                statusMessage.textContent = '⚠️ Select a preset first to copy a prompt.';
-                statusMessage.style.color = '#a05252';
-                return;
-            }
+function renderAll() {
+  renderControls();
+  renderVisibility();
+  renderPrompt();
+  saveState();
+}
 
-            try {
-                await navigator.clipboard.writeText(text);
-                statusMessage.textContent = '✅ Copied to clipboard!';
-                statusMessage.style.color = '#2c4b4e';
-                copyBtn.textContent = '✅ Copied!';
-                setTimeout(() => { copyBtn.textContent = '📋 Copy Prompt'; }, 2000);
-            } catch (err) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                statusMessage.textContent = '✅ Copied to clipboard!';
-                statusMessage.style.color = '#2c4b4e';
-            }
-        }
+// ============================================================
+// 7. СОБЫТИЯ
+// ============================================================
+function toggleDropdown(open) {
+  const willOpen = (open === undefined) ? !customSelect.classList.contains('open') : open;
+  customSelect.classList.toggle('open', willOpen);
+  selectTrigger.setAttribute('aria-expanded', willOpen);
+}
 
-        copyBtn.addEventListener('click', copyPrompt);
-        customText.addEventListener('input', loadPrompt);
-        teacherInput.addEventListener('input', loadPrompt);
-        countryInput.addEventListener('input', loadPrompt);
+function selectOption(value) {
+  state.presetId = value;
+  renderDropdownSelection();
+  toggleDropdown(false);
+  renderAll();
+}
 
-        selectOption('');
-    </script>
+selectTrigger.addEventListener('click', e => { e.stopPropagation(); toggleDropdown(); });
+selectTrigger.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDropdown(); }
+});
+selectDropdown.addEventListener('click', e => {
+  const option = e.target.closest('.custom-select-option');
+  if (option) selectOption(option.dataset.value);
+});
+document.addEventListener('click', () => toggleDropdown(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleDropdown(false); });
+
+// Делегирование: клики по кнопкам вариантов
+dynamicControls.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-group]');
+  if (!btn) return;
+  state.variants[btn.dataset.group] = btn.dataset.option;
+  btn.closest('.group-options').querySelectorAll('.btn')
+     .forEach(b => b.classList.toggle('active', b === btn));
+  renderPrompt();
+  saveState();
+});
+
+// Делегирование: ввод в текстовые поля
+dynamicControls.addEventListener('input', e => {
+  if (!e.target.matches('input[data-input]')) return;
+  state.inputs[e.target.dataset.input] = e.target.value;
+  renderPrompt();
+  saveState();
+});
+
+customTextInput.addEventListener('input', () => {
+  state.customText = customTextInput.value;
+  renderPrompt();
+  saveState();
+});
+
+// ============================================================
+// 8. КОПИРОВАНИЕ
+// ============================================================
+function copyFallback(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  ta.remove();
+}
+
+async function copyPrompt() {
+  if (!getPreset()) {
+    setStatus('⚠️ Select a preset first to copy a prompt.', 'error');
+    return;
+  }
+  const text = promptDisplay.textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    copyFallback(text);
+  }
+  setStatus('✅ Copied to clipboard!', 'success');
+  copyBtn.textContent = '✅ Copied!';
+  setTimeout(() => { copyBtn.textContent = '📋 Copy Prompt'; }, 2000);
+}
+
+copyBtn.addEventListener('click', copyPrompt);
+
+// ============================================================
+// 9. ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+loadState();
+renderDropdownOptions();
+renderDropdownSelection();
+selectOption(state.presetId || '');
+</script>
 </body>
 </html>
