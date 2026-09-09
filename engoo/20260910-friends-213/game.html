@@ -238,14 +238,14 @@ const LEVELS = [
     icon: "✏️", name: "English in Action", type: "gap",
     intro: "Complete each quote from the episode summary with the right word from the coffee-house word bank.",
     items: [
-      { before: "A janitor reveals the truth: Marcel was", after: "and forced into show business.", answer: "kidnapped" },
-      { before: "Ross travels back to New York, where a joyful", after: "with his old pet awaits.", answer: "reunion" },
-      { before: "Monica is", after: "but too shy to speak to the famous action star.", answer: "smitten" },
-      { before: "Susie steals Chandler's clothes as an act of", after: ".", answer: "revenge" },
-      { before: "Joey finally lands a tiny role as a dying plague victim, but loses his only line due to severe", after: ".", answer: "overacting" },
-      { before: "His date turns out to be a", after: "who believes Joey is really a doctor.", answer: "stalker" },
-      { before: "The competition between the two friends creates fierce", after: ".", answer: "tension" },
-      { before: "Being left without clothes left Chandler in terrible", after: ".", answer: "embarrassment" }
+      { before: "A janitor reveals the truth: Marcel was ", after: " and forced into show business.", answer: "kidnapped" },
+      { before: "Ross travels back to New York, where a joyful ", after: " with his old pet awaits.", answer: "reunion" },
+      { before: "Monica is ", after: " but too shy to speak to the famous action star.", answer: "smitten" },
+      { before: "Susie steals Chandler's clothes as an act of ", after: ".", answer: "revenge" },
+      { before: "Joey finally lands a tiny role as a dying plague victim, but loses his only line due to severe ", after: ".", answer: "overacting" },
+      { before: "His date turns out to be a ", after: " who believes Joey is really a doctor.", answer: "stalker" },
+      { before: "The competition between the two friends creates fierce ", after: ".", answer: "tension" },
+      { before: "Being left without clothes left Chandler in terrible ", after: ".", answer: "embarrassment" }
     ]
   },
   {
@@ -369,12 +369,19 @@ function bumpStreak() { state.streak++; state.bestStreak = Math.max(state.bestSt
 function breakStreak() { state.streak = 0; updateTop(); }
 function markCorrect() { state.correct++; state.completed++; updateTop(); }
 
+/* --- FIXED: null-safe feedback functions (this was the freeze bug) --- */
 function setFeedback(type, phrase, fact) {
   const fb = $("#feedback");
+  if (!fb) return;                       // guard: no feedback element on this screen
   fb.className = "show " + (type === "good" ? "good" : "bad");
   fb.innerHTML = "<strong>" + phrase + "</strong>" + (fact ? "<span class='fact'>💡 " + fact + "</span>" : "");
 }
-function hideFeedback() { const fb = $("#feedback"); fb.className = ""; fb.innerHTML = ""; }
+function hideFeedback() {
+  const fb = $("#feedback");
+  if (!fb) return;                       // guard: nothing to hide
+  fb.className = "";
+  fb.innerHTML = "";
+}
 
 /* ================= SOUND ================= */
 let audioCtx = null;
@@ -450,7 +457,6 @@ function startLevel(i) {
 function renderMC() {
   const L = LEVELS[state.level], q = L.items[state.mc.idx];
   state.mc.attempted = false; state.mc.answered = false;
-  hideFeedback();
   const isTF = q.options.length === 2 && (q.options[0] === "True");
   const opts = shuffle(q.options.map((t, i) => ({ t, ok: i === q.correct })));
   stage.innerHTML = `
@@ -464,6 +470,7 @@ function renderMC() {
       <div id="feedback"></div>
       <div class="next-row" id="nextRow"></div>
     </div>`;
+  hideFeedback();
   document.querySelectorAll("#optBox .option").forEach(btn => {
     btn.addEventListener("click", () => onMCAnswer(btn, q));
   });
@@ -500,7 +507,6 @@ function onMCAnswer(btn, q) {
 /* ---------- MATCH ENGINE ---------- */
 function renderMatch() {
   const L = LEVELS[state.level];
-  hideFeedback();
   stage.innerHTML = `
     <div class="card">
       <p class="level-tag">${L.icon} ${L.name} · ${L.pairs.length} pairs</p>
@@ -511,6 +517,7 @@ function renderMatch() {
       </div>
       <div id="feedback"></div>
     </div>`;
+  hideFeedback();
   document.querySelectorAll("#stage .chip").forEach(chip => {
     chip.addEventListener("click", () => {
       if (chip.classList.contains("locked")) return;
@@ -554,7 +561,6 @@ function onDefPick(chip) {
 function renderGap() {
   const L = LEVELS[state.level], it = L.items[state.gap.idx];
   state.gap.attempted = false;
-  hideFeedback();
   stage.innerHTML = `
     <div class="card">
       <p class="level-tag">${L.icon} ${L.name} · Sentence ${state.gap.idx + 1} of ${L.items.length}</p>
@@ -565,6 +571,7 @@ function renderGap() {
       </div>
       <div id="feedback"></div>
     </div>`;
+  hideFeedback();
   document.querySelectorAll("#bank .chip").forEach(chip => {
     chip.addEventListener("click", () => onGapChip(chip, it));
   });
