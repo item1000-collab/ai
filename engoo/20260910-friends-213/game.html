@@ -84,7 +84,7 @@
   .screen{position:relative;border-radius:12px;overflow:hidden;background:#050505;aspect-ratio:16/9;
     box-shadow:inset 0 0 40px rgba(0,0,0,.8)}
   .screen img{width:100%;height:100%;object-fit:cover;display:block}
-  .screen::after{content:"";position:absolute;inset:0;pointer-events:none;
+  .screen::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
     background:repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px);}
   .screen .noimg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     font-size:2.4rem;background:linear-gradient(135deg,#1c1409,#0d0904);color:#6b543a}
@@ -514,7 +514,7 @@ const state = { ch:-1, pts:0, words:new Set(), mem:new Set(), correct:0, quizTot
 /* ================= HELPERS ================= */
 const $ = s => document.querySelector(s);
 const shuffle = a => { const x=a.slice(); for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];} return x; };
-const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
 
 /* ================= AUDIO ================= */
 let AC=null;
@@ -545,7 +545,7 @@ function noise(dur,g){
 }
 const S = {
   click:()=>beep(420,.06,"sine",.04),
-  type:()=>beep(950+.Math.random()*300,.015,"square",.008),
+  type:()=>beep(950+Math.random()*300,.015,"square",.008),
   collect:()=>{beep(560,.1,"sine",.06);beep(840,.14,"sine",.05,.08);},
   good:()=>{beep(660,.12);beep(880,.18,"sine",.06,.1);},
   bad:()=>beep(160,.28,"square",.05),
@@ -558,21 +558,20 @@ const S = {
 
 /* ================= HUD ================= */
 function hud(){
-  const p=$("#hPts"),w=$("#hWords"),m=$("#hMem");
-  if(p)p.textContent=state.pts;
-  if(w)w.textContent=state.words.size;
-  if(m)w||0; if(m)m.textContent=state.mem.size;
+  const p=$("#hPts"), w=$("#hWords"), m=$("#hMem");
+  if(p) p.textContent = state.pts;
+  if(w) w.textContent = state.words.size;
+  if(m) m.textContent = state.mem.size;
 }
 function renderChapters(){
   const box=$("#chapters"); if(!box) return;
   box.innerHTML = CHAPTERS.map((c,i)=>{
     let cls="cdot";
-    if(i===state.ch) cls+=" cur"; else if(state.mem.has(chImg(i))&&i<state.ch) cls+=" done";
+    if(i===state.ch) cls+=" cur";
     else if(i<state.ch) cls+=" done";
-    return `<span class="${cls}" title="${c.chapter}: ${c.title}"></span>`;
+    return `<span class="${cls}" title="${esc(c.chapter)}: ${esc(c.title)}"></span>`;
   }).join("");
 }
-const chImg = i => CHAPTERS[i].img || 0;
 
 /* ================= DUST ================= */
 (function spawnDust(){
@@ -596,7 +595,7 @@ function typeInto(el,text,done){
   el.classList.add("tw");
   const iv=setInterval(()=>{
     if(sess!==state.typeSession){clearInterval(iv);return;}
-    if(skipFlag){ el.textContent=text; el.classList.add("done"); clearInterval(iv); done(); return; }
+    if(skipFlag){ el.textContent=text; el.classList.add("done"); clearInterval(iv); skipFlag=false; done(); return; }
     i+=step;
     el.textContent=text.slice(0,i);
     if(i%3===0) S.type();
@@ -608,10 +607,10 @@ function playNarr(items,box,done){
   let i=0;
   function next(){
     if(sess!==state.typeSession) return;
-    if(i>=items.length){done&&done();return;}
+    if(i>=items.length){ if(done)done(); return; }
     const it=items[i];
-    let el;
-    if(it.t==="q"){ el=document.createElement("div"); el.className="q"; el.style.visibility="hidden";
+    if(it.t==="q"){
+      const el=document.createElement("div"); el.className="q"; el.style.visibility="hidden";
       el.innerHTML=esc(it.x)+`<span class="src">— from the study guide</span>`;
       box.appendChild(el);
       setTimeout(()=>{ if(sess!==state.typeSession)return;
@@ -619,7 +618,8 @@ function playNarr(items,box,done){
       },300);
       return;
     }
-    el=document.createElement("p"); box.appendChild(el);
+    skipFlag=false; /* each tap skips only the current paragraph */
+    const el=document.createElement("p"); box.appendChild(el);
     typeInto(el,it.x,()=>{ i++; setTimeout(next,120); });
   }
   next();
@@ -643,8 +643,8 @@ function tvBlock(imgN,cap,bootTv){
 function shell(ch,idx){
   return `
   <div class="scene" id="sceneBox">
-    <div class="chapter-tag">${ch.chapter} · ${idx+1} of ${TOTAL_CH}</div>
-    <h2>${ch.title}</h2>
+    <div class="chapter-tag">${esc(ch.chapter)} · ${idx+1} of ${TOTAL_CH}</div>
+    <h2>${esc(ch.title)}</h2>
     ${tvBlock(ch.img,ch.cap,ch.bootTv)}
     <div class="narr" id="narrBox"></div>
     <div class="skipnote">tap the text to speed it up</div>
@@ -659,8 +659,9 @@ function shelfHTML(words){
   return `<div class="panel-label">📚 Collect the new words into your jar</div>
     <div class="shelf" id="shelf">${words.map(w=>`<button class="bean" data-w="${esc(w)}">${esc(w)}</button>`).join("")}</div>`;
 }
-function openWordCard(word,isNew){
+function openWordCard(word){
   const v=VOCAB[word]; if(!v) return;
+  const already=state.words.has(word);
   const card=$("#wordCard");
   card.innerHTML=`
     <button class="close-x" data-close="wordOverlay">✕</button>
@@ -670,11 +671,11 @@ function openWordCard(word,isNew){
     <div class="wrow">🎭 <b>In this story:</b> ${esc(v.ctx)}</div>
     <div class="wrow">💬 <b>Example from the material:</b> ${esc(v.ex)}</div>
     <div class="wrow">📚 <b>The guide explains:</b> <em>${esc(v.def)}</em></div>
-    <div class="center"><button class="btn" id="collectBtn" ${(!isNew||state.words.has(word))?"disabled":""}>
-      ${state.words.has(word)?"In the jar ✓":"Add to the jar · +5 ☕"}</button></div>`;
+    <div class="center"><button class="btn" id="collectBtn" ${already?"disabled":""}>
+      ${already?"In the jar ✓":"Add to the jar · +5 ☕"}</button></div>`;
   $("#wordOverlay").classList.add("show");
   const cb=$("#collectBtn");
-  if(cb&&isNew&&!state.words.has(word)) cb.addEventListener("click",()=>{
+  if(cb&&!already) cb.addEventListener("click",()=>{
     state.words.add(word); state.pts+=5; hud(); S.collect();
     cb.disabled=true; cb.textContent="In the jar ✓";
     const b=document.querySelector(`.bean[data-w="${CSS.escape(word)}"]`);
@@ -687,7 +688,7 @@ function bindShelf(words){
     b.addEventListener("click",()=>{
       if(b.classList.contains("done")) return;
       S.click();
-      openWordCard(b.dataset.w,true);
+      openWordCard(b.dataset.w);
     });
   });
   words.forEach(w=>{ if(state.words.has(w)){ const el=document.querySelector(`.bean[data-w="${CSS.escape(w)}"]`); if(el)el.classList.add("done"); } });
@@ -718,7 +719,7 @@ function bindQuiz(q,onDone){
         state.pts+=tried?5:15;
         fb.className="fb show good";
         fb.innerHTML=`<strong>${tried?"+5 ☕ — got there!":"+15 ☕ How you doin'!"}</strong><br>💡 ${esc(q.fact)}`;
-        S.good(); hud(); onDone&&onDone();
+        S.good(); hud(); if(onDone)onDone();
       }else{
         tried=true; btn.disabled=true; btn.classList.add("wrong");
         fb.className="fb show bad";
@@ -735,7 +736,7 @@ function checkSceneDone(){
   const ch=CHAPTERS[state.ch];
   let ready=true;
   if(ch.words.length) ready = ready && ch.words.every(w=>state.words.has(w));
-  if(ch.quiz!==undefined && ch.quiz) ready = ready && sc.quizDone;
+  if(ch.quiz) ready = ready && sc.quizDone;
   if(ch.matrix) ready = ready && sc.extraDone;
   if(ch.symbols) ready = ready && sc.extraDone;
   if(ch.trial) ready = ready && sc.trialIdx>=ch.trial.length;
@@ -765,9 +766,8 @@ function renderChapter(i){
   if(ch.bootTv){
     const off=$("#tvOff");
     if(off){ off.addEventListener("click",()=>{
-      $("#tvOnBtn")&&$("#tvOnBtn").remove();
       off.remove(); S.static();
-      const scr=$("#screenBox"); setTimeout(()=>S.static(),600);
+      setTimeout(()=>S.static(),600);
       playNarr(ch.narr,narrBox,()=>revealPanel(ch));
     }); }
   }else{
@@ -781,7 +781,7 @@ function revealPanel(ch){
   if(ch.words.length) html+=`<div id="shelfWrap">${shelfHTML(ch.words)}</div>`;
   if(ch.quiz) html+=quizHTML(ch.quiz);
   if(ch.matrix) html+=`<div class="panel-label">🛋️ Tap each character to reveal the row</div>`+
-    ch.matrix.map((m,k)=>`<button class="mrow" data-k="${k}"><span class="mhead">${m.who}</span><span class="hinttap"> · tap to reveal</span><div class="mbody">${esc(m.body)}</div></button>`).join("");
+    ch.matrix.map((m,k)=>`<button class="mrow" data-k="${k}"><span class="mhead">${esc(m.who)}</span><span class="hinttap"> · tap to reveal</span><div class="mbody">${esc(m.body)}</div></button>`).join("");
   if(ch.symbols) html+=`<div class="panel-label">🎓 Tap each symbol to open the commentary</div>`+
     ch.symbols.map((s,k)=>`<div class="sym" data-k="${k}"><div class="shead">${s.icon} ${esc(s.title)}</div><div class="sbody">${esc(s.body)}</div></div>`).join("");
   if(ch.trial) html+=`<div id="trialBox"></div>`;
@@ -848,6 +848,7 @@ function showBoot(){
       <h1 class="neon" style="font-size:2rem;margin:.4rem 0">THE ONE AFTER THE SUPERBOWL</h1>
       <div class="neon-sub">Master 21 essential English phrases through the biggest sitcom episode of the 1990s — one memory at a time.</div>
     </div>
+    ${tvBlock(1,"The Title Card",false)}
     <div style="max-width:520px;margin:0 auto;text-align:left">
       <p style="font-size:1rem">The café is quiet, the coffee is warm, and an old television waits in the corner. Inside it sleeps the night when 52.9 million people stayed on the couch — the most-watched episode in the series' history, a $600,000-per-ad broadcast, an Emmy for directing.</p>
       <p style="font-size:1rem">Walk through ten memories, collect every phrase into your jar, pass the comprehension trial, and hear the director's commentary on the symbols hiding behind the laughs.</p>
@@ -859,7 +860,12 @@ function showBoot(){
       Prefer the original first? <a href="${BASE}213-90s-sitcom-english-guide.pdf" target="_blank" rel="noopener" style="color:var(--amber)">Open the Study Guide (PDF)</a>
     </p>
   </div>`;
-  const b=$("#enterBtn"); if(b) b.addEventListener("click",()=>{S.chapter();renderChapter(0);});
+  const b=$("#enterBtn"); if(b) b.addEventListener("click",()=>{
+    S.chapter();
+    state.mem.add(1); /* the title card joins the collection */
+    hud(); renderChapters();
+    renderChapter(0);
+  });
 }
 
 function showFinaleAlbum(){
@@ -876,7 +882,7 @@ function showFinaleAlbum(){
   <div class="scene">
     ${ch.rain?`<div class="rain-layer" id="rainL"></div>`:""}
     <div class="chapter-tag">Finale · ${TOTAL_CH} of ${TOTAL_CH}</div>
-    <h2>${ch.title}</h2>
+    <h2>${esc(ch.title)}</h2>
     ${tvBlock(ch.img,ch.cap,false)}
     <div id="finNarr" class="narr"></div>
     <div class="panel" id="finPanel"></div>
@@ -926,7 +932,7 @@ function showFinaleAlbum(){
 }
 function buildAlbum(){
   const al=$("#album"); if(!al) return;
-  const names=CHAPTERS.filter(c=>c.cap);
+  const names=[{img:1,cap:"The Title Card"}].concat(CHAPTERS.filter(c=>c.img&&c.img!==1&&c.cap).map(c=>({img:c.img,cap:c.cap})));
   al.innerHTML=names.map(c=>{
     const got=state.mem.has(c.img);
     return `<div class="polaroid ${got?"":"locked"}" data-n="${c.img}">
@@ -942,12 +948,14 @@ function bindAlbum(){
     p.addEventListener("click",()=>{
       S.click();
       const n=+p.dataset.n;
-      const ch=CHAPTERS.find(c=>c.img===n);
+      let cap="Memory №"+n;
+      if(n===1) cap="The Title Card";
+      else{ const ch=CHAPTERS.find(c=>c.img===n); if(ch&&ch.cap) cap=ch.cap; }
       const card=$("#lbCard");
       card.innerHTML=`<button class="close-x" data-close="lbOverlay">✕</button>
-        <div class="tv"><div class="screen"><img src="${imgURL(n)}" alt="${esc(ch?ch.cap:"")}" onerror="this.parentElement.innerHTML='<div class=\\'noimg\\'>🎞️</div>'"></div>
+        <div class="tv"><div class="screen"><img src="${imgURL(n)}" alt="${esc(cap)}" onerror="this.parentElement.innerHTML='<div class=\\'noimg\\'>🎞️</div>'"></div>
         <div class="tv-controls"><span class="knob"></span><span class="knob"></span><span class="speaker"></span></div></div>
-        <p class="center" style="color:var(--muted);font-style:italic">${esc(ch?ch.cap:"")} ${state.mem.has(n)?"· collected ✓":"· still locked 🔒"}</p>`;
+        <p class="center" style="color:var(--muted);font-style:italic">${esc(cap)} ${state.mem.has(n)?"· collected ✓":"· still locked 🔒"}</p>`;
       $("#lbOverlay").classList.add("show");
     });
   });
