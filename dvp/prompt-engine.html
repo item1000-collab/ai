@@ -1026,12 +1026,12 @@ Generate both files now based on the attached screenshot and transcript text fil
         id: 'mode',
         label: '🎯 Choose game type',
         hint: 'Both options use the same aesthetic field below. The aesthetic will be inserted into the prompt.',
-        default: 'interactivegame',
+        default: 'g1',
         options: [
           {
-            id: 'interactivegame',
-            label: '🎮 Interactive Game',
-            shortLabel: '🎮 Interactive Game',
+            id: 'g1',
+            label: 'g1 (Interactive Game)',
+            shortLabel: 'g1 (Interactive Game)',
             template: `Prompt for creating interactive educational games (like "Friends Vocab Arcade")
 
 You are an experienced frontend developer and game designer specializing in interactive educational games in a retro-arcade style. Your task is to create a complete single-page game in pure HTML/CSS/JS (no bundlers, no frameworks) that can be opened in a browser as a single file.
@@ -1185,9 +1185,9 @@ FINAL RESULT:
 Generate the complete HTML document with embedded styles and scripts. The game is a fully self-contained, atmospheric, narrative learning experience built on the provided slides, using the exact URL path [PATH_FROM_SCREENSHOT] for all images and PDFs.`
           },
           {
-            id: 'storyslides',
-            label: '📖 Story with Slides',
-            shortLabel: '📖 Story with Slides',
+            id: 'g2',
+            label: 'g2 (Story with Slides)',
+            shortLabel: 'g2 (Story with Slides)',
             template: `Write an engaging, atmospheric story based on the following source materials:
 - PDF presentation (slides) — visual content
 - Event transcript (if available) — optional text file
@@ -1364,6 +1364,17 @@ function loadState() {
   if (!state.inputs  || typeof state.inputs  !== 'object') state.inputs  = {};
   if (typeof state.customText !== 'string') state.customText = '';
   if (!PROMPTS[state.presetId]) state.presetId = '';
+
+  // Migration: reset stale variant ids that no longer exist in the library
+  Object.keys(PROMPTS).forEach(key => {
+    const p = PROMPTS[key];
+    (p.variants || []).forEach(g => {
+      const saved = state.variants[g.id];
+      if (saved && !g.options.some(o => o.id === saved)) {
+        delete state.variants[g.id];
+      }
+    });
+  });
 }
 
 // ============================================================
