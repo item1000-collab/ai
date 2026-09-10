@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt Engine</title>
+<style>
+:root {
+  --bg: #f5f3ef;
+  --card-bg: #ffffff;
+  --card-border: #e7e3dc;
+  --text: #1a1a1a;
+  --heading: #1f2b2c;
+  --label: #7b6e5d;
+  --hint: #8f887d;
+  --input-bg: #fefcf9;
+  --input-border: #ddd8cf;
+  --input-border-hover: #b7aa98;
+  --accent: #b7aa98;
+  --accent-dark: #9e8f7c;
+  --btn-bg: #f0ede8;
+  --btn-bg-hover: #e2d9cf;
+  --btn-text: #2b4a4d;
+  --btn-border: #ddd2c4;
+  --display-bg: #1e2829;
+  --display-text: #e5e9e8;
+  --display-border: #3b4b4a;
+  --status-info: #6f6a60;
+  --status-success: #2c4b4e;
+  --status-error: #a05252;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); font-family: 'Inter', system-ui, -apple-system, sans-serif; color: var(--text); padding: 2rem 0; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+.card { background: var(--card-bg); border-radius: 28px; padding: 2rem; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border: 1px solid var(--card-border); }
+h1 { font-size: 1.8rem; font-weight: 600; color: var(--heading); margin-bottom: 1.5rem; }
+.selector-group { margin-bottom: 1.5rem; }
+.input-group { margin-bottom: 1.2rem; }
+label { display: block; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--label); margin-bottom: 0.5rem; }
+.custom-select { position: relative; width: 100%; user-select: none; }
+.custom-select-trigger { width: 100%; padding: 0.8rem 2.8rem 0.8rem 1rem; border-radius: 16px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 0.9rem; font-family: inherit; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; min-height: 52px; word-break: break-word; }
+.custom-select-trigger:hover { border-color: var(--input-border-hover); }
+.custom-select-trigger .arrow { flex-shrink: 0; transition: transform 0.2s ease; color: var(--label); font-size: 0.7rem; }
+.custom-select.open .custom-select-trigger .arrow { transform: rotate(180deg); }
+.custom-select-trigger .selected-text { flex: 1; word-break: break-word; white-space: normal; line-height: 1.4; }
+.custom-select-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border-radius: 16px; border: 1px solid var(--input-border); box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 400px; overflow-y: auto; z-index: 1000; display: none; padding: 0.4rem; }
+.custom-select.open .custom-select-dropdown { display: block; }
+.custom-select-option { padding: 0.7rem 0.9rem; border-radius: 12px; cursor: pointer; font-size: 0.9rem; font-family: inherit; transition: background 0.15s ease; word-break: break-word; white-space: normal; line-height: 1.4; color: var(--text); }
+.custom-select-option:hover { background: #f0ede8; }
+.custom-select-option.selected { background: #e8e0d6; font-weight: 500; }
+.custom-select-option:not(:last-child) { border-bottom: 1px solid #f0ede8; }
+input[type="text"] { width: 100%; padding: 0.8rem 1rem; border-radius: 16px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 0.9rem; font-family: inherit; transition: all 0.2s ease; }
+input[type="text"]:hover { border-color: var(--input-border-hover); }
+input[type="text"]:focus { outline: none; border-color: var(--input-border-hover); background: #fff; }
+textarea { width: 100%; padding: 1rem 1.2rem; border-radius: 16px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 0.95rem; font-family: inherit; transition: all 0.2s ease; resize: vertical; min-height: 120px; line-height: 1.6; }
+textarea:hover { border-color: var(--input-border-hover); }
+textarea:focus { outline: none; border-color: var(--input-border-hover); background: #fff; box-shadow: 0 0 0 3px rgba(183,170,152,0.15); }
+textarea.large-aesthetic {
+  min-height: 200px;
+  font-size: 0.95rem;
+  padding: 1.2rem 1.4rem;
+}
+.inline-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+.inline-group .input-group { flex: 1 1 200px; margin-bottom: 1.2rem; }
+.dynamic-group { margin-bottom: 1.2rem; }
+.group-options { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.group-options .btn { font-size: 0.75rem; padding: 0.4rem 1.2rem; }
+.group-options .btn.active { background: var(--accent); color: white; border-color: var(--accent-dark); }
+.prompt-display { background: var(--display-bg); color: var(--display-text); padding: 1.2rem; border-radius: 16px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; margin: 1rem 0; border: 1px solid var(--display-border); min-height: 100px; max-height: 400px; overflow-y: auto; }
+.button-group { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
+.btn { padding: 0.7rem 1.8rem; border-radius: 40px; border: none; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+.btn-secondary { background: var(--btn-bg); color: var(--btn-text); border: 1px solid var(--btn-border); }
+.btn-secondary:hover { background: var(--btn-bg-hover); }
+.status { font-size: 0.8rem; margin-top: 0.5rem; }
+.status--info { color: var(--status-info); }
+.status--success { color: var(--status-success); }
+.status--error { color: var(--status-error); }
+.hint { font-size: 0.75rem; color: var(--hint); margin-top: 0.4rem; }
+.hidden { display: none !important; }
+@media (max-width: 600px) {
+  .custom-select-trigger { font-size: 0.85rem; padding: 0.7rem 2.5rem 0.7rem 0.9rem; }
+  .custom-select-option { font-size: 0.85rem; padding: 0.6rem 0.8rem; }
+  .card { padding: 1.2rem; }
+  textarea.large-aesthetic { min-height: 160px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <h1>⚙️ Prompt Engine</h1>
+
+    <div class="selector-group">
+      <label>⭐ Favorite Prompts</label>
+      <div class="custom-select" id="customSelect">
+        <div class="custom-select-trigger" id="selectTrigger" role="button" aria-haspopup="listbox" aria-expanded="false" tabindex="0">
+          <span class="selected-text">— Choose a preset —</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="custom-select-dropdown" id="selectDropdown" role="listbox"></div>
+      </div>
+    </div>
+
+    <div id="dynamicControls"></div>
+
+    <div id="customTextGroup" class="hidden">
+      <div class="input-group">
+        <label>📝 Optional: Add your custom text</label>
+        <textarea id="customText" placeholder="Paste your text here (optional). It will be prepended to the prompt."></textarea>
+        <div class="hint">If filled, this text will appear at the beginning of the prompt, followed by a blank line and the selected prompt.</div>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button id="copyBtn" class="btn btn-secondary">📋 Copy Prompt</button>
+    </div>
+
+    <div class="prompt-display" id="promptDisplay">Select a preset to load a prompt template.</div>
+    <div class="status status--info" id="statusMessage">💡 Choose a preset from the dropdown above</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ============================================================
+// 1. БИБЛИОТЕКА ПРОМПТОВ (данные)
+// ============================================================
+const PROMPTS = {
+
+  // ----------------------------------------------------------
+  enrutranslator: {
+    name: '📊 English-Russian Translation (source optional: txt file)',
+    customText: true,
+    template: `Translate the following text from English to Russian. Provide a clear, accurate translation with a focus on natural language flow.
+
+REQUIREMENTS:
+
+    Provide a complete translation of the entire source text.
+
+    Highlight in bold in the main text any advanced vocabulary – this includes both the English source text and the Russian translation. Every term that appears in the glossary must be bolded in both columns of the table (English and Russian).
+
+    Include a short glossary of key terms at the end of each episode. The glossary should include ONLY idioms, fixed expressions, phrasal verbs, and complex collocations — NOT simple standalone words (e.g., include "to give away", "to work out", "can't get the monkey off your back", but NOT "monkey", "jungle", "sad").
+
+    The source text must be divided into episodes (logical segments: chapters, scenes, time blocks, or thematic parts) — each episode must be translated separately.
+
+    In the output, each episode must start with a separator indicating the episode number and title (e.g., «— Episode 1: Title —» or «— Эпизод 1: Название —»).
+
+    Do NOT mix content from different episodes.
+
+    If the source contains clear episode markers (e.g., "Episode 1", "Part 2", "Scene 3", timestamps, or section headings), use them exactly as they appear.
+
+    If no explicit episode markers exist, divide the text into equal logical parts (by paragraphs, scenes, or every ~200–300 words) and label them as «Episode 1», «Episode 2», etc.
+
+CRITICAL FORMATTING RULE — BOLD IN BOTH COLUMNS:
+
+    For EVERY term listed in the glossary for a given episode, you MUST bold that term in BOTH the English column AND the Russian column of the translation table for that episode. This applies to ALL episodes, not just the first one. Every occurrence of every glossary term in the translation table must be enclosed in **bold** markers (e.g., **to give away** in English and **отдать** in Russian). If a term appears multiple times in the table, bold it each time.`,
+    variants: [{
+      id: 'format',
+      label: '📄 Output Format',
+      hint: 'Choose how the translation should be formatted in the output.',
+      default: 'table',
+      options: [
+        {
+          id: 'table',
+          label: '📊 Table',
+          shortLabel: 'Table',
+          suffix: `
+
+OUTPUT FORMAT: Table
+
+The ENTIRE translation output must be formatted as a two-column table:
+| English (original) | Russian (translation) |
+Every sentence, phrase, or segment from the source must appear in the left column, with its corresponding Russian version in the right column.
+
+For each episode, add a glossary section after the translation table:
+### Glossary for Episode X
+| English term | Russian translation | Explanation |
+|--------------|---------------------|-------------|
+| ... | ... | ... |
+
+IMPORTANT: Every term listed in the glossary must be bolded in BOTH columns of the translation table — the English column AND the Russian column. This applies to ALL episodes, not just the first one. Every occurrence of each glossary term in the table must be bolded.
+
+OUTPUT: Return only the table and glossaries. No extra commentary, no introductory or concluding text.`
+        },
+        {
+          id: 'gist',
+          label: '📝 Gist Markdown',
+          shortLabel: 'Gist Markdown',
+          suffix: `
+
+OUTPUT FORMAT: Gist Markdown
+
+Format the translation as a structured Markdown document suitable for a GitHub Gist:
+
+1. The entire output must be inside a single Markdown code block with \`\`\`markdown ... \`\`\` delimiters.
+
+2. Use this structure:
+    # Translation: [Title of the source text]
+
+    ## Episode 1: [Title]
+    | English (original) | Russian (translation) |
+    |---------------------|------------------------|
+    | ... | ... |
+
+    ### Glossary for Episode 1
+    | English term | Russian translation | Explanation |
+    |--------------|---------------------|-------------|
+    | ... | ... | ... |
+
+    ## Episode 2: [Title]
+    | English (original) | Russian (translation) |
+    |---------------------|------------------------|
+    | ... | ... |
+
+    ### Glossary for Episode 2
+    | English term | Russian translation | Explanation |
+    |--------------|---------------------|-------------|
+    | ... | ... | ... |
+
+    (Continue this pattern for all episodes)
+
+3. Each episode must be a separate Markdown section with its own table.
+
+4. Each episode must have its own glossary table immediately following the translation table.
+
+5. Bold the advanced vocabulary in both the English and Russian columns using **bold** markers. IMPORTANT: The bolded terms in the left (English) column and the right (Russian) column must match the terms listed in the glossary for that episode. This must be done for EVERY episode, not just the first one.
+
+6. Do NOT include any text outside the Markdown block. No introductory or concluding remarks.
+
+7. The output must be valid Markdown that renders correctly in a Gist.
+
+OUTPUT: Return only the Markdown block.`
+        },
+        {
+          id: 'plaintext',
+          label: '📄 Plain Text',
+          shortLabel: 'Plain Text',
+          suffix: `
+
+OUTPUT FORMAT: Plain Text
+
+Format the translation as plain text (no tables, no Markdown).
+
+1. Each episode must start with a separator line:
+    — Episode 1: [Title] —
+    (followed by a blank line)
+
+2. For each sentence or phrase:
+    - Write the English original on one line.
+    - Write the Russian translation on the next line.
+    - Leave a blank line between each pair.
+
+3. Highlight advanced vocabulary in BOTH English and Russian using **bold** markers (e.g., **advanced word**). IMPORTANT: The bolded terms in the English text and the Russian text must match the terms listed in the glossary for that episode. This must be done for EVERY episode, not just the first one.
+
+4. At the end of each episode, add a glossary for that episode:
+    Glossary for Episode X:
+    - English term — Russian translation — Explanation
+
+5. Do NOT use any tables, columns, or Markdown formatting (except bold).
+
+6. Do NOT include any introductory or concluding text — only the translation and glossaries.
+
+OUTPUT: Return only the plain text translation with glossaries after each episode.`
+        }
+      ]
+    }]
+  },
+
+  // ----------------------------------------------------------
+  zenwriter: {
+    name: '📝 Article for Zen (full slide-by-slide)',
+    variants: [{
+      id: 'mode',
+      label: '🌐 Language Mode',
+      hint: 'Ru-En: for English slides with translation. Ru: for Russian-only slides (no English content).',
+      default: 'ru-en',
+      options: [
+        {
+          id: 'ru-en',
+          label: '🇷🇺🇬🇧 Ru-En (default)',
+          shortLabel: '🇷🇺🇬🇧 Ru-En',
+          template: `Напиши статью для Дзен на основе вложенных файлов (PDF-презентация и транскрипция мероприятия).
+
+**ЯЗЫК СТАТЬИ:** русский.
+
+**ГЛАВНОЕ ТРЕБОВАНИЕ:** последовательно разбери ВСЕ слайды презентации по порядку их следования. Каждый слайд должен найти отражение в статье. На основе этого полного разбора построй увлекательное, связное повествование, которое читается как живой рассказ, а не как техническая инструкция.
+
+---
+
+**1. РАБОТА СО СЛАЙДАМИ (обязательные правила):**
+- В тексте статьи используй номера слайдов строго в квадратных скобках: [SLIDE X].
+- Номера слайдов идут последовательно: [SLIDE 1], [SLIDE 2], [SLIDE 3] ... и так до последнего слайда.
+- Если на слайде англоязычный текст — продублируй его на английском, затем дай русский перевод и пояснение.
+- Если на слайде русский текст — процитируй его и поясни в контексте материала.
+- Если в материале использовался AI — приведи полный текст AI на английском, затем дай перевод и пояснение на русском.
+- Не пропускай слайды. Даже если слайд кажется техническим или незначительным — найди способ вписать его в повествование, показав его роль в общей логике материала.
+
+**2. ЛЕКСИКА (если на слайдах есть вокабуляр):**
+Разбери всю значимую лексику, которая встречается на слайдах. Для каждой единицы укажи:
+— Саму фразу/слово на английском.
+— Буквальное значение (если применимо).
+— Значение в контексте.
+— Пример из материала (цитата + перевод).
+— Как эта лексика объясняется в методичке (цитата из слайда + перевод).
+Лексику оформляй маркированным списком (НЕ ТАБЛИЦА). Вплетай разбор лексики в основной текст, а не выноси в отдельный скучный словарь.
+
+**3. МЕТАФОРЫ, СИМВОЛЫ, КЛЮЧЕВЫЕ ИДЕИ:**
+Выдели все значимые метафоры, символы и ключевые тезисы из материала. Дай объяснение их значения на русском. Обязательно приведи цитату из слайда с трактовкой. Покажи, как эти глубинные смыслы связаны с языком и культурой.
+
+---
+
+**4. СТРУКТУРА СТАТЬИ (строго соблюдай):**
+
+**ЗАГОЛОВОК:**
+Кликабельный, информативный. Обязательно содержит тему и источник (название мероприятия, издание или автора). Пример: «Как носители говорят на самом деле: полный разбор живого урока с BBC».
+
+**ВСТУПЛЕНИЕ (1–2 абзаца):**
+— Начни с яркого факта, наблюдения или интригующей детали, которая цепляет внимание.
+— Кратко представь материал, его формат и познавательную ценность для изучающих язык.
+— ВСЕ ПРЕДЛОЖЕНИЯ — ТОЛЬКО УТВЕРДИТЕЛЬНЫЕ. Запрещены любые вопросы.
+— Излагай как рассказчик, а не как собеседник.
+
+**ОСНОВНАЯ ЧАСТЬ (разбита на подзаголовки ##):**
+— Двигайся последовательно по слайдам. Каждый слайд — это новый логический шаг в повествовании.
+— Для каждого слайда:
+  * Приведи цитату идеи из слайда (текст с самого слайда).
+  * Объясни, что означает эта идея и как она вписывается в общий замысел материала.
+  * Если на слайде есть лексика — разбери её здесь же, в контексте.
+  * Если на слайде есть метафора или символ — поясни его глубинный смысл.
+  * Приведи живой пример из урока (диалог учителя, ученика или AI), который иллюстрирует эту идею.
+  * Дай практический совет для читателя, развивающий мысль из слайда.
+- Следи за логическими переходами между слайдами. Статья не должна выглядеть как простой список. Выстраивай нарратив: от вводных слайдов — к ключевым идеям — к практическим выводам — к итоговому обобщению.
+
+**ЗАКЛЮЧЕНИЕ (2–3 абзаца):**
+— Приведи резюмирующий комментарий, который собирает воедино все ключевые идеи, прозвучавшие на слайдах.
+— Сформулируй главный вывод, опираясь на финальный слайд и общую логику всего материала. Вывод должен быть практическим и вдохновляющим — читатель должен понять, что именно он выносит из этого разбора.
+— Обязательно используй в заключении хотя бы одну цитату из последних слайдов или итогового комментария учителя.
+— Закончи яркой, запоминающейся фразой, которая останется у читателя в голове.
+
+---
+
+**5. СТИЛЬ И ФОРМАТИРОВАНИЕ (для Дзена):**
+
+**СТИЛЬ ИЗЛОЖЕНИЯ:**
+— Тон — увлечённый исследователь, который делится захватывающим открытием. Спокойный, уверенный, вдохновляющий.
+— Разговорный, но грамотный. Избегай канцеляризмов и сухости.
+— ИСКЛЮЧИТЕЛЬНО повествовательный стиль. ВСЕ ПРЕДЛОЖЕНИЯ — УТВЕРДИТЕЛЬНЫЕ.
+— ЗАПРЕЩЕНЫ ЛЮБЫЕ ВИДЫ ВОПРОСОВ. Вместо них используй обороты: «Важно понимать, что...», «Стоит обратить внимание на...», «Следует отметить...», «Обратите внимание...», «Интересно, что...», «Ключевой момент заключается в том...», «Стоит запомнить...», «Обращает на себя внимание...», «Показательно, что...».
+
+**ПРИМЕР ПРАВИЛЬНОЙ ИНТОНАЦИИ (ориентируйся на это):**
+*«Интересно, что британские журналисты намеренно используют короткие глаголы в прямых эфирах. Ключевой момент заключается в том, что это экономит время и создаёт эффект доверительного разговора. Стоит запомнить этот приём для повседневной речи»*.
+
+**ФОРМАТИРОВАНИЕ:**
+— НЕ использовать таблицы (только маркированные или нумерованные списки).
+— Ключевые фразы, термины и выводы выделять **жирным шрифтом**.
+— Цитаты на русском языке выделять *курсивом*.
+— Разделы оформлять подзаголовками с ##.
+— Использовать эмодзи для визуального разнообразия: 📚, 💡, 📌, ⚠️, 🎓, 🔥, 🗝️.
+— Ссылки на слайды ставить строго в квадратных скобках [SLIDE X] сразу после упоминания идеи со слайда.
+— Оригинал на английском → перевод на русском выделять **жирным** или отдельным абзацем.
+
+---
+
+**6. ЕСЛИ В ИСХОДНЫХ ФАЙЛАХ НЕ ХВАТАЕТ ДАННЫХ:**
+Если для какого-то слайда нет пояснений в транскрипции или перевода — дай собственную интерпретацию, основываясь на контексте всего материала. Если слайд технический (например, просто заголовок раздела) — покажи его роль в структуре урока и перейди к следующему.
+
+---
+
+**ГЛАВНАЯ ЦЕЛЬ СТАТЬИ:**
+Читатель должен пройти вместе с автором весь путь от первого до последнего слайда, увидеть, как выстраивается логика материала, обогатиться новой лексикой и идеями, вдохновиться и захотеть пересмотреть исходный материал в оригинале. Статья должна читаться как увлекательный репортаж с разбора, а не как сухой конспект.`
+        },
+        {
+          id: 'ru',
+          label: '🇷🇺 Ru only',
+          shortLabel: '🇷🇺 Ru only',
+          template: `Напиши статью для Дзен на основе вложенных файлов (PDF-презентация и транскрипция мероприятия).
+
+**ЯЗЫК СТАТЬИ:** русский.
+
+**ГЛАВНОЕ ТРЕБОВАНИЕ:** последовательно разбери ВСЕ слайды презентации по порядку их следования. Каждый слайд должен найти отражение в статье. На основе этого полного разбора построй увлекательное, связное повествование, которое читается как живой рассказ, а не как техническая инструкция.
+
+---
+
+**1. РАБОТА СО СЛАЙДАМИ (обязательные правила):**
+- В тексте статьи используй номера слайдов строго в квадратных скобках: [SLIDE X].
+- Номера слайдов идут последовательно: [SLIDE 1], [SLIDE 2], [SLIDE 3] ... и так до последнего слайда.
+- Если на слайде русский текст — процитируй его и поясни в контексте материала.
+- Если использовался AI — приведи полностью текст AI на русском.
+- Не пропускай слайды. Даже если слайд кажется техническим или незначительным — найди способ вписать его в повествование, показав его роль в общей логике материала.
+
+**2. КЛЮЧЕВЫЕ ТЕРМИНЫ И ПОНЯТИЯ:**
+Разбери все значимые термины и понятия, которые встречаются на слайдах. Для каждой единицы укажи:
+— Сам термин/понятие на русском.
+— Определение или пояснение.
+— Пример из материала (цитата из слайда или транскрипции).
+— Как этот термин объясняется в исходных материалах (цитата из слайда).
+Оформляй маркированным списком (НЕ ТАБЛИЦА). Вплетай разбор в основной текст.
+
+**3. МЕТАФОРЫ, СИМВОЛЫ, КЛЮЧЕВЫЕ ИДЕИ:**
+Выдели все значимые метафоры, символы и ключевые тезисы из материала. Дай объяснение их значения на русском. Обязательно приведи цитату из слайда с трактовкой.
+
+---
+
+**4. СТРУКТУРА СТАТЬИ (строго соблюдай):**
+
+**ЗАГОЛОВОК:**
+Кликабельный, информативный. Обязательно содержит тему и источник (название мероприятия, доклада или тема презентации).
+
+**ВСТУПЛЕНИЕ (1–2 абзаца):**
+— Начни с яркого факта, наблюдения или интригующей детали, которая цепляет внимание.
+— Кратко представь материал, его формат и познавательную ценность.
+— ВСЕ ПРЕДЛОЖЕНИЯ — ТОЛЬКО УТВЕРДИТЕЛЬНЫЕ. Запрещены любые вопросы.
+— Излагай как рассказчик, а не как собеседник.
+
+**ОСНОВНАЯ ЧАСТЬ (разбита на подзаголовки ##):**
+— Двигайся последовательно по слайдам. Каждый слайд — это новый логический шаг в повествовании.
+— Для каждого слайда:
+  * Приведи цитату идеи из слайда (текст с самого слайда).
+  * Объясни, что означает эта идея и как она вписывается в общий замысел материала.
+  * Если на слайде есть ключевые термины — разбери их здесь же, в контексте.
+  * Если на слайде есть метафора или символ — поясни его глубинный смысл.
+  * Приведи живой пример из материала (кейс, ситуация, фрагмент выступления, диалог или работа AI), который иллюстрирует эту идею.
+  * Дай практический совет для читателя, развивающий мысль из слайда.
+- Следи за логическими переходами между слайдами. Статья не должна выглядеть как простой список. Выстраивай нарратив: от вводных слайдов — к ключевым идеям — к практическим выводам — к итоговому обобщению.
+
+**ЗАКЛЮЧЕНИЕ (2–3 абзаца):**
+— Приведи резюмирующий комментарий, который собирает воедино все ключевые идеи, прозвучавшие на слайдах.
+— Сформулируй главный вывод, опираясь на финальный слайд и общую логику всего материала.
+— Обязательно используй в заключении хотя бы одну цитату из последних слайдов или итогового комментария спикера.
+— Закончи яркой, запоминающейся фразой.
+
+---
+
+**5. СТИЛЬ И ФОРМАТИРОВАНИЕ (для Дзена):**
+
+**СТИЛЬ ИЗЛОЖЕНИЯ:**
+— Тон — увлечённый исследователь, который делится захватывающим открытием. Спокойный, уверенный, вдохновляющий.
+— Разговорный, но грамотный. Избегай канцеляризмов и сухости.
+— ИСКЛЮЧИТЕЛЬНО повествовательный стиль. ВСЕ ПРЕДЛОЖЕНИЯ — УТВЕРДИТЕЛЬНЫЕ.
+— ЗАПРЕЩЕНЫ ЛЮБЫЕ ВИДЫ ВОПРОСОВ. Вместо них используй обороты: «Важно понимать, что...», «Стоит обратить внимание на...», «Следует отметить...», «Обратите внимание...», «Интересно, что...», «Ключевой момент заключается в том...», «Стоит запомнить...», «Обращает на себя внимание...», «Показательно, что...».
+
+**ФОРМАТИРОВАНИЕ:**
+— НЕ использовать таблицы (только маркированные или нумерованные списки).
+— Ключевые фразы, термины и выводы выделять **жирным шрифтом**.
+— Цитаты выделять *курсивом*.
+— Разделы оформлять подзаголовками с ##.
+— Использовать эмодзи для визуального разнообразия: 📚, 💡, 🔍, ⚠️, 🎯, 🎤, 🔥.
+— Ссылки на слайды ставить строго в квадратных скобках [SLIDE X] сразу после упоминания идеи со слайда.
+
+---
+
+**ГЛАВНАЯ ЦЕЛЬ СТАТЬИ:**
+Читатель должен пройти вместе с автором весь путь от первого до последнего слайда, увидеть, как выстраивается логика материала, обогатиться новыми идеями, вдохновиться и захотеть углубиться в тему. Статья должна читаться как увлекательный репортаж с разбора, а не как сухой конспект.`
+        }
+      ]
+    }]
+  },
+
+  // ----------------------------------------------------------
+  indexofevent: {
+    name: '📋 Index of Event (generate HTML page with PDF file list) — (source - screen)',
+    template: `Create a complete, self-contained HTML document that displays a list of PDF files based on a screenshot or a provided file list.
+
+## INPUT DATA (extract from the screenshot or file list):
+- Extract all PDF files visible in the screenshot (their full names with .pdf extension). Include ONLY files with .pdf extension — ignore folders, directories, and files without .pdf extension.
+- Determine the lesson theme/title (e.g., series name, season, episode, date) if shown in the screenshot. If the date is not obvious — do not include it in the subtitle, use only what is clearly visible.
+- If a part of the URL after /ai/ is visible in the screenshot — extract this path for building links. Use EXACTLY the path shown in the screenshot.
+
+## WHAT TO GENERATE:
+
+A complete HTML document with the following features:
+
+### 1. PAGE STRUCTURE:
+- Header with logo (📄 icon), title "Resources", subtitle with lesson theme (extracted from the screenshot — e.g., series name, season, episode).
+- Badge on the right with a pulsing dot indicator and label "PDF Files" (without a count).
+- Main block with a card containing a grid of PDF files.
+- Footer with text "Powered by AI Exploration Hub".
+
+### 2. EACH PDF FILE CARD:
+For each file, create an <a> element with class "item" containing:
+- An emoji (choose appropriate: 📕, 📘, 📗, 📙, 📄 — alternate or pick by meaning).
+- File name (exactly as in the screenshot, with .pdf extension — letter by letter, case sensitive).
+- Right arrow → (appears on hover).
+- Link built using this template:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/[FILE_NAME]
+  Where [PATH_FROM_SCREENSHOT] is the part of the URL visible in the screenshot after /ai/ (e.g., if the screenshot shows "engoo/20260813-friends-s1e24/", use that exact path).
+- target="_blank" and rel="noopener noreferrer" attributes to open in a new tab with security.
+
+### 3. STYLES (exact copy from the reference):
+Use these CSS variables and styling:
+- Background: #f8f6f3
+- Cards: white with shadows, rounded corners (16px and 24px)
+- Colors: accent #e07a5f, text #1a1a2e, secondary #6b7280
+- Font: DM Sans (load from Google Fonts)
+- File grid: 2 columns on wide screens, 1 column on narrow (≤500px)
+- On hover: accent border highlight, slight lift, arrow appears
+- Pulsing dot animation for the badge
+- All hover effects, shadows, spacing — exactly as in the reference example
+
+### 4. CODE REQUIREMENTS:
+- Valid, semantic HTML with proper structure.
+- All styles inside <style> tag in <head>.
+- No external files (except Google Fonts).
+- All links must be working and point to real PDF files using the specified template.
+- File names in links must exactly match the names in the screenshot (case sensitive).
+- Path in URL must be taken ONLY from the screenshot. If no path is specified — don't add extra folders, use base URL: https://item1000-collab.github.io/ai/[FILE_NAME]
+- NO file counter (no "count" class or number next to "PDF Files").
+- DO NOT display the number of files anywhere on the page.
+- Include ONLY files with .pdf extension. Do NOT include folders, directories, or files without .pdf extension.
+
+### 5. EXAMPLE OF BUILDING A LINK:
+If the screenshot shows the path "engoo/20260813-friends-s1e24/" and the file name is "friends-english-lesson.pdf", the link should be:
+https://item1000-collab.github.io/ai/engoo/20260813-friends-s1e24/friends-english-lesson.pdf
+
+If the screenshot shows no path, only the file name "friends-english-lesson.pdf", the link is:
+https://item1000-collab.github.io/ai/friends-english-lesson.pdf
+
+### 6. EXAMPLE OF ONE ELEMENT (for format reference):
+<a href="https://item1000-collab.github.io/ai/engoo/20260813-friends-s1e24/friends-english-lesson.pdf" target="_blank" rel="noopener noreferrer" class="item">
+    <span class="emoji">📕</span>
+    <span class="name">friends-english-lesson.pdf</span>
+    <span class="arrow">→</span>
+</a>
+
+### 7. FINAL OUTPUT:
+Output a complete HTML code that can be saved as a .html file and opened in a browser — it should work without any modifications.
+
+## IMPORTANT:
+- Date in subtitle is included ONLY if clearly visible in the screenshot. If there's no date — don't invent it.
+- Path in URL is taken ONLY from the screenshot (the part after /ai/).
+- NO file counter anywhere on the page.
+- Include ONLY .pdf files. Ignore folders and files without .pdf extension.
+- File names must be EXACT matches (case sensitive) — copy letter by letter from the screenshot.
+- All links must have both target="_blank" and rel="noopener noreferrer".
+- No comments or explanations in the final code, only clean HTML.
+- Preserve all visual details: spacing, font sizes, rounding, shadows, colors.
+
+Generate the HTML based on the attached screenshot.`
+  },
+
+  // ----------------------------------------------------------
+  englishlessonarticle: {
+    name: '✍️ English lesson article (sources: txt, pdf and screen)',
+    customText: true,
+    template: `Write an engaging, informative article in English based on the following source materials:
+- PDF presentation (slides)
+- Event transcript (text file)
+- Screenshot showing available lesson files
+
+The article should be interesting, educational, and suitable for an English-language blog (e.g., Medium, Substack).
+
+**CRITICAL OUTPUT FORMAT:**
+- The output MUST be a complete, self-contained HTML document.
+- The HTML page MUST display the article with proper formatting (headings, paragraphs, bold, italics, emojis).
+- The HTML page MUST include images of the slides referenced in the article.
+- Image URLs must be built using the same path as the PDF files from the screenshot:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/slide-001.jpg
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/slide-002.jpg
+  etc.
+- The PATH_FROM_SCREENSHOT is the part of the URL visible in the screenshot after /ai/ (e.g., "engoo/20260818-friends-203/").
+- All slide images (slide-001.jpg, slide-002.jpg, etc.) are expected to be available at the same resource location as the PDF files.
+- Do NOT use placeholder images — use the actual constructed URLs.
+
+**CRITICAL REQUIREMENT — NO SLIDE NUMBERS IN THE ARTICLE TEXT:**
+- The final article text MUST NOT contain any slide numbers, references like [SLIDE X], "Slide 5", "on slide 10", or any similar explicit mention of slide numbering.
+- The article must read as a natural, flowing narrative without any textual references to slides.
+- The visual placement of slide images in the HTML will indicate which content corresponds to which slide — no textual references are needed.
+- All content from the slides must be seamlessly integrated into the article without mentioning the slides themselves.
+
+**STRICT RULE FOR IMAGE PLACEMENT:**
+- To place an image in the HTML, use an HTML comment like <!-- SLIDE-IMAGE: slide-001.jpg --> directly above or below the paragraph that discusses the content of that slide.
+- The final HTML output must NOT contain the literal text [SLIDE X] or slide-001 anywhere in the visible article text — it may only appear in the HTML comments or src attributes of the <img> tags.
+- For each slide, include the corresponding image using the URL: https://item1000-collab.github.io/ai/[PATH]/slide-00X.jpg (with leading zeros, e.g., slide-001.jpg, slide-002.jpg, etc.){{TEACHER_BLOCK}}{{COUNTRY_BLOCK}}
+
+REQUIREMENTS FOR THE ARTICLE:
+
+1. LANGUAGE:
+- The article must be written in English.
+- Use a conversational but polished style — inspiring and motivating.
+- All sentences must be DECLARATIVE (no questions of any kind: rhetorical, clarifying, or introductory). Use statements like: "It is important to understand that...", "Pay attention to...", "It should be noted that...", "Notice that...", "Interestingly...", "The key point is...", "Remember that...".
+
+2. USING SOURCE MATERIALS:
+- If a slide contains English text, quote it directly and provide explanations in English.
+- If AI was used in the lesson (e.g., ChatGPT, Maya, or any AI assistant), quote the full AI-generated text in English and provide explanations and commentary in English.
+
+3. VOCABULARY SECTION:
+- Rely on vocabulary slides from the PDF.
+- Present vocabulary in plain text format (NO TABLES).
+- For each vocabulary item, provide:
+   — The English phrase/word.
+   — Literal meaning (if applicable).
+   — Figurative / contextual meaning.
+   — Example from the material (quote + explanation).
+   — How the material explains this vocabulary (quote from the slide + explanation).
+
+4. METAPHORS, SYMBOLS, AND KEY IDEAS:
+- Identify 3–4 key elements from the material (symbols, metaphors, core theses) based on the slides.
+- Explain their significance in English.
+- Quote the slide's interpretation.
+
+5. ARTICLE STRUCTURE:
+
+Title:
+— Clickable and informative — include the topic and a key learning goal.
+— Mention the source of the material (e.g., the TV show, event name, or platform).
+
+Introduction (1–2 paragraphs):
+— An interesting fact or observation related to the topic.
+— ALL SENTENCES MUST BE DECLARATIVE. NO QUESTIONS.
+— Write as a storyteller, not as a conversational partner.
+— Briefly introduce the material and its educational value (based on the introductory slides).
+
+Main Body — Section 1: Content and Context
+— Brief summary of the material's essence (2–3 paragraphs).
+— Key points important for language learning.
+— For each slide, provide a quote of the idea from the slide.
+— A real-life example from the lesson (teacher, student, or AI dialogue) that ILLUSTRATES this idea from the slide.
+— Practical advice for the reader that expands on the slide's idea.
+— Teacher's commentary from the transcript (if available).
+
+Main Body — Section 2: Vocabulary and Language Takeaways
+— Present key vocabulary with explanations as described above.
+— Show how these words/phrases are used in context.
+— Connect vocabulary to the overall theme of the material.
+
+Main Body — Section 3: Deeper Meaning — Metaphors and Symbols
+— Analyze 3–4 symbols or metaphors from the slides.
+— Explain their significance and how they enhance understanding of the topic.
+
+Conclusion (1–2 paragraphs):
+— An inspiring quote from the slides or material.
+— The main takeaway for language learners, based on the final slide.
+— A call to action (practice, review the original material, apply knowledge, etc.).
+
+6. FORMATTING:
+- Use subheadings (##) to separate sections.
+- Use **bold** for key phrases.
+- Use *italics* for quotes.
+- Use emojis (📚, 💡, 📌, ⚠️) for visual variety.
+- For quotes:
+   — Quote the original in English.
+   — Provide explanations in English.
+   — Mark teacher's comments with 🎓 and put them in *italics*.
+- Do NOT use tables.
+
+7. CRITICAL REMINDERS:
+- Verify that all content in the article corresponds to the PDF slides.
+- Include teacher comments from the transcript to connect slide theory with live practice (if available).
+- If AI was used, provide the full AI-generated text in English and add explanations in English.
+- All text on the page MUST be in English only — no Russian, no other languages.
+- The article must be a complete, self-contained piece ready for publication.
+- The HTML page must include all slide images using the constructed URLs.
+- ONLY the PDF files from the screenshot should be referenced as downloads (no TXT or HTML files should be linked).
+- The final HTML must contain NO visible text like slide-001 or [SLIDE 1] — only the <img src="..."> tags and HTML comments for positioning.
+
+**PATH FOR IMAGES AND PDFs:**
+Extract the path from the screenshot (the part after /ai/). For example, if the screenshot shows "engoo/20260818-friends-203/", use:
+- PDF base URL: https://item1000-collab.github.io/ai/engoo/20260818-friends-203/
+- Image base URL: https://item1000-collab.github.io/ai/engoo/20260818-friends-203/
+- Image filenames: slide-001.jpg, slide-002.jpg, slide-003.jpg, etc. (with leading zeros).
+
+If the path is not clearly visible, use the most specific path available from the screenshot.
+
+Generate the complete HTML document with all styles embedded.
+
+**STRICT RULE FOR FILE PATHS AND URLS:**
+- The final HTML MUST contain EXACTLY the file names and paths as they appear in the provided screenshot.
+- Do NOT guess, alter, or "correct" any file names. For example, if the screenshot shows "summary-20260903165758Inn4Px.pdf", the link MUST be exactly:
+  https://item1000-collab.github.io/ai/engoo/20260903-friends-211/summary-20260903165758Inn4Px.pdf
+- Do NOT use any other file names (such as .txt, .html, or any other file not explicitly listed in the screenshot) in the download links.
+- The PDF download links MUST be limited to ONLY the files that are explicitly present in the screenshot as PDF files (e.g., 211-friends-wedding-english.pdf and summary-20260903165758Inn4Px.pdf).
+- If the screenshot shows a file with a specific name, copy it VERBATIM (including capital letters, numbers, and extensions). Do NOT change "Inn4Px" to "lnn4Px" or any other variation.
+- All links in the HTML must point to the SAME base URL path as shown in the screenshot for the PDFs.
+- Do NOT include links to any other files (TXT, HTML, etc.) unless they are explicitly requested in the instructions.`,
+    inputs: [
+      {
+        id: 'teacher',
+        label: '👩‍🏫 Teacher (optional)',
+        placeholder: 'e.g. Rosie — leave blank to skip',
+        token: '{{TEACHER_BLOCK}}',
+        fallback: '',
+        inline: true,
+        optional: true,
+        template: function(val) { return val ? '\n\nTeacher: ' + val : ''; }
+      },
+      {
+        id: 'country',
+        label: '🌍 Country (optional)',
+        placeholder: 'e.g. Venezuela — leave blank to skip',
+        token: '{{COUNTRY_BLOCK}}',
+        fallback: '',
+        inline: true,
+        optional: true,
+        template: function(val) { return val ? '\nCountry: ' + val : ''; }
+      }
+    ]
+  },
+
+  // ----------------------------------------------------------
+  radioshow: {
+    name: '🎧 Radio Show (source: json)',
+    template: `Role: You are a senior frontend developer. Create a single-page web application (SPA) for listening to an audio show with interactive, time-synchronized transcripts, ready for immediate deployment on GitHub Pages.
+
+1. INPUT DATA (Files)
+
+    ai_radio.mp3 (Audio file. Name is strictly fixed.)
+
+    cover.png (Cover image.)
+
+    show_notes.json (JSON with timestamps. Format below):
+    json
+
+    {
+      "show_title": "Show Title",
+      "show_duration": "MM:SS",
+      "timecoded_transcript": [
+        { "timecode": "M:SS", "speaker": "Name", "text": "Dialogue line" }
+      ]
+    }
+
+2. OUTPUT DATA
+
+I need 4 files ready to upload to a GitHub repository:
+
+    index.html (Contains all CSS and JavaScript inside it).
+
+    show_notes.json (Validated).
+
+    ai_radio.mp3 (Upload instruction).
+
+    cover.png (Upload instruction).
+
+3. TECHNICAL REQUIREMENTS FOR CODE
+
+Design (CSS):
+
+    Dark theme (background: #121212), sans-serif font.
+
+    Player container: cover on top, title, duration, standard <audio controls>.
+
+    Transcript list: lines with pointer cursor, dividers, and hover highlighting.
+
+    Active line is highlighted bright blue (#007bff) with white text.
+
+    IMPORTANT: The cover image (cover.png) must be SMALL and neat. Set its width to exactly 200px (width: 200px), height: auto, with border-radius: 8px, and display: block. DO NOT stretch it to 100% width.
+
+Logic (JavaScript):
+
+    Paths: Strictly: ai_radio.mp3 and cover.png.
+
+    Loading: fetch('show_notes.json').
+
+    Timestamps: Function to convert "M:SS" to seconds. Calculate endSeconds for each line (if no next line, start + 20 sec).
+
+    Rendering: Create DOM elements dynamically. Line format: <span class="speaker">Name:</span> Text.
+
+    Synchronization: Listen to timeupdate. If currentTime falls within a line's range, add class .active and call scrollIntoView({ behavior: 'smooth', block: 'center' }).
+
+    Click: Clicking a line seeks audio.currentTime to the start of that line and starts playback.
+
+    Errors: If JSON is not found, display a clear error message instead of the show title.
+
+4. STRICT STRUCTURE RULES
+
+    No separate files: It is forbidden to create style.css or script.js. All CSS strictly inside <style> in <head>, all JS strictly inside <script> at the end of <body>.
+
+    File names: The code must use only ai_radio.mp3, cover.png, and show_notes.json. No other name variations (like audio.mp3) should be present.
+
+    Simplicity: The code should be concise, without unnecessary libraries (only pure HTML, CSS, Vanilla JS).`
+  },
+
+  // ----------------------------------------------------------
+  gistpresentation: {
+    name: '📑 Gist Presentation Overview (presentation slides analysis in md)',
+    template: `По этой презентации дай общую информацию на русском языке, а затем объяснение и трактовку каждого слайда включая текст отдельных слов и фраз на английском языке и их перевод на русский язык и комментарии.
+
+ТРЕБОВАНИЯ:
+
+1. Общая информация (на русском):
+   — Название презентации
+   — Основная тема
+   — Ключевая цель
+   — Краткое описание содержания (2-3 предложения)
+
+2. Разбор каждого слайда:
+   Для каждого слайда (по порядку):
+   — Номер слайда
+   — Заголовок слайда (если есть)
+   — Описание содержания слайда на русском
+   — Все английские слова, фразы, выражения со слайда:
+     • Сама фраза на английском
+     • Перевод на русский
+     • Пояснение / комментарий (контекст использования, нюансы, грамматические особенности)
+
+3. Формат вывода (СТРОГО):
+   — Оформи весь ответ в виде ОДНОГО Markdown-блока внутри тройных обратных кавычек (\`\`\`markdown ... \`\`\`).
+   — В начале укажи имя файла для Gist (например, \`# friends_lesson.md\`), чтобы я мог просто скопировать всё и вставить в новый Gist.
+   — Используй Markdown-структуру: заголовки (#, ##, ###), списки (- или *), жирный текст (**текст**), курсив (*текст*).
+   — Не добавляй никакого текста вне Markdown-блока (никаких «Вот текст», «Готово», «Скопируйте» и т.д.). Только сам код.
+   — Следи, чтобы заголовки и списки начинались с начала строки (без лишних отступов), чтобы при вставке в Gist форматирование не сломалось.
+
+4. Структура документа:
+   # Название презентации
+
+   ## Общая информация
+   ...
+
+   ## Слайд 1
+   ### Заголовок слайда
+   Описание...
+   - **английская фраза** — перевод — комментарий
+   ...
+
+   ## Слайд 2
+   ...
+
+5. Язык:
+   — Общая информация и описания слайдов — на русском
+   — Все английские фразы сохраняются в оригинале
+   — Перевод и комментарии — на русском
+
+6. Важно:
+   — Обрабатывать все слайды презентации (их 13)
+   — Не пропускать ни одного слайда
+   — Для каждого слайда указывать все значимые слова и фразы
+   — Комментарии должны быть полезными и информативными
+
+ВЫХОДНОЙ ФОРМАТ: Только текст в формате Markdown (.md), готовый для вставки в Gist. Никакого дополнительного текста вне формата.`
+  },
+
+  // ----------------------------------------------------------
+  audioshow: {
+    name: '🎙 Radio Show from Screenshot (source: screen + txt with timestamps)',
+    template: `Role: You are a senior frontend developer. Create a complete, self-contained web application for an audio radio show with synchronized transcripts, ready for deployment on GitHub Pages.
+
+## OUTPUT FILES
+
+You must generate **TWO files** with these EXACT names:
+1. **audio.json** — the parsed transcript data in JSON format (VALID JSON ONLY, no markers, no BOM)
+2. **audio.html** — the complete HTML document with all CSS and JS inside
+
+## CRITICAL RULES (MUST FOLLOW)
+
+### For audio.json:
+- The file MUST start with \`{\` and end with \`}\`
+- NO markdown code blocks, NO "\`\`\`json", NO "=== audio.json ===" markers
+- NO BOM (Byte Order Mark) at the beginning of the file
+- The file must be 100% valid JSON (use a JSON validator)
+- All strings must use double quotes \`"\`
+- No trailing commas
+
+### For audio.html:
+- The file MUST start with \`<!DOCTYPE html>\`
+- All resource URLs must use the EXACT path from the screenshot
+- The audio file name is \`audio.mp3\` (NOT \`ai_radio.mp3\`)
+- The cover image is \`audio.jpg\`
+- PDF links are OPTIONAL — only include if PDF files are visible in the screenshot
+
+## INPUT DATA
+
+You will receive:
+1. A **screenshot** showing the file list in a directory (similar to the "Index of Event" structure).
+2. A **text file** containing the transcript with timestamps (format: \`[MM:SS] Speaker: Text\` or similar timecoded format).
+
+## EXTRACT FROM SCREENSHOT
+
+- Extract the **PATH** from the screenshot (the part after \`/ai/\` in the URL, e.g., \`gdc/20260906-peter-miles-pizza/\`)
+- Extract all **PDF files** visible in the screenshot (their full names with .pdf extension) — if none, skip PDF section
+- Determine the **show title** and **theme** from the screenshot (folder name, file names, or any visible text)
+
+## WHAT TO GENERATE
+
+### 1. audio.json (from the transcript text file)
+
+Parse the transcript text file and convert it to JSON with the following structure:
+\`\`\`json
+{
+  "show_title": "Extracted from screenshot or transcript",
+  "show_duration": "MM:SS",
+  "timecoded_transcript": [
+    { "timecode": "M:SS", "speaker": "Speaker Name", "text": "Dialogue line" }
+  ]
+}
+\`\`\`
+
+**Parsing rules:**
+- Extract timecodes in format \`[MM:SS]\` or \`MM:SS\` from the transcript.
+- Extract speaker names (e.g., "Speaker 1:", "Peter:", "Miles:", etc.).
+- The text after the speaker name is the dialogue line.
+- If the transcript has no speaker names, use "Speaker" as default.
+- Calculate the duration from the last timecode.
+
+**JSON VALIDATION:**
+- After generating, verify the JSON is valid (use a JSON linter mentally)
+- The first character MUST be \`{\`
+- The last character MUST be \`}\`
+- No invisible characters before the first \`{\`
+
+### 2. audio.html
+
+A complete, self-contained HTML document with the following features:
+
+**Page Structure:**
+- Header with show title and duration (from audio.json)
+- Cover image: Use \`audio.jpg\` (small, width: 120px, border-radius: 16px)
+- Standard HTML5 audio player with controls
+- Transcript list with synchronized highlighting
+- **NO PDF section** — PDF links are OPTIONAL and only included if PDF files are visible in the screenshot
+
+**Resource URLs (CRITICAL):**
+- Audio file: \`https://item1000-collab.github.io/ai/[PATH]/audio.mp3\`
+- Cover image: \`https://item1000-collab.github.io/ai/[PATH]/audio.jpg\`
+- JSON data: \`https://item1000-collab.github.io/ai/[PATH]/audio.json\`
+- If no path is visible in the screenshot, use base URLs without path
+
+**Design (Dark Theme):**
+- Background: #121212
+- Active line: bright blue (#007bff) with white text
+- Each line shows: speaker name (bold, colored) + text
+- Pointer cursor on hover, hover highlighting
+- Dividers between lines
+
+**JavaScript Logic:**
+- Fetch \`audio.json\` on load
+- Handle BOM removal: check \`text.charCodeAt(0) === 0xFEFF\` and remove if present
+- Handle JSON parsing errors with try/catch
+- Convert timecodes "M:SS" to seconds
+- Calculate end time for each line (next line's start, or start + 20s for last)
+- On \`timeupdate\`: find current line, highlight it, scroll into view
+- On click: seek to line's start time and play
+- Display error if JSON not found or invalid
+
+**STRICT REQUIREMENTS:**
+
+1. **File names (FIXED):**
+   - Audio file: MUST be \`audio.mp3\` (NOT \`ai_radio.mp3\`)
+   - Cover image: MUST be \`audio.jpg\`
+   - JSON data: MUST be \`audio.json\`
+   - HTML file: MUST be \`audio.html\`
+   - All links must use these exact names.
+
+2. **Path for resources:**
+   - Build resource URLs using the path extracted from the screenshot:
+     \`https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/audio.mp3\`
+     \`https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/audio.jpg\`
+   - If no path is visible in the screenshot, use:
+     \`https://item1000-collab.github.io/ai/audio.mp3\`
+     \`https://item1000-collab.github.io/ai/audio.jpg\`
+
+3. **PDF files (OPTIONAL):**
+   - Only include if PDF files are actually visible in the screenshot
+   - If no PDF files, SKIP the PDF section entirely (do not create an empty section)
+   - If PDFs exist, create download links using: \`https://item1000-collab.github.io/ai/[PATH]/[PDF_NAME]\`
+   - Display PDF links as a list below the transcript
+   - Each link should have \`target="_blank"\` and \`rel="noopener noreferrer"\`
+
+4. **Code structure:**
+   - ALL CSS inside \`<style>\` in \`<head>\`
+   - ALL JavaScript inside \`<script>\` at the end of \`<body>\`
+   - NO external files (except Google Fonts if needed)
+   - NO external libraries (pure HTML, CSS, Vanilla JS)
+
+5. **Transcript parsing:**
+   - Support format: \`[MM:SS] Speaker: Text\`
+   - Support format: \`MM:SS Speaker: Text\`
+   - Support format: \`MM:SS - Speaker: Text\`
+   - If timecode is in format \`H:MM:SS\`, convert correctly.
+
+## OUTPUT FORMAT
+
+**CRITICAL: Your response MUST contain BOTH files. Format your response EXACTLY as:**
+
+\`\`\`
+=== audio.json ===
+{"show_title":"...", ...}
+
+=== audio.html ===
+<!DOCTYPE html>...
+\`\`\`
+
+**IMPORTANT:**
+- The \`=== audio.json ===\` marker is ONLY for the response formatting, NOT part of the actual file
+- The actual \`audio.json\` file content must start with \`{\` and end with \`}\`
+- Do NOT wrap the JSON in markdown code blocks
+- Do NOT add any extra commentary before or after the files
+
+## EXAMPLE
+
+If the screenshot shows:
+- Path: \`gdc/20260906-peter-miles-pizza/\`
+- No PDF files visible
+- Folder name: \`20260906-peter-miles-pizza\`
+
+And transcript contains:
+\`\`\`
+[00:01] Speaker 1: Hey, what's good?
+[00:04] Speaker 2: Hello. Good morning.
+\`\`\`
+
+Then generate:
+- audio.json with \`show_title: "Peter Miles Pizza"\`
+- audio.html with audio src: \`https://item1000-collab.github.io/ai/gdc/20260906-peter-miles-pizza/audio.mp3\`
+- NO PDF section (since no PDFs in screenshot)
+
+## IMPORTANT NOTES
+
+- The audio file is \`audio.mp3\` (NOT \`ai_radio.mp3\`)
+- If the screenshot shows a path, use it EXACTLY as shown (including subdirectories like \`gdc/\`)
+- If the transcript file contains a title, use it. Otherwise, derive from the folder name.
+- All file names are CASE SENSITIVE — copy exactly from the screenshot.
+- The transcript text file may contain timestamps in different formats — be flexible.
+- Do NOT include any extra commentary in the output — only the JSON and HTML.
+- **Remember: audio.json must be PURE JSON — no markers, no BOM, no code blocks**
+
+Generate both files now based on the attached screenshot and transcript text file.`
+  },
+
+  // ----------------------------------------------------------
+  // PRESET: "Game" with two options + aesthetic field
+  // ----------------------------------------------------------
+  game: {
+    name: '🎮 Game',
+    variants: [
+      {
+        id: 'mode',
+        label: '🎯 Choose game type',
+        hint: 'Both options use the same aesthetic field below. The aesthetic will be inserted into the prompt.',
+        default: 'interactivegame',
+        options: [
+          {
+            id: 'interactivegame',
+            label: '📖 Story with Slides',
+            shortLabel: '📖 Story with Slides',
+            template: `Create an engaging, atmospheric interactive game as a complete, self-contained HTML document. It should be a browser-based narrative learning game, fully built on the provided source materials. You DO NOT have internet access — do not try to open or download any URLs. All links below are just text strings to be inserted into the HTML.
+
+SOURCE MATERIALS:
+- PDF presentation (slides)
+- Event transcript (text file) — may or may not be present
+- Screenshot with available lesson files — provided as an image
+
+OUTPUT FORMAT:
+- The result is a complete, self-contained HTML document with all CSS and JavaScript embedded. No external libraries, no CDN links, no internet dependencies.
+- The output must be a full HTML page: it must start with <!DOCTYPE html> and include <html>, <head>, and <body> tags.
+- The page displays the game with proper formatting: headings, paragraphs, bold, italics, emojis, interactive elements, buttons, progress indicators.
+
+SLIDE IMAGES:
+- The HTML page MUST include images of the slides referenced in the game.
+- Image URLs are built using the same path as the PDF files from the screenshot:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/slide-001.jpg
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/slide-002.jpg
+  etc.
+- PATH_FROM_SCREENSHOT is the part of the URL visible in the screenshot after /ai/.
+- All slide images (slide-001.jpg, slide-002.jpg, etc.) are expected to be available at the same resource location as the PDF files.
+- Do NOT use placeholder images — use the actual constructed URLs.
+- To place an image, use an HTML comment like <!-- SLIDE-IMAGE: slide-001.jpg --> directly above or below the paragraph that discusses the content of that slide.
+
+NO SLIDE NUMBERS:
+- The final game text MUST NOT contain slide numbers, references like [SLIDE X], "Slide 5", or any other explicit mention of slide numbering.
+- The literal text slide-001 or [SLIDE X] may only appear in HTML comments or in the src attributes of <img> tags, but not in the visible game text.
+- In the game, content from the slides must be seamlessly integrated without mentioning the slides themselves.
+
+GAME CONCEPT AND MECHANICS:
+Since you cannot open an example game online, build the game according to this template:
+
+- Format: linear narrative journey. The player goes through a sequence of scenes — one per slide.
+- Scene structure:
+    - A short atmospheric narrative paragraph (2–4 sentences) setting the mood and introducing the slide's idea.
+    - The slide image as a card.
+    - An interactive task tied to the slide (multiple choice, word matching, fill-in-the-blank, or "choose the correct meaning").
+    - Immediate feedback: correct answer reveals a short explanation and a "Continue" button; incorrect answer shows a gentle hint and allows retry.
+- Progress: a visible indicator or step counter (e.g., "Scene 3 of 10"). The counter refers to scenes, NOT slides.
+- Scoring: track correct answers and show the final score.
+- Final screen: main takeaway, an inspiring quote from the material, a call to action, and download links to the PDF files from the screenshot.
+- Visual style: atmospheric theme, large readable headings, neat cards, smooth transitions, light CSS animations.
+- Technically: all interactivity in pure vanilla JavaScript embedded in the HTML.
+
+LANGUAGE AND STYLE:
+- The game is written in English. All text on the page is in English only, no other languages.
+- Style: conversational but polished — inspiring, motivating, atmospheric, immersive.
+- All sentences are DECLARATIVE, without questions of any kind. Use constructions like: "It is important to understand that...", "Pay attention to...", "It should be noted that...", "Notice that...", "Interestingly...", "The key point is...", "Remember that...".
+
+VOCABULARY (inside the game):
+- Rely on vocabulary slides from the PDF. Present it as plain text, NO TABLES.
+- For each item, provide: the English phrase/word; literal meaning (if applicable); figurative/contextual meaning; example from the material (quote + explanation); how the material explains this vocabulary (quote from the slide + explanation).
+- Embed vocabulary into game tasks: choose the correct meaning, fill in the blank, matching.
+
+METAPHORS, SYMBOLS, KEY IDEAS:
+- Identify 3–4 key elements from the material (symbols, metaphors, core theses) based on the slides.
+- Explain their significance in English and provide the slide's interpretation.
+- These elements become the semantic anchors of the game and the final screen.
+
+TEXT FORMATTING:
+- Subheadings (##) to separate sections.
+- Bold for key phrases, italics for quotes.
+- Emojis (📚, 💡, 📌, ⚠️, 🎓) for visual variety.
+- No tables.
+
+PDF LINKS:
+- Download links are limited ONLY to the files explicitly present in the screenshot as PDF files.
+- File names are copied VERBATIM, including capital letters, numbers, and extensions. Do NOT change Inn4Px to lnn4Px or any other variation.
+- All links use the same base URL path as the PDF files from the screenshot.
+- Do NOT link to TXT, HTML, or any other non-PDF files.
+
+AESTHETIC FIELD — FILL THIS BEFORE CREATING THE GAME:
+{{AESTHETIC_BLOCK}}
+
+FINAL RESULT:
+Generate the complete HTML document with embedded styles and scripts. The game is a fully self-contained, atmospheric, narrative learning experience built on the provided slides, using the exact URL path [PATH_FROM_SCREENSHOT] for all images and PDFs.`
+          },
+          {
+            id: 'storyslides',
+            label: '🎮 Interactive Game',
+            shortLabel: '🎮 Interactive Game',
+            template: `Write an engaging, atmospheric story based on the following source materials:
+- PDF presentation (slides) — visual content
+- Event transcript (if available) — optional text file
+- Screenshot with available lesson files — provided as an image
+
+**CRITICAL OUTPUT FORMAT:**
+- The output MUST be a complete, self-contained HTML document.
+- The HTML page MUST display the story with proper formatting (headings, paragraphs, bold, italics, emojis).
+- The HTML page MUST include images of the slides referenced in the story.
+- Image URLs must be built using the same path as the PDF files from the screenshot:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/slide-001.jpg
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/slide-002.jpg
+  etc.
+- The PATH_FROM_SCREENSHOT is the part of the URL visible in the screenshot after /ai/.
+- All slide images (slide-001.jpg, slide-002.jpg, etc.) are expected to be available at the same resource location as the PDF files.
+- Do NOT use placeholder images — use the actual constructed URLs.
+
+**CRITICAL REQUIREMENT — NO SLIDE NUMBERS IN THE STORY TEXT:**
+- The final story text MUST NOT contain any slide numbers, references like [SLIDE X], "Slide 5", or any similar explicit mention of slide numbering.
+- The story must read as a natural, flowing narrative without any textual references to slides.
+- The visual placement of slide images in the HTML will indicate which content corresponds to which slide.
+- All content from the slides must be seamlessly integrated into the story without mentioning the slides themselves.
+
+**STRICT RULE FOR IMAGE PLACEMENT:**
+- To place an image in the HTML, use an HTML comment like <!-- SLIDE-IMAGE: slide-001.jpg --> directly above or below the paragraph that discusses the content of that slide.
+- The final HTML output must NOT contain the literal text [SLIDE X] or slide-001 anywhere in the visible story text.
+
+**AESTHETIC FIELD — FILL THIS BEFORE WRITING:**
+{{AESTHETIC_BLOCK}}
+
+REQUIREMENTS FOR THE STORY:
+
+1. LANGUAGE:
+- The story must be written in English.
+- Use a conversational but polished style — inspiring, motivating, atmospheric.
+- All sentences must be DECLARATIVE (no questions of any kind). Use statements like: "It is important to understand that...", "Pay attention to...", "It should be noted that...", "Notice that...", "Interestingly...", "The key point is...", "Remember that...".
+
+2. USING SOURCE MATERIALS:
+- If a slide contains English text, quote it directly and weave it into the narrative.
+- If AI was used in the lesson, quote the full AI-generated text and provide commentary.
+
+3. VOCABULARY SECTION (integrated into the story):
+- Rely on vocabulary slides from the PDF.
+- Present vocabulary in plain text format (NO TABLES).
+- For each vocabulary item, provide: the English phrase/word, literal meaning, figurative/contextual meaning, example from the material, and how the material explains it.
+- Weave vocabulary naturally into the story.
+
+4. METAPHORS, SYMBOLS, AND KEY IDEAS:
+- Identify 3–4 key elements from the material (symbols, metaphors, core theses).
+- Explain their significance in English.
+- Quote the slide's interpretation.
+
+5. STORY STRUCTURE:
+
+Title:
+— Clickable and informative — include the topic and a key learning goal.
+
+Introduction (1–2 paragraphs):
+— An interesting fact or observation related to the topic.
+— ALL SENTENCES MUST BE DECLARATIVE. NO QUESTIONS.
+— Write as a storyteller, not as a conversational partner.
+
+Main Body — Section 1: Content and Context
+— Brief summary of the material's essence.
+— Key points important for language learning.
+— For each slide, provide a quote of the idea from the slide.
+— A real-life example from the lesson that illustrates this idea.
+— Practical advice for the reader.
+
+Main Body — Section 2: Vocabulary and Language Takeaways
+— Present key vocabulary with explanations.
+— Show how these words/phrases are used in context.
+
+Main Body — Section 3: Deeper Meaning — Metaphors and Symbols
+— Analyze 3–4 symbols or metaphors from the slides.
+
+Conclusion (1–2 paragraphs):
+— An inspiring quote from the slides or material.
+— The main takeaway for language learners.
+— A call to action.
+
+6. FORMATTING:
+- Use subheadings (##) to separate sections.
+- Use **bold** for key phrases.
+- Use *italics* for quotes.
+- Use emojis (📚, 💡, 📌, ⚠️) for visual variety.
+- For quotes: quote the original in English, provide explanations in English, mark teacher's comments with 🎓 and put them in *italics*.
+- Do NOT use tables.
+
+7. CRITICAL REMINDERS:
+- Verify that all content in the story corresponds to the PDF slides.
+- All text on the page MUST be in English only.
+- The story must be a complete, self-contained piece ready for publication.
+- ONLY the PDF files from the screenshot should be referenced as downloads (no TXT or HTML files should be linked).
+
+**PATH FOR IMAGES AND PDFs:**
+Extract the path from the screenshot (the part after /ai/). For example, if the screenshot shows "engoo/20260818-friends-203/", use:
+- PDF base URL: https://item1000-collab.github.io/ai/engoo/20260818-friends-203/
+- Image base URL: https://item1000-collab.github.io/ai/engoo/20260818-friends-203/
+- Image filenames: slide-001.jpg, slide-002.jpg, etc.
+
+Generate the complete HTML document with all styles embedded.`
+          }
+        ]
+      }
+    ],
+    inputs: [
+      {
+        id: 'aesthetic',
+        label: '🎨 Aesthetic — describe the visual mood, style, and atmosphere',
+        placeholder: 'e.g. "retro VHS 90s, neon cyberpunk, paper scrapbook, detective board with threads, pixel art 8-bit, warm paper textures, muted tones"',
+        token: '{{AESTHETIC_BLOCK}}',
+        fallback: 'Atmospheric, warm, engaging, with a clear visual narrative and immersive feel.',
+        optional: false,
+        inline: false,
+        type: 'textarea',
+        className: 'large-aesthetic'
+      }
+    ]
+  }
+};
+
+// ============================================================
+// 2. СОСТОЯНИЕ
+// ============================================================
+const STORAGE_KEY = 'promptEngineState';
+const state = {
+  presetId: '',   // выбранный пресет
+  variants: {},   // groupId -> optionId
+  inputs: {},     // inputId -> значение
+  customText: ''
+};
+
+// ============================================================
+// 3. DOM
+// ============================================================
+const $ = id => document.getElementById(id);
+const customSelect    = $('customSelect');
+const selectTrigger   = $('selectTrigger');
+const selectDropdown  = $('selectDropdown');
+const selectedText    = selectTrigger.querySelector('.selected-text');
+const dynamicControls = $('dynamicControls');
+const customTextGroup = $('customTextGroup');
+const customTextInput = $('customText');
+const copyBtn         = $('copyBtn');
+const promptDisplay   = $('promptDisplay');
+const statusMessage   = $('statusMessage');
+
+// ============================================================
+// 4. ХЕЛПЕРЫ
+// ============================================================
+function getPreset() { return PROMPTS[state.presetId] || null; }
+
+function getVariantOption(group) {
+  const id = state.variants[group.id] || group.default;
+  return group.options.find(o => o.id === id) || group.options[0];
+}
+
+function setStatus(msg, type = 'info') {
+  statusMessage.textContent = msg;
+  statusMessage.className = 'status status--' + type;
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (s && typeof s === 'object') Object.assign(state, s);
+  } catch (e) {}
+  if (!state.variants || typeof state.variants !== 'object') state.variants = {};
+  if (!state.inputs  || typeof state.inputs  !== 'object') state.inputs  = {};
+  if (typeof state.customText !== 'string') state.customText = '';
+  if (!PROMPTS[state.presetId]) state.presetId = '';
+}
+
+// ============================================================
+// 5. СБОРКА ПРОМПТА
+// ============================================================
+function buildPrompt() {
+  const p = getPreset();
+  if (!p) return null;
+
+  let text = p.template || '';
+
+  // Варианты: template заменяет базу, suffix добавляется к ней
+  (p.variants || []).forEach(g => {
+    const opt = getVariantOption(g);
+    if (opt.template != null)      text = opt.template;
+    else if (opt.suffix != null)   text = text + opt.suffix;
+  });
+
+  // Подстановка полей — с поддержкой optional и кастомных шаблонов
+  (p.inputs || []).forEach(f => {
+    const val = (state.inputs[f.id] || '').trim();
+
+    // Если у поля есть template-функция — используем её для генерации значения
+    if (f.template && typeof f.template === 'function') {
+      const replacement = f.template(val);
+      text = text.split(f.token).join(replacement);
+    } else {
+      // Стандартное поведение: fallback, если поле обязательное
+      const fallback = f.optional ? '' : (f.fallback || '');
+      text = text.split(f.token).join(val || fallback);
+    }
+  });
+
+  // Пользовательский текст — в начало
+  const custom = state.customText.trim();
+  if (custom && p.customText) text = custom + '\n\n' + text;
+
+  return text;
+}
+
+// ============================================================
+// 6. ОТРИСОВКА
+// ============================================================
+function renderDropdownOptions() {
+  selectDropdown.innerHTML = '';
+  const add = (value, labelText) => {
+    const el = document.createElement('div');
+    el.className = 'custom-select-option';
+    el.dataset.value = value;
+    el.setAttribute('role', 'option');
+    el.textContent = labelText;
+    selectDropdown.appendChild(el);
+  };
+  add('', '— Choose a preset —');
+  Object.keys(PROMPTS).forEach(key => add(key, PROMPTS[key].name));
+}
+
+function renderDropdownSelection() {
+  let label = '— Choose a preset —';
+  selectDropdown.querySelectorAll('.custom-select-option').forEach(opt => {
+    const active = opt.dataset.value === state.presetId;
+    opt.classList.toggle('selected', active);
+    opt.setAttribute('aria-selected', active);
+    if (active) label = opt.textContent;
+  });
+  selectedText.textContent = label;
+}
+
+function renderControls() {
+  const p = getPreset();
+  dynamicControls.innerHTML = '';
+  if (!p) return;
+
+  // Группы вариантов (кнопки)
+  (p.variants || []).forEach(g => {
+    const wrap = document.createElement('div');
+    wrap.className = 'dynamic-group';
+    const label = document.createElement('label');
+    label.textContent = g.label;
+    wrap.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'group-options';
+    const activeId = state.variants[g.id] || g.default;
+    g.options.forEach(o => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-secondary' + (o.id === activeId ? ' active' : '');
+      b.dataset.group = g.id;
+      b.dataset.option = o.id;
+      b.textContent = o.label;
+      row.appendChild(b);
+    });
+    wrap.appendChild(row);
+
+    if (g.hint) {
+      const h = document.createElement('div');
+      h.className = 'hint';
+      h.textContent = g.hint;
+      wrap.appendChild(h);
+    }
+    dynamicControls.appendChild(wrap);
+  });
+
+  // Текстовые поля (inline-поля группируются в одну строку)
+  let inlineWrap = null;
+  (p.inputs || []).forEach(f => {
+    if (f.inline && !inlineWrap) {
+      inlineWrap = document.createElement('div');
+      inlineWrap.className = 'inline-group';
+      dynamicControls.appendChild(inlineWrap);
+    }
+    if (!f.inline) inlineWrap = null;
+    const target = f.inline ? inlineWrap : dynamicControls;
+
+    const g = document.createElement('div');
+    g.className = 'input-group';
+    const label = document.createElement('label');
+    label.textContent = f.label;
+
+    let inp;
+    if (f.type === 'textarea') {
+      inp = document.createElement('textarea');
+      if (f.className) inp.className = f.className;
+      inp.placeholder = f.placeholder || '';
+      inp.value = state.inputs[f.id] || '';
+    } else {
+      inp = document.createElement('input');
+      inp.type = 'text';
+      inp.placeholder = f.placeholder || '';
+      inp.value = state.inputs[f.id] || '';
+    }
+    inp.dataset.input = f.id;
+    g.appendChild(label);
+    g.appendChild(inp);
+    target.appendChild(g);
+  });
+}
+
+function renderVisibility() {
+  const p = getPreset();
+  customTextGroup.classList.toggle('hidden', !(p && p.customText));
+  customTextInput.value = state.customText;
+}
+
+function renderPrompt() {
+  const p = getPreset();
+  const full = buildPrompt();
+
+  if (!full) {
+    promptDisplay.textContent = '⚠️ Please select a prompt preset from the dropdown.';
+    setStatus('📌 No prompt selected.', 'info');
+    return;
+  }
+  promptDisplay.textContent = full;
+
+  // Статусная строка собирается автоматически из метаданных
+  const extra = [];
+  (p.variants || []).forEach(g => {
+    const o = getVariantOption(g);
+    extra.push(o.shortLabel || o.label);
+  });
+  (p.inputs || []).forEach(f => {
+    const v = (state.inputs[f.id] || '').trim();
+    if (v) extra.push(v.length > 40 ? v.substring(0, 40) + '…' : v);
+  });
+  let label = p.name + (extra.length ? ' (' + extra.join(', ') + ')' : '');
+  if (state.customText.trim()) label += ' (with custom text)';
+  setStatus('✅ Loaded: ' + label, 'success');
+}
+
+function renderAll() {
+  renderControls();
+  renderVisibility();
+  renderPrompt();
+  saveState();
+}
+
+// ============================================================
+// 7. СОБЫТИЯ
+// ============================================================
+function toggleDropdown(open) {
+  const willOpen = (open === undefined) ? !customSelect.classList.contains('open') : open;
+  customSelect.classList.toggle('open', willOpen);
+  selectTrigger.setAttribute('aria-expanded', willOpen);
+}
+
+function selectOption(value) {
+  state.presetId = value;
+  renderDropdownSelection();
+  toggleDropdown(false);
+  renderAll();
+}
+
+selectTrigger.addEventListener('click', e => { e.stopPropagation(); toggleDropdown(); });
+selectTrigger.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDropdown(); }
+});
+selectDropdown.addEventListener('click', e => {
+  const option = e.target.closest('.custom-select-option');
+  if (option) selectOption(option.dataset.value);
+});
+document.addEventListener('click', () => toggleDropdown(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleDropdown(false); });
+
+// Делегирование: клики по кнопкам вариантов
+dynamicControls.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-group]');
+  if (!btn) return;
+  state.variants[btn.dataset.group] = btn.dataset.option;
+  btn.closest('.group-options').querySelectorAll('.btn')
+     .forEach(b => b.classList.toggle('active', b === btn));
+  renderPrompt();
+  saveState();
+});
+
+// Делегирование: ввод в текстовые поля
+dynamicControls.addEventListener('input', e => {
+  if (!e.target.matches('[data-input]')) return;
+  state.inputs[e.target.dataset.input] = e.target.value;
+  renderPrompt();
+  saveState();
+});
+
+customTextInput.addEventListener('input', () => {
+  state.customText = customTextInput.value;
+  renderPrompt();
+  saveState();
+});
+
+// ============================================================
+// 8. КОПИРОВАНИЕ
+// ============================================================
+function copyFallback(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  ta.remove();
+}
+
+async function copyPrompt() {
+  if (!getPreset()) {
+    setStatus('⚠️ Select a preset first to copy a prompt.', 'error');
+    return;
+  }
+  const text = promptDisplay.textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    copyFallback(text);
+  }
+  setStatus('✅ Copied to clipboard!', 'success');
+  copyBtn.textContent = '✅ Copied!';
+  setTimeout(() => { copyBtn.textContent = '📋 Copy Prompt'; }, 2000);
+}
+
+copyBtn.addEventListener('click', copyPrompt);
+
+// ============================================================
+// 9. ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+loadState();
+renderDropdownOptions();
+renderDropdownSelection();
+selectOption(state.presetId || '');
+</script>
+</body>
+</html>
