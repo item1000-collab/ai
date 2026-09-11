@@ -1,2310 +1,1548 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>👑 The Royal Urbanite — Coming to America</title>
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    /* ===== RESET & GLOBAL ===== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    :root {
-      --bg-dark: #0d0a0b;
-      --bg-card: #1a1418;
-      --gold: #c9a84c;
-      --gold-light: #e8d48b;
-      --gold-dark: #8b6b2e;
-      --red: #a83e3e;
-      --green: #3e7a4e;
-      --text: #f0e6d8;
-      --text-dim: #b8a89a;
-      --shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-      --radius: 18px;
-      --font-display: 'Playfair Display', Georgia, serif;
-      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    html, body {
-      height: 100%;
-      overflow: hidden;
-      background: var(--bg-dark);
-      font-family: var(--font-body);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
-    }
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    /* ===== PRELOADER ===== */
-    #preloader {
-      position: fixed;
-      inset: 0;
-      background: var(--bg-dark);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.8s ease;
-    }
-    #preloader.hidden {
-      transform: translateY(-100%);
-      opacity: 0;
-      pointer-events: none;
-    }
-    .preloader-title {
-      font-family: var(--font-display);
-      font-size: clamp(2rem, 6vw, 4rem);
-      color: var(--gold);
-      letter-spacing: 0.05em;
-      margin-bottom: 0.5rem;
-      text-align: center;
-      text-shadow: 0 0 40px rgba(201, 168, 76, 0.3);
-    }
-    .preloader-sub {
-      font-size: clamp(0.9rem, 2vw, 1.2rem);
-      color: var(--text-dim);
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      margin-bottom: 2.5rem;
-      text-align: center;
-    }
-    .play-btn {
-      background: transparent;
-      border: 2px solid var(--gold);
-      color: var(--gold);
-      font-family: var(--font-body);
-      font-size: clamp(1.2rem, 3vw, 1.8rem);
-      font-weight: 700;
-      padding: 0.8em 2.5em;
-      border-radius: 60px;
-      cursor: pointer;
-      letter-spacing: 0.15em;
-      transition: all 0.3s ease;
-      animation: pulse-gold 2s infinite;
-      display: flex;
-      align-items: center;
-      gap: 0.5em;
-    }
-    .play-btn:hover {
-      background: var(--gold);
-      color: var(--bg-dark);
-      transform: scale(1.05);
-      box-shadow: 0 0 60px rgba(201, 168, 76, 0.4);
-    }
-    @keyframes pulse-gold {
-      0%, 100% { box-shadow: 0 0 20px rgba(201, 168, 76, 0.2); }
-      50% { box-shadow: 0 0 60px rgba(201, 168, 76, 0.5); }
-    }
-    /* ===== APP SHELL ===== */
-    #app {
-      width: 100%;
-      max-width: 900px;
-      height: 100%;
-      max-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      overflow: hidden;
-      background: var(--bg-dark);
-      box-shadow: 0 0 80px rgba(0,0,0,0.9);
-    }
-    /* ===== HEADER CONSOLE ===== */
-    #hud {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.6rem 1.2rem;
-      background: rgba(13, 10, 11, 0.95);
-      border-bottom: 1px solid rgba(201, 168, 76, 0.15);
-      backdrop-filter: blur(12px);
-      z-index: 50;
-      flex-shrink: 0;
-      gap: 0.8rem;
-    }
-    .hud-brand {
-      font-family: var(--font-display);
-      font-size: 1rem;
-      color: var(--gold);
-      letter-spacing: 0.08em;
-      white-space: nowrap;
-    }
-    .hud-progress {
-      display: flex;
-      gap: 0.4rem;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .hud-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.15);
-      transition: all 0.3s ease;
-      border: 1px solid transparent;
-    }
-    .hud-dot.completed {
-      background: var(--gold);
-      box-shadow: 0 0 10px rgba(201, 168, 76, 0.5);
-    }
-    .hud-dot.current {
-      border-color: var(--gold);
-      background: transparent;
-      box-shadow: 0 0 15px rgba(201, 168, 76, 0.6);
-      transform: scale(1.2);
-    }
-    .hud-right {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-    }
-    .hud-score {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--gold-light);
-      background: rgba(201, 168, 76, 0.1);
-      padding: 0.3em 0.8em;
-      border-radius: 20px;
-      border: 1px solid rgba(201, 168, 76, 0.2);
-      white-space: nowrap;
-    }
-    .hud-btn {
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      cursor: pointer;
-      padding: 0.4em;
-      border-radius: 8px;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-    }
-    .hud-btn:hover {
-      color: var(--gold);
-      background: rgba(201, 168, 76, 0.1);
-    }
-    .hud-btn.active {
-      color: var(--gold);
-    }
-    /* ===== SCREENS ===== */
-    .screen {
-      display: none;
-      flex-direction: column;
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 1.2rem 1.2rem 2rem;
-      position: relative;
-      scroll-behavior: smooth;
-    }
-    .screen.active {
-      display: flex;
-      animation: screenIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    @keyframes screenIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    /* ===== INTRO SCREEN ===== */
-    .intro-hero {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 2rem 0 1.5rem;
-      gap: 0.8rem;
-    }
-    .intro-hero h1 {
-      font-family: var(--font-display);
-      font-size: clamp(1.8rem, 5vw, 3.2rem);
-      color: var(--gold);
-      line-height: 1.1;
-      text-shadow: 0 4px 30px rgba(201, 168, 76, 0.2);
-    }
-    .intro-hero .sub {
-      font-size: clamp(0.9rem, 2vw, 1.1rem);
-      color: var(--text-dim);
-      font-style: italic;
-      max-width: 600px;
-      line-height: 1.6;
-    }
-    .intro-hero .badge {
-      font-size: 0.75rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--gold-dark);
-      border: 1px solid var(--gold-dark);
-      padding: 0.3em 1.2em;
-      border-radius: 20px;
-      margin-bottom: 0.5rem;
-    }
-    .intro-cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.8rem;
-      width: 100%;
-      max-width: 700px;
-      margin: 0.5rem auto;
-    }
-    @media (max-width: 500px) {
-      .intro-cards { grid-template-columns: 1fr; }
-    }
-    .intro-card {
-      background: var(--bg-card);
-      border: 1px solid rgba(201, 168, 76, 0.12);
-      border-radius: var(--radius);
-      padding: 1.2rem 1rem;
-      text-align: left;
-      transition: all 0.3s;
-    }
-    .intro-card:hover {
-      border-color: rgba(201, 168, 76, 0.35);
-      transform: translateY(-2px);
-    }
-    .intro-card h3 {
-      font-family: var(--font-display);
-      font-size: 1.1rem;
-      color: var(--gold-light);
-      margin-bottom: 0.4rem;
-    }
-    .intro-card p {
-      font-size: 0.85rem;
-      color: var(--text-dim);
-      line-height: 1.5;
-    }
-    .intro-card .emoji {
-      font-size: 1.6rem;
-      display: block;
-      margin-bottom: 0.3rem;
-    }
-    .cta-btn {
-      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-      color: var(--bg-dark);
-      border: none;
-      font-family: var(--font-body);
-      font-weight: 700;
-      font-size: clamp(1rem, 2.5vw, 1.2rem);
-      padding: 0.9em 2.5em;
-      border-radius: 60px;
-      cursor: pointer;
-      letter-spacing: 0.05em;
-      transition: all 0.3s;
-      margin: 0.5rem auto 0;
-      display: block;
-      box-shadow: 0 8px 30px rgba(201, 168, 76, 0.25);
-    }
-    .cta-btn:hover {
-      transform: translateY(-3px) scale(1.02);
-      box-shadow: 0 12px 40px rgba(201, 168, 76, 0.4);
-    }
-    .cta-btn:active {
-      transform: translateY(0) scale(0.98);
-    }
-    /* ===== MAP SCREEN ===== */
-    .map-header {
-      text-align: center;
-      margin-bottom: 1.2rem;
-    }
-    .map-header h2 {
-      font-family: var(--font-display);
-      font-size: clamp(1.5rem, 4vw, 2.2rem);
-      color: var(--gold);
-    }
-    .map-header p {
-      color: var(--text-dim);
-      font-size: 0.9rem;
-      margin-top: 0.3rem;
-    }
-    .map-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 0.9rem;
-      width: 100%;
-    }
-    .map-card {
-      background: var(--bg-card);
-      border: 1px solid rgba(201, 168, 76, 0.1);
-      border-radius: var(--radius);
-      padding: 0;
-      overflow: hidden;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-    }
-    .map-card:hover:not(.locked) {
-      border-color: rgba(201, 168, 76, 0.4);
-      transform: translateY(-4px);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-    }
-    .map-card.locked {
-      opacity: 0.5;
-      cursor: not-allowed;
-      filter: grayscale(0.6);
-    }
-    .map-card .card-img {
-      width: 100%;
-      height: 110px;
-      object-fit: cover;
-      display: block;
-      border-bottom: 1px solid rgba(201, 168, 76, 0.1);
-      background: #1a1418;
-    }
-    .map-card .card-body {
-      padding: 0.8rem 1rem 0.9rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      flex: 1;
-    }
-    .map-card .card-num {
-      font-size: 0.7rem;
-      color: var(--gold-dark);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      font-weight: 600;
-    }
-    .map-card .card-title {
-      font-family: var(--font-display);
-      font-size: 1.05rem;
-      color: var(--text);
-      line-height: 1.2;
-    }
-    .map-card .card-char {
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      font-style: italic;
-    }
-    .map-card .card-stars {
-      font-size: 0.9rem;
-      color: var(--gold);
-      letter-spacing: 0.1em;
-      margin-top: 0.2rem;
-    }
-    .map-card .card-best {
-      font-size: 0.7rem;
-      color: var(--text-dim);
-      opacity: 0.7;
-    }
-    .map-card .lock-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(13, 10, 11, 0.7);
-      font-size: 2rem;
-      color: var(--text-dim);
-    }
-    /* ===== SCENE SCREEN ===== */
-    .scene-header {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      margin-bottom: 0.8rem;
-      flex-wrap: wrap;
-    }
-    .scene-header .back-btn {
-      background: none;
-      border: 1px solid rgba(201, 168, 76, 0.2);
-      color: var(--text-dim);
-      padding: 0.4em 0.8em;
-      border-radius: 30px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 0.3em;
-    }
-    .scene-header .back-btn:hover {
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-    .scene-header h2 {
-      font-family: var(--font-display);
-      font-size: clamp(1.2rem, 3.5vw, 1.8rem);
-      color: var(--gold);
-      flex: 1;
-    }
-    .scene-header .scene-tag {
-      font-size: 0.7rem;
-      color: var(--gold-dark);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      border: 1px solid var(--gold-dark);
-      padding: 0.2em 0.8em;
-      border-radius: 20px;
-    }
-    .scene-img {
-      width: 100%;
-      border-radius: var(--radius);
-      border: 1px solid rgba(201, 168, 76, 0.15);
-      margin-bottom: 0.8rem;
-      display: block;
-      background: #1a1418;
-      max-height: 220px;
-      object-fit: cover;
-    }
-    .scene-flavor {
-      font-size: 0.95rem;
-      color: var(--text-dim);
-      line-height: 1.7;
-      margin-bottom: 1rem;
-      padding: 0.8rem 1rem;
-      border-left: 3px solid var(--gold-dark);
-      background: rgba(201, 168, 76, 0.04);
-      border-radius: 0 12px 12px 0;
-      font-style: italic;
-    }
-    .scene-flavor strong {
-      color: var(--gold-light);
-      font-style: normal;
-    }
-    .scene-obj {
-      font-size: 0.9rem;
-      color: var(--gold-light);
-      background: rgba(201, 168, 76, 0.08);
-      padding: 0.6em 1em;
-      border-radius: 12px;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: flex-start;
-      gap: 0.5em;
-    }
-    .scene-obj i {
-      flex-shrink: 0;
-      margin-top: 0.15em;
-    }
-    /* ===== GAME AREA ===== */
-    .game-area {
-      background: var(--bg-card);
-      border: 1px solid rgba(201, 168, 76, 0.1);
-      border-radius: var(--radius);
-      padding: 1.2rem;
-      margin-top: 0.3rem;
-    }
-    .game-prompt {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 1rem;
-      line-height: 1.5;
-    }
-    .game-prompt .hl {
-      color: var(--gold);
-    }
-    /* Word bank / fill blanks */
-    .blank-sentence {
-      font-size: 1.05rem;
-      line-height: 2.2;
-      margin-bottom: 1rem;
-      color: var(--text);
-    }
-    .blank {
-      display: inline-block;
-      min-width: 100px;
-      border-bottom: 2px solid var(--gold-dark);
-      text-align: center;
-      padding: 0 0.5em;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: var(--gold);
-      font-weight: 600;
-      margin: 0 0.1em;
-    }
-    .blank:hover {
-      background: rgba(201, 168, 76, 0.1);
-      border-radius: 4px 4px 0 0;
-    }
-    .blank.filled {
-      border-bottom-color: var(--green);
-      color: var(--green);
-    }
-    .blank.filled.correct {
-      border-bottom-color: var(--green);
-      color: var(--green);
-    }
-    .blank.filled.wrong {
-      border-bottom-color: var(--red);
-      color: var(--red);
-      animation: shake 0.4s;
-    }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-6px); }
-      75% { transform: translateX(6px); }
-    }
-    .word-bank {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.8rem;
-    }
-    .word-chip {
-      background: rgba(201, 168, 76, 0.1);
-      border: 1px solid rgba(201, 168, 76, 0.25);
-      color: var(--gold-light);
-      padding: 0.4em 1em;
-      border-radius: 30px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-    .word-chip:hover {
-      background: rgba(201, 168, 76, 0.25);
-      transform: translateY(-2px);
-    }
-    .word-chip.used {
-      opacity: 0.3;
-      pointer-events: none;
-      text-decoration: line-through;
-    }
-    /* True/False */
-    .tf-card {
-      background: rgba(201, 168, 76, 0.05);
-      border: 1px solid rgba(201, 168, 76, 0.15);
-      border-radius: 14px;
-      padding: 1.2rem;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-      line-height: 1.6;
-      min-height: 80px;
-      display: flex;
-      align-items: center;
-    }
-    .tf-actions {
-      display: flex;
-      gap: 0.8rem;
-      margin-top: 0.5rem;
-    }
-    .tf-btn {
-      flex: 1;
-      padding: 0.7em;
-      border: 2px solid;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 0.95rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: transparent;
-    }
-    .tf-btn.real {
-      border-color: var(--green);
-      color: var(--green);
-    }
-    .tf-btn.real:hover, .tf-btn.real.selected {
-      background: var(--green);
-      color: var(--bg-dark);
-    }
-    .tf-btn.not-real {
-      border-color: var(--red);
-      color: var(--red);
-    }
-    .tf-btn.not-real:hover, .tf-btn.not-real.selected {
-      background: var(--red);
-      color: var(--bg-dark);
-    }
-    .tf-timer {
-      height: 6px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 3px;
-      margin-top: 0.8rem;
-      overflow: hidden;
-    }
-    .tf-timer-fill {
-      height: 100%;
-      background: var(--gold);
-      width: 100%;
-      transition: width 0.1s linear;
-    }
-    .tf-timer-fill.warning {
-      background: var(--red);
-      animation: flash 0.5s infinite;
-    }
-    @keyframes flash {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-    .streak-badge {
-      display: inline-block;
-      font-size: 0.8rem;
-      color: var(--gold);
-      background: rgba(201, 168, 76, 0.1);
-      padding: 0.2em 0.8em;
-      border-radius: 20px;
-      margin-bottom: 0.5rem;
-    }
-    /* Multiple Choice */
-    .mc-options {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-    .mc-opt {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(201, 168, 76, 0.15);
-      border-radius: 12px;
-      padding: 0.8em 1em;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 0.95rem;
-      text-align: left;
-      color: var(--text);
-      font-family: var(--font-body);
-    }
-    .mc-opt:hover {
-      border-color: var(--gold);
-      background: rgba(201, 168, 76, 0.08);
-    }
-    .mc-opt.correct {
-      border-color: var(--green);
-      background: rgba(62, 122, 78, 0.15);
-    }
-    .mc-opt.wrong {
-      border-color: var(--red);
-      background: rgba(168, 62, 62, 0.15);
-    }
-    .mc-opt:disabled {
-      cursor: default;
-      opacity: 0.7;
-    }
-    /* Sorting */
-    .sort-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .sort-item {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(201, 168, 76, 0.12);
-      border-radius: 10px;
-      padding: 0.6em 0.8em;
-      cursor: grab;
-      transition: all 0.2s;
-      font-size: 0.9rem;
-    }
-    .sort-item:active {
-      cursor: grabbing;
-    }
-    .sort-item.dragging {
-      opacity: 0.4;
-      border-style: dashed;
-    }
-    .sort-item.drag-over {
-      border-color: var(--gold);
-      background: rgba(201, 168, 76, 0.1);
-    }
-    .sort-item.correct {
-      border-color: var(--green);
-      background: rgba(62, 122, 78, 0.1);
-    }
-    .sort-item.wrong {
-      border-color: var(--red);
-      background: rgba(168, 62, 62, 0.1);
-    }
-    .sort-item .drag-handle {
-      color: var(--text-dim);
-      font-size: 1.1rem;
-      cursor: grab;
-      user-select: none;
-    }
-    .sort-item .sort-text {
-      flex: 1;
-    }
-    .sort-item .arrow-btns {
-      display: flex;
-      gap: 0.2rem;
-    }
-    .sort-item .arrow-btns button {
-      background: rgba(201, 168, 76, 0.1);
-      border: none;
-      color: var(--gold);
-      width: 26px;
-      height: 26px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s;
-    }
-    .sort-item .arrow-btns button:hover {
-      background: rgba(201, 168, 76, 0.3);
-    }
-    /* Memory */
-    .memory-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.6rem;
-      margin-bottom: 0.8rem;
-    }
-    @media (max-width: 500px) {
-      .memory-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-    .mem-card {
-      aspect-ratio: 1;
-      perspective: 800px;
-      cursor: pointer;
-    }
-    .mem-inner {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-      transform-style: preserve-3d;
-    }
-    .mem-card.flipped .mem-inner {
-      transform: rotateY(180deg);
-    }
-    .mem-face {
-      position: absolute;
-      inset: 0;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      backface-visibility: hidden;
-      font-size: 0.7rem;
-      padding: 0.3rem;
-      text-align: center;
-      border: 1px solid rgba(201, 168, 76, 0.2);
-      overflow: hidden;
-    }
-    .mem-front {
-      background: linear-gradient(135deg, #1a1418, #2a1f24);
-      color: var(--gold-dark);
-      font-size: 1.5rem;
-    }
-    .mem-back {
-      background: rgba(201, 168, 76, 0.1);
-      color: var(--text);
-      transform: rotateY(180deg);
-      font-size: 0.65rem;
-      line-height: 1.2;
-      word-break: break-word;
-    }
-    .mem-card.matched .mem-inner {
-      transform: rotateY(180deg);
-    }
-    .mem-card.matched .mem-back {
-      border-color: var(--green);
-      background: rgba(62, 122, 78, 0.15);
-    }
-    .mem-stats {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      margin-bottom: 0.5rem;
-    }
-    /* Bonus Round */
-    .bonus-timer {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--gold);
-      text-align: center;
-      margin-bottom: 0.5rem;
-      font-family: var(--font-display);
-    }
-    .bonus-timer.danger {
-      color: var(--red);
-      animation: flash 0.5s infinite;
-    }
-    .bonus-q {
-      font-size: 1rem;
-      margin-bottom: 0.8rem;
-      line-height: 1.5;
-    }
-    .bonus-options {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
-    }
-    .bonus-opt {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(201, 168, 76, 0.15);
-      border-radius: 10px;
-      padding: 0.7em;
-      cursor: pointer;
-      font-size: 0.85rem;
-      color: var(--text);
-      font-family: var(--font-body);
-      transition: all 0.2s;
-      text-align: center;
-    }
-    .bonus-opt:hover {
-      border-color: var(--gold);
-      background: rgba(201, 168, 76, 0.08);
-    }
-    .bonus-opt.correct {
-      border-color: var(--green);
-      background: rgba(62, 122, 78, 0.2);
-    }
-    .bonus-opt.wrong {
-      border-color: var(--red);
-      background: rgba(168, 62, 62, 0.2);
-    }
-    /* Result */
-    .result-box {
-      text-align: center;
-      padding: 1rem 0;
-    }
-    .result-stars {
-      font-size: 2.5rem;
-      letter-spacing: 0.2em;
-      margin: 0.5rem 0;
-    }
-    .result-score {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--gold);
-      font-family: var(--font-display);
-    }
-    .result-msg {
-      color: var(--text-dim);
-      font-size: 0.9rem;
-      margin: 0.5rem 0 1rem;
-      line-height: 1.5;
-    }
-    /* ===== FINALE ===== */
-    .finale-wrap {
-      text-align: center;
-      padding: 1rem 0;
-    }
-    .finale-wrap h1 {
-      font-family: var(--font-display);
-      font-size: clamp(1.8rem, 5vw, 3rem);
-      color: var(--gold);
-      margin-bottom: 0.5rem;
-    }
-    .finale-rank {
-      font-size: 1.2rem;
-      color: var(--gold-light);
-      margin-bottom: 0.5rem;
-    }
-    .finale-total {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 1.2rem;
-    }
-    .finale-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1rem 0;
-      font-size: 0.85rem;
-    }
-    .finale-table th, .finale-table td {
-      padding: 0.5em 0.6em;
-      text-align: left;
-      border-bottom: 1px solid rgba(201, 168, 76, 0.1);
-    }
-    .finale-table th {
-      color: var(--gold-dark);
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
-    }
-    .finale-table td {
-      color: var(--text-dim);
-    }
-    .finale-table .stars-cell {
-      color: var(--gold);
-      letter-spacing: 0.1em;
-    }
-    /* ===== MODAL ===== */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(13, 10, 11, 0.85);
-      backdrop-filter: blur(8px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-      padding: 1rem;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s;
-    }
-    .modal-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .modal-box {
-      background: var(--bg-card);
-      border: 1px solid rgba(201, 168, 76, 0.2);
-      border-radius: var(--radius);
-      padding: 1.5rem;
-      max-width: 480px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: var(--shadow);
-      transform: scale(0.95);
-      transition: transform 0.3s;
-    }
-    .modal-overlay.open .modal-box {
-      transform: scale(1);
-    }
-    .modal-box h3 {
-      font-family: var(--font-display);
-      font-size: 1.3rem;
-      color: var(--gold);
-      margin-bottom: 0.6rem;
-    }
-    .modal-box p {
-      font-size: 0.9rem;
-      color: var(--text-dim);
-      line-height: 1.6;
-      margin-bottom: 1rem;
-    }
-    .modal-box .modal-actions {
-      display: flex;
-      gap: 0.6rem;
-      justify-content: flex-end;
-      margin-top: 1rem;
-    }
-    .modal-box button {
-      padding: 0.6em 1.5em;
-      border-radius: 30px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-    }
-    .modal-box .btn-primary {
-      background: var(--gold);
-      color: var(--bg-dark);
-    }
-    .modal-box .btn-primary:hover {
-      background: var(--gold-light);
-      transform: scale(1.03);
-    }
-    .modal-box .btn-secondary {
-      background: transparent;
-      border: 1px solid rgba(201, 168, 76, 0.3);
-      color: var(--text-dim);
-    }
-    .modal-box .btn-secondary:hover {
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-    /* ===== TOAST ===== */
-    #toast-container {
-      position: fixed;
-      bottom: 1.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 300;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      align-items: center;
-      pointer-events: none;
-    }
-    .toast {
-      background: rgba(26, 20, 24, 0.95);
-      border: 1px solid rgba(201, 168, 76, 0.3);
-      color: var(--text);
-      padding: 0.6em 1.2em;
-      border-radius: 30px;
-      font-size: 0.85rem;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-      animation: toastIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-      white-space: nowrap;
-      max-width: 90vw;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateY(20px) scale(0.9); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .toast.out {
-      animation: toastOut 0.3s forwards;
-    }
-    @keyframes toastOut {
-      to { opacity: 0; transform: translateY(-10px) scale(0.9); }
-    }
-    /* ===== CONFETTI ===== */
-    .confetti-piece {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      z-index: 400;
-      pointer-events: none;
-      animation: confettiFall 1.5s ease-out forwards;
-    }
-    @keyframes confettiFall {
-      0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-    }
-    /* ===== FLOAT SCORE ===== */
-    .float-score {
-      position: fixed;
-      font-weight: 700;
-      font-size: 1.2rem;
-      color: var(--gold);
-      z-index: 350;
-      pointer-events: none;
-      animation: floatUp 1s ease-out forwards;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-    }
-    @keyframes floatUp {
-      0% { opacity: 1; transform: translateY(0); }
-      100% { opacity: 0; transform: translateY(-60px); }
-    }
-    /* ===== SCROLLBAR ===== */
-    .screen::-webkit-scrollbar {
-      width: 6px;
-    }
-    .screen::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .screen::-webkit-scrollbar-thumb {
-      background: rgba(201, 168, 76, 0.2);
-      border-radius: 3px;
-    }
-    /* ===== UTILITY ===== */
-    .hidden { display: none !important; }
-    .text-center { text-align: center; }
-    .mt-1 { margin-top: 0.5rem; }
-    .mt-2 { margin-top: 1rem; }
-    .mb-1 { margin-bottom: 0.5rem; }
-    .flex-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-    .gold { color: var(--gold); }
-    .dim { color: var(--text-dim); }
-    .small { font-size: 0.8rem; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Megacity Arcade — Discovering the Megacity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito+Sans:ital,wght@0,400;0,700;0,800;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ===== Reset & tokens ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#201726; --bg2:#160f1f; --card:#2b2136; --card2:#332742;
+  --ink:#f6ebd9; --ink-dim:#c8b6a4;
+  --gold:#e9b44c; --gold-2:#c98f2f; --purple:#8a5bb8; --purple-d:#4a3170;
+  --teal:#3e8e8c; --red:#d9433b; --green:#4caf7d;
+  --line:rgba(233,180,76,.22); --r:14px; --shadow:0 6px 0 rgba(0,0,0,.35);
+  --font-d:'Righteous',cursive; --font-b:'Nunito Sans',system-ui,sans-serif; --font-m:'Courier Prime',monospace;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-b); color:var(--ink); min-height:100vh; overflow-x:hidden;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(138,91,184,.25), transparent 60%),
+    radial-gradient(900px 500px at 10% 0%, rgba(233,180,76,.12), transparent 55%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+}
+/* film grain over everything */
+body::after{content:'';position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.06;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='0.55'/></svg>");}
+/* faint scanlines + vignette */
+body::before{content:'';position:fixed;inset:0;z-index:59;pointer-events:none;opacity:.5;mix-blend-mode:multiply;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0 1px, transparent 1px 4px),
+    radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(10,4,16,.5) 100%);}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:4px}
+
+/* ===== Background layers ===== */
+#bg-skyline{position:fixed;left:0;right:0;bottom:0;height:230px;z-index:0;pointer-events:none;opacity:.7}
+#bg-skyline svg{width:100%;height:100%;display:block}
+#embers{position:fixed;inset:0;z-index:1;pointer-events:none}
+#confetti{position:fixed;inset:0;z-index:90;pointer-events:none}
+
+/* ===== Top console ===== */
+#topbar{position:fixed;top:0;left:0;right:0;height:60px;z-index:50;display:flex;align-items:center;gap:14px;padding:0 16px;
+  background:rgba(22,15,31,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--font-d);letter-spacing:.5px}
+.brand-crown{color:var(--gold);display:grid;place-items:center}.brand-crown svg{width:20px;height:20px}
+.brand-name{font-size:1.02rem;white-space:nowrap}.brand-name em{color:var(--gold);font-style:normal;margin-left:4px}
+#hud-dots{display:flex;gap:7px;margin-left:6px}
+.dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--line);background:transparent;cursor:pointer;padding:0;transition:.15s}
+.dot:hover{transform:scale(1.2)}
+.dot.done{background:var(--gold);border-color:var(--gold)}
+.dot.now{border-color:var(--gold);box-shadow:0 0 0 3px rgba(233,180,76,.25)}
+.hud-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.hud-score{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 12px;display:flex;gap:6px;align-items:center}
+.hud-score svg{width:14px;height:14px;color:var(--gold)}
+.hud-score .mono{font-size:1rem;color:var(--gold)}
+.icon-btn{width:38px;height:38px;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--ink);cursor:pointer;transition:transform .12s, background .12s;padding:0}
+.icon-btn:hover{background:var(--card2)}.icon-btn:active{transform:translateY(2px)}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn.mini{width:30px;height:30px;border-radius:8px}.icon-btn.mini svg{width:14px;height:14px}
+
+/* ===== Buttons & chips ===== */
+.btn{font-family:var(--font-b);font-weight:800;font-size:1rem;color:#241708;background:linear-gradient(180deg,#f2c766,var(--gold));
+  border:2px solid #8a6320;border-radius:12px;padding:10px 18px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+  box-shadow:0 4px 0 #7a5518;transition:transform .1s, box-shadow .1s, filter .12s}
+.btn:hover{filter:brightness(1.06)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #7a5518}
+.btn svg{width:16px;height:16px}
+.btn.big{font-size:1.15rem;padding:14px 26px}
+.btn.alt{background:linear-gradient(180deg,#b98ede,var(--purple));border-color:var(--purple-d);box-shadow:0 4px 0 #35224f;color:#fff}
+.btn.alt:active{box-shadow:0 1px 0 #35224f}
+.btn.ghost{background:var(--card);color:var(--ink);border-color:var(--line);box-shadow:0 4px 0 rgba(0,0,0,.35)}
+.btn.ghost:active{box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.btn.danger{background:linear-gradient(180deg,#e2695f,var(--red));border-color:#7e211b;box-shadow:0 4px 0 #6e1c16;color:#fff}
+.btn.danger:active{box-shadow:0 1px 0 #6e1c16}
+.btn.opt{width:100%;justify-content:flex-start;text-align:left;background:var(--card);color:var(--ink);border:2px solid var(--line);box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.btn.opt:hover{border-color:var(--gold);filter:none}
+.btn.opt:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+.btn.opt.right{background:linear-gradient(180deg,#5fc48d,var(--green));border-color:#2c7a50;color:#08281a}
+.btn.opt.wrong{background:linear-gradient(180deg,#e2695f,var(--red));border-color:#7e211b;color:#fff}
+.btn.opt.sm{padding:9px 14px;font-size:.95rem}
+.btn.opt b{color:var(--gold)}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:.85rem;font-weight:700}
+.chip svg{width:14px;height:14px}
+.mono{font-family:var(--font-m)}
+.streak-chip{color:var(--gold)}
+
+/* ===== Screens ===== */
+main{position:relative;z-index:2;padding-top:60px;min-height:100vh}
+.screen{display:none;min-height:calc(100vh - 60px)}
+.screen.active{display:block;animation:screenIn .45s ease both}
+@keyframes screenIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shakeX .45s}
+
+/* ===== Preloader ===== */
+#preloader{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:linear-gradient(180deg,#241a2f,#140d1d);
+  transition:transform .65s cubic-bezier(.7,0,.3,1), opacity .65s}
+#preloader.exit{transform:translateY(-100%);opacity:.35}
+.pre-inner{text-align:center;display:grid;justify-items:center;gap:14px;padding:20px}
+.pre-crown{color:var(--gold)}.pre-crown svg{width:46px;height:46px}
+.pre-title{font-family:var(--font-d);font-size:clamp(2.2rem,6vw,3.6rem);letter-spacing:2px}
+.pre-title em{color:var(--gold);font-style:normal}
+.pre-sub{color:var(--ink-dim)}
+.pre-bar{width:min(320px,70vw);height:10px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:rgba(0,0,0,.4)}
+.pre-fill{height:100%;width:0;background:linear-gradient(90deg,var(--gold-2),var(--gold));animation:loadFill 1s ease forwards}
+@keyframes loadFill{to{width:100%}}
+.pre-note{font-size:.72rem;color:var(--ink-dim);letter-spacing:3px}
+.play-btn:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.6)}
+.play-btn.ready{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.05)}}
+
+/* ===== Intro ===== */
+.intro-shell{max-width:880px;margin:0 auto;padding:44px 20px 90px;display:grid;gap:22px;justify-items:center;text-align:center}
+.intro-banner{position:relative;width:100%;max-width:760px;height:240px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+.banner-art{position:absolute;inset:0}.banner-art svg{width:100%;height:100%;display:block}
+.banner-text{position:relative;z-index:2;height:100%;display:grid;align-content:center;justify-items:center;gap:8px;padding:12px;
+  background:linear-gradient(180deg,rgba(20,10,30,.2),rgba(20,10,30,.55))}
+.kicker{color:var(--gold);letter-spacing:3px;font-size:.78rem;font-weight:700}
+h1.title{font-family:var(--font-d);font-size:clamp(1.8rem,4.5vw,2.9rem);line-height:1.1;text-shadow:0 3px 0 rgba(0,0,0,.4)}
+h1.title em{color:var(--gold);font-style:normal}
+.intro-sub{color:var(--ink-dim);max-width:560px}
+.intro-copy{max-width:640px;line-height:1.7}
+.how-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.how{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;max-width:210px;display:grid;gap:6px;justify-items:center;box-shadow:var(--shadow)}
+.how .h-ico{color:var(--gold)}.how .h-ico svg{width:26px;height:26px}
+.how b{font-size:.95rem}.how span{font-size:.8rem;color:var(--ink-dim)}
+.intro-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.intro-foot{font-size:.68rem;color:var(--ink-dim);letter-spacing:2px}
+
+/* ===== Map ===== */
+.map-shell{max-width:1020px;margin:0 auto;padding:40px 20px 90px}
+.map-head{text-align:center;display:grid;gap:8px;margin-bottom:24px}
+.map-head h2{font-family:var(--font-d);font-size:clamp(1.6rem,3.5vw,2.3rem)}
+.map-sub{color:var(--ink-dim)}
+#map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.level-card{position:relative;display:grid;gap:4px;padding:0 0 12px;text-align:left;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r);cursor:pointer;color:var(--ink);overflow:hidden;box-shadow:var(--shadow);transition:transform .15s;font-family:var(--font-b)}
+.level-card:not(:disabled):hover{transform:translateY(-4px)}
+.level-card:not(:disabled):active{transform:translateY(0)}
+.level-card:disabled{cursor:not-allowed;opacity:.55;filter:saturate(.4)}
+.lc-art{height:112px;display:block}.lc-art svg{width:100%;height:100%;display:block}
+.lc-lock{position:absolute;inset:0;display:grid;place-items:center;background:rgba(12,6,20,.55);color:var(--ink-dim)}
+.lc-lock svg{width:30px;height:30px}
+.lc-num{font-family:var(--font-m);font-size:.7rem;color:var(--gold);letter-spacing:2px;padding:10px 14px 0}
+.lc-title{font-family:var(--font-d);font-size:1.12rem;padding:0 14px;line-height:1.15}
+.lc-char{font-size:.8rem;color:var(--ink-dim);padding:0 14px}
+.lc-meta{display:flex;justify-content:space-between;align-items:center;padding:8px 14px 0;font-size:.82rem}
+.lc-stars{display:inline-flex;gap:2px;color:#5c4b33}
+.lc-stars i{display:inline-grid;font-style:normal}
+.lc-stars svg{width:14px;height:14px}
+.lc-stars i.on{color:var(--gold)}.lc-stars i.on svg *{fill:var(--gold)}
+.lc-best{color:var(--gold)}
+.map-note{font-size:.68rem;color:var(--ink-dim);letter-spacing:2px;text-align:center;margin-top:20px}
+
+/* ===== Scene ===== */
+.scene-shell{max-width:820px;margin:0 auto;padding:26px 18px 90px;display:grid;gap:16px}
+.scene-head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;background:var(--card);
+  border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow)}
+.scene-id{display:flex;gap:12px;align-items:center}
+.avatar{--ac:var(--gold);width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-d);
+  font-size:1rem;color:#fff;background:radial-gradient(circle at 30% 30%, var(--ac), #1c1226 130%);border:2px solid var(--ac);
+  box-shadow:0 0 0 3px rgba(0,0,0,.3);flex-shrink:0}
+.scene-tag{font-size:.68rem;letter-spacing:2px;color:var(--gold)}
+.scene-title{font-family:var(--font-d);font-size:1.3rem;line-height:1.15}
+.scene-char{font-size:.8rem;color:var(--ink-dim)}
+.scene-chips{display:flex;gap:8px;flex-wrap:wrap}
+.game-root{display:grid;gap:14px}
+.game-sub{color:var(--ink-dim);font-size:.92rem}
+
+/* Fill in the blanks */
+.fill-list{display:grid;gap:10px}
+.fill-line{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:baseline}
+.fill-num{color:var(--gold);font-size:.78rem}
+.fill-text{line-height:1.6;font-size:.98rem}
+.gap{font-family:var(--font-b);font-weight:800;color:var(--gold);background:rgba(233,180,76,.08);border:2px dashed var(--line);
+  border-radius:8px;padding:1px 10px;cursor:pointer;min-width:92px;transition:.15s}
+.gap.armed{border-color:var(--gold);background:rgba(233,180,76,.18);box-shadow:0 0 0 3px rgba(233,180,76,.2)}
+.gap.filled{border-style:solid;border-color:var(--green);color:#bff0d4;background:rgba(76,175,125,.15);cursor:default}
+.word-bank{display:flex;flex-wrap:wrap;gap:8px;background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.bank-chip{font-weight:700;font-size:.95rem;color:var(--ink);background:#1d1528;border:1px solid var(--line);border-radius:999px;
+  padding:7px 14px;cursor:pointer;transition:transform .12s, border-color .12s}
+.bank-chip:hover{border-color:var(--gold);transform:translateY(-2px)}
+.bank-chip.used{opacity:.25;text-decoration:line-through;cursor:default;transform:none}
+
+/* True / False */
+.tf-head{display:flex;justify-content:space-between;align-items:center}
+.tf-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:grid;gap:18px;box-shadow:var(--shadow);position:relative}
+.tf-card.ok{border-color:var(--green);box-shadow:0 0 0 2px rgba(76,175,125,.4), var(--shadow)}
+.tf-card.bad{border-color:var(--red);animation:shakeX .4s}
+.tf-timer{height:10px;border-radius:6px;background:rgba(0,0,0,.45);overflow:hidden}
+.tf-timer-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--gold-2),#ffe6a6);transform-origin:left}
+.tf-statement{font-size:1.22rem;font-weight:800;line-height:1.5;min-height:70px;display:grid;align-content:center}
+.tf-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.kbd-hint{font-size:.76rem;color:var(--ink-dim);text-align:center}
+
+/* Multiple choice */
+.mc-stage{display:grid;gap:14px}
+.mc-stage.pop{animation:screenIn .3s ease}
+.mc-q{font-size:1.2rem;font-weight:800;line-height:1.4}
+.mc-opts{display:grid;gap:10px}
+.mc-react{min-height:46px;display:grid;align-content:center;color:var(--gold);font-style:italic;background:rgba(233,180,76,.07);
+  border:1px dashed var(--line);border-radius:10px;padding:8px 14px;font-size:.94rem}
+
+/* Sorting */
+.sort-list{list-style:none;display:grid;gap:8px}
+.sort-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:10px 12px;cursor:grab;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.sort-row.dragging{opacity:.4;border-style:dashed}
+.sort-row.locked{cursor:default;border-color:var(--green);background:rgba(76,175,125,.16)}
+.sort-row.locked .row-text{color:#c9f2da}
+.drag-grip{color:var(--ink-dim);display:grid;place-items:center}.drag-grip svg{width:16px;height:16px}
+.row-text{flex:1;font-weight:700}
+.row-btns{display:flex;gap:6px}
+.sort-actions{display:flex;justify-content:center}
+
+/* Memory */
+.mem-head{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
+.mem-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;perspective:1000px}
+.mem-card{background:transparent;border:none;padding:0;cursor:pointer;min-height:98px;position:relative}
+.mem-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.4,.1,.2,1)}
+.mem-card.flipped .mem-inner,.mem-card.matched .mem-inner{transform:rotateY(180deg)}
+.mem-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;display:grid;place-items:center;padding:8px;text-align:center}
+.mem-face.front{background:linear-gradient(160deg,var(--card2),#221832);border:1px solid var(--line);color:var(--gold)}
+.mem-face.front svg{width:26px;height:26px;opacity:.85}
+.mem-face.back{transform:rotateY(180deg);background:var(--card);border:1px solid var(--line)}
+.mem-card.matched .mem-face.back{border-color:var(--green);background:rgba(76,175,125,.18)}
+.mem-face.back.term{font-family:var(--font-d);color:var(--gold);font-size:.95rem;line-height:1.2}
+.mem-face.back.def{font-size:.72rem;font-weight:700;line-height:1.35}
+
+/* Bonus */
+.bonus-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bonus-timer{font-size:2.4rem;font-weight:700;color:var(--gold);min-width:86px;text-align:center;background:var(--card);
+  border:1px solid var(--line);border-radius:12px;padding:2px 10px}
+.bonus-timer.danger{color:#ff6b5e;border-color:var(--red);animation:blinkRed .5s steps(2) infinite}
+@keyframes blinkRed{50%{background:rgba(217,67,59,.3)}}
+.bonus-card.alarm{border-color:var(--red)}
+
+/* ===== Modal ===== */
+#modal{position:fixed;inset:0;z-index:80;display:none;place-items:center;background:rgba(10,5,16,.72);backdrop-filter:blur(4px);padding:18px}
+#modal.open{display:grid}
+.modal-card{width:min(560px,100%);max-height:86vh;overflow:auto;background:linear-gradient(180deg,var(--card),#241a30);
+  border:1px solid var(--line);border-radius:18px;padding:26px;display:grid;gap:14px;box-shadow:0 10px 0 rgba(0,0,0,.35);animation:screenIn .3s ease}
+.modal-title{font-family:var(--font-d);font-size:1.55rem;line-height:1.15}
+.modal-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding-top:6px}
+.brief-tag{color:var(--gold);letter-spacing:2px;font-size:.72rem}
+.brief-char{display:flex;gap:12px;align-items:center;background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.brief-char .flavor{font-style:italic;color:var(--ink-dim);font-size:.88rem}
+.brief-obj,.brief-tip{display:flex;gap:10px;align-items:flex-start;font-size:.94rem;line-height:1.5}
+.brief-obj svg,.brief-tip svg{width:18px;height:18px;color:var(--gold);flex-shrink:0;margin-top:2px}
+.res-stars{display:flex;gap:10px;justify-content:center}
+.res-star{width:44px;height:44px;color:#57452c;display:grid;place-items:center;opacity:0;transform:scale(.2) rotate(-40deg);
+  animation:starPop .5s cubic-bezier(.2,1.5,.4,1) forwards}
+.res-star svg{width:100%;height:100%}
+.res-star.on{color:var(--gold);filter:drop-shadow(0 0 6px rgba(233,180,76,.6))}
+.res-star.on svg *{fill:var(--gold)}
+@keyframes starPop{to{opacity:1;transform:scale(1) rotate(0)}}
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}
+.res-grid>div{display:grid;gap:2px;background:rgba(0,0,0,.2);border-radius:12px;padding:10px}
+.res-grid .big{font-size:1.25rem;color:var(--gold)}
+.res-grid span:last-child{font-size:.68rem;color:var(--ink-dim);letter-spacing:1px;text-transform:uppercase}
+.res-react{text-align:center;font-style:italic;color:var(--ink-dim)}
+.res-unlock{text-align:center;color:var(--gold);font-weight:700}
+.gloss-list{list-style:none;display:grid;gap:8px;text-align:left}
+.gloss-list li{display:grid;gap:2px;background:rgba(0,0,0,.2);border-radius:10px;padding:9px 12px}
+.gloss-list strong{color:var(--gold)}
+.gloss-list span{font-size:.86rem;color:var(--ink-dim)}
+
+/* ===== Toasts & floats ===== */
+#toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:95;display:grid;gap:8px;justify-items:center;pointer-events:none}
+.toast{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:9px 16px;font-size:.9rem;font-weight:700;opacity:0;transform:translateY(12px);transition:.3s;box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:none}
+.toast svg{width:16px;height:16px;color:var(--gold)}
+.toast.ok{border-color:var(--green)}.toast.ok svg{color:var(--green)}
+.toast.err{border-color:var(--red)}.toast.err svg{color:var(--red)}
+.pop-float{position:fixed;z-index:70;font-family:var(--font-m);font-weight:700;font-size:1.05rem;color:var(--gold);
+  text-shadow:0 2px 0 rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,-50%);animation:floatUp .95s ease-out forwards}
+.pop-float.neg{color:#ff8a80}
+@keyframes floatUp{to{transform:translate(-50%,-170%);opacity:0}}
+
+/* ===== Finale ===== */
+.finale-shell{max-width:760px;margin:0 auto;padding:44px 20px 90px;display:grid;gap:18px;justify-items:center;text-align:center}
+.finale-title{font-family:var(--font-d);font-size:clamp(2rem,6vw,3.2rem);color:var(--gold);text-shadow:0 4px 0 rgba(0,0,0,.4)}
+.finale-rank-sub{color:var(--ink-dim);max-width:480px}
+.finale-stats{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 22px;display:grid;gap:2px;box-shadow:var(--shadow)}
+.stat .mono{font-size:1.5rem;color:var(--gold)}
+.stat span:last-child{font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--ink-dim)}
+.fin-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.fin-table th,.fin-table td{padding:10px 14px;text-align:left;border-bottom:1px solid rgba(233,180,76,.1);font-size:.9rem}
+.fin-table tr:last-child td{border-bottom:none}
+.fin-table th{font-size:.68rem;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+.fin-table td.num{text-align:right;color:var(--gold)}
+.fin-quote{font-style:italic;color:var(--ink-dim);max-width:560px;border-left:3px solid var(--gold);padding-left:14px;text-align:left}
+
+/* ===== Responsive & motion ===== */
+@media (max-width:640px){
+  #hud-dots{display:none}
+  .brand-name{display:none}
+  .scene-head{flex-direction:column;align-items:flex-start}
+  .tf-statement{font-size:1.05rem;min-height:96px}
+  .mem-card{min-height:78px}
+  .mem-face.back.term{font-size:.78rem}.mem-face.back.def{font-size:.6rem}
+  .bonus-timer{font-size:1.7rem;min-width:64px}
+  .res-grid{grid-template-columns:1fr 1fr}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
 </head>
 <body>
 
-<!-- ===== PRELOADER ===== -->
-<div id="preloader">
-  <div class="preloader-title">The Royal Urbanite</div>
-  <div class="preloader-sub">A Journey Through Coming to America</div>
-  <button class="play-btn" id="playBtn">▶ PLAY</button>
-</div>
+<canvas id="embers" aria-hidden="true"></canvas>
+<div id="bg-skyline" aria-hidden="true"></div>
 
-<!-- ===== APP SHELL ===== -->
-<div id="app">
-  <!-- Header Console -->
-  <header id="hud">
-    <div class="hud-brand">👑 Royal Urbanite</div>
-    <div class="hud-progress" id="hudProgress"></div>
-    <div class="hud-right">
-      <span class="hud-score" id="hudScore">0 pts</span>
-      <button class="hud-btn" id="soundToggle" title="Sound">🔊</button>
-      <button class="hud-btn" id="mapBtn" title="Map">🗺️</button>
+<!-- ===== Top console ===== -->
+<header id="topbar">
+  <div class="brand"><span class="brand-crown" data-icon="crown"></span><span class="brand-name">MEGACITY<em>ARCADE</em></span></div>
+  <nav id="hud-dots" role="group" aria-label="Reel progress"></nav>
+  <div class="hud-right">
+    <div class="hud-score" title="Total score"><span data-icon="star"></span><span class="mono" id="hud-score">0</span></div>
+    <button class="icon-btn" id="btn-words" aria-label="Open the word bank"><span data-icon="book"></span></button>
+    <button class="icon-btn" id="btn-sound" aria-label="Mute sound" aria-pressed="true"></button>
+    <button class="icon-btn" id="btn-map" aria-label="Back to the reel map"><span data-icon="map"></span></button>
+  </div>
+</header>
+
+<main>
+  <!-- ===== Intro ===== -->
+  <section class="screen" id="screen-intro">
+    <div class="intro-shell">
+      <div class="intro-banner">
+        <div class="banner-art" id="banner-art" aria-hidden="true"></div>
+        <div class="banner-text">
+          <p class="kicker mono">A LEARNING ARCADE IN SIX REELS</p>
+          <h1 class="title">Discovering the <em>Megacity</em></h1>
+          <p class="intro-sub">The American Dream, urban life, and the search for authenticity in <i>Coming to America</i>.</p>
+        </div>
+      </div>
+      <p class="intro-copy">For generations, megacities like New York have stood as beacons for immigrants and dreamers seeking
+        to reinvent themselves. This arcade replays the tropes of urban American life through the comedic lens of
+        <b>Prince Akeem</b> — a man who gave up a kingdom to find an authentic life in the concrete canyons of 1980s America.</p>
+      <div class="how-row">
+        <div class="how"><span class="h-ico" data-icon="book"></span><b>Learn the words</b><span>16 royal terms pulled straight from the slide deck.</span></div>
+        <div class="how"><span class="h-ico" data-icon="play"></span><b>Play six reels</b><span>Blanks, reflexes, puzzles, memory — and a timed gauntlet.</span></div>
+        <div class="how"><span class="h-ico" data-icon="trophy"></span><b>Claim your rank</b><span>Up to 3 stars per reel. Flawless runs earn the crown.</span></div>
+      </div>
+      <div class="intro-btns">
+        <button class="btn big" id="btn-enter"><span data-icon="play"></span> Open the Reel Map</button>
+        <button class="btn ghost" id="btn-glossary"><span data-icon="book"></span> Word Bank</button>
+      </div>
+      <p class="intro-foot mono">FAN-MADE STUDY GAME · ALL ART &amp; SOUND GENERATED IN CODE · BEST WITH SOUND ON</p>
     </div>
-  </header>
+  </section>
 
-  <!-- Screens -->
-  <div class="screen" id="screen-intro"></div>
-  <div class="screen" id="screen-map"></div>
-  <div class="screen" id="screen-scene"></div>
-  <div class="screen" id="screen-finale"></div>
+  <!-- ===== Level map ===== -->
+  <section class="screen" id="screen-map">
+    <div class="map-shell">
+      <div class="map-head">
+        <p class="kicker mono">SELECT YOUR REEL</p>
+        <h2>The Reel Map</h2>
+        <p class="map-sub">Beat a reel to unlock the next. Stars are forever — well, as long as your browser remembers.</p>
+      </div>
+      <div id="map-grid"></div>
+      <p class="map-note mono">PROGRESS &amp; BEST SCORES ARE SAVED IN THIS BROWSER</p>
+    </div>
+  </section>
+
+  <!-- ===== Scene (mini-game stage) ===== -->
+  <section class="screen" id="screen-scene">
+    <div class="scene-shell">
+      <div class="scene-head">
+        <div class="scene-id">
+          <span class="avatar" id="sc-ava" aria-hidden="true"></span>
+          <div>
+            <p class="scene-tag mono" id="sc-tag"></p>
+            <h2 class="scene-title" id="sc-title"></h2>
+            <p class="scene-char" id="sc-char"></p>
+          </div>
+        </div>
+        <div class="scene-chips">
+          <span class="chip mono" title="Reel score"><span data-icon="star"></span><b id="hd-score">0</b></span>
+          <span class="chip streak-chip" title="Streak multiplier"><span data-icon="flame"></span><b id="hd-mult">×1</b></span>
+          <span class="chip mono" title="Mistakes"><span data-icon="x"></span><b id="hd-mist">0</b></span>
+        </div>
+      </div>
+      <div id="game-area"></div>
+    </div>
+  </section>
+
+  <!-- ===== Finale ===== -->
+  <section class="screen" id="screen-finale">
+    <div class="finale-shell">
+      <p class="kicker mono">FINAL REEL · A TALE OF TWO WORLDS</p>
+      <h2 class="finale-title" id="fin-rank"></h2>
+      <p class="finale-rank-sub" id="fin-rank-sub"></p>
+      <div class="finale-stats">
+        <div class="stat"><span class="mono" id="fin-score">0</span><span>Total score</span></div>
+        <div class="stat"><span class="mono" id="fin-stars">0 / 18</span><span>Stars</span></div>
+        <div class="stat"><span class="mono" id="fin-best">0</span><span>Best single reel</span></div>
+      </div>
+      <table class="fin-table"><tbody id="fin-table"></tbody></table>
+      <blockquote class="fin-quote">“The majestic promise of the New York skyline is fulfilled not in the penthouses of Manhattan,
+        but in the gritty, hard-working, independent communities of Queens. The city provided the ultimate canvas for a Prince to finally become a Man.”</blockquote>
+      <div class="modal-btns">
+        <button class="btn ghost" id="fin-map"><span data-icon="map"></span> Reel Map</button>
+        <button class="btn danger" id="fin-rewind"><span data-icon="rewind"></span> Rewind the Tape</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===== Modal / toasts / confetti ===== -->
+<div id="modal"><div class="modal-card" id="modal-card" role="dialog" aria-modal="true" aria-label="Game dialog"></div></div>
+<div id="toasts" aria-live="polite"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<!-- ===== Preloader ===== -->
+<div id="preloader">
+  <div class="pre-inner">
+    <div class="pre-crown" data-icon="crown"></div>
+    <h1 class="pre-title">MEGACITY <em>ARCADE</em></h1>
+    <p class="pre-sub">Discovering the Megacity · a “Coming to America” learning quest</p>
+    <div class="pre-bar"><div class="pre-fill"></div></div>
+    <button id="btn-play" class="btn big play-btn" disabled aria-label="Start playing"><span data-icon="play"></span> PLAY</button>
+    <p class="pre-note mono">INSERT COIN · SOUND ON</p>
+  </div>
 </div>
-
-<!-- Modal -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box" id="modalBox"></div>
-</div>
-
-<!-- Toast Container -->
-<div id="toast-container"></div>
 
 <script>
-(function(){
-  "use strict";
+(function(){ "use strict";
 
-  /* ===== UTILITIES ===== */
-  const $ = (s, c) => (c || document).querySelector(s);
-  const $$ = (s, c) => Array.from((c || document).querySelectorAll(s));
-  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-  const shuffle = arr => {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  };
-  const refreshIcons = () => { if (window.lucide) window.lucide.createIcons(); };
+/* ============================================================
+   DATA — scenes, vocabulary and question sets
+   ============================================================ */
+const STORAGE_KEY = 'megacity-arcade-save-v1';
+const PENALTY = 20;
 
-  let toastTimer = null;
-  function toast(msg, dur) {
-    const container = $('#toast-container');
-    const el = document.createElement('div');
-    el.className = 'toast';
-    el.textContent = msg;
-    container.appendChild(el);
-    setTimeout(() => {
-      el.classList.add('out');
-      setTimeout(() => el.remove(), 300);
-    }, dur || 2200);
+const SCENES = [
+  { id:'golden-cage', num:1, title:'The Golden Cage', char:'Prince Akeem', color:'#8A5BB8', slide:'Slides 1–3',
+    tag:'Zamunda', obj:'Place 8 royal words into the sentences about Akeem’s gilded life.',
+    tip:'Click a blank, then click a word from the bank. Wrong words bounce back — and cost points.',
+    flavor:'“A man who has everything… except a life of his own.”' },
+  { id:'culture-shock', num:2, title:'Pavement & Culture Shock', char:'Semmi', color:'#E08A3C', slide:'Slides 4–5',
+    tag:'Queens, NYC', obj:'Separate street facts from royal fiction — 10 quick calls.',
+    tip:'TRUE = ←, FALSE = →. Fast answers earn a speed bonus; streaks raise the multiplier.',
+    flavor:'“The most common part, please. And your poorest room.”' },
+  { id:'voices', num:3, title:'Voices of the Street', char:'Clarence the Barber', color:'#D9433B', slide:'Slides 6–7',
+    tag:'The Barbershop', obj:'Answer 5 questions about the neighborhood. One attempt each.',
+    tip:'Read carefully — in this shop there is no second take.',
+    flavor:'“A man has the right to change his name to whatever he wants… It’s a free country!”' },
+  { id:'hustle', num:4, title:'The McDowell Hustle', char:'Cleo McDowell', color:'#3E8E8C', slide:'Slides 8–10',
+    tag:'McDowell’s', obj:'Rebuild the ladder of the American work ethic, then retrace Akeem’s path through Queens.',
+    tip:'Drag the rows, or use the arrow buttons on touch screens. Correct rows stick green.',
+    flavor:'“They’ve got the Golden Arches — mine are the Golden Arcs. The Big Mac? The Big Mick!”' },
+  { id:'wealth-worth', num:5, title:'Wealth vs. Worth', char:'Lisa McDowell', color:'#C98F2F', slide:'Slides 11–12',
+    tag:'Confrontation', obj:'Match 8 pairs of names and fates from the story.',
+    tip:'Fewer moves, bigger streaks — every mismatch costs points and cools your flame.',
+    flavor:'“I want a man who arouses my intellect… and ties his own shoes.”' },
+  { id:'throne', num:6, title:'Renouncing the Throne', char:'King Jaffe Joffer', color:'#6B4FA1', slide:'Slides 13–15',
+    tag:'Finale', obj:'Survive the 75-second bonus gauntlet of questions from every reel.',
+    tip:'Streaks multiply your score ×2 and ×3. The clock turns red near the end — don’t panic.',
+    flavor:'“This is America, Jack. I don’t care who you are!”' },
+];
+
+/* Glossary — the 16 target words */
+const VOCAB = [
+  ['megacity','a vast urban region home to millions of people'],
+  ['beacon','a guiding light; something that attracts and inspires'],
+  ['pampering','excessive, indulgent care and comfort'],
+  ['dependency','reliance on others for even the simplest needs'],
+  ['obedience','compliance with commands, without question'],
+  ['entourage','a group of attendants surrounding an important person'],
+  ['authenticity','being genuine and true to oneself'],
+  ['demeaning','causing a loss of dignity or self-respect'],
+  ['squalor','a filthy, wretched living condition'],
+  ['unvarnished','plain and honest, without decoration or spin'],
+  ['forum','a public space for open debate and discussion'],
+  ['hustle','energetic, scrappy effort to earn a living'],
+  ['entrepreneur','one who builds a business from nothing'],
+  ['heir','a person who inherits wealth or position'],
+  ['merit','worth earned through one’s own actions'],
+  ['renounce','to formally give up a title, throne or claim'],
+];
+
+/* Reel 1 — fill in the blanks */
+const FILL_QUESTIONS = [
+  { before:'New York is a ', after:' where millions of dreamers chase their fortunes.', answer:'megacity' },
+  { before:'For generations, the skyline has been a ', after:' for immigrants and dreamers.', answer:'beacon' },
+  { before:'Akeem grew up in absolute ', after:' — a chorus of attendants woke him each morning.', answer:'pampering' },
+  { before:'At twenty-one, the prince’s ', after:' was total: he had never tied his own shoes.', answer:'dependency' },
+  { before:'His arranged bride was raised for ', after:' — barking on command, never thinking freely.', answer:'obedience' },
+  { before:'The King crossed the ocean with a golden ', after:' of attendants and diplomats.', answer:'entourage' },
+  { before:'Akeem wants a partner who will arouse his intellect — a queen of true ', after:'.', answer:'authenticity' },
+  { before:'A gilded cage is still a cage; without freedom, all that comfort feels ', after:'.', answer:'demeaning' },
+];
+const FILL_DECOYS = ['squalor','hustle','heir','forum'];
+
+/* Reel 2 — true / false */
+const TF_QUESTIONS = [
+  { s:'Semmi expected to check into a luxury Manhattan hotel — the Waldorf-Astoria.', a:true },
+  { s:'Akeem specifically asked for “the most common part” of the city.', a:true },
+  { s:'In Queens, Akeem’s luggage was greeted with rose petals and royal honors.', a:false },
+  { s:'Zamundan walkways are dusted with fresh rose petals every morning.', a:true },
+  { s:'New York sidewalks were covered in broken glass and chalk outlines.', a:true },
+  { s:'The Queens apartment came with five private bathrooms just for Akeem.', a:false },
+  { s:'The room’s previous tenant had a dog — which was eaten by rats.', a:true },
+  { s:'Akeem’s luggage was stolen the moment it touched the sidewalk.', a:true },
+  { s:'Akeem saw the hardship as the price of admission to a real life.', a:true },
+  { s:'Semmi celebrated the squalor even more joyfully than Akeem did.', a:false },
+];
+
+/* Reel 3 — multiple choice */
+const MC_QUESTIONS = [
+  { q:'The neighborhood barbershop serves as…',
+    opts:['a chaotic democratic forum','a silent luxury spa','a royal throne room'], a:0,
+    react:'“Everybody talks over everybody — that’s democracy, baby!”' },
+  { q:'The barbers passionately debate which sports legends?',
+    opts:['Joe Louis vs. Rocky Marciano','Messi vs. Ronaldo','Ali vs. Tyson'], a:0,
+    react:'“Joe Louis! Rocky Marciano was great, but Joe…”' },
+  { q:'“A man has the right to change his name to whatever he wants…”',
+    opts:['…It’s a free country!','…but only with the King’s blessing.','…and must pay a crown tax.'], a:0,
+    react:'“Racial identity is… what about…! That’s what I’m saying!”' },
+  { q:'In the local bars, Akeem and Semmi meet…',
+    opts:['a devil worshipper, an aspiring star and an aggressive opportunist','only quiet accountants','nothing but royal cousins'], a:0,
+    react:'“In a megacity of millions, weird comes standard.”' },
+  { q:'Finding a true intellectual and emotional match in the megacity is like…',
+    opts:['finding a needle in a haystack','buying bread at a bakery','renting a limousine'], a:0,
+    react:'“Millions of voices. One that matters.”' },
+];
+
+/* Reel 4 — sorting */
+const SORT_ROUNDS = [
+  { title:'The American Work Ethic', rows:[
+    'Garbage disposal & mopping floors',
+    'Washing lettuce',
+    'Working the grill',
+    'Assistant Manager — the ultimate local dream',
+  ]},
+  { title:'Akeem’s Path Through Queens', rows:[
+    'Chooses the poorest room in Queens over the Waldorf',
+    'Listens to barbershop debates about Joe Louis',
+    'Meets the odd souls of the nightlife',
+    'Attends the Black Awareness Week rally',
+    'Spots Lisa McDowell in the crowd',
+    'Starts washing lettuce at McDowell’s',
+  ]},
+];
+
+/* Reel 5 — memory pairs [term, definition] */
+const MEMORY_PAIRS = [
+  ['Golden Arcs','Cleo’s own burger joint'],
+  ['Big Mick','McDowell’s sesame-free burger'],
+  ['Soul Glo','Darryl’s family hair fortune'],
+  ['The Worker','Akeem — nobility through labor'],
+  ['The Heir','Darryl — a life handed down'],
+  ['Mop handle','Akeem’s weapon of courage'],
+  ['Nietzsche','“Stand and walk before you fly”'],
+  ['Asst. Manager','The ultimate local dream'],
+];
+
+/* Reel 6 — bonus gauntlet */
+const BONUS_QUESTIONS = [
+  { q:'Who offers Cleo McDowell millions of dollars to leave Akeem alone?', opts:['King Jaffe Joffer','Semmi','Lisa'], a:0 },
+  { q:'“This is America, Jack. I don’t care who you are!” — who shouts it?', opts:['Cleo McDowell','Akeem','Reverend Brown'], a:0 },
+  { q:'What weapon does Akeem use to disarm the robber?', opts:['A mop handle','A golden scepter','A cast-iron pan'], a:0 },
+  { q:'True Independence = Royal Heritage + …', opts:['Urban Authenticity','More gold','A bigger palace'], a:0 },
+  { q:'Where is the city’s majesty finally fulfilled?', opts:['In the gritty communities of Queens','In Manhattan penthouses','In Zamunda'], a:0 },
+  { q:'“Assistant Manager” is called…', opts:['the ultimate local dream','a royal title','an insult'], a:0 },
+  { q:'Which burger belongs to McDowell’s?', opts:['The Big Mick','The Big Mac','The Whopper'], a:0 },
+  { q:'Akeem’s arches are the Golden…', opts:['Arcs','Aches','Arts'], a:0 },
+  { q:'Who does Cleo favor for his family’s capital?', opts:['Darryl','Akeem','Randy Watson'], a:0 },
+  { q:'Darryl’s family owns…', opts:['Soul Glo hair products','Golden Arcs','the Waldorf-Astoria'], a:0 },
+  { q:'Who sings with Sexual Chocolate?', opts:['Randy Watson','Semmi','Clarence'], a:0 },
+  { q:'The rally where Akeem spots Lisa is…', opts:['Black Awareness Week','Royal Awareness Week','Waldorf Week'], a:0 },
+  { q:'What does Akeem offer to renounce for love?', opts:['The throne of Zamunda','His mop','Lisa'], a:0 },
+  { q:'“The person is infinitely more valuable than…”', opts:['the position','the paycheck','the palace'], a:0 },
+  { q:'By the end of the story, the Prince becomes…', opts:['a Man','a beggar','a barber'], a:0 },
+  { q:'Akeem’s arranged bride was trained to…', opts:['bark like a dog on command','sing opera','rule a navy'], a:0 },
+];
+
+const REACT = {
+  3:'Now THAT is royalty in motion. Flawless!',
+  2:'Solid work. The streets salute you.',
+  1:'You survived Queens. Somehow, that counts.',
+};
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+const $  = (sel, root)=> (root||document).querySelector(sel);
+const $$ = (sel, root)=> Array.from((root||document).querySelectorAll(sel));
+const clamp = (v,a,b)=> Math.max(a, Math.min(b, v));
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function prng(seed){ let s=seed; return ()=>{ s=(s*9301+49297)%233280; return s/233280; }; }
+function cx(el){ const r=el.getBoundingClientRect(); return r.left+r.width/2; }
+function cy(el){ const r=el.getBoundingClientRect(); return r.top+r.height/2; }
+function initials(name){ return name.split(' ').map(w=>w[0]).slice(0,2).join(''); }
+function fmtMult(m){ return '×'+(Math.round(m*100)/100); }
+
+/* Inline icon set (custom SVG, no external library needed) */
+function svgWrap(inner, fill){ return '<svg viewBox="0 0 24 24" '+(fill?'fill="currentColor" stroke="none"':'fill="none" stroke="currentColor" stroke-width="2"')+' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+inner+'</svg>'; }
+const ICONS = {
+  play:      svgWrap('<path d="M7 4.5v15l13-7.5z"/>', true),
+  volume2:   svgWrap('<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 5.2a9.4 9.4 0 0 1 0 13.6"/>'),
+  volumeX:   svgWrap('<path d="M11 5 6 9H2v6h4l5 4z"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/>'),
+  map:       svgWrap('<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><line x1="9" y1="4" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="20"/>'),
+  book:      svgWrap('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'),
+  lock:      svgWrap('<rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
+  star:      svgWrap('<polygon points="12 2.5 15 8.6 21.7 9.5 16.8 14.2 18 20.9 12 17.7 6 20.9 7.2 14.2 2.3 9.5 9 8.6"/>'),
+  crown:     svgWrap('<path d="M3 7.5 7.5 11 12 4.5 16.5 11 21 7.5 19.2 18.5H4.8z"/>'),
+  check:     svgWrap('<polyline points="20 6 9 17 4 12"/>'),
+  x:         svgWrap('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'),
+  arrowUp:   svgWrap('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'),
+  arrowDown: svgWrap('<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>'),
+  arrowLeft: svgWrap('<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>'),
+  arrowRight:svgWrap('<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>'),
+  rewind:    svgWrap('<path d="M11 19 2 12l9-7z"/><path d="M22 19l-9-7 9-7z"/>', true),
+  refresh:   svgWrap('<polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/>'),
+  info:      svgWrap('<circle cx="12" cy="12" r="9"/><line x1="12" y1="10.5" x2="12" y2="16"/><line x1="12" y1="7.4" x2="12" y2="7.5"/>'),
+  flame:     svgWrap('<path d="M12 22c4.4 0 7-2.8 7-6.6 0-3.2-2.1-5.4-3.6-7.2C14 6.5 13.2 4.4 13.2 2c-3.6 2.2-4.9 5-4.9 7.4 0 1.1-.5 1.6-1.4.7-.5-.5-.9-1.3-1-2.2C4.5 9.9 5 12 5 15.4 5 19.2 7.6 22 12 22z"/>'),
+  bulb:      svgWrap('<path d="M9 18h6"/><path d="M10 21.5h4"/><path d="M12 2.5a6.5 6.5 0 0 0-3.9 11.7c.8.6 1.4 1.6 1.4 2.6h5c0-1 .6-2 1.4-2.6A6.5 6.5 0 0 0 12 2.5z"/>'),
+  grip:      svgWrap('<circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/>', true),
+  trophy:    svgWrap('<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.7 3.5"/><path d="M17 6h2.5a2.5 2.5 0 0 1-2.7 3.5"/>'),
+};
+function refreshIcons(root){ $$('[data-icon]', root).forEach(el=>{ const n=el.dataset.icon; if(ICONS[n]) el.innerHTML=ICONS[n]; }); }
+
+function toast(msg, type, dur){
+  const box=$('#toasts'); const el=document.createElement('div');
+  el.className='toast '+(type||'info'); el.setAttribute('role','status');
+  el.innerHTML='<span data-icon="'+(type==='ok'?'check':type==='err'?'x':'info')+'"></span><span>'+msg+'</span>';
+  box.appendChild(el); refreshIcons(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),320); }, dur||2600);
+}
+function popFloat(text, x, y, neg){
+  if(REDUCED) return;
+  const el=document.createElement('div');
+  el.className='pop-float'+(neg?' neg':''); el.textContent=text;
+  el.style.left=x+'px'; el.style.top=y+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),960);
+}
+let confCtx=null, confParts=[], confRAF=null;
+function initConfetti(){
+  const c=$('#confetti'); confCtx=c.getContext('2d');
+  const rs=()=>{ c.width=innerWidth; c.height=innerHeight; };
+  rs(); addEventListener('resize', rs);
+}
+function spawnConfetti(x, y, n){
+  if(REDUCED || !confCtx) return;
+  const cols=['#E9B44C','#F6E7C1','#C98F2F','#8A5BB8','#D9433B','#4CAF7D'];
+  for(let i=0;i<(n||60);i++){
+    const a=Math.random()*Math.PI*2, sp=2+Math.random()*6;
+    confParts.push({x:x, y:y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-3.2, rot:Math.random()*6.3, vr:(Math.random()-.5)*.3,
+      w:5+Math.random()*6, h:3+Math.random()*4, c:cols[i%cols.length], life:60+Math.random()*40});
   }
-
-  function popFloat(x, y, text, color) {
-    const el = document.createElement('div');
-    el.className = 'float-score';
-    el.textContent = text;
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    el.style.color = color || 'var(--gold)';
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 1000);
-  }
-
-  function spawnConfetti(count) {
-    const colors = ['#c9a84c', '#e8d48b', '#a83e3e', '#3e7a4e', '#f0e6d8'];
-    for (let i = 0; i < (count || 40); i++) {
-      const piece = document.createElement('div');
-      piece.className = 'confetti-piece';
-      piece.style.left = Math.random() * 100 + 'vw';
-      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-      piece.style.width = (6 + Math.random() * 10) + 'px';
-      piece.style.height = (6 + Math.random() * 10) + 'px';
-      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-      piece.style.animationDuration = (1 + Math.random() * 1.5) + 's';
-      piece.style.animationDelay = Math.random() * 0.3 + 's';
-      document.body.appendChild(piece);
-      setTimeout(() => piece.remove(), 2500);
-    }
-  }
-
-  /* ===== AUDIO ENGINE ===== */
-  let audioCtx = null;
-  let soundOn = true;
-  try {
-    soundOn = localStorage.getItem('royal_sound') !== 'off';
-  } catch(e) {}
-
-  function initAudio() {
-    if (!audioCtx) {
-      try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      } catch(e) { /* no audio */ }
-    }
-  }
-
-  function tone(freq, dur, type, vol, when) {
-    if (!soundOn || !audioCtx) return;
-    const t = when || audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = type || 'sine';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(vol || 0.15, t + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + (dur || 0.15));
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(t);
-    osc.stop(t + (dur || 0.15) + 0.05);
-  }
-
-  function noiseBurst(dur, vol) {
-    if (!soundOn || !audioCtx) return;
-    const bufferSize = audioCtx.sampleRate * (dur || 0.3);
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
-    }
-    const src = audioCtx.createBufferSource();
-    src.buffer = buffer;
-    const gain = audioCtx.createGain();
-    gain.gain.value = vol || 0.08;
-    src.connect(gain);
-    gain.connect(audioCtx.destination);
-    src.start();
-  }
-
-  const sfx = {
-    click() { tone(800, 0.06, 'square', 0.06); },
-    flip() { tone(400, 0.08, 'triangle', 0.08); },
-    correct() { tone(523, 0.1, 'sine', 0.12); tone(659, 0.1, 'sine', 0.12, audioCtx ? audioCtx.currentTime + 0.1 : 0); },
-    wrong() { tone(200, 0.2, 'sawtooth', 0.1); },
-    match() { tone(700, 0.08, 'sine', 0.1); tone(900, 0.08, 'sine', 0.1, audioCtx ? audioCtx.currentTime + 0.08 : 0); },
-    fanfare() {
-      if (!audioCtx) return;
-      const now = audioCtx.currentTime;
-      [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.15, 'triangle', 0.12, now + i * 0.12));
-    },
-    tick() { tone(1200, 0.03, 'square', 0.04); },
-    cheer() { noiseBurst(0.5, 0.1); }
-  };
-
-  function renderSound() {
-    const btn = $('#soundToggle');
-    if (btn) btn.textContent = soundOn ? '🔊' : '🔇';
-  }
-
-  /* ===== DATA CONSTANTS ===== */
-  const BASE_URL = 'https://item1000-collab.github.io/ai/engoo/20260912-com-america/';
-  const PDF_URL = BASE_URL + 'coming-to-america.pdf';
-
-  const SCENES = [
-    {
-      id: 'zamunda',
-      num: 1,
-      title: 'The Golden Cage',
-      char: 'Prince Akeem',
-      color: '#c9a84c',
-      slide: 'slide-003.jpg',
-      tag: 'Zamunda',
-      obj: 'Discover the paradox of absolute wealth without independence.',
-      tip: 'Akeem has everything — except the freedom to be himself.',
-      flavor: 'Waking to a chorus of attendants, bathed by servants, walkways paved with rose petals. A 21-year-old man who has never been allowed to tie his own shoes. A future bride trained from birth to bark like a dog on command.'
-    },
-    {
-      id: 'queens',
-      num: 2,
-      title: 'Bypassing the Palace',
-      char: 'Semmi & Akeem',
-      color: '#8b6b2e',
-      slide: 'slide-004.jpg',
-      tag: 'Queens',
-      obj: 'Choose the pavement over the palace — and face the culture shock.',
-      tip: 'Akeem demands "the most common part" and the "poorest room."',
-      flavor: 'Upon landing in New York, Akeem\'s aide Semmi expects to stay in a luxury Manhattan hotel fitting their royal status. Akeem deliberately rejects this, demanding to be taken to Queens. He specifically requests "the most common part" and the "poorest room."'
-    },
-    {
-      id: 'barbershop',
-      num: 3,
-      title: 'The Barbershop',
-      char: 'The Barbershop Crowd',
-      color: '#a83e3e',
-      slide: 'slide-006.jpg',
-      tag: 'Cultural Hub',
-      obj: 'Witness the chaotic democratic forum of working-class America.',
-      tip: 'Respect is fiercely debated, not inherited.',
-      flavor: 'The neighborhood barbershop serves as a chaotic democratic forum. Akeem silently observes passionate, overlapping debates about American sports legends and racial identity. This scene introduces Akeem to the vibrant, argumentative, and proudly free-spirited nature of working-class urban Americans.'
-    },
-    {
-      id: 'nightlife',
-      num: 4,
-      title: 'Urban Nightlife',
-      char: 'The Bar Scene',
-      color: '#3e7a4e',
-      slide: 'slide-007.jpg',
-      tag: 'Diversity',
-      obj: 'Navigate bizarre personalities in the megacity.',
-      tip: 'Finding a true intellectual match is like finding a needle in a haystack.',
-      flavor: 'Akeem and Semmi navigate the chaotic local bar scene, encountering radically bizarre personalities. In a megacity of millions, finding a true intellectual and emotional match proves to be like finding a needle in a haystack.'
-    },
-    {
-      id: 'rally',
-      num: 5,
-      title: 'The Community Rally',
-      char: 'Lisa McDowell',
-      color: '#e8d48b',
-      slide: 'slide-008.jpg',
-      tag: 'Turning Point',
-      obj: 'Find the right environment and meet the antithesis of an arranged bride.',
-      tip: 'Decent women don\'t hang out in bars.',
-      flavor: 'Advised by the barber that "decent women don\'t hang out in bars," Akeem attends a local community rally. Here, Akeem spots Lisa McDowell—independent, fiercely civic-minded, and authentic. She is the antithesis of his arranged bride.'
-    },
-    {
-      id: 'mcdowells',
-      num: 6,
-      title: "McDowell's Hustle",
-      char: 'Cleo McDowell',
-      color: '#c9a84c',
-      slide: 'slide-009.jpg',
-      tag: 'Entrepreneur',
-      obj: 'Learn the scrappy urban entrepreneur\'s game.',
-      tip: 'The Golden Arcs vs. The Golden Arches.',
-      flavor: 'Cleo McDowell embodies the aggressive, scrappy urban entrepreneur. He defends his local fast-food business against corporate giants through sheer denial and slight alterations. McDowell represents the intense drive to build generational wealth from nothing.'
-    },
-    {
-      id: 'workethic',
-      num: 7,
-      title: 'The American Work Ethic',
-      char: 'Akeem the Worker',
-      color: '#8b6b2e',
-      slide: 'slide-010.jpg',
-      tag: 'Labor',
-      obj: 'Shed past titles and earn your place through honest sweat.',
-      tip: '"He who would learn to fly one day must first learn to stand and walk." — Nietzsche',
-      flavor: 'Akeem cheerfully accepts manual labor. This satirizes, yet deeply honors, the classic immigrant narrative: shedding past titles to earn one\'s place through hard, honest sweat. Assistant Manager, working the grill, washing lettuce, mopping floors.'
-    },
-    {
-      id: 'wealth',
-      num: 8,
-      title: 'Wealth vs. Worth',
-      char: 'Darryl & Akeem',
-      color: '#a83e3e',
-      slide: 'slide-011.jpg',
-      tag: 'Conflict',
-      obj: 'Prove that character outweighs capital.',
-      tip: 'The person is infinitely more valuable than the position.',
-      flavor: 'Akeem represents inherent nobility and dignity. Stripped of his royal bank account, he must rely on his character, manners, and work ethic to win Lisa\'s respect. Darryl represents flashy, inherited wealth, relying on his family\'s hair product fortune. Cleo favors Darryl purely for his capital.'
-    },
-    {
-      id: 'respect',
-      num: 9,
-      title: 'Earning Respect',
-      char: 'The Royal Urbanite',
-      color: '#3e7a4e',
-      slide: 'slide-012.jpg',
-      tag: 'Action',
-      obj: 'Discover that action dictates status.',
-      tip: 'A humble wooden mop handle becomes a symbol of courage.',
-      flavor: 'When an armed robber holds up McDowell\'s, Akeem\'s royal guards are absent. He must rely entirely on his own courage and martial arts training, using a humble wooden mop handle to disarm the thief. He earns the true, unbought respect of his boss and peers.'
-    },
-    {
-      id: 'past',
-      num: 10,
-      title: 'The Past Catches Up',
-      char: 'King Jaffe Joffer',
-      color: '#c9a84c',
-      slide: 'slide-013.jpg',
-      tag: 'Pushback',
-      obj: 'Confront the clash between Old World power and American pride.',
-      tip: '"This is America, Jack. I don\'t care who you are!"',
-      flavor: 'King Jaffe Joffer arrives in Queens with his full royal entourage, treating the gritty apartment building like a subjugated territory and attempting to pay off Cleo McDowell with millions of dollars to leave Akeem alone. Despite his earlier obsession with wealth, Cleo violently rejects the King\'s insult to his daughter.'
-    },
-    {
-      id: 'renounce',
-      num: 11,
-      title: 'Renouncing the Throne',
-      char: 'Akeem & Lisa',
-      color: '#e8d48b',
-      slide: 'slide-014.jpg',
-      tag: 'Synthesis',
-      obj: 'Prove that true wealth is built on mutual respect and individual merit.',
-      tip: 'Authenticity cannot be inherited or arranged — it must be discovered through friction.',
-      flavor: 'Confronted by Lisa\'s feeling of betrayal over his hidden identity, Akeem proves his intentions in the ultimate way. Standing in the middle of a gritty Queens street, he loudly declares his willingness to renounce his crown entirely. He proves that the person is infinitely more valuable than the position.'
-    }
-  ];
-
-  /* ===== VOCABULARY ===== */
-  const VOCAB = [
-    { term: 'megacity', literal: 'a very large city', figurative: 'a place of immense scale and possibility', example: 'For generations, megacities like New York have stood as beacons for immigrants.', explanation: 'A city of millions where dreams and nightmares coexist.' },
-    { term: 'golden cage', literal: 'a cage made of gold', figurative: 'wealth that restricts freedom', example: 'Akeem possesses extreme material wealth but entirely lacks personal independence.', explanation: 'A metaphor for Zamunda — luxury without autonomy.' },
-    { term: 'authenticity', literal: 'the quality of being real', figurative: 'living without pretense', example: 'He seeks a partner who will arouse his intellect, not just obey his orders.', explanation: 'The opposite of arranged obedience.' },
-    { term: 'culture shock', literal: 'disorientation in a new culture', figurative: 'the collision of expectation and reality', example: 'Walkways dusted with fresh rose petals vs. sidewalks covered in broken glass.', explanation: 'Zamunda\'s expectations vs. Queens\' reality.' },
-    { term: 'democratic forum', literal: 'a place of open debate', figurative: 'chaotic, equal exchange of ideas', example: 'The neighborhood barbershop serves as a chaotic democratic forum.', explanation: 'Where respect is debated, not inherited.' },
-    { term: 'antithesis', literal: 'the exact opposite', figurative: 'a direct contrast', example: 'Lisa is the antithesis of his arranged bride.', explanation: 'Independent vs. obedient.' },
-    { term: 'hustle', literal: 'energetic activity', figurative: 'the grind of urban survival', example: 'Cleo McDowell embodies the aggressive, scrappy urban entrepreneur.', explanation: 'The relentless drive to build something from nothing.' },
-    { term: 'work ethic', literal: 'belief in the value of work', figurative: 'dignity through labor', example: 'Akeem cheerfully accepts manual labor.', explanation: 'Shedding titles to earn one\'s place.' },
-    { term: 'renounce', literal: 'to give up formally', figurative: 'to sacrifice status for something greater', example: 'He loudly declares his willingness to renounce his crown entirely.', explanation: 'Proving that the person is more valuable than the position.' },
-    { term: 'concrete jungle', literal: 'a dense urban environment', figurative: 'a harsh, competitive city', example: 'Earning Respect in the Concrete Jungle.', explanation: 'Where action dictates status.' }
-  ];
-
-  /* ===== GAME DATA ===== */
-  const LEVEL_GAMES = {
-    zamunda: {
-      type: 'fill',
-      prompt: 'Fill in the blanks to describe the Golden Cage of Zamunda.',
-      sentence: 'Akeem possesses extreme {0} wealth but entirely lacks personal {1}. He seeks a partner who will arouse his {2}, not just obey his orders.',
-      blanks: ['material', 'independence', 'intellect'],
-      bank: ['material', 'independence', 'intellect', 'obedience', 'wealth', 'status']
-    },
-    queens: {
-      type: 'tf',
-      prompt: 'Real or Not Real? Decide based on the culture shock of authenticity.',
-      statements: [
-        { text: 'Akeem demands to stay at the Waldorf-Astoria.', real: false },
-        { text: 'Akeem specifically requests "the most common part" and the "poorest room."', real: true },
-        { text: 'Semmi expects to stay in a luxury Manhattan hotel.', real: true },
-        { text: 'Akeem wants to experience the unvarnished, authentic reality of the American city.', real: true }
-      ]
-    },
-    barbershop: {
-      type: 'mc',
-      prompt: 'Choose the correct interpretation of the barbershop scene.',
-      questions: [
-        {
-          q: 'What does the barbershop represent in the film?',
-          opts: ['A quiet place for haircuts', 'A chaotic democratic forum', 'A royal court'],
-          ans: 1
-        },
-        {
-          q: 'What is debated passionately in the barbershop?',
-          opts: ['Politics and religion only', 'Sports legends and racial identity', 'Royal succession'],
-          ans: 1
-        },
-        {
-          q: 'How is respect earned in this environment?',
-          opts: ['It is inherited', 'It is fiercely debated, not inherited', 'It is bought with money'],
-          ans: 1
-        }
-      ]
-    },
-    nightlife: {
-      type: 'sort',
-      prompt: 'Arrange the steps of Akeem\'s search for authenticity.',
-      items: [
-        'Akeem and Semmi navigate the chaotic local bar scene.',
-        'They encounter radically bizarre personalities.',
-        'Finding a true intellectual and emotional match proves difficult.',
-        'In a megacity of millions, it is like finding a needle in a haystack.'
-      ]
-    },
-    rally: {
-      type: 'fill',
-      prompt: 'Complete the description of the turning point.',
-      sentence: 'Advised by the barber that "decent women don\'t hang out in bars," Akeem attends a local community {0}. Here, he spots Lisa McDowell—independent, fiercely {1}-minded, and {2}.',
-      blanks: ['rally', 'civic', 'authentic'],
-      bank: ['rally', 'civic', 'authentic', 'bar', 'wealthy', 'obedient']
-    },
-    mcdowells: {
-      type: 'mc',
-      prompt: 'Test your knowledge of the McDowell\'s hustle.',
-      questions: [
-        {
-          q: 'What does Cleo McDowell defend his business against?',
-          opts: ['Local competition', 'Corporate giants', 'The royal family'],
-          ans: 1
-        },
-        {
-          q: 'What is the name of McDowell\'s fast-food chain?',
-          opts: ['The Golden Arcs', 'The Golden Arches', 'The Silver Spoons'],
-          ans: 0
-        },
-        {
-          q: 'What does McDowell represent culturally?',
-          opts: ['Inherited wealth', 'The drive to build generational wealth from nothing', 'Royal lineage'],
-          ans: 1
-        }
-      ]
-    },
-    workethic: {
-      type: 'tf',
-      prompt: 'Real or Not Real? Test your understanding of the American work ethic.',
-      statements: [
-        { text: 'Akeem refuses to do manual labor.', real: false },
-        { text: 'Akeem quotes Nietzsche while mopping.', real: true },
-        { text: 'Akeem becomes Assistant Manager at McDowell\'s.', real: true },
-        { text: 'The film satirizes the immigrant narrative.', real: false }
-      ]
-    },
-    wealth: {
-      type: 'fill',
-      prompt: 'Complete the comparison between Akeem and Darryl.',
-      sentence: 'Akeem represents inherent {0} and dignity. Darryl represents flashy, inherited {1}. Cleo favors Darryl purely for his {2}.',
-      blanks: ['nobility', 'wealth', 'capital'],
-      bank: ['nobility', 'wealth', 'capital', 'poverty', 'status', 'character']
-    },
-    respect: {
-      type: 'mc',
-      prompt: 'How does Akeem earn respect in the concrete jungle?',
-      questions: [
-        {
-          q: 'What does Akeem use to disarm the robber?',
-          opts: ['A royal sword', 'A wooden mop handle', 'His bare hands'],
-          ans: 1
-        },
-        {
-          q: 'What does this action prove?',
-          opts: ['Action dictates status', 'Wealth solves everything', 'Royalty is always respected'],
-          ans: 0
-        },
-        {
-          q: 'What does the mop handle symbolize?',
-          opts: ['Weakness', 'Courage and resourcefulness', 'Defeat'],
-          ans: 1
-        }
-      ]
-    },
-    past: {
-      type: 'tf',
-      prompt: 'Real or Not Real? The past catches up.',
-      statements: [
-        { text: 'King Jaffe Joffer arrives in Queens with a full royal entourage.', real: true },
-        { text: 'Cleo McDowell accepts the King\'s money to leave Akeem alone.', real: false },
-        { text: 'Cleo shouts: "This is America, Jack. I don\'t care who you are!"', real: true },
-        { text: 'The King treats the apartment building like a subjugated territory.', real: true }
-      ]
-    },
-    renounce: {
-      type: 'fill',
-      prompt: 'Complete the synthesis of Akeem\'s journey.',
-      sentence: 'Confronted by Lisa\'s feeling of betrayal, Akeem declares his willingness to {0} his crown entirely. He proves that the person is infinitely more valuable than the {1}. True wealth is building a life based on mutual {2} and individual merit.',
-      blanks: ['renounce', 'position', 'respect'],
-      bank: ['renounce', 'position', 'respect', 'accept', 'wealth', 'obedience']
-    }
-  };
-
-  /* ===== STATE ===== */
-  let state = {
-    currentScreen: 'intro',
-    currentScene: null,
-    scores: {},
-    stars: {},
-    totalScore: 0,
-    totalStars: 0,
-    streak: 0,
-    levelInProgress: false,
-    cleanupFn: null,
-    bonusActive: false
-  };
-
-  const STORAGE_KEY = 'royal_urbanite_v1';
-
-  function saveProgress() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        scores: state.scores,
-        stars: state.stars,
-        totalScore: state.totalScore,
-        totalStars: state.totalStars
-      }));
-    } catch(e) { /* private mode */ }
-  }
-
-  function loadProgress() {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      if (data) {
-        const parsed = JSON.parse(data);
-        state.scores = parsed.scores || {};
-        state.stars = parsed.stars || {};
-        state.totalScore = parsed.totalScore || 0;
-        state.totalStars = parsed.totalStars || 0;
-      }
-    } catch(e) { /* ignore */ }
-  }
-
-  /* ===== CLEANUP ===== */
-  function setCleanup(fn) {
-    if (state.cleanupFn) state.cleanupFn();
-    state.cleanupFn = fn;
-  }
-
-  /* ===== HUD ===== */
-  function updateHUD() {
-    const prog = $('#hudProgress');
-    let dotsHtml = '';
-    SCENES.forEach((s, i) => {
-      const done = state.stars[s.id] > 0;
-      const current = state.currentScene && state.currentScene.id === s.id;
-      dotsHtml += `<span class="hud-dot ${done ? 'completed' : ''} ${current ? 'current' : ''}"></span>`;
-    });
-    prog.innerHTML = dotsHtml;
-    $('#hudScore').textContent = state.totalScore + ' pts';
-    renderSound();
-  }
-
-  /* ===== SCREEN SWITCHING ===== */
-  function showScreen(name) {
-    state.currentScreen = name;
-    $$('.screen').forEach(s => s.classList.remove('active'));
-    const el = $('#screen-' + name);
-    if (el) el.classList.add('active');
-    updateHUD();
-  }
-
-  /* ===== INTRO RENDER ===== */
-  function renderIntro() {
-    const el = $('#screen-intro');
-    el.innerHTML = `
-      <div class="intro-hero">
-        <div class="badge">👑 An Interactive Journey</div>
-        <h1>The Royal Urbanite</h1>
-        <p class="sub">A narrative learning experience through the concrete canyons of 1980s America — where a prince becomes a man.</p>
-      </div>
-      <div class="intro-cards">
-        <div class="intro-card">
-          <span class="emoji">🏰</span>
-          <h3>From Zamunda to Queens</h3>
-          <p>Follow Prince Akeem as he trades rose petals for broken glass in search of authenticity.</p>
-        </div>
-        <div class="intro-card">
-          <span class="emoji">💪</span>
-          <h3>Earn Your Place</h3>
-          <p>Discover that true worth is not inherited — it is built through friction, labor, and courage.</p>
-        </div>
-        <div class="intro-card">
-          <span class="emoji">📚</span>
-          <h3>Master the Vocabulary</h3>
-          <p>Learn key terms like <strong>megacity</strong>, <strong>authenticity</strong>, and <strong>renounce</strong> through play.</p>
-        </div>
-        <div class="intro-card">
-          <span class="emoji">🎯</span>
-          <h3>Prove Your Merit</h3>
-          <p>Complete eleven challenges, earn stars, and rise through the ranks of the Royal Urbanite.</p>
-        </div>
-      </div>
-      <button class="cta-btn" id="startBtn">Begin the Journey →</button>
-      <p style="font-size:0.75rem; color:var(--text-dim); margin-top:1rem; text-align:center;">
-        Based on the presentation <em>Discovering the Megacity: The American Dream, Urban Life, and the Search for Authenticity in Coming to America</em>.
-      </p>
-    `;
-    $('#startBtn').addEventListener('click', () => {
-      initAudio();
-      sfx.click();
-      showScreen('map');
-      renderMap();
-    });
-  }
-
-  /* ===== MAP RENDER ===== */
-  function renderMap() {
-    const el = $('#screen-map');
-    let html = `
-      <div class="map-header">
-        <h2>🗺️ The Journey</h2>
-        <p>Complete each chapter to unlock the next.</p>
-      </div>
-      <div class="map-grid">
-    `;
-    SCENES.forEach((s, i) => {
-      const unlocked = i === 0 || state.stars[SCENES[i-1].id] > 0;
-      const stars = state.stars[s.id] || 0;
-      const best = state.scores[s.id] || 0;
-      const starStr = '★'.repeat(stars) + '☆'.repeat(3 - stars);
-      html += `
-        <div class="map-card ${unlocked ? '' : 'locked'}" data-scene="${s.id}" data-index="${i}">
-          <img class="card-img" src="${BASE_URL}${s.slide}" alt="${s.title}" loading="lazy"
-               onerror="this.style.display='none'">
-          <div class="card-body">
-            <div class="card-num">Chapter ${s.num}</div>
-            <div class="card-title">${s.title}</div>
-            <div class="card-char">${s.char}</div>
-            <div class="card-stars">${starStr}</div>
-            <div class="card-best">${best > 0 ? 'Best: ' + best + ' pts' : ''}</div>
-          </div>
-          ${!unlocked ? '<div class="lock-overlay">🔒</div>' : ''}
-        </div>
-      `;
-    });
-    html += `</div>`;
-    // Final button
-    const allDone = SCENES.every(s => state.stars[s.id] > 0);
-    if (allDone) {
-      html += `<button class="cta-btn" id="finaleBtn" style="margin-top:1.5rem;">🏆 View Finale</button>`;
-    } else {
-      html += `<p style="text-align:center; color:var(--text-dim); font-size:0.8rem; margin-top:1.5rem;">Complete all chapters to unlock the finale.</p>`;
-    }
-    el.innerHTML = html;
-
-    // Handlers
-    $$('.map-card', el).forEach(card => {
-      card.addEventListener('click', () => {
-        const idx = parseInt(card.dataset.index);
-        const unlocked = idx === 0 || state.stars[SCENES[idx-1].id] > 0;
-        if (!unlocked) {
-          toast('🔒 Complete the previous chapter first.');
-          sfx.wrong();
-          return;
-        }
-        initAudio();
-        sfx.click();
-        openScene(SCENES[idx]);
-      });
-    });
-    const fb = $('#finaleBtn');
-    if (fb) fb.addEventListener('click', () => { sfx.fanfare(); showScreen('finale'); renderFinale(); });
-  }
-
-  /* ===== SCENE ===== */
-  function openScene(scene) {
-    state.currentScene = scene;
-    state.levelInProgress = true;
-    state.streak = 0;
-    showScreen('scene');
-    renderSceneIntro(scene);
-    updateHUD();
-  }
-
-  function renderSceneIntro(scene) {
-    const el = $('#screen-scene');
-    el.innerHTML = `
-      <div class="scene-header">
-        <button class="back-btn" id="sceneBack">← Map</button>
-        <h2>${scene.title}</h2>
-        <span class="scene-tag">${scene.tag}</span>
-      </div>
-      <!-- SLIDE-IMAGE: ${scene.slide} -->
-      <img class="scene-img" src="${BASE_URL}${scene.slide}" alt="${scene.title}"
-           onerror="this.style.display='none'">
-      <div class="scene-flavor">${scene.flavor}</div>
-      <div class="scene-obj"><i>🎯</i> <span>${scene.obj}</span></div>
-      <div class="scene-obj" style="background:rgba(201,168,76,0.04); font-style:italic;">
-        <i>💡</i> <span>${scene.tip}</span>
-      </div>
-      <button class="cta-btn" id="sceneStart" style="width:100%;">Start Challenge →</button>
-    `;
-    $('#sceneBack').addEventListener('click', () => {
-      sfx.click();
-      state.levelInProgress = false;
-      if (state.cleanupFn) state.cleanupFn();
-      showScreen('map');
-      renderMap();
-    });
-    $('#sceneStart').addEventListener('click', () => {
-      initAudio();
-      sfx.click();
-      startLevelGame(scene);
-    });
-  }
-
-  /* ===== LEVEL GAME ROUTER ===== */
-  function startLevelGame(scene) {
-    const game = LEVEL_GAMES[scene.id];
-    if (!game) return;
-    const el = $('#screen-scene');
-    // Replace content with game area
-    el.innerHTML = `
-      <div class="scene-header">
-        <button class="back-btn" id="gameBack">← Map</button>
-        <h2>${scene.title}</h2>
-        <span class="scene-tag">Challenge</span>
-      </div>
-      <div class="game-area" id="gameArea"></div>
-      <div id="gameResult" class="hidden"></div>
-    `;
-    $('#gameBack').addEventListener('click', () => {
-      sfx.click();
-      state.levelInProgress = false;
-      if (state.cleanupFn) state.cleanupFn();
-      showScreen('map');
-      renderMap();
-    });
-
-    const area = $('#gameArea');
-    let correctCount = 0;
-    let mistakeCount = 0;
-    let levelScore = 0;
-    let streak = 0;
-    let totalQuestions = 0;
-
-    function finishLevel() {
-      state.levelInProgress = false;
-      const stars = mistakeCount === 0 ? 3 : mistakeCount <= 2 ? 2 : 1;
-      if (!state.scores[scene.id] || levelScore > state.scores[scene.id]) {
-        state.scores[scene.id] = levelScore;
-      }
-      if (!state.stars[scene.id] || stars > state.stars[scene.id]) {
-        state.stars[scene.id] = stars;
-      }
-      state.totalScore = Object.values(state.scores).reduce((a, b) => a + b, 0);
-      state.totalStars = Object.values(state.stars).reduce((a, b) => a + b, 0);
-      saveProgress();
-      updateHUD();
-      sfx.fanfare();
-      spawnConfetti(30);
-      const resultEl = $('#gameResult');
-      resultEl.classList.remove('hidden');
-      area.style.display = 'none';
-      const starStr = '★'.repeat(stars) + '☆'.repeat(3 - stars);
-      resultEl.innerHTML = `
-        <div class="result-box">
-          <div style="font-size:1.5rem; margin-bottom:0.5rem;">${stars === 3 ? '🏆' : stars === 2 ? '🥈' : '🥉'}</div>
-          <div class="result-stars">${starStr}</div>
-          <div class="result-score">${levelScore} pts</div>
-          <div class="result-msg">${stars === 3 ? 'Flawless! You are a true Royal Urbanite.' : stars === 2 ? 'Well done! A few missteps, but strong progress.' : 'You made it through. The city is tough — try again for a better score.'}</div>
-          <div style="display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap;">
-            <button class="cta-btn" id="retryBtn" style="font-size:0.9rem; padding:0.7em 1.8em;">Retry</button>
-            <button class="cta-btn" id="nextBtn" style="font-size:0.9rem; padding:0.7em 1.8em; background:transparent; border:2px solid var(--gold); color:var(--gold); box-shadow:none;">Back to Map</button>
-          </div>
-        </div>
-      `;
-      $('#retryBtn').addEventListener('click', () => {
-        sfx.click();
-        startLevelGame(scene);
-      });
-      $('#nextBtn').addEventListener('click', () => {
-        sfx.click();
-        showScreen('map');
-        renderMap();
-      });
-    }
-
-    function addScore(pts) {
-      levelScore += pts;
-      state.totalScore += pts;
-      updateHUD();
-    }
-
-    /* --- FILL IN THE BLANKS --- */
-    if (game.type === 'fill') {
-      totalQuestions = game.blanks.length;
-      let filled = new Array(game.blanks.length).fill(null);
-      let bankUsed = new Array(game.bank.length).fill(false);
-      let selectedBlank = null;
-
-      function renderFill() {
-        let sentence = game.sentence;
-        let blankIdx = 0;
-        sentence = sentence.replace(/\{(\d+)\}/g, (m, i) => {
-          const idx = parseInt(i);
-          const val = filled[idx];
-          return `<span class="blank ${val ? 'filled' : ''}" data-blank="${idx}">${val || '______'}</span>`;
-        });
-        let bankHtml = '';
-        game.bank.forEach((w, i) => {
-          bankHtml += `<span class="word-chip ${bankUsed[i] ? 'used' : ''}" data-word="${i}">${w}</span>`;
-        });
-        area.innerHTML = `
-          <div class="game-prompt">${game.prompt}</div>
-          <div class="blank-sentence">${sentence}</div>
-          <div style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.5rem;">Word Bank:</div>
-          <div class="word-bank">${bankHtml}</div>
-        `;
-
-        // Blank click
-        $$('.blank', area).forEach(b => {
-          b.addEventListener('click', () => {
-            if (b.classList.contains('filled')) return;
-            sfx.click();
-            $$('.blank', area).forEach(x => x.style.boxShadow = 'none');
-            b.style.boxShadow = '0 0 15px rgba(201,168,76,0.5)';
-            selectedBlank = parseInt(b.dataset.blank);
-          });
-        });
-        // Word click
-        $$('.word-chip', area).forEach(w => {
-          w.addEventListener('click', () => {
-            if (w.classList.contains('used')) return;
-            if (selectedBlank === null) {
-              toast('Select a blank first.');
-              sfx.wrong();
-              return;
-            }
-            const wordIdx = parseInt(w.dataset.word);
-            const word = game.bank[wordIdx];
-            const correct = game.blanks[selectedBlank];
-            if (word === correct) {
-              filled[selectedBlank] = word;
-              bankUsed[wordIdx] = true;
-              correctCount++;
-              streak++;
-              const pts = 100 + streak * 20;
-              addScore(pts);
-              sfx.correct();
-              popFloat(window.innerWidth/2, window.innerHeight/2, '+' + pts, 'var(--green)');
-              selectedBlank = null;
-              renderFill();
-              if (correctCount === totalQuestions) {
-                setTimeout(finishLevel, 400);
-              }
-            } else {
-              mistakeCount++;
-              streak = 0;
-              sfx.wrong();
-              w.style.animation = 'shake 0.4s';
-              setTimeout(() => w.style.animation = '', 400);
-              addScore(-20);
-              toast('❌ Not quite. Try another word.');
-            }
-          });
-        });
-      }
-      renderFill();
-      setCleanup(() => {});
-    }
-
-    /* --- TRUE / FALSE --- */
-    if (game.type === 'tf') {
-      totalQuestions = game.statements.length;
-      let qIndex = 0;
-      let timerId = null;
-      let timeLeft = 6;
-
-      function renderTF() {
-        if (qIndex >= game.statements.length) {
-          finishLevel();
-          return;
-        }
-        const st = game.statements[qIndex];
-        area.innerHTML = `
-          <div class="game-prompt">${game.prompt}</div>
-          <div class="streak-badge">🔥 Streak: ${streak}×</div>
-          <div class="tf-card">${st.text}</div>
-          <div class="tf-actions">
-            <button class="tf-btn real" data-ans="true">✅ REAL</button>
-            <button class="tf-btn not-real" data-ans="false">❌ NOT REAL</button>
-          </div>
-          <div class="tf-timer"><div class="tf-timer-fill" id="tfTimerFill"></div></div>
-        `;
-        timeLeft = 6;
-        const fill = $('#tfTimerFill');
-        if (timerId) clearInterval(timerId);
-        timerId = setInterval(() => {
-          timeLeft -= 0.1;
-          if (fill) fill.style.width = clamp((timeLeft / 6) * 100, 0, 100) + '%';
-          if (timeLeft <= 2 && fill) fill.classList.add('warning');
-          if (timeLeft <= 0) {
-            clearInterval(timerId);
-            handleTFAnswer(null);
-          }
-        }, 100);
-
-        $$('.tf-btn', area).forEach(btn => {
-          btn.addEventListener('click', () => {
-            if (timerId) clearInterval(timerId);
-            handleTFAnswer(btn.dataset.ans === 'true');
-          });
-        });
-      }
-
-      function handleTFAnswer(answer) {
-        const st = game.statements[qIndex];
-        const correct = answer === st.real;
-        if (correct) {
-          correctCount++;
-          streak++;
-          const pts = 80 + streak * 15;
-          addScore(pts);
-          sfx.correct();
-          toast('✅ Correct!');
-        } else {
-          mistakeCount++;
-          streak = 0;
-          sfx.wrong();
-          toast('❌ Incorrect.');
-          addScore(-15);
-        }
-        qIndex++;
-        setTimeout(renderTF, 500);
-      }
-
-      // Keyboard support
-      const keyHandler = (e) => {
-        if (e.key === 'ArrowLeft') {
-          const btn = $('.tf-btn.real', area);
-          if (btn) btn.click();
-        } else if (e.key === 'ArrowRight') {
-          const btn = $('.tf-btn.not-real', area);
-          if (btn) btn.click();
-        }
-      };
-      document.addEventListener('keydown', keyHandler);
-      setCleanup(() => {
-        if (timerId) clearInterval(timerId);
-        document.removeEventListener('keydown', keyHandler);
-      });
-      renderTF();
-    }
-
-    /* --- MULTIPLE CHOICE --- */
-    if (game.type === 'mc') {
-      totalQuestions = game.questions.length;
-      let qIndex = 0;
-
-      function renderMC() {
-        if (qIndex >= game.questions.length) {
-          finishLevel();
-          return;
-        }
-        const q = game.questions[qIndex];
-        let optsHtml = '';
-        q.opts.forEach((o, i) => {
-          optsHtml += `<button class="mc-opt" data-idx="${i}">${o}</button>`;
-        });
-        area.innerHTML = `
-          <div class="game-prompt">${game.prompt}</div>
-          <div class="streak-badge">🔥 Streak: ${streak}×</div>
-          <div class="tf-card" style="min-height:auto; font-size:0.95rem;">${q.q}</div>
-          <div class="mc-options">${optsHtml}</div>
-        `;
-        $$('.mc-opt', area).forEach(btn => {
-          btn.addEventListener('click', () => {
-            const idx = parseInt(btn.dataset.idx);
-            const correct = idx === q.ans;
-            $$('.mc-opt', area).forEach(b => b.disabled = true);
-            if (correct) {
-              btn.classList.add('correct');
-              correctCount++;
-              streak++;
-              const pts = 120 + streak * 20;
-              addScore(pts);
-              sfx.correct();
-              toast('✅ Exactly right!');
-            } else {
-              btn.classList.add('wrong');
-              $$('.mc-opt', area)[q.ans].classList.add('correct');
-              mistakeCount++;
-              streak = 0;
-              sfx.wrong();
-              toast('❌ Not quite.');
-              addScore(-20);
-            }
-            qIndex++;
-            setTimeout(renderMC, 1000);
-          });
-        });
-      }
-      renderMC();
-      setCleanup(() => {});
-    }
-
-    /* --- SORTING --- */
-    if (game.type === 'sort') {
-      totalQuestions = 1;
-      let items = shuffle([...game.items]);
-      let dragSrc = null;
-
-      function renderSort() {
-        let html = `
-          <div class="game-prompt">${game.prompt}</div>
-          <div class="sort-list" id="sortList">
-        `;
-        items.forEach((item, i) => {
-          html += `
-            <div class="sort-item" draggable="true" data-idx="${i}">
-              <span class="drag-handle">⠿</span>
-              <span class="sort-text">${item}</span>
-              <span class="arrow-btns">
-                <button data-dir="up" data-idx="${i}">▲</button>
-                <button data-dir="down" data-idx="${i}">▼</button>
-              </span>
-            </div>
-          `;
-        });
-        html += `</div>
-          <button class="cta-btn" id="sortCheck" style="width:100%;">Check Order</button>
-        `;
-        area.innerHTML = html;
-
-        // Drag and drop
-        $$('.sort-item', area).forEach(el => {
-          el.addEventListener('dragstart', (e) => {
-            dragSrc = parseInt(el.dataset.idx);
-            el.classList.add('dragging');
-          });
-          el.addEventListener('dragend', () => el.classList.remove('dragging'));
-          el.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            el.classList.add('drag-over');
-          });
-          el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
-          el.addEventListener('drop', (e) => {
-            e.preventDefault();
-            el.classList.remove('drag-over');
-            const target = parseInt(el.dataset.idx);
-            if (dragSrc !== null && dragSrc !== target) {
-              const temp = items[dragSrc];
-              items.splice(dragSrc, 1);
-              items.splice(target, 0, temp);
-              renderSort();
-            }
-          });
-        });
-        // Arrow buttons
-        $$('.arrow-btns button', area).forEach(btn => {
-          btn.addEventListener('click', () => {
-            const idx = parseInt(btn.dataset.idx);
-            const dir = btn.dataset.dir;
-            if (dir === 'up' && idx > 0) {
-              [items[idx-1], items[idx]] = [items[idx], items[idx-1]];
-            } else if (dir === 'down' && idx < items.length - 1) {
-              [items[idx], items[idx+1]] = [items[idx+1], items[idx]];
-            }
-            sfx.click();
-            renderSort();
-          });
-        });
-        // Check
-        $('#sortCheck').addEventListener('click', () => {
-          const correctOrder = game.items;
-          let allCorrect = true;
-          items.forEach((item, i) => {
-            if (item !== correctOrder[i]) allCorrect = false;
-          });
-          if (allCorrect) {
-            correctCount = 1;
-            const pts = 200;
-            addScore(pts);
-            sfx.correct();
-            spawnConfetti(20);
-            toast('✅ Perfect order!');
-            setTimeout(finishLevel, 600);
-          } else {
-            mistakeCount++;
-            sfx.wrong();
-            toast('❌ Not quite. Rearrange and try again.');
-            addScore(-30);
-          }
-        });
-      }
-      renderSort();
-      setCleanup(() => {});
-    }
-
-    /* --- BONUS ROUND (timed) --- */
-    if (game.type === 'bonus') {
-      // Handled separately
-    }
-  }
-
-  /* ===== FINALE ===== */
-  function renderFinale() {
-    const el = $('#screen-finale');
-    const totalScore = state.totalScore;
-    const totalStars = state.totalStars;
-    let rank = 'Peasant';
-    if (totalScore > 1500) rank = 'Royal Urbanite';
-    else if (totalScore > 1000) rank = 'Honorary Prince';
-    else if (totalScore > 600) rank = 'Rising Star';
-    else if (totalScore > 300) rank = 'Apprentice';
-
-    let rows = '';
-    SCENES.forEach(s => {
-      const stars = state.stars[s.id] || 0;
-      const score = state.scores[s.id] || 0;
-      const starStr = '★'.repeat(stars) + '☆'.repeat(3 - stars);
-      rows += `
-        <tr>
-          <td>${s.num}. ${s.title}</td>
-          <td class="stars-cell">${starStr}</td>
-          <td>${score} pts</td>
-        </tr>
-      `;
-    });
-
-    el.innerHTML = `
-      <div class="finale-wrap">
-        <h1>🏆 The Royal Urbanite</h1>
-        <div class="finale-rank">Rank: <strong>${rank}</strong></div>
-        <div class="finale-total">${totalScore} pts · ${totalStars} ★</div>
-        <table class="finale-table">
-          <thead><tr><th>Chapter</th><th>Stars</th><th>Best</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-        <p style="font-size:0.9rem; color:var(--text-dim); line-height:1.6; margin:1rem 0;">
-          "The majestic promise of the New York skyline is ultimately fulfilled not in the penthouses of Manhattan, but in the gritty, hard-working, independent communities of Queens."
-        </p>
-        <button class="cta-btn" id="resetBtn" style="background:transparent; border:2px solid var(--red); color:var(--red); box-shadow:none; font-size:0.9rem;">⏪ Rewind the Tape</button>
-      </div>
-    `;
-    $('#resetBtn').addEventListener('click', () => {
-      if (confirm('Erase all progress and start over?')) {
-        state.scores = {};
-        state.stars = {};
-        state.totalScore = 0;
-        state.totalStars = 0;
-        saveProgress();
-        updateHUD();
-        showScreen('map');
-        renderMap();
-        toast('Progress reset. The journey begins anew.');
-      }
-    });
-    // Confetti for finale
-    if (totalStars >= 30) spawnConfetti(60);
-  }
-
-  /* ===== MODAL ===== */
-  function showModal(title, text, onConfirm) {
-    const overlay = $('#modalOverlay');
-    const box = $('#modalBox');
-    box.innerHTML = `
-      <h3>${title}</h3>
-      <p>${text}</p>
-      <div class="modal-actions">
-        <button class="btn-secondary" id="modalCancel">Cancel</button>
-        <button class="btn-primary" id="modalOk">Confirm</button>
-      </div>
-    `;
-    overlay.classList.add('open');
-    $('#modalCancel').addEventListener('click', () => overlay.classList.remove('open'));
-    $('#modalOk').addEventListener('click', () => {
-      overlay.classList.remove('open');
-      if (onConfirm) onConfirm();
-    });
-  }
-
-  /* ===== EVENT LISTENERS ===== */
-  // Preloader
-  $('#playBtn').addEventListener('click', () => {
-    initAudio();
-    sfx.click();
-    $('#preloader').classList.add('hidden');
-    setTimeout(() => {
-      showScreen('intro');
-      renderIntro();
-    }, 300);
+  if(!confRAF) confLoop();
+}
+function confLoop(){
+  confCtx.clearRect(0,0,innerWidth,innerHeight);
+  confParts=confParts.filter(p=>p.life>0);
+  if(!confParts.length){ confRAF=null; return; }
+  confParts.forEach(p=>{
+    p.life--; p.x+=p.vx; p.y+=p.vy; p.vy+=0.18; p.vx*=0.99; p.rot+=p.vr;
+    confCtx.save(); confCtx.translate(p.x,p.y); confCtx.rotate(p.rot);
+    confCtx.globalAlpha=clamp(p.life/40,0,1); confCtx.fillStyle=p.c;
+    confCtx.fillRect(-p.w/2,-p.h/2,p.w,p.h); confCtx.restore();
   });
+  confRAF=requestAnimationFrame(confLoop);
+}
 
-  // Sound toggle
-  $('#soundToggle').addEventListener('click', () => {
-    soundOn = !soundOn;
-    try { localStorage.setItem('royal_sound', soundOn ? 'on' : 'off'); } catch(e) {}
-    renderSound();
-    if (soundOn) { initAudio(); sfx.click(); }
-  });
-
-  // Map button
-  $('#mapBtn').addEventListener('click', () => {
-    sfx.click();
-    if (state.currentScreen !== 'map') {
-      if (state.cleanupFn) state.cleanupFn();
-      state.levelInProgress = false;
-      showScreen('map');
-      renderMap();
-    }
-  });
-
-  /* ===== INIT ===== */
-  function init() {
-    loadProgress();
-    renderSound();
-    updateHUD();
-    // Preload images
-    SCENES.forEach(s => {
-      const img = new Image();
-      img.src = BASE_URL + s.slide;
-    });
-    refreshIcons();
+/* ============================================================
+   AUDIO — Web Audio API, fully synthesized
+   ============================================================ */
+let AC=null, noiseBuf=null;
+function ensureAudio(){
+  if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; } }
+  if(AC && AC.state==='suspended'){ AC.resume().catch(()=>{}); }
+}
+function tone(freq, dur, type, vol, when, glide){
+  if(!AC || state.muted) return;
+  dur=dur||0.15; type=type||'sine'; vol=vol||0.15; when=when||0;
+  const t0=AC.currentTime+when;
+  const o=AC.createOscillator(), g=AC.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq, t0);
+  if(glide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq+glide), t0+dur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  o.connect(g); g.connect(AC.destination);
+  o.start(t0); o.stop(t0+dur+0.05);
+}
+function noiseBurst(dur, vol, when){
+  if(!AC || state.muted) return;
+  dur=dur||0.4; vol=vol||0.2; when=when||0;
+  if(!noiseBuf){
+    const len=AC.sampleRate; noiseBuf=AC.createBuffer(1, len, AC.sampleRate);
+    const d=noiseBuf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
   }
+  const t0=AC.currentTime+when;
+  const src=AC.createBufferSource(); src.buffer=noiseBuf; src.loop=true;
+  const g=AC.createGain(); g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1800; f.Q.value=0.7;
+  src.connect(f); f.connect(g); g.connect(AC.destination);
+  src.start(t0); src.stop(t0+dur+0.05);
+}
+const SFX = {
+  click(){ tone(600,.05,'square',.05); },
+  flip(){ tone(300,.07,'triangle',.1); tone(430,.07,'triangle',.08,.06); },
+  correct(){ tone(523,.09,'square',.08); tone(659,.09,'square',.08,.09); tone(784,.16,'square',.09,.18); },
+  wrong(){ tone(196,.18,'sawtooth',.1); tone(147,.28,'sawtooth',.1,.12); },
+  match(){ tone(660,.1,'triangle',.1); tone(990,.18,'triangle',.1,.1); },
+  tick(){ tone(900,.03,'square',.05); },
+  fanfare(){ [392,523,659,784].forEach((f,i)=>tone(f,.16,'square',.09,i*.12)); tone(1046,.4,'square',.1,.5); noiseBurst(.5,.12,.5); },
+  cheer(){ noiseBurst(.9,.14); tone(523,.12,'triangle',.08,.05); tone(659,.12,'triangle',.08,.2); tone(880,.2,'triangle',.08,.35); },
+  rewind(){ tone(700,.4,'sawtooth',.07,0,-450); tone(500,.4,'square',.05,.1,-320); },
+};
+function sfx(name){ if(SFX[name]) SFX[name](); }
 
-  init();
+/* ============================================================
+   STATE & STORAGE
+   ============================================================ */
+const state = { levels:{}, muted:false };
+let activeSceneId=null, levelScore=0, levelMistakes=0, streak=0, finishing=false;
+const cleanupFns=[];
+function setCleanup(fn){ cleanupFns.push(fn); }
+function runCleanup(){ cleanupFns.forEach(fn=>{ try{ fn(); }catch(e){} }); cleanupFns.length=0; }
 
-  // Handle visibility change to pause timers
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && state.cleanupFn) {
-      // Optionally pause; we'll just leave it
-    }
-  });
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){ const d=JSON.parse(raw); state.levels=d.levels||{}; state.muted=!!d.muted; }
+  }catch(e){ /* private mode — play without persistence */ }
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({levels:state.levels, muted:state.muted})); }
+  catch(e){ /* ignore */ }
+}
+function totalScore(){
+  return SCENES.reduce((t,s)=>{
+    const rec=state.levels[s.id], cur=(activeSceneId===s.id)?levelScore:0;
+    return t+(rec?Math.max(rec.best||0,cur):cur);
+  },0);
+}
+function scoreFor(base){ return Math.round(base*(1+0.25*clamp(streak-1,0,4))); }
+function starFromMistakes(m){ return m===0?3:(m<=2?2:1); }
 
-  // End of code
+function onCorrect(){ streak++; updateChips(); }
+function addMistake(n){ levelMistakes+=(n||1); streak=0; updateChips(); }
+function addScore(pts, x, y){
+  levelScore=Math.max(0, levelScore+pts);
+  popFloat((pts>0?'+':'')+pts, x, y, pts<=0);
+  const hs=$('#hd-score'); if(hs) hs.textContent=levelScore.toLocaleString('en-US');
   updateHUD();
-  renderMap();
-  renderSound();
-  refreshIcons();
+}
+function updateChips(){
+  const m=$('#hd-mult'); if(m) m.textContent=fmtMult(1+0.25*clamp(streak-1,0,4));
+  const mi=$('#hd-mist'); if(mi) mi.textContent=levelMistakes;
+}
 
-  /* ===== SECOND EPISODE IDEAS ===== */
-  // 1. Additional mechanics: "Dilemma" choices that branch the narrative (e.g., stay in Queens vs. return to Zamunda).
-  // 2. Localization: Spanish, French, and Portuguese translations for ESL learners.
-  // 3. Content extension: "The Real Queens" — historical context on 1980s immigration, Harlem Renaissance, and the American Dream.
-  // 4. Mini-game: "Barbershop Debate" — a rhythm-based argument game where you match rebuttals.
-  // 5. Mini-game: "McDowell's Menu" — a business simulation where you manage a fast-food franchise.
-  // 6. Character deep-dives: unlockable dossiers for Lisa, Semmi, Cleo, and Darryl with extra vocabulary.
-  // 7. "Soul Glo" rhythm game — a simple beat-matching mechanic for the iconic commercial.
-  // 8. Multiplayer trivia mode with leaderboards.
+/* ============================================================
+   RENDER — generated art, header, map
+   ============================================================ */
+let artUid=0;
+function cityArt(seed, top, bottom, W, H, birds){
+  W=W||240; H=H||140;
+  const R=prng(seed*7919+31), uid='sky'+(artUid++);
+  let s='<defs><linearGradient id="'+uid+'" x1="0" y1="0" x2="0" y2="1">'+
+        '<stop offset="0" stop-color="'+top+'"/><stop offset="1" stop-color="'+bottom+'"/></linearGradient></defs>'+
+        '<rect width="'+W+'" height="'+H+'" fill="url(#'+uid+')"/>';
+  const sx=W*0.68, sy=H*0.5;
+  s+='<circle cx="'+sx+'" cy="'+sy+'" r="'+(H*0.16).toFixed(1)+'" fill="rgba(255,220,160,.85)"/>'+
+     '<circle cx="'+sx+'" cy="'+sy+'" r="'+(H*0.3).toFixed(1)+'" fill="rgba(255,190,120,.18)"/>';
+  if(birds){
+    for(let i=0;i<6;i++){
+      const bx=W*0.08+R()*W*0.5, by=H*0.1+R()*H*0.35, k=0.6+R()*0.9;
+      s+='<path d="M'+bx.toFixed(1)+' '+by.toFixed(1)+' q'+(4*k).toFixed(1)+' '+(-5*k).toFixed(1)+' '+(8*k).toFixed(1)+' 0 q'+(4*k).toFixed(1)+' '+(-5*k).toFixed(1)+' '+(8*k).toFixed(1)+' 0" fill="none" stroke="rgba(40,20,10,.55)" stroke-width="1.4"/>';
+    }
+  }
+  let x=-4, back='';
+  while(x<W){
+    const bw=12+R()*26, bh=(0.25+R()*0.4)*H;
+    back+='<rect x="'+x.toFixed(1)+'" y="'+(H-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" fill="rgba(30,17,40,.5)"/>';
+    x+=bw+2+R()*8;
+  }
+  s+=back;
+  x=-6; let front='', wins='';
+  while(x<W){
+    const bw=14+R()*30, bh=(0.15+R()*0.42)*H;
+    front+='<rect x="'+x.toFixed(1)+'" y="'+(H-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" fill="rgba(14,7,22,.92)"/>';
+    for(let wy=H-bh+5; wy<H-6; wy+=9){
+      for(let wx=x+3; wx<x+bw-4; wx+=8){
+        if(R()<0.24) wins+='<rect x="'+wx.toFixed(1)+'" y="'+wy.toFixed(1)+'" width="2.6" height="3.6" fill="rgba(255,205,130,'+(0.3+R()*0.5).toFixed(2)+')"/>';
+      }
+    }
+    x+=bw+2+R()*9;
+  }
+  s+=front+wins;
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">'+s+'</svg>';
+}
+function starsRow(n){
+  return '<span class="lc-stars">'+[0,1,2].map(i=>'<i class="'+(i<n?'on':'')+'" data-icon="star"></i>').join('')+'</span>';
+}
+
+function buildDots(){
+  const nav=$('#hud-dots');
+  nav.innerHTML=SCENES.map(s=>'<button class="dot" aria-label="Reel '+s.num+': '+s.title+'"></button>').join('');
+  $$('.dot',nav).forEach(d=>d.addEventListener('click',()=>{ sfx('click'); goMap(); }));
+}
+function updateHUD(){
+  $('#hud-score').textContent=totalScore().toLocaleString('en-US');
+  $$('#hud-dots .dot').forEach((d,i)=>{
+    const s=SCENES[i], rec=state.levels[s.id];
+    const unlocked=i===0 || (state.levels[SCENES[i-1].id]||{}).done;
+    d.classList.toggle('done', !!(rec&&rec.done));
+    d.classList.toggle('now', activeSceneId===s.id);
+    d.title=s.num+'. '+s.title+(rec&&rec.done?' — '+rec.stars+'★':(unlocked?' — ready':' — locked'));
+  });
+}
+function renderSound(){
+  const b=$('#btn-sound');
+  b.innerHTML='<span data-icon="'+(state.muted?'volumeX':'volume2')+'"></span>';
+  b.setAttribute('aria-label', state.muted?'Unmute sound':'Mute sound');
+  b.setAttribute('aria-pressed', String(!state.muted));
+  refreshIcons(b);
+}
+function renderMap(){
+  const grid=$('#map-grid');
+  let html='';
+  SCENES.forEach((s,i)=>{
+    const rec=state.levels[s.id];
+    const unlocked=i===0 || (state.levels[SCENES[i-1].id]||{}).done;
+    const stars=rec?rec.stars:0, best=rec?rec.best:0;
+    html+='<button class="level-card'+(unlocked?'':' locked')+'" data-level="'+s.id+'"'+(unlocked?'':' disabled')+
+      ' aria-label="Reel '+s.num+': '+s.title+(unlocked?'':', locked')+'">'+
+      '<span class="lc-art" aria-hidden="true">'+cityArt(i+3, s.color, '#E8955B')+'</span>'+
+      (unlocked?'':'<span class="lc-lock" data-icon="lock" aria-hidden="true"></span>')+
+      '<span class="lc-num">REEL '+s.num+' · '+s.slide.toUpperCase()+'</span>'+
+      '<span class="lc-title">'+s.title+'</span>'+
+      '<span class="lc-char">with '+s.char+'</span>'+
+      '<span class="lc-meta">'+starsRow(stars)+'<span class="lc-best mono">'+(best?best.toLocaleString('en-US'):'—')+'</span></span>'+
+      '</button>';
+  });
+  const allDone=SCENES.every(s=>(state.levels[s.id]||{}).done);
+  if(allDone){
+    html+='<button class="level-card" id="btn-finale" aria-label="Grand finale">'+
+      '<span class="lc-art" aria-hidden="true">'+cityArt(42,'#6B4FA1','#E8955B')+'</span>'+
+      '<span class="lc-num">FINAL REEL</span><span class="lc-title">Grand Finale</span>'+
+      '<span class="lc-char">A Tale of Two Worlds</span>'+
+      '<span class="lc-meta">'+starsRow(3)+'<span class="lc-best mono">ENTER</span></span></button>';
+  }
+  grid.innerHTML=html;
+  refreshIcons(grid);
+}
+
+/* ============================================================
+   SCREENS, MODALS, FLOW
+   ============================================================ */
+function showScreen(id){
+  $$('.screen').forEach(s=>{
+    if(s.id===id){ s.classList.remove('active'); void s.offsetWidth; s.classList.add('active'); }
+    else s.classList.remove('active');
+  });
+  window.scrollTo(0,0);
+}
+let modalClosable=true, modalOnClose=null;
+function modalIsOpen(){ return $('#modal').classList.contains('open'); }
+function openModal(html, opts){
+  opts=opts||{};
+  modalClosable=opts.closable!==false;
+  modalOnClose=opts.onClose||null;
+  $('#modal-card').innerHTML=html;
+  $('#modal').classList.add('open');
+  refreshIcons($('#modal'));
+  const f=$('#modal-card button');
+  if(f) setTimeout(()=>f.focus(),60);
+}
+function closeModal(){
+  $('#modal').classList.remove('open');
+  $('#modal-card').innerHTML='';
+  const cb=modalOnClose; modalOnClose=null;
+  if(cb) cb();
+}
+function goMap(){
+  const wasPlaying=!!activeSceneId;
+  runCleanup(); activeSceneId=null; levelScore=0; levelMistakes=0; streak=0; finishing=false;
+  $('#game-area').replaceChildren();
+  updateHUD(); renderMap(); showScreen('screen-map');
+  if(wasPlaying) toast('Back to the map — that run was discarded','info');
+}
+function leaveLevel(){ goMap(); }
+
+function openBriefing(scene){
+  openModal(
+    '<span class="brief-tag mono">'+scene.tag.toUpperCase()+' · '+scene.slide.toUpperCase()+'</span>'+
+    '<h3 class="modal-title">Reel '+scene.num+' — '+scene.title+'</h3>'+
+    '<div class="brief-char"><span class="avatar" style="--ac:'+scene.color+'">'+initials(scene.char)+'</span>'+
+    '<div><strong>'+scene.char+'</strong><p class="flavor">'+scene.flavor+'</p></div></div>'+
+    '<p class="brief-obj"><span data-icon="bulb"></span><span><strong>Mission:</strong> '+scene.obj+'</span></p>'+
+    '<p class="brief-tip"><span data-icon="info"></span><span>'+scene.tip+'</span></p>'+
+    '<div class="modal-btns"><button class="btn ghost" data-close>Not yet</button>'+
+    '<button class="btn" id="btn-begin"><span data-icon="play"></span> Start Reel '+scene.num+'</button></div>');
+  $('#btn-begin').addEventListener('click', ()=>{ sfx('click'); modalOnClose=null; closeModal(); mountGame(scene); });
+}
+
+function mountGame(scene){
+  runCleanup();
+  activeSceneId=scene.id; levelScore=0; levelMistakes=0; streak=0; finishing=false;
+  $('#sc-ava').textContent=initials(scene.char);
+  $('#sc-ava').style.setProperty('--ac', scene.color);
+  $('#sc-tag').textContent=(scene.tag+' · '+scene.slide).toUpperCase();
+  $('#sc-title').textContent='Reel '+scene.num+' — '+scene.title;
+  $('#sc-char').textContent='With '+scene.char;
+  $('#hd-score').textContent='0';
+  updateChips(); updateHUD();
+  showScreen('screen-scene');
+  const area=$('#game-area'); area.replaceChildren();
+  const root=document.createElement('div'); root.className='game-root';
+  area.appendChild(root);
+  GAMES[scene.id](root);
+}
+
+function finishLevel(){
+  if(finishing || !activeSceneId) return;
+  finishing=true;
+  runCleanup();
+  const scene=SCENES.find(s=>s.id===activeSceneId);
+  const stars=starFromMistakes(levelMistakes);
+  const rec=state.levels[scene.id]||{best:0,stars:0,done:false};
+  const newBest=levelScore>rec.best;
+  const firstDone=!rec.done;
+  rec.best=Math.max(rec.best||0, levelScore);
+  rec.stars=Math.max(rec.stars||0, stars);
+  rec.done=true;
+  state.levels[scene.id]=rec;
+  saveState(); updateHUD();
+  activeSceneId=null;
+  if(stars===3){ sfx('fanfare'); spawnConfetti(innerWidth/2, innerHeight/2.4, 130); }
+  else sfx('cheer');
+  openResults(scene, stars, newBest, firstDone);
+}
+
+function openResults(scene, stars, newBest, firstDone){
+  const nextScene=SCENES[scene.num]||null;
+  const allDone=SCENES.every(s=>(state.levels[s.id]||{}).done);
+  if(firstDone && nextScene) toast('Reel '+nextScene.num+' unlocked: “'+nextScene.title+'”','ok');
+  if(allDone) toast('All reels complete — the Grand Finale awaits!','ok');
+  openModal(
+    '<span class="brief-tag mono">REEL '+scene.num+' COMPLETE</span>'+
+    '<h3 class="modal-title">'+scene.title+'</h3>'+
+    '<div class="res-stars" aria-label="'+stars+' of 3 stars">'+
+      [0,1,2].map(i=>'<span class="res-star'+(i<stars?' on':'')+'" style="animation-delay:'+(0.15+i*0.25)+'s" data-icon="star"></span>').join('')+
+    '</div>'+
+    '<div class="res-grid">'+
+      '<div><span class="mono big">'+levelScore.toLocaleString('en-US')+'</span><span>Reel score</span></div>'+
+      '<div><span class="mono big">'+(state.levels[scene.id].best).toLocaleString('en-US')+'</span><span>'+(newBest?'New best!':'Best')+'</span></div>'+
+      '<div><span class="mono big">'+levelMistakes+'</span><span>Mistakes</span></div>'+
+    '</div>'+
+    '<p class="res-react">“'+REACT[stars]+'” — '+scene.char+'</p>'+
+    '<div class="modal-btns">'+
+      '<button class="btn ghost" data-close><span data-icon="map"></span> Map</button>'+
+      '<button class="btn ghost" id="btn-replay"><span data-icon="refresh"></span> Replay</button>'+
+      (nextScene
+        ? '<button class="btn" id="btn-next">Reel '+nextScene.num+' <span data-icon="arrowRight"></span></button>'
+        : (allDone ? '<button class="btn" id="btn-final"><span data-icon="trophy"></span> Grand Finale</button>' : ''))+
+    '</div>',
+    { onClose:()=>goMap() });
+  $('#btn-replay').addEventListener('click', ()=>{ modalOnClose=null; closeModal(); openBriefing(scene); });
+  const bn=$('#btn-next'); if(bn) bn.addEventListener('click', ()=>{ modalOnClose=null; closeModal(); openBriefing(nextScene); });
+  const bf=$('#btn-final'); if(bf) bf.addEventListener('click', ()=>{ modalOnClose=null; closeModal(); showFinale(); });
+}
+
+function rankFor(t){
+  if(t>=8000) return ['KING OF QUEENS','The whole borough bows. Authenticity: unlocked.'];
+  if(t>=6500) return ['TRUE URBANITE','You walk these streets like you own them — respectfully.'];
+  if(t>=5000) return ['HONORARY CITIZEN','Queens has stamped your passport.'];
+  if(t>=3000) return ['STREET SCHOLAR','The barbers would debate you — and lose, mostly.'];
+  return ['FRESH OFF THE PLANE','Every prince starts by tying his own shoes. Replay for glory!'];
+}
+function renderFinale(){
+  const total=SCENES.reduce((t,s)=>t+((state.levels[s.id]||{}).best||0),0);
+  const stars=SCENES.reduce((t,s)=>t+((state.levels[s.id]||{}).stars||0),0);
+  const bestSingle=SCENES.reduce((t,s)=>Math.max(t,(state.levels[s.id]||{}).best||0),0);
+  const rank=rankFor(total);
+  $('#fin-rank').textContent=rank[0];
+  $('#fin-rank-sub').textContent=rank[1];
+  $('#fin-score').textContent=total.toLocaleString('en-US');
+  $('#fin-stars').textContent=stars+' / 18';
+  $('#fin-best').textContent=bestSingle.toLocaleString('en-US');
+  $('#fin-table').innerHTML=SCENES.map(s=>{
+    const rec=state.levels[s.id]||{};
+    return '<tr><td class="mono">REEL '+s.num+'</td><td>'+s.title+'</td>'+
+      '<td>'+starsRow(rec.stars||0)+'</td><td class="num mono">'+((rec.best||0).toLocaleString('en-US'))+'</td></tr>';
+  }).join('');
+  refreshIcons($('#fin-table'));
+}
+function showFinale(){
+  runCleanup(); activeSceneId=null; finishing=false;
+  renderFinale(); showScreen('screen-finale');
+  sfx('fanfare');
+  spawnConfetti(innerWidth/2, innerHeight*0.32, 170);
+}
+function openGlossary(){
+  openModal(
+    '<span class="brief-tag mono">WORD BANK</span>'+
+    '<h3 class="modal-title">Royal Glossary</h3>'+
+    '<ul class="gloss-list">'+VOCAB.map(v=>'<li><strong>'+v[0]+'</strong><span>'+v[1]+'</span></li>').join('')+'</ul>'+
+    '<div class="modal-btns"><button class="btn" data-close>Close</button></div>');
+}
+function confirmRewind(){
+  sfx('click');
+  openModal(
+    '<span class="brief-tag mono">SYSTEM</span>'+
+    '<h3 class="modal-title">Rewind the tape?</h3>'+
+    '<p>All progress, stars and best scores will be wiped clean. The story, of course, stays the same.</p>'+
+    '<div class="modal-btns"><button class="btn ghost" data-close>Keep my progress</button>'+
+    '<button class="btn danger" id="btn-wipe"><span data-icon="rewind"></span> Rewind everything</button></div>');
+  $('#btn-wipe').addEventListener('click', ()=>{
+    state.levels={};
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+    saveState();
+    modalOnClose=null; closeModal();
+    sfx('rewind');
+    updateHUD(); renderMap(); showScreen('screen-map');
+    toast('Tape rewound — a fresh start awaits','ok');
+  });
+}
+
+/* ============================================================
+   MINI-GAME 1 — Fill in the blanks (Reel 1)
+   ============================================================ */
+function gameFill(root){
+  const items=FILL_QUESTIONS.map((q,i)=>({before:q.before, after:q.after, answer:q.answer, done:false}));
+  const bank=shuffle(FILL_QUESTIONS.map(q=>q.answer).concat(FILL_DECOYS));
+  root.innerHTML=
+    '<p class="game-sub">Click a blank, then click the word that fits. Distractors lurk in the bank.</p>'+
+    '<div class="fill-list">'+items.map((q,i)=>
+      '<div class="fill-line"><span class="fill-num mono">'+(i+1)+'</span>'+
+      '<span class="fill-text">'+q.before+'<button class="gap" data-gap="'+i+'" aria-label="Blank '+(i+1)+': choose a word">______</button>'+q.after+'</span></div>'
+    ).join('')+'</div>'+
+    '<div class="word-bank" aria-label="Word bank">'+bank.map(w=>'<button class="bank-chip" data-word="'+w+'">'+w+'</button>').join('')+'</div>';
+  let armed=-1, endTimer=null;
+  root.addEventListener('click', e=>{
+    const gap=e.target.closest('.gap');
+    const chip=e.target.closest('.bank-chip');
+    if(gap){
+      const i=+gap.dataset.gap;
+      if(items[i].done) return;
+      armed=(armed===i)? -1 : i;
+      $$('.gap',root).forEach(g=>g.classList.toggle('armed', +g.dataset.gap===armed && !g.classList.contains('filled')));
+      sfx('click');
+      return;
+    }
+    if(chip){
+      if(chip.classList.contains('used')) return;
+      if(armed<0){ toast('Pick a blank first — click one of the ______','info',1800); return; }
+      const w=chip.dataset.word, line=items[armed];
+      const gapEl=$('.gap[data-gap="'+armed+'"]', root);
+      if(w===line.answer){
+        chip.classList.add('used'); chip.disabled=true;
+        gapEl.textContent=w; gapEl.classList.add('filled'); gapEl.classList.remove('armed'); gapEl.disabled=true;
+        line.done=true; armed=-1;
+        onCorrect();
+        addScore(scoreFor(100), cx(gapEl), cy(gapEl));
+        sfx('correct'); spawnConfetti(cx(gapEl), cy(gapEl), 14);
+        if(items.every(x=>x.done)) endTimer=setTimeout(finishLevel, 900);
+      }else{
+        addMistake();
+        addScore(-PENALTY, cx(chip), cy(chip));
+        sfx('wrong');
+        chip.classList.add('shake'); gapEl.classList.add('shake');
+        setTimeout(()=>{ chip.classList.remove('shake'); gapEl.classList.remove('shake'); }, 480);
+      }
+    }
+  });
+  setCleanup(()=>{ if(endTimer) clearTimeout(endTimer); });
+}
+
+/* ============================================================
+   MINI-GAME 2 — True / False reaction (Reel 2)
+   ============================================================ */
+function gameTrueFalse(root){
+  const qs=shuffle(TF_QUESTIONS), TIME=6000;
+  let i=0, timer=null, nextTimer=null, tStart=0, locked=false, lastTick=-1;
+  root.innerHTML=
+    '<p class="game-sub">Semmi keeps yelling both answers. You have 6 seconds per call — trust the streets.</p>'+
+    '<div class="tf-head"><span class="chip mono" id="tf-prog">1 / '+qs.length+'</span>'+
+    '<span class="chip streak-chip" title="Streak raises the multiplier"><span data-icon="flame"></span><span id="tf-streak">×1</span></span></div>'+
+    '<div class="tf-card" id="tf-card">'+
+      '<div class="tf-timer" aria-hidden="true"><div class="tf-timer-fill" id="tf-fill"></div></div>'+
+      '<p class="tf-statement" id="tf-text" aria-live="assertive"></p>'+
+      '<div class="tf-btns">'+
+        '<button class="btn big" id="tf-true"><span data-icon="arrowLeft"></span> TRUE</button>'+
+        '<button class="btn big alt" id="tf-false">FALSE <span data-icon="arrowRight"></span></button>'+
+      '</div>'+
+    '</div>'+
+    '<p class="kbd-hint">Keyboard: ← TRUE · → FALSE</p>';
+  refreshIcons(root);
+  const fill=$('#tf-fill',root), card=$('#tf-card',root), textEl=$('#tf-text',root), streakEl=$('#tf-streak',root);
+  function startQ(){
+    locked=false; lastTick=-1;
+    $('#tf-prog',root).textContent=(i+1)+' / '+qs.length;
+    textEl.textContent=qs[i].s;
+    card.classList.remove('ok','bad');
+    streakEl.textContent=fmtMult(1+0.25*clamp(streak-1,0,4));
+    tStart=performance.now();
+    if(timer) clearInterval(timer);
+    timer=setInterval(()=>{
+      const el=performance.now()-tStart;
+      fill.style.transform='scaleX('+clamp(1-el/TIME,0,1)+')';
+      const secLeft=Math.ceil((TIME-el)/1000);
+      if(secLeft<=2 && secLeft>=1 && secLeft!==lastTick){ lastTick=secLeft; sfx('tick'); }
+      if(el>=TIME){ clearInterval(timer); onAnswer(null); }
+    },50);
+  }
+  function onAnswer(v){
+    if(locked) return;
+    locked=true; clearInterval(timer);
+    const q=qs[i], rem=clamp(1-(performance.now()-tStart)/TIME,0,1);
+    const good=(v===q.a);
+    if(good){
+      onCorrect();
+      addScore(scoreFor(80+Math.round(40*rem)), cx(card), cy(card));
+      sfx('correct'); card.classList.add('ok');
+    }else{
+      addMistake();
+      addScore(-PENALTY, cx(card), cy(card));
+      sfx('wrong'); card.classList.add('bad');
+      textEl.textContent=q.s+(q.a?'  — the answer was TRUE.':'  — the answer was FALSE.');
+    }
+    i++;
+    nextTimer=setTimeout(()=>{ if(i<qs.length) startQ(); else finishLevel(); }, good?700:1600);
+  }
+  $('#tf-true',root).addEventListener('click', ()=>onAnswer(true));
+  $('#tf-false',root).addEventListener('click', ()=>onAnswer(false));
+  function key(e){
+    if(e.key==='ArrowLeft'){ e.preventDefault(); onAnswer(true); }
+    else if(e.key==='ArrowRight'){ e.preventDefault(); onAnswer(false); }
+  }
+  document.addEventListener('keydown', key);
+  setCleanup(()=>{ if(timer) clearInterval(timer); if(nextTimer) clearTimeout(nextTimer); document.removeEventListener('keydown', key); });
+  startQ();
+}
+
+/* ============================================================
+   MINI-GAME 3 — Multiple choice (Reel 3)
+   ============================================================ */
+function gameMultiple(root){
+  const qs=shuffle(MC_QUESTIONS);
+  let i=0, timer=null;
+  root.innerHTML='<p class="game-sub">One attempt per question. The barbers are watching.</p><div class="mc-stage" id="mc-stage"></div>';
+  const stage=$('#mc-stage',root);
+  function renderQ(){
+    const q=qs[i];
+    const opts=shuffle(q.opts.map((t,oi)=>({t:t, ok:oi===q.a})));
+    stage.innerHTML=
+      '<span class="chip mono">'+(i+1)+' / '+qs.length+'</span>'+
+      '<p class="mc-q">'+q.q+'</p>'+
+      '<div class="mc-opts">'+opts.map(o=>'<button class="btn opt" data-ok="'+(o.ok?1:0)+'">'+o.t+'</button>').join('')+'</div>'+
+      '<div class="mc-react" id="mc-react" aria-live="polite"></div>';
+    stage.classList.add('pop');
+    setTimeout(()=>stage.classList.remove('pop'),320);
+  }
+  stage.addEventListener('click', e=>{
+    const b=e.target.closest('.opt');
+    if(!b || stage.classList.contains('answered')) return;
+    stage.classList.add('answered');
+    const ok=b.dataset.ok==='1';
+    if(ok){
+      onCorrect();
+      addScore(scoreFor(150), cx(b), cy(b));
+      sfx('correct'); b.classList.add('right');
+    }else{
+      addMistake();
+      addScore(-PENALTY, cx(b), cy(b));
+      sfx('wrong'); b.classList.add('wrong');
+      const right=$$('.opt',stage).find(o=>o.dataset.ok==='1');
+      if(right) right.classList.add('right');
+    }
+    $('#mc-react',stage).textContent=SCENES[2].char+': “'+qs[i].react+'”';
+    timer=setTimeout(()=>{
+      i++;
+      if(i<qs.length){ stage.classList.remove('answered'); renderQ(); }
+      else finishLevel();
+    }, ok?1900:2600);
+  });
+  setCleanup(()=>{ if(timer) clearTimeout(timer); });
+  renderQ();
+}
+
+/* ============================================================
+   MINI-GAME 4 — Sorting / timeline (Reel 4)
+   ============================================================ */
+function gameSorting(root){
+  let round=0, timer=null;
+  root.innerHTML=
+    '<p class="game-sub">Drag the rows into the right order (or use the arrow buttons), then check. Correct rows stick green.</p>'+
+    '<div id="sort-stage"></div>';
+  const stage=$('#sort-stage',root);
+  function renderRound(){
+    const r=SORT_ROUNDS[round];
+    stage.innerHTML=
+      '<div class="tf-head"><span class="chip mono">Act '+(round+1)+' of '+SORT_ROUNDS.length+' — '+r.title+'</span></div>'+
+      '<ul class="sort-list" aria-label="Reorder the rows">'+
+        shuffle(r.rows.map((t,idx)=>({t:t, id:idx}))).map(row=>
+          '<li class="sort-row" draggable="true" tabindex="0" data-id="'+row.id+'">'+
+          '<span class="drag-grip" data-icon="grip" aria-hidden="true"></span>'+
+          '<span class="row-text">'+row.t+'</span>'+
+          '<span class="row-btns">'+
+            '<button class="icon-btn mini mv up" aria-label="Move row up"><span data-icon="arrowUp"></span></button>'+
+            '<button class="icon-btn mini mv down" aria-label="Move row down"><span data-icon="arrowDown"></span></button>'+
+          '</span></li>').join('')+
+      '</ul>'+
+      '<div class="sort-actions"><button class="btn" id="btn-check"><span data-icon="check"></span> Check Order</button></div>';
+    refreshIcons(stage);
+  }
+  let dragEl=null;
+  stage.addEventListener('dragstart', e=>{
+    const li=e.target.closest('.sort-row');
+    if(!li || li.classList.contains('locked')) return;
+    dragEl=li; li.classList.add('dragging');
+    e.dataTransfer.effectAllowed='move';
+    try{ e.dataTransfer.setData('text/plain', li.dataset.id); }catch(err){}
+  });
+  stage.addEventListener('dragend', ()=>{
+    if(dragEl){ dragEl.classList.remove('dragging'); dragEl=null; }
+  });
+  stage.addEventListener('dragover', e=>{
+    if(!dragEl) return;
+    e.preventDefault();
+    const list=$('#sort-list',stage); if(!list) return;
+    const rows=$$('.sort-row:not(.locked):not(.dragging)', list);
+    const after=rows.find(r=>{ const b=r.getBoundingClientRect(); return e.clientY < b.top + b.height/2; });
+    if(after) list.insertBefore(dragEl, after); else list.appendChild(dragEl);
+  });
+  function moveRow(li, dir){
+    if(!li || li.classList.contains('locked')) return;
+    const list=$('#sort-list',stage);
+    if(dir<0){ const p=li.previousElementSibling; if(p) list.insertBefore(li,p); }
+    else{ const n=li.nextElementSibling; if(n) list.insertBefore(n, li); }
+    sfx('click');
+  }
+  stage.addEventListener('click', e=>{
+    const mv=e.target.closest('.mv');
+    if(mv){ moveRow(mv.closest('.sort-row'), mv.classList.contains('up')?-1:1); return; }
+    if(e.target.closest('#btn-check')) check();
+  });
+  stage.addEventListener('keydown', e=>{
+    const li=e.target.closest('.sort-row'); if(!li) return;
+    if(e.key==='ArrowUp'){ e.preventDefault(); moveRow(li,-1); }
+    if(e.key==='ArrowDown'){ e.preventDefault(); moveRow(li,1); }
+  });
+  function check(){
+    const r=SORT_ROUNDS[round];
+    const list=$('#sort-list',stage);
+    const rows=$$('.sort-row', list);
+    let wrong=0, wrongEl=null;
+    rows.forEach((li,idx)=>{
+      if(li.classList.contains('locked')) return;
+      if(+li.dataset.id===idx){
+        li.classList.add('locked'); li.draggable=false; li.removeAttribute('tabindex');
+        addScore(80, cx(li), cy(li)); sfx('match');
+      }else{
+        wrong++; wrongEl=li; li.classList.add('shake');
+      }
+    });
+    const checkBtn=$('#btn-check',stage);
+    if(wrong){
+      addMistakes(wrong);
+      addScore(-PENALTY*wrong, cx(checkBtn), cy(checkBtn));
+      sfx('wrong');
+      timer=setTimeout(()=>$$('.sort-row',list).forEach(li=>li.classList.remove('shake')), 500);
+    }
+    if($$('.sort-row.locked', list).length===r.rows.length){
+      round++;
+      if(round<SORT_ROUNDS.length){
+        toast('Act '+(round)+' complete!','ok');
+        timer=setTimeout(renderRound, 750);
+      }else{
+        toast('Both reels in order!','ok');
+        timer=setTimeout(finishLevel, 900);
+      }
+    }
+  }
+  function addMistakes(n){ for(let k=0;k<n;k++) addMistake(); }
+  setCleanup(()=>{ if(timer) clearTimeout(timer); });
+  renderRound();
+}
+
+/* ============================================================
+   MINI-GAME 5 — Memory pairs (Reel 5)
+   ============================================================ */
+function gameMemory(root){
+  const pairs=MEMORY_PAIRS;
+  const deck=shuffle(pairs.flatMap((p,i)=>[
+    {pair:i, side:0, text:p[0], cls:'term'},
+    {pair:i, side:1, text:p[1], cls:'def'},
+  ]));
+  let open=[], lockBoard=false, matched=0, moves=0, timer=null;
+  root.innerHTML=
+    '<div class="mem-head">'+
+      '<span class="chip mono" id="mem-moves">Moves: 0</span>'+
+      '<span class="chip mono" id="mem-left">Pairs left: '+pairs.length+'</span>'+
+    '</div>'+
+    '<p class="game-sub">Match each name to its fate. Consecutive matches raise the multiplier.</p>'+
+    '<div class="mem-grid" id="mem-grid">'+deck.map((c,ci)=>
+      '<button class="mem-card" data-ci="'+ci+'" aria-label="Hidden card '+(ci+1)+'">'+
+        '<span class="mem-inner">'+
+          '<span class="mem-face front" aria-hidden="true"><span data-icon="crown"></span></span>'+
+          '<span class="mem-face back '+c.cls+'">'+c.text+'</span>'+
+        '</span></button>').join('')+'</div>';
+  refreshIcons(root);
+  const grid=$('#mem-grid',root);
+  grid.addEventListener('click', e=>{
+    const card=e.target.closest('.mem-card');
+    if(!card || lockBoard) return;
+    const ci=+card.dataset.ci;
+    if(card.classList.contains('matched') || card.classList.contains('flipped')) return;
+    card.classList.add('flipped');
+    card.setAttribute('aria-label', deck[ci].text);
+    sfx('flip');
+    open.push({ci:ci, card:card});
+    if(open.length===2){
+      moves++; $('#mem-moves',root).textContent='Moves: '+moves;
+      lockBoard=true;
+      const a=open[0], b=open[1];
+      if(deck[a.ci].pair===deck[b.ci].pair){
+        onCorrect();
+        addScore(scoreFor(150), cx(b.card), cy(b.card));
+        timer=setTimeout(()=>{
+          a.card.classList.add('matched'); b.card.classList.add('matched');
+          sfx('match'); spawnConfetti(cx(b.card), cy(b.card), 16);
+          matched++;
+          $('#mem-left',root).textContent='Pairs left: '+(pairs.length-matched);
+          open=[]; lockBoard=false;
+          if(matched===pairs.length){ toast('All pairs matched!','ok'); timer=setTimeout(finishLevel, 800); }
+        }, 300);
+      }else{
+        addMistake();
+        addScore(-PENALTY, cx(b.card), cy(b.card));
+        sfx('wrong');
+        timer=setTimeout(()=>{
+          a.card.classList.remove('flipped'); b.card.classList.remove('flipped');
+          a.card.setAttribute('aria-label','Hidden card'); b.card.setAttribute('aria-label','Hidden card');
+          open=[]; lockBoard=false;
+        }, 780);
+      }
+    }
+  });
+  setCleanup(()=>{ if(timer) clearTimeout(timer); });
+}
+
+/* ============================================================
+   MINI-GAME 6 — Timed bonus gauntlet (Reel 6)
+   ============================================================ */
+function gameBonus(root){
+  const TOTAL=75000;
+  let qPool=shuffle(BONUS_QUESTIONS), qi=0, answered=0;
+  let timer=null, nextTimer=null, tStart=0, locked=false, lastSec=99, ended=false;
+  root.innerHTML=
+    '<div class="bonus-head">'+
+      '<span class="chip streak-chip" id="bn-mult"><span data-icon="flame"></span>×1</span>'+
+      '<div class="bonus-timer mono" id="bn-time" role="timer">75</div>'+
+      '<span class="chip mono" id="bn-prog">0 answered</span>'+
+    '</div>'+
+    '<div class="tf-card bonus-card" id="bn-card">'+
+      '<p class="tf-statement" id="bn-q" aria-live="assertive"></p>'+
+      '<div class="mc-opts" id="bn-opts"></div>'+
+    '</div>'+
+    '<p class="kbd-hint">Keys 1 · 2 · 3 pick an answer. Streaks of 3+ double the bounty; 6+ triple it.</p>';
+  refreshIcons(root);
+  const timeEl=$('#bn-time',root), card=$('#bn-card',root), qEl=$('#bn-q',root), optsEl=$('#bn-opts',root);
+  function mult(){ return streak>=6?3:(streak>=3?2:1); }
+  function updateMult(){
+    const el=$('#bn-mult',root);
+    el.innerHTML='<span data-icon="flame"></span>×'+mult();
+    refreshIcons(el);
+  }
+  function startTimer(){
+    tStart=performance.now();
+    timer=setInterval(()=>{
+      const left=TOTAL-(performance.now()-tStart);
+      const s=Math.max(0, Math.ceil(left/1000));
+      timeEl.textContent=s;
+      if(left<=10000 && !ended){
+        timeEl.classList.add('danger'); card.classList.add('alarm');
+        if(s!==lastSec){ lastSec=s; sfx('tick'); }
+      }
+      if(left<=0) end();
+    },100);
+  }
+  function nextQ(){
+    locked=false;
+    if(qi>=qPool.length){ qPool=shuffle(BONUS_QUESTIONS); qi=0; }
+    const q=qPool[qi];
+    qEl.textContent=q.q;
+    const opts=shuffle(q.opts.map((t,oi)=>({t:t, ok:oi===q.a})));
+    optsEl.innerHTML=opts.map((o,i)=>'<button class="btn opt sm" data-ok="'+(o.ok?1:0)+'" data-k="'+(i+1)+'"><b class="mono">'+(i+1)+'</b> '+o.t+'</button>').join('');
+  }
+  function answer(b){
+    if(locked || ended) return;
+    locked=true;
+    const ok=b.dataset.ok==='1';
+    if(ok){
+      onCorrect();
+      addScore(scoreFor(100)*mult(), cx(b), cy(b));
+      sfx('correct'); b.classList.add('right');
+    }else{
+      addMistake();
+      addScore(-PENALTY, cx(b), cy(b));
+      sfx('wrong'); b.classList.add('wrong');
+      const right=$$('.opt',optsEl).find(o=>o.dataset.ok==='1');
+      if(right) right.classList.add('right');
+    }
+    answered++;
+    $('#bn-prog',root).textContent=answered+' answered';
+    updateMult();
+    nextTimer=setTimeout(()=>{ qi++; nextQ(); }, ok?520:950);
+  }
+  function end(){
+    if(ended) return;
+    ended=true;
+    clearInterval(timer); clearTimeout(nextTimer);
+    document.removeEventListener('keydown', key);
+    card.classList.remove('alarm'); timeEl.textContent='0';
+    sfx('cheer');
+    finishLevel();
+  }
+  optsEl.addEventListener('click', e=>{ const b=e.target.closest('.opt'); if(b) answer(b); });
+  function key(e){
+    const k=+e.key;
+    if(k>=1 && k<=3){ const b=$('#bn-opts .opt[data-k="'+k+'"]', root); if(b && !locked) answer(b); }
+  }
+  document.addEventListener('keydown', key);
+  setCleanup(()=>{ if(timer) clearInterval(timer); if(nextTimer) clearTimeout(nextTimer); document.removeEventListener('keydown', key); });
+  nextQ(); startTimer();
+}
+
+const GAMES={ 'golden-cage':gameFill, 'culture-shock':gameTrueFalse, 'voices':gameMultiple,
+              'hustle':gameSorting, 'wealth-worth':gameMemory, 'throne':gameBonus };
+
+/* ============================================================
+   HANDLERS — shell wiring
+   ============================================================ */
+function trapTab(e){
+  const f=$$('#modal-card button, #modal-card [tabindex="0"]').filter(el=>!el.disabled);
+  if(!f.length) return;
+  const first=f[0], last=f[f.length-1];
+  if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+}
+function onGlobalKey(e){
+  if(modalIsOpen()){
+    if(e.key==='Escape' && modalClosable){ sfx('click'); closeModal(); }
+    else if(e.key==='Tab') trapTab(e);
+    return;
+  }
+  if(e.key==='Escape' && activeSceneId) leaveLevel();
+}
+function onMapClick(e){
+  const card=e.target.closest('.level-card');
+  if(!card || card.disabled) return;
+  sfx('click');
+  if(card.id==='btn-finale'){ showFinale(); return; }
+  const scene=SCENES.find(s=>s.id===card.dataset.level);
+  if(scene) openBriefing(scene);
+}
+function onPlay(){
+  ensureAudio();
+  sfx('fanfare');
+  const pre=$('#preloader');
+  pre.classList.add('exit');
+  setTimeout(()=>{ pre.remove(); showScreen('screen-intro'); }, 680);
+}
+function initEmbers(){
+  if(REDUCED) return;
+  const c=$('#embers'), ctx=c.getContext('2d');
+  const rs=()=>{ c.width=innerWidth; c.height=innerHeight; };
+  rs(); addEventListener('resize', rs);
+  const ps=[];
+  for(let i=0;i<34;i++) ps.push({x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+    r:0.8+Math.random()*2, vy:0.15+Math.random()*0.4, ph:Math.random()*6.3, tw:0.5+Math.random()*1.5});
+  (function loop(){
+    ctx.clearRect(0,0,c.width,c.height);
+    ps.forEach(p=>{
+      p.y-=p.vy; p.x+=Math.sin((p.y+p.ph*80)/40)*0.15;
+      if(p.y<-10){ p.y=c.height+10; p.x=Math.random()*c.width; }
+      const a=0.22+0.18*Math.sin(Date.now()/700*p.tw+p.ph);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.3);
+      ctx.fillStyle='rgba(255,196,120,'+a.toFixed(2)+')'; ctx.fill();
+    });
+    requestAnimationFrame(loop);
+  })();
+}
+function bindShell(){
+  document.addEventListener('pointerdown', ensureAudio, {once:true});
+  $('#btn-play').addEventListener('click', onPlay);
+  $('#btn-sound').addEventListener('click', ()=>{
+    state.muted=!state.muted; saveState(); renderSound();
+    if(!state.muted){ ensureAudio(); sfx('click'); }
+    toast(state.muted?'Sound off':'Sound on','info',1400);
+  });
+  $('#btn-map').addEventListener('click', ()=>{ sfx('click'); goMap(); });
+  $('#btn-words').addEventListener('click', ()=>{ sfx('click'); openGlossary(); });
+  $('#btn-glossary').addEventListener('click', ()=>{ sfx('click'); openGlossary(); });
+  $('#btn-enter').addEventListener('click', ()=>{ sfx('click'); renderMap(); showScreen('screen-map'); });
+  $('#map-grid').addEventListener('click', onMapClick);
+  $('#fin-map').addEventListener('click', ()=>{ sfx('click'); goMap(); });
+  $('#fin-rewind').addEventListener('click', confirmRewind);
+  $('#modal').addEventListener('click', e=>{ if(e.target.id==='modal' && modalClosable){ sfx('click'); closeModal(); } });
+  document.addEventListener('keydown', onGlobalKey);
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+function init(){
+  loadState();
+  bindShell();
+  buildDots();
+  initConfetti();
+  initEmbers();
+  $('#bg-skyline').innerHTML=cityArt(99,'#1d1427','#7c4527',900,260,true);
+  $('#banner-art').innerHTML=cityArt(7,'#41265C','#E8955B',880,240,true);
+  refreshIcons($('#topbar'));
+  refreshIcons($('#screen-intro'));
+  setTimeout(()=>{
+    const b=$('#btn-play');
+    if(b){ b.disabled=false; b.classList.add('ready'); }
+  }, 1000);
+}
+
+init();
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
 
 })();
 </script>
