@@ -953,13 +953,13 @@ Generate the complete HTML document with all styles embedded.
   },
 
   // ----------------------------------------------------------
-  radioshow: {
-    name: '🎧 Radio Show',
+  audioshow: {
+    name: '🎙 Audio show',
     variants: [
       {
         id: 'mode',
-        label: '🎙 Radio Show type',
-        hint: 'Choose the source format: JSON with timestamps or a screenshot + TXT transcript.',
+        label: '🎙 Audio show type',
+        hint: 'Choose the source format: JSON with timestamps, or a screenshot + m4a audio file.',
         default: 'json',
         options: [
           {
@@ -1037,190 +1037,60 @@ Logic (JavaScript):
           },
           {
             id: 'screenshot',
-            label: '🎙 Radio Show from Screenshot (source: screen + txt with timestamps)',
-            shortLabel: 'Screenshot + TXT',
-            template: `Role: You are a senior frontend developer. Create a complete, self-contained web application for an audio radio show with synchronized transcripts, ready for deployment on GitHub Pages.
+            label: '🎙 Audio show (sources: screen + m4a)',
+            shortLabel: 'Screen + m4a',
+            template: `Task: Based on the attached audio file and interface screenshot, generate two complete files: audio.json and audio.html.
 
-## OUTPUT FILES
+## Input Data
 
-You must generate **TWO files** with these EXACT names:
-1. **audio.json** — the parsed transcript data in JSON format (VALID JSON ONLY, no markers, no BOM)
-2. **audio.html** — the complete HTML document with all CSS and JS inside
+- **Audio file (attached)** — transcribe the audio and accurately place timestamps for each phrase.
+- **Screenshot (attached)** — extract the user/organization repository and folder path from it.
 
-## CRITICAL RULES (MUST FOLLOW)
+## Resource URLs (CRITICAL)
 
-### For audio.json:
-- The file MUST start with \`{\` and end with \`}\`
-- NO markdown code blocks, NO "\`\`\`json", NO "=== audio.json ===" markers
-- NO BOM (Byte Order Mark) at the beginning of the file
-- The file must be 100% valid JSON (use a JSON validator)
-- All strings must use double quotes \`"\`
-- No trailing commas
+- Audio file: https://item1000-collab.github.io/ai/[PATH]/audio.m4a
+  (check the file extension on the screenshot; use audio.mp3 or audio.m4a accordingly)
+- Cover image: https://item1000-collab.github.io/ai/[PATH]/audio.jpg
+- JSON data: https://item1000-collab.github.io/ai/[PATH]/audio.json
 
-### For audio.html:
-- The file MUST start with \`<!DOCTYPE html>\`
-- All resource URLs must use the EXACT path from the screenshot
-- The audio file name is \`audio.mp3\` (NOT \`ai_radio.mp3\`)
-- The cover image is \`audio.jpg\`
-- PDF links are OPTIONAL — only include if PDF files are visible in the screenshot
+If no path is visible in the screenshot, use base URLs without [PATH].
 
-## INPUT DATA
+## 1. Requirements for audio.json
 
-You will receive:
-1. A **screenshot** showing the file list in a directory (similar to the "Index of Event" structure).
-2. A **text file** containing the transcript with timestamps (format: \`[MM:SS] Speaker: Text\` or similar timecoded format).
+Formulate a valid JSON with the following structure:
 
-## EXTRACT FROM SCREENSHOT
+- **show_title**: Title of the show/recording.
+- **show_duration**: Total duration of the audio in MM:SS format.
+- **timecoded_transcript**: An array of objects where each phrase contains:
+    - **timecode**: Start time of the phrase in MM:SS format (must strictly match the timing of the attached audio).
+    - **speaker**: Name or role of the speaker (e.g., "Host 1", "Host 2").
+    - **text**: Exact transcribed text of the phrase.
 
-- Extract the **PATH** from the screenshot (the part after \`/ai/\` in the URL, e.g., \`gdc/20260906-peter-miles-pizza/\`)
-- Extract all **PDF files** visible in the screenshot (their full names with .pdf extension) — if none, skip PDF section
-- Determine the **show title** and **theme** from the screenshot (folder name, file names, or any visible text)
+## 2. Requirements for audio.html
 
-## WHAT TO GENERATE
+### Links and Media
 
-### 1. audio.json (from the transcript text file)
+- Identify the exact extension of the audio file from the screenshot (audio.m4a or audio.mp3).
+- Use the constructed base URL for absolute paths to media files (audio.m4a/audio.mp3, audio.jpg, audio.json).
+- Specify the correct type attribute in the \`<source>\` tag (for .m4a use \`type="audio/mp4"\`, for .mp3 use \`type="audio/mpeg"\`).
 
-Parse the transcript text file and convert it to JSON with the following structure:
-\`\`\`json
-{
-  "show_title": "Extracted from screenshot or transcript",
-  "show_duration": "MM:SS",
-  "timecoded_transcript": [
-    { "timecode": "M:SS", "speaker": "Speaker Name", "text": "Dialogue line" }
-  ]
-}
-\`\`\`
+### Synchronization Logic (JavaScript)
 
-**Parsing rules:**
-- Extract timecodes in format \`[MM:SS]\` or \`MM:SS\` from the transcript.
-- Extract speaker names (e.g., "Speaker 1:", "Peter:", "Miles:", etc.).
-- The text after the speaker name is the dialogue line.
-- If the transcript has no speaker names, use "Speaker" as default.
-- Calculate the duration from the last timecode.
+- Calculate the end time of each line (endTime) as the start time of the NEXT line (\`arr[index + 1].startTime\`). For the last line, set it to \`Infinity\`. This prevents desynchronization and gaps during pauses.
+- During playback (\`timeupdate\`), highlight the \`.active\` class strictly on the current replica.
+- Configure smooth scrolling with centering: \`el.scrollIntoView({ behavior: 'smooth', block: 'center' })\`.
 
-**JSON VALIDATION:**
-- After generating, verify the JSON is valid (use a JSON linter mentally)
-- The first character MUST be \`{\`
-- The last character MUST be \`}\`
-- No invisible characters before the first \`{\`
+### Interactivity
 
-### 2. audio.html
+- Clicking any text line must seek the audio to the corresponding \`startTime\` and start playback.
 
-A complete, self-contained HTML document with the following features:
+### Design
 
-**Page Structure:**
-- Header with show title and duration (from audio.json)
-- Cover image: Use \`audio.jpg\` (small, width: 120px, border-radius: 16px)
-- Standard HTML5 audio player with controls
-- Transcript list with synchronized highlighting
-- **NO PDF section** — PDF links are OPTIONAL and only included if PDF files are visible in the screenshot
+- Modern dark mode interface with a sticky player block fixed on top of the text (\`position: sticky\`).
 
-**Resource URLs (CRITICAL):**
-- Audio file: \`https://item1000-collab.github.io/ai/[PATH]/audio.mp3\`
-- Cover image: \`https://item1000-collab.github.io/ai/[PATH]/audio.jpg\`
-- JSON data: \`https://item1000-collab.github.io/ai/[PATH]/audio.json\`
-- If no path is visible in the screenshot, use base URLs without path
+## Output
 
-**Design (Dark Theme):**
-- Background: #121212
-- Active line: bright blue (#007bff) with white text
-- Each line shows: speaker name (bold, colored) + text
-- Pointer cursor on hover, hover highlighting
-- Dividers between lines
-
-**JavaScript Logic:**
-- Fetch \`audio.json\` on load
-- Handle BOM removal: check \`text.charCodeAt(0) === 0xFEFF\` and remove if present
-- Handle JSON parsing errors with try/catch
-- Convert timecodes "M:SS" to seconds
-- Calculate end time for each line (next line's start, or start + 20s for last)
-- On \`timeupdate\`: find current line, highlight it, scroll into view
-- On click: seek to line's start time and play
-- Display error if JSON not found or invalid
-
-**STRICT REQUIREMENTS:**
-
-1. **File names (FIXED):**
-   - Audio file: MUST be \`audio.mp3\` (NOT \`ai_radio.mp3\`)
-   - Cover image: MUST be \`audio.jpg\`
-   - JSON data: MUST be \`audio.json\`
-   - HTML file: MUST be \`audio.html\`
-   - All links must use these exact names.
-
-2. **Path for resources:**
-   - Build resource URLs using the path extracted from the screenshot:
-     \`https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/audio.mp3\`
-     \`https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/audio.jpg\`
-   - If no path is visible in the screenshot, use:
-     \`https://item1000-collab.github.io/ai/audio.mp3\`
-     \`https://item1000-collab.github.io/ai/audio.jpg\`
-
-3. **PDF files (OPTIONAL):**
-   - Only include if PDF files are actually visible in the screenshot
-   - If no PDF files, SKIP the PDF section entirely (do not create an empty section)
-   - If PDFs exist, create download links using: \`https://item1000-collab.github.io/ai/[PATH]/[PDF_NAME]\`
-   - Display PDF links as a list below the transcript
-   - Each link should have \`target="_blank"\` and \`rel="noopener noreferrer"\`
-
-4. **Code structure:**
-   - ALL CSS inside \`<style>\` in \`<head>\`
-   - ALL JavaScript inside \`<script>\` at the end of \`<body>\`
-   - NO external files (except Google Fonts if needed)
-   - NO external libraries (pure HTML, CSS, Vanilla JS)
-
-5. **Transcript parsing:**
-   - Support format: \`[MM:SS] Speaker: Text\`
-   - Support format: \`MM:SS Speaker: Text\`
-   - Support format: \`MM:SS - Speaker: Text\`
-   - If timecode is in format \`H:MM:SS\`, convert correctly.
-
-## OUTPUT FORMAT
-
-**CRITICAL: Your response MUST contain BOTH files. Format your response EXACTLY as:**
-
-\`\`\`
-=== audio.json ===
-{"show_title":"...", ...}
-
-=== audio.html ===
-<!DOCTYPE html>...
-\`\`\`
-
-**IMPORTANT:**
-- The \`=== audio.json ===\` marker is ONLY for the response formatting, NOT part of the actual file
-- The actual \`audio.json\` file content must start with \`{\` and end with \`}\`
-- Do NOT wrap the JSON in markdown code blocks
-- Do NOT add any extra commentary before or after the files
-
-## EXAMPLE
-
-If the screenshot shows:
-- Path: \`gdc/20260906-peter-miles-pizza/\`
-- No PDF files visible
-- Folder name: \`20260906-peter-miles-pizza\`
-
-And transcript contains:
-\`\`\`
-[00:01] Speaker 1: Hey, what's good?
-[00:04] Speaker 2: Hello. Good morning.
-\`\`\`
-
-Then generate:
-- audio.json with \`show_title: "Peter Miles Pizza"\`
-- audio.html with audio src: \`https://item1000-collab.github.io/ai/gdc/20260906-peter-miles-pizza/audio.mp3\`
-- NO PDF section (since no PDFs in screenshot)
-
-## IMPORTANT NOTES
-
-- The audio file is \`audio.mp3\` (NOT \`ai_radio.mp3\`)
-- If the screenshot shows a path, use it EXACTLY as shown (including subdirectories like \`gdc/\`)
-- If the transcript file contains a title, use it. Otherwise, derive from the folder name.
-- All file names are CASE SENSITIVE — copy exactly from the screenshot.
-- The transcript text file may contain timestamps in different formats — be flexible.
-- Do NOT include any extra commentary in the output — only the JSON and HTML.
-- **Remember: audio.json must be PURE JSON — no markers, no BOM, no code blocks**
-
-Generate both files now based on the attached screenshot and transcript text file.`
+Output the full code for both files completely, without abbreviations.`
           }
         ]
       }
