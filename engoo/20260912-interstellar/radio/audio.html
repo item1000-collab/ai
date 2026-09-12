@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radio Show with Synchronized Transcript</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .cover-img {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 16px;
+      background-color: #2a2a2a;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+    .show-info h1 {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      color: #ffffff;
+    }
+    .show-info p {
+      color: #a0a0a0;
+      font-size: 0.95rem;
+    }
+    .player-container {
+      margin-bottom: 25px;
+      position: sticky;
+      top: 10px;
+      z-index: 100;
+      background: #1e1e1e;
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+    audio {
+      width: 100%;
+      outline: none;
+    }
+    .transcript-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: #181818;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #282828;
+    }
+    .transcript-line {
+      display: flex;
+      padding: 12px 16px;
+      gap: 12px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      border-bottom: 1px solid #222222;
+    }
+    .transcript-line:last-child {
+      border-bottom: none;
+    }
+    .transcript-line:hover {
+      background-color: #262626;
+    }
+    .transcript-line.active {
+      background-color: #007bff;
+      color: #ffffff;
+    }
+    .timecode {
+      font-size: 0.85rem;
+      color: #888888;
+      min-width: 45px;
+      font-family: monospace;
+      padding-top: 2px;
+    }
+    .transcript-line.active .timecode {
+      color: #e0e0e0;
+    }
+    .content {
+      flex: 1;
+    }
+    .speaker {
+      font-weight: bold;
+      color: #4da6ff;
+      margin-right: 6px;
+    }
+    .transcript-line.active .speaker {
+      color: #ffffff;
+    }
+    .text {
+      display: inline;
+    }
+    .error-msg {
+      color: #ff5555;
+      padding: 20px;
+      text-align: center;
+      background: #2a1515;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img id="coverImg" class="cover-img" src="https://item1000-collab.github.io/ai/engoo/20260912-interstellar/radio/audio.jpg" alt="Cover Art">
+    <div class="show-info">
+      <h1 id="showTitle">Loading radio show...</h1>
+      <p id="showDuration"></p>
+    </div>
+  </header>
+
+  <div class="player-container">
+    <audio id="audioPlayer" controls>
+      <source src="https://item1000-collab.github.io/ai/engoo/20260912-interstellar/radio/audio.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+  </div>
+
+  <div id="transcript" class="transcript-container"></div>
+
+  <script>
+    const baseUrl = 'https://item1000-collab.github.io/ai/engoo/20260912-interstellar/radio/';
+    const jsonUrl = baseUrl + 'audio.json';
+    
+    let transcriptData = [];
+    let lineElements = [];
+
+    function parseTimecode(tc) {
+      const parts = tc.split(':').map(Number);
+      if (parts.length === 3) {
+        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      } else if (parts.length === 2) {
+        return parts[0] * 60 + parts[1];
+      }
+      return 0;
+    }
+
+    async function loadShowData() {
+      try {
+        const response = await fetch(jsonUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        let text = await response.text();
+        
+        if (text.charCodeAt(0) === 0xFEFF) {
+          text = text.slice(1);
+        }
+        
+        const data = JSON.parse(text);
+        
+        document.getElementById('showTitle').textContent = data.show_title || 'Radio Show';
+        if (data.show_duration) {
+          document.getElementById('showDuration').textContent = `Duration: ${data.show_duration}`;
+        }
+
+        if (data.timecoded_transcript && Array.isArray(data.timecoded_transcript)) {
+          transcriptData = data.timecoded_transcript.map((item, index, arr) => {
+            const startTime = parseTimecode(item.timecode);
+            let endTime;
+            if (index < arr.length - 1) {
+              endTime = parseTimecode(arr[index + 1].timecode);
+            } else {
+              endTime = startTime + 20;
+            }
+            return { ...item, startTime, endTime };
+          });
+          
+          renderTranscript();
+        }
+      } catch (err) {
+        console.error('Error loading audio.json:', err);
+        document.getElementById('transcript').innerHTML = `<div class="error-msg">Failed to load transcript data.</div>`;
+      }
+    }
+
+    function renderTranscript() {
+      const container = document.getElementById('transcript');
+      container.innerHTML = '';
+      lineElements = [];
+
+      transcriptData.forEach((item, index) => {
+        const lineDiv = document.createElement('div');
+        lineDiv.className = 'transcript-line';
+        lineDiv.dataset.index = index;
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'timecode';
+        timeSpan.textContent = item.timecode;
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'content';
+
+        const speakerSpan = document.createElement('span');
+        speakerSpan.className = 'speaker';
+        speakerSpan.textContent = item.speaker ? `${item.speaker}:` : '';
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'text';
+        textSpan.textContent = item.text;
+
+        contentDiv.appendChild(speakerSpan);
+        contentDiv.appendChild(textSpan);
+
+        lineDiv.appendChild(timeSpan);
+        lineDiv.appendChild(contentDiv);
+
+        lineDiv.addEventListener('click', () => {
+          const player = document.getElementById('audioPlayer');
+          player.currentTime = item.startTime;
+          player.play();
+        });
+
+        container.appendChild(lineDiv);
+        lineElements.push(lineDiv);
+      });
+    }
+
+    const audioPlayer = document.getElementById('audioPlayer');
+    audioPlayer.addEventListener('timeupdate', () => {
+      const currentTime = audioPlayer.currentTime;
+      
+      let activeIndex = transcriptData.findIndex(item => currentTime >= item.startTime && currentTime < item.endTime);
+
+      lineElements.forEach((el, i) => {
+        if (i === activeIndex) {
+          if (!el.classList.contains('active')) {
+            el.classList.add('active');
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        } else {
+          el.classList.remove('active');
+        }
+      });
+    });
+
+    loadShowData();
+  </script>
+</body>
+</html>
