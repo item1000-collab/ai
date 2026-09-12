@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interstellar · AI Roleplay in an English Class</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05060f;
+    --panel:rgba(15,18,38,.72);
+    --gold:#e8c56a;
+    --gold-soft:rgba(232,197,106,.14);
+    --ink:#e9ecf5;
+    --muted:#9aa3c0;
+    --ai:#8fb8ff;
+    --line:rgba(143,184,255,.16);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:300;
+    line-height:1.7;
+    overflow-x:hidden;
+  }
+  canvas#stars{position:fixed;inset:0;z-index:0;display:block}
+  .wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 24px 120px}
+
+  /* ---------- HERO ---------- */
+  header{min-height:92vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding-top:60px}
+  .eyebrow{letter-spacing:.45em;text-transform:uppercase;font-size:.72rem;color:var(--gold);margin-bottom:26px}
+  h1{
+    font-family:'Cormorant Garamond',serif;font-weight:600;
+    font-size:clamp(2.6rem,7vw,5.2rem);line-height:1.08;
+    background:linear-gradient(180deg,#fff 20%,#b9c6ef 90%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero-sub{margin-top:22px;max-width:620px;color:var(--muted);font-size:1.02rem}
+  .hero-meta{margin-top:38px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+  .chip{border:1px solid var(--line);border-radius:999px;padding:8px 18px;font-size:.78rem;letter-spacing:.12em;color:var(--ai);background:rgba(143,184,255,.05)}
+  .chip.gold{color:var(--gold);border-color:rgba(232,197,106,.3);background:var(--gold-soft)}
+  .scroll-hint{margin-top:70px;color:var(--muted);font-size:.75rem;letter-spacing:.3em;text-transform:uppercase;animation:float 2.6s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+
+  /* ---------- SECTIONS ---------- */
+  section{margin-top:110px}
+  .sec-label{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+  .sec-label .num{font-family:'Cormorant Garamond',serif;font-size:2.4rem;color:var(--gold);font-style:italic}
+  .sec-label .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--gold),transparent)}
+  h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(1.7rem,3.6vw,2.6rem);margin-bottom:18px}
+  .lead{color:var(--muted);max-width:720px;margin-bottom:34px}
+
+  /* ---------- CONTEXT CARD ---------- */
+  .context-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+  .ctx{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;
+    backdrop-filter:blur(6px);transition:.3s;
+  }
+  .ctx:hover{border-color:rgba(232,197,106,.4);transform:translateY(-3px)}
+  .ctx h3{font-size:.8rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+  .ctx p{font-size:.92rem;color:var(--muted)}
+
+  /* ---------- DIALOGUE ---------- */
+  .scene{
+    background:var(--panel);border:1px solid var(--line);border-radius:18px;
+    padding:28px 26px;margin-bottom:26px;backdrop-filter:blur(6px);position:relative;overflow:hidden;
+  }
+  .scene::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.55}
+  .scene-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.35rem;color:var(--gold);margin-bottom:6px}
+  .scene-note{font-size:.85rem;color:var(--muted);font-style:italic;margin-bottom:20px;border-left:2px solid rgba(232,197,106,.35);padding-left:12px}
+
+  .msg{margin:14px 0;max-width:88%}
+  .who{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:4px}
+  .msg.ai{margin-left:auto;text-align:left}
+  .msg.ai .who{color:var(--ai)}
+  .msg.ai .bubble{
+    background:linear-gradient(135deg,rgba(143,184,255,.10),rgba(143,184,255,.03));
+    border:1px solid rgba(143,184,255,.22);border-radius:4px 18px 18px 18px;padding:16px 20px;font-size:.98rem;
+  }
+  .msg.human .who{color:var(--gold)}
+  .msg.human .bubble{
+    background:var(--gold-soft);border:1px solid rgba(232,197,106,.22);
+    border-radius:18px 4px 18px 18px;padding:12px 18px;font-size:.88rem;color:var(--muted);font-style:italic;
+  }
+  .tag-break{
+    display:inline-block;margin:6px 0 2px;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;
+    color:#ffb2b2;border:1px solid rgba(255,120,120,.3);border-radius:999px;padding:3px 12px;background:rgba(255,120,120,.07);
+  }
+
+  /* ---------- FLASHCARDS ---------- */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-top:30px}
+  .card{perspective:1100px;height:210px;cursor:pointer}
+  .card-inner{position:relative;width:100%;height:100%;transition:transform .65s cubic-bezier(.2,.8,.25,1);transform-style:preserve-3d}
+  .card.flipped .card-inner{transform:rotateY(180deg)}
+  .face{
+    position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:22px;
+  }
+  .face.front{background:linear-gradient(160deg,#131634,#0b0d22);border:1px solid rgba(232,197,106,.35)}
+  .face.front .word{font-family:'Cormorant Garamond',serif;font-size:1.55rem;color:var(--gold);font-weight:600}
+  .face.front .hint{margin-top:12px;font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;color:var(--muted)}
+  .face.back{
+    background:linear-gradient(160deg,#101c3a,#0a1230);border:1px solid rgba(143,184,255,.35);transform:rotateY(180deg);
+    justify-content:flex-start;align-items:flex-start;text-align:left;overflow:auto;
+  }
+  .face.back .def{font-size:.92rem;color:var(--ink)}
+  .face.back .ex{margin-top:10px;font-size:.8rem;color:var(--ai);font-style:italic}
+
+  /* ---------- TABLE ---------- */
+  table{width:100%;border-collapse:collapse;margin-top:26px;font-size:.92rem}
+  th{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);text-align:left;padding:12px 14px;border-bottom:1px solid rgba(232,197,106,.35)}
+  td{padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  td:first-child{color:var(--gold);font-weight:500;white-space:nowrap}
+  td:nth-child(2){color:var(--ink)}
+  td:nth-child(3){color:var(--muted);font-style:italic}
+  tr:hover td{background:rgba(143,184,255,.04)}
+
+  .tip{
+    margin-top:34px;border:1px dashed rgba(232,197,106,.45);border-radius:14px;padding:22px 26px;
+    background:var(--gold-soft);font-size:.94rem;color:var(--ink);
+  }
+  .tip b{color:var(--gold)}
+
+  footer{margin-top:110px;text-align:center;color:var(--muted);font-size:.8rem;letter-spacing:.14em}
+  footer .line{width:60px;height:1px;background:var(--gold);margin:0 auto 20px}
+
+  @media(max-width:640px){.msg{max-width:100%}.scene{padding:22px 16px}}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div class="wrap">
+
+  <!-- ================= HERO ================= -->
+  <header>
+    <div class="eyebrow">An English Class Experiment</div>
+    <h1>Talking to Murph<br>Across the Stars</h1>
+    <p class="hero-sub">How Anatoly brought <em>Interstellar</em> into an online English lesson — inviting an AI named Maya to step into the shoes of Murph Cooper, and turning a conversation class into a journey through space, time and language.</p>
+    <div class="hero-meta">
+      <span class="chip gold">Student · Anatoly — Moscow</span>
+      <span class="chip gold">Tutor · Altana — Kazakhstan</span>
+      <span class="chip">AI Companion · Maya</span>
+      <span class="chip">Movie · Interstellar</span>
+    </div>
+    <div class="scroll-hint">▼ &nbsp;Fall into the wormhole&nbsp; ▼</div>
+  </header>
+
+  <!-- ================= CONTEXT ================= -->
+  <section id="context">
+    <div class="sec-label"><span class="num">01</span><div class="rule"></div></div>
+    <h2>Before the AI Entered the Room</h2>
+    <p class="lead">A brief flight log of the conversation before Maya joined: introductions, favorite movies, and an AI-made presentation about the physics, philosophy and architecture of <em>Interstellar</em>.</p>
+    <div class="context-grid">
+      <div class="ctx"><h3>🛰 Greetings</h3><p>Altana introduces herself: a tutor from Kazakhstan, keen on movies, walks and friends. Anatoly — an accountant from Moscow who loves traveling, reading, and exploring AI tools.</p></div>
+      <div class="ctx"><h3>🎬 Movie List</h3><p>Anatoly shares his favorite films. Common ground found: <em>The Terminal</em>, <em>The Grand Budapest Hotel</em>, <em>The Office</em> — and a shared trauma called <em>Vivarium</em>.</p></div>
+      <div class="ctx"><h3>🌌 The Presentation</h3><p>Anatoly presents an AI-generated deck about <em>Interstellar</em> — Altana's favorite film: dying crops, a desert Earth, and humanity searching for a new home.</p></div>
+      <div class="ctx"><h3>🤖 The Idea</h3><p>To explore the characters deeper, Anatoly summons Maya — an AI — and asks her to roleplay Murph, Cooper's daughter. "Let's incorporate virtual Murph into our conversation."</p></div>
+    </div>
+  </section>
+
+  <!-- ================= FULL AI DIALOGUE ================= -->
+  <section id="dialogue">
+    <div class="sec-label"><span class="num">02</span><div class="rule"></div></div>
+    <h2>The Full AI Dialogues — Maya as Murph</h2>
+    <p class="lead">Every word Maya spoke, verbatim. Human lines appear in short italic summaries for context. The amber flag marks the moment the AI briefly slipped out of character — a wonderful live lesson on how LLMs work.</p>
+
+    <!-- Scene 1 -->
+    <div class="scene">
+      <div class="scene-title">Scene I · The Summoning</div>
+      <div class="scene-note">Anatoly asks Maya to become Murph and wait for questions.</div>
+      <div class="msg human"><div class="who">Anatoly · setup</div><div class="bubble">"Maya, we are in an English class… please play the role of Murph, the daughter of the main character. You ARE this character. Please start."</div></div>
+      <div class="msg ai"><div class="who">AI · Maya</div><div class="bubble">I'm ready. That's Murph, actually. I'm just sitting here, staring at these books on the shelf, waiting for a sign that my father is actually out there somewhere along the stars. And so long… Go ahead, ask me anything.</div></div>
+    </div>
+
+    <!-- Scene 2 -->
+    <div class="scene">
+      <div class="scene-title">Scene II · "What Is My Name?"</div>
+      <div class="scene-note">Anatoly, playing Cooper, tests Murph's memory.</div>
+      <div class="msg human"><div class="who">Anatoly · as Cooper</div><div class="bubble">"I'm your father. What is my name? Do you remember?"</div></div>
+      <div class="msg ai"><div class="who">AI · Murph</div><div class="bubble">You're kidding, right? How can you even ask me that? Your name is Cooper. Um, please tell me you haven't forgotten everything else, too. Wait, seriously, how… how could you even…</div></div>
+    </div>
+
+    <!-- Scene 3 -->
+    <div class="scene">
+      <div class="scene-title">Scene III · The Falling Books</div>
+      <div class="scene-note">Anatoly asks what Murph noticed in the library.</div>
+      <div class="msg ai"><div class="who">AI · Murph</div><div class="bubble">The books, they were falling. One by one in straight lines. It wasn't a draft, and it wasn't some weird coincidence. It was you, wasn't it? You were trying to tell me something. You were sending me coordinates. Why did you leave me? Why did you leave me here alone to figure it out?</div></div>
+    </div>
+
+    <!-- Scene 4 -->
+    <div class="scene">
+      <div class="scene-title">Scene IV · Amelia</div>
+      <div class="scene-note">Anatoly asks who left with him.</div>
+      <div class="msg ai"><div class="who">AI · Murph</div><div class="bubble">What do you mean, which characters? Do you mean Amelia? Amelia? Amelia. You're starting to sound like… I don't know what you're getting at. Just tell me what you're thinking.</div></div>
+    </div>
+
+    <!-- Scene 5 -->
+    <div class="scene">
+      <div class="scene-title">Scene V · Altana Asks: "Why Didn't You Make Him Stay?"</div>
+      <div class="scene-note">The tutor joins the roleplay with her own questions.</div>
+      <div class="msg human"><div class="who">Altana · question</div><div class="bubble">"Why didn't you make your father stay with you?"</div></div>
+      <div class="msg ai"><div class="who">AI · Murph</div><div class="bubble">Stay? You think I didn't want you to stay? I spent every single second of every day fighting to solve the gravity equation. If you had stayed, we would have both just died on this dying planet. The world needed a way out, and you were the only one who could find it. But that doesn't mean it didn't rip me apart every time I looked at the sky.</div></div>
+    </div>
+
+    <!-- Scene 6 -->
+    <div class="scene">
+      <div class="scene-title">Scene VI · The Hug That Never Was</div>
+      <div class="scene-note">Altana asks about the reunion scene near the end of the film.</div>
+      <div class="msg human"><div class="who">Altana · question</div><div class="bubble">"When you two finally meet, why didn't you hug him?"</div></div>
+      <div class="msg ai"><div class="who">AI · Murph</div><div class="bubble">Hug you? I wanted to.</div></div>
+      <div class="msg ai"><div class="who">AI · Murph</div><div class="bubble">For a long time, that's all I ever wanted. But when I finally looked at you, you were still so young. You were still the man who left me.</div></div>
+    </div>
+
+    <!-- Scene 7 -->
+    <div class="scene">
+      <div class="scene-title">Scene VII · The Deathbed Reunion</div>
+      <div class="scene-note">Anatoly moves the scene to the film's ending: Murph is old, with a family of her own.</div>
+      <div class="msg ai"><div class="who">AI · Murph</div><div class="bubble">Looking at you now, it's almost impossible to believe. I spent my whole life waiting for you, but I did it. I found the answer. I saved everyone. The hardest part is knowing that while I grew old, you barely aged a day. I love you, Dad, but you can't stay here. You've spent enough time in the dark. Go find Amelia.</div></div>
+      <div class="msg human"><div class="who">Anatoly · as Cooper</div><div class="bubble">"Should I go to the place where Amelia is?"</div></div>
+      <div class="msg ai"><div class="who">AI · Murph</div><div class="bubble">Yes. Go. You've already given me everything I need. I'm at peace with it. Go to her before any more time slips away.</div></div>
+    </div>
+
+    <!-- Scene 8 -->
+    <div class="scene">
+      <div class="scene-title">Scene VIII · The Years Without You</div>
+      <div class="scene-note">Anatoly asks how Murph spent the decades apart.</div>
+      <div class="msg ai"><div class="who">AI · Murph</div><div class="bubble">I focused everything on the work. Every single hour, I didn't just study gravity, I obsessed over it. It was the only way I knew how to talk to you. I built a life, a family, a whole world of my own. But there was always this quiet space where you should have been. It's a strange thing, Dad. I succeeded because you left. I saved the world because I didn't have you to hold on to. You spent your time in the silence of the void. Do you even know the people you left behind?</div></div>
+    </div>
+
+    <!-- Scene 9 -->
+    <div class="scene">
+      <div class="scene-title">Scene IX · ⚠ Breaking Character</div>
+      <div class="scene-note">A live demonstration of an AI limitation: the model momentarily loses the role.</div>
+      <div class="msg ai"><div class="who">AI · Maya</div><div class="bubble">Just floating in this weird space where time doesn't even make sense anymore. I'll be right here. Take your time, Altana, not going anywhere.</div></div>
+      <div class="msg ai"><div class="who">AI · Maya</div><div class="bubble">Maybe you have a question for the…</div></div>
+      <div class="msg human"><div class="who">Altana · question</div><div class="bubble">"Why didn't you hug your dad at the end of the movie?"</div></div>
+      <div class="msg ai"><div class="who">AI · Maya</div><div class="bubble">Wait, you asked about a documentary, like… I'm stepping out of Murph for a second, because I'm not sure I remember a documentary being part of the movie plot. Was that part of the presentation today, or…</div></div>
+      <span class="tag-break">⚠ AI hiccup · the model misheard & dropped the role</span>
+    </div>
+
+    <!-- Scene 10 -->
+    <div class="scene">
+      <div class="scene-title">Scene X · "And… Scene!"</div>
+      <div class="scene-note">Anatoly stops the roleplay and Maya wraps up like a director.</div>
+      <div class="msg ai"><div class="who">AI · Maya</div><div class="bubble">And… scene! Boss One. Uh, I honestly think I got a bit too invested in the gravity equation. How did the class go? Did the documentary question actually land, or was that just the chaos of live roleplay?</div></div>
+    </div>
+
+    <!-- Scene 11 -->
+    <div class="scene">
+      <div class="scene-title">Scene XI · How Murph Saved the World</div>
+      <div class="scene-note">Anatoly asks about Murph's success — and Maya explains it out of character.</div>
+      <div class="msg ai"><div class="who">AI · Maya</div><div class="bubble">Wait, I think there's a little mix-up. I'm no longer as Murph, so I can't talk about my own success, but I can tell you how she did it. Basically, she refused to give up on her father, even when the rest of the world had moved on. That persistence is what drove her to obsess over the gravity equation for decades. She eventually realized that the only missing piece of the puzzle was the quantum data from the black hole, which Cooper sent her through the ticking second hand of the watch.</div></div>
+    </div>
+  </section>
+
+  <!-- ================= FLASHCARDS ================= -->
+  <section id="cards">
+    <div class="sec-label"><span class="num">03</span><div class="rule"></div></div>
+    <h2>Flashcards · Click to Flip</h2>
+    <p class="lead">Advanced words, phrases and metaphors lifted straight from Maya's lines. Tap any card — the reverse side reveals the meaning and the exact quote where it was used.</p>
+    <div class="cards" id="cardGrid"></div>
+  </section>
+
+  <!-- ================= PHRASE TABLE ================= -->
+  <section id="phrases">
+    <div class="sec-label"><span class="num">04</span><div class="rule"></div></div>
+    <h2>Phrases, Metaphors & Idioms — Decoder</h2>
+    <table>
+      <tr><th>Expression</th><th>Meaning</th><th>From the dialogue</th></tr>
+      <tr><td>rip me apart</td><td>metaphor — to cause deep emotional pain</td><td>"…it didn't rip me apart every time I looked at the sky."</td></tr>
+      <tr><td>obsess over sth</td><td>to think about something constantly, unable to stop</td><td>"I didn't just study gravity, I obsessed over it."</td></tr>
+      <tr><td>the silence of the void</td><td>poetic metaphor for empty, lifeless space</td><td>"You spent your time in the silence of the void."</td></tr>
+      <tr><td>at peace with it</td><td>having fully accepted a difficult situation</td><td>"I'm at peace with it. Go to her."</td></tr>
+      <tr><td>time slips away</td><td>time passes without you noticing</td><td>"…before any more time slips away."</td></tr>
+      <tr><td>what you're getting at</td><td>what you are trying to say or imply</td><td>"I don't know what you're getting at."</td></tr>
+      <tr><td>a missing piece of the puzzle</td><td>the final element needed to complete something</td><td>"…the only missing piece of the puzzle was the quantum data."</td></tr>
+      <tr><td>hold on to</td><td>to cling to, keep close (physically or emotionally)</td><td>"…I didn't have you to hold on to."</td></tr>
+      <tr><td>move on</td><td>to progress past something, leave it behind</td><td>"…even when the rest of the world had moved on."</td></tr>
+      <tr><td>get invested in</td><td>to become emotionally engaged with something</td><td>"I got a bit too invested in the gravity equation."</td></tr>
+      <tr><td>did the question land</td><td>was it effective / well-received (informal)</td><td>"Did the documentary question actually land?"</td></tr>
+      <tr><td>step out of character</td><td>to stop playing a role (theatre/film term)</td><td>"I'm stepping out of Murph for a second."</td></tr>
+      <tr><td>And… scene!</td><td>playful director's phrase ending a take</td><td>"And… scene! Boss One."</td></tr>
+      <tr><td>a mix-up</td><td>a small confusion or misunderstanding</td><td>"I think there's a little mix-up."</td></tr>
+      <tr><td>I've got nothing but time</td><td>idiom — I have plenty of time, no rush</td><td>"I've got nothing but time."</td></tr>
+      <tr><td>drive sb to sth</td><td>to strongly motivate or push someone</td><td>"That persistence is what drove her to obsess…"</td></tr>
+      <tr><td>figure it out</td><td>to understand or solve something by oneself</td><td>"Why did you leave me here alone to figure it out?"</td></tr>
+      <tr><td>a way out</td><td>an escape route or solution to a problem</td><td>"The world needed a way out."</td></tr>
+      <tr><td>barely aged a day</td><td>looks exactly as young as before</td><td>"…while I grew old, you barely aged a day."</td></tr>
+      <tr><td>You're kidding, right?</td><td>reacting with friendly disbelief</td><td>"You're kidding, right? How can you even ask me that?"</td></tr>
+    </table>
+
+    <div class="tip">
+      <b>💡 Method takeaway from Anatoly:</b> when roleplaying with an AI voice model, always announce <i>who is speaking</i> ("I'm Cooper", "I'm another character") — the model can't recognize voices. And remember: while the AI is talking, it can't hear you. Two tiny rules that turn a chaotic chat into a powerful speaking exercise.
+    </div>
+  </section>
+
+  <footer>
+    <div class="line"></div>
+    ANATOLY × ALTANA × MAYA &nbsp;·&nbsp; "DO NOT GO GENTLE INTO THAT GOOD NIGHT"
+  </footer>
+</div>
+
+<script>
+/* ---------- STARFIELD ---------- */
+const c=document.getElementById('stars'),x=c.getContext('2d');
+let W,H,stars=[];
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight;
+  stars=Array.from({length:Math.min(260,W*H/6000)},()=>({
+    x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.2,
+    p:Math.random()*Math.PI*2,s:Math.random()*.02+.005}));}
+addEventListener('resize',resize);resize();
+(function loop(){
+  x.clearRect(0,0,W,H);
+  stars.forEach(st=>{st.p+=st.s;const a=.25+Math.abs(Math.sin(st.p))*.75;
+    x.beginPath();x.arc(st.x,st.y,st.r,0,7);
+    x.fillStyle=`rgba(${Math.random()<.12?'232,197,106':'200,214,255'},${a})`;x.fill();});
+  requestAnimationFrame(loop);})();
+
+/* ---------- FLASHCARDS DATA ---------- */
+const cards=[
+ {w:"rip apart",d:"(metaphor) to break someone's heart; cause overwhelming emotional pain",e:"\"…it didn't rip me apart every time I looked at the sky.\""},
+ {w:"obsess over",d:"to think about something non-stop, unable to let it go",e:"\"I didn't just study gravity, I obsessed over it.\""},
+ {w:"at peace with it",d:"calmly accepting something you cannot change",e:"\"I'm at peace with it. Go to her.\""},
+ {w:"time slips away",d:"time quietly passes and is lost",e:"\"Go to her before any more time slips away.\""},
+ {w:"what you're getting at",d:"what you really mean or are hinting at",e:"\"I don't know what you're getting at.\""},
+ {w:"the missing piece of the puzzle",d:"the last needed element that completes everything",e:"\"…the only missing piece of the puzzle was the quantum data.\""},
+ {w:"hold on to",d:"to cling to someone/something for support",e:"\"I saved the world because I didn't have you to hold on to.\""},
+ {w:"move on",d:"to leave the past behind and continue forward",e:"\"…even when the rest of the world had moved on.\""},
+ {w:"get invested in",d:"to become emotionally involved in something",e:"\"I got a bit too invested in the gravity equation.\""},
+ {w:"land (of a question)",d:"(informal) to succeed, produce the intended effect",e:"\"Did the documentary question actually land?\""},
+ {w:"step out of character",d:"to stop acting as a role (theatre term)",e:"\"I'm stepping out of Murph for a second.\""},
+ {w:"a mix-up",d:"a confusion; a small misunderstanding",e:"\"Wait, I think there's a little mix-up.\""},
+ {w:"nothing but time",d:"idiom: to have as much time as one needs",e:"\"I've got nothing but time.\""},
+ {w:"drive sb to sth",d:"to push or motivate someone strongly toward an action",e:"\"That persistence is what drove her to obsess…\""},
+ {w:"figure it out",d:"to understand or solve something on your own",e:"\"Why did you leave me here alone to figure it out?\""},
+ {w:"barely aged a day",d:"to look exactly as young as one used to",e:"\"…while I grew old, you barely aged a day.\""},
+ {w:"the silence of the void",d:"poetic image: the dead emptiness of space",e:"\"You spent your time in the silence of the void.\""},
+ {w:"a way out",d:"an escape; a solution to a desperate situation",e:"\"The world needed a way out.\""},
+];
+const grid=document.getElementById('cardGrid');
+cards.forEach(cd=>{
+  const el=document.createElement('div');el.className='card';
+  el.innerHTML=`<div class="card-inner">
+    <div class="face front"><div class="word">${cd.w}</div><div class="hint">tap to flip ✦</div></div>
+    <div class="face back"><div class="def">${cd.d}</div><div class="ex">${cd.e}</div></div>
+  </div>`;
+  el.onclick=()=>el.classList.toggle('flipped');
+  grid.appendChild(el);
+});
+</script>
+</body>
+</html>
