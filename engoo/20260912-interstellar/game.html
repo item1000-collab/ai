@@ -1,262 +1,1121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resources – Interstellar</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENDURANCE — The Ultimate Finite Resource · An Interactive Mission Based on Interstellar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#04060e;
+    --panel:#0b1120;
+    --panel2:#101a30;
+    --ink:#e9edf7;
+    --muted:#94a2bd;
+    --gold:#f2b95c;
+    --gold-soft:rgba(242,185,92,.12);
+    --blue:#6fd3ff;
+    --green:#7ce8a8;
+    --red:#ff7a7a;
+    --violet:#c9a6ff;
+    --line:rgba(255,255,255,.09);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:16px;line-height:1.7;
+    background:var(--bg);
+    overflow-x:hidden;
+  }
+  #stars{position:fixed;inset:0;z-index:0;display:block;}
+  .vignette{
+    position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:
+      radial-gradient(1200px 500px at 80% -8%, rgba(242,185,92,.07), transparent 60%),
+      radial-gradient(900px 600px at -10% 30%, rgba(111,211,255,.06), transparent 55%),
+      radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%);
+  }
+  .scanlines{
+    position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.5;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px);
+  }
+  .wrap{position:relative;z-index:3;max-width:1000px;margin:0 auto;padding:26px 18px 80px;}
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: #f8f6f3;
-            color: #1a1a2e;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: 24px;
-        }
+  /* ---------- Header ---------- */
+  .masthead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:16px;}
+  .brand{display:flex;align-items:center;gap:14px;}
+  .orb{
+    width:52px;height:52px;border-radius:50%;flex:none;position:relative;
+    background:radial-gradient(circle at 50% 50%, #000 0 38%, transparent 39%);
+    box-shadow:0 0 0 2px rgba(242,185,92,.75), 0 0 22px rgba(242,185,92,.4), inset 0 0 12px rgba(242,185,92,.35);
+  }
+  .orb::after{
+    content:"";position:absolute;inset:-9px;border-radius:50%;
+    border:1px solid rgba(111,211,255,.4);border-top-color:transparent;border-bottom-color:transparent;
+    transform:rotate(18deg);
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif;font-size:clamp(1.35rem,3.4vw,2rem);
+    margin:0;line-height:1.15;color:#fff;letter-spacing:.02em;
+  }
+  h1 span{color:var(--gold);}
+  .tagline{margin:2px 0 0;font-size:.85rem;color:var(--muted);}
+  .ctrls{display:flex;gap:8px;flex-wrap:wrap;}
+  .ghost{
+    background:transparent;color:var(--gold);border:1px solid rgba(242,185,92,.5);
+    border-radius:999px;padding:8px 16px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer;
+    transition:background .2s;
+  }
+  .ghost:hover{background:rgba(242,185,92,.12);}
+  .ghost:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 
-        .wrapper {
-            max-width: 860px;
-            width: 100%;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-        }
+  /* ---------- HUD ---------- */
+  .hud{
+    position:sticky;top:0;z-index:20;
+    display:grid;grid-template-columns:repeat(3,1fr) auto;gap:10px;align-items:stretch;
+    background:rgba(6,9,18,.82);backdrop-filter:blur(8px);
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:10px 12px;margin-bottom:16px;
+  }
+  .stat{min-width:0;}
+  .stat .lbl{
+    font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.18em;
+    color:var(--muted);text-transform:uppercase;display:block;
+  }
+  .stat .val{
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.15rem;
+    color:var(--gold);line-height:1.3;
+  }
+  .stat.fuel .val{color:var(--blue);}
+  .stat.data .val{color:var(--green);}
+  .stat .val.low{color:var(--red);animation:pulse 1s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+  .bar{height:5px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden;margin-top:5px;}
+  .bar i{display:block;height:100%;border-radius:99px;background:var(--gold);width:100%;transition:width .5s ease;}
+  .stat.fuel .bar i{background:var(--blue);}
+  .stat.data .bar i{background:var(--green);}
+  .sector{
+    display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:6px;min-width:150px;
+  }
+  #sector-name{
+    font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.14em;
+    color:var(--blue);text-transform:uppercase;text-align:right;
+  }
+  .dots{display:flex;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.14);}
+  .dot.done{background:var(--gold);}
+  .dot.cur{background:var(--blue);transform:scale(1.35);}
+  @media (max-width:760px){
+    .hud{grid-template-columns:1fr 1fr;}
+    .sector{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center;}
+  }
 
-        header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 16px;
-            padding: 8px 0 32px;
-        }
+  /* ---------- Stage ---------- */
+  .art{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--panel);box-shadow:0 18px 50px rgba(0,0,0,.5);}
+  .art img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;transition:opacity .35s ease;background:#0a1020;}
+  .art figcaption{
+    padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:.66rem;
+    letter-spacing:.1em;color:var(--muted);border-top:1px solid var(--line);text-transform:uppercase;
+  }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
+  .console{
+    margin-top:14px;background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:0 18px 50px rgba(0,0,0,.45);
+    overflow:hidden;
+  }
+  .console-head{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:10px 16px;border-bottom:1px solid var(--line);
+    font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.16em;
+    color:var(--gold);text-transform:uppercase;
+  }
+  .console-head .right{color:var(--muted);letter-spacing:.1em;}
+  .console-body{padding:18px 18px 20px;}
+  #narrative{min-height:7.5em;}
+  #narrative p{margin:0 0 12px;}
+  #narrative .w{opacity:0;}
+  #narrative .w.on{opacity:1;transition:opacity .16s linear;}
+  #narrative p.quote{
+    border-left:3px solid var(--gold);padding:6px 0 6px 14px;margin:14px 0;
+    font-style:italic;color:#ffe4bb;background:var(--gold-soft);border-radius:0 10px 10px 0;
+  }
+  .skip-hint{
+    font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);
+    letter-spacing:.12em;text-transform:uppercase;margin-top:2px;
+  }
 
-        .logo {
-            font-size: 36px;
-            line-height: 1;
-        }
+  #choices{display:flex;flex-direction:column;gap:9px;margin-top:16px;}
+  .choice{
+    display:flex;justify-content:space-between;align-items:baseline;gap:14px;width:100%;text-align:left;
+    background:rgba(255,255,255,.04);color:var(--ink);border:1px solid var(--line);
+    border-left:3px solid var(--gold);border-radius:10px;padding:12px 15px;
+    font:inherit;font-size:.95rem;cursor:pointer;transition:background .18s,transform .18s,border-color .18s;
+  }
+  .choice:hover:not(:disabled){background:rgba(242,185,92,.1);transform:translateX(4px);border-color:rgba(242,185,92,.55);}
+  .choice:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+  .choice.danger{border-left-color:var(--red);}
+  .choice.danger:hover:not(:disabled){background:rgba(255,122,122,.09);border-color:rgba(255,122,122,.5);}
+  .c-label{font-weight:600;}
+  .c-hint{
+    font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.06em;
+    color:var(--muted);white-space:nowrap;flex:none;
+  }
+  .choice.danger .c-hint{color:#ffb0a6;}
 
-        .header-text h1 {
-            font-size: 26px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            color: #1a1a2e;
-        }
+  /* ---------- Minigames ---------- */
+  .mg{
+    margin-top:14px;border:1px solid rgba(242,185,92,.45);border-radius:var(--radius);
+    background:linear-gradient(180deg,#131f38,#0b1120);padding:16px 18px 20px;
+  }
+  .mg.shake{animation:shake .5s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
+  .mg.flash{animation:flash .7s ease;}
+  @keyframes flash{0%,100%{box-shadow:none;}30%{box-shadow:0 0 0 3px rgba(255,80,80,.55), 0 0 40px rgba(255,80,80,.35);}}
+  .mg-art{border-radius:10px;overflow:hidden;border:1px solid var(--line);margin-bottom:14px;}
+  .mg-art img{display:block;width:100%;aspect-ratio:21/9;object-fit:cover;}
+  .mg-title{
+    font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.2em;
+    color:var(--gold);text-transform:uppercase;margin:0 0 4px;
+  }
+  .mg-sub{font-size:.86rem;color:var(--muted);margin:0 0 14px;}
+  .mg-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin:12px 0 5px;}
+  .track{position:relative;height:14px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;border:1px solid var(--line);}
+  .track .fill{position:absolute;inset:0;width:0%;border-radius:99px;}
+  #wave-fill{background:linear-gradient(90deg,#3d6ea8,#6fd3ff 60%,#ff7a7a);}
+  #up-fill{background:linear-gradient(90deg,#2e7d55,#7ce8a8);}
+  #yrs-big{
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.7rem;color:var(--gold);
+    margin:12px 0 2px;line-height:1.1;
+  }
+  #yrs-big small{font-size:.7rem;color:var(--muted);letter-spacing:.14em;display:block;}
+  .callout{min-height:1.5em;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#ffd79a;margin:8px 0 2px;letter-spacing:.04em;}
+  .btn-act{
+    display:inline-block;background:linear-gradient(135deg,#f2b95c,#e08f2f);color:#241503;
+    font:inherit;font-weight:700;border:none;border-radius:999px;padding:13px 30px;cursor:pointer;
+    box-shadow:0 10px 26px rgba(242,185,92,.3);transition:transform .18s, box-shadow .18s;margin-top:12px;
+  }
+  .btn-act:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(242,185,92,.36);}
+  .btn-act:focus-visible{outline:2px solid var(--blue);outline-offset:3px;}
+  .btn-act.small{padding:9px 20px;font-size:.86rem;}
+  .kbd-hint{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);letter-spacing:.1em;margin-top:10px;}
+  .kbd-hint kbd{
+    border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;
+    padding:1px 6px;font-family:inherit;color:#cfd9ec;background:rgba(255,255,255,.05);
+  }
+  .mg-report{margin-top:6px;}
+  .mg-report h4{font-family:'JetBrains Mono',monospace;letter-spacing:.18em;font-size:.8rem;color:var(--gold);text-transform:uppercase;margin:8px 0 10px;}
+  .mg-report h4.bad{color:var(--red);}
+  .mg-report .rep-line{font-size:.92rem;margin:6px 0;color:#dfe6f3;}
+  .mg-report .rep-line b{color:#fff;}
+  .mg-report p.quote{
+    border-left:3px solid var(--gold);padding:6px 0 6px 14px;margin:12px 0;
+    font-style:italic;color:#ffe4bb;background:var(--gold-soft);border-radius:0 10px 10px 0;font-size:.92rem;
+  }
 
-        .header-text .subtitle {
-            font-size: 15px;
-            font-weight: 400;
-            color: #6b7280;
-            margin-top: 2px;
-        }
+  /* slingshot */
+  .sg-track{position:relative;height:58px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);overflow:hidden;margin-top:10px;}
+  .sg-zone{position:absolute;top:0;bottom:0;}
+  .sg-zone.dead{left:0;width:76%;background:repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 8px, transparent 8px 16px);}
+  .sg-zone.sweet{left:76%;width:16%;background:linear-gradient(90deg, rgba(124,232,168,.28), rgba(124,232,168,.5));border-left:1px solid rgba(124,232,168,.6);border-right:1px solid rgba(124,232,168,.6);}
+  .sg-zone.horizon{left:92%;width:8%;background:linear-gradient(90deg, rgba(255,122,122,.35), rgba(255,122,122,.6));}
+  .sg-labels{display:flex;font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-top:5px;}
+  .sg-labels span:nth-child(1){width:76%;}
+  .sg-labels span:nth-child(2){width:16%;color:var(--green);}
+  .sg-labels span:nth-child(3){width:8%;color:var(--red);}
+  #sg-marker{
+    position:absolute;top:0;bottom:0;width:4px;background:var(--gold);
+    box-shadow:0 0 12px rgba(242,185,92,.9);left:0;
+  }
 
-        .badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 100px;
-            padding: 8px 16px 8px 14px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #1a1a2e;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            white-space: nowrap;
-        }
+  /* morse watch */
+  .morse-wrap{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-top:14px;}
+  .watch{
+    width:150px;height:150px;border-radius:50%;flex:none;position:relative;
+    border:2px solid rgba(242,185,92,.7);
+    background:radial-gradient(circle at 50% 42%, #17233f 0 62%, #0c1326 63%);
+    box-shadow:0 0 30px rgba(242,185,92,.18), inset 0 0 24px rgba(0,0,0,.7);
+  }
+  .watch::before{
+    content:"";position:absolute;inset:8px;border-radius:50%;
+    background:repeating-conic-gradient(rgba(242,185,92,.55) 0deg 1.5deg, transparent 1.5deg 30deg);
+    -webkit-mask:radial-gradient(circle, transparent 0 58px, #000 58px 62px, transparent 62px);
+            mask:radial-gradient(circle, transparent 0 58px, #000 58px 62px, transparent 62px);
+  }
+  #hand{
+    position:absolute;left:50%;bottom:50%;width:2px;height:56px;margin-left:-1px;
+    background:linear-gradient(180deg,var(--gold),#e08f2f);border-radius:2px;
+    transform-origin:bottom center;transform:rotate(0deg);
+    box-shadow:0 0 10px rgba(242,185,92,.8);
+  }
+  .watch .pin{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px;border-radius:50%;background:var(--gold);}
+  .watch.wrong{animation:wshake .4s ease;border-color:var(--red);}
+  @keyframes wshake{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+  .morse-main{flex:1;min-width:230px;}
+  .mletters{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px;}
+  .mletter{
+    border:1px solid var(--line);border-radius:10px;padding:8px 12px;text-align:center;min-width:64px;
+    background:rgba(255,255,255,.03);transition:border-color .2s, background .2s;
+  }
+  .mletter .ch{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem;color:#fff;display:block;}
+  .mletter .pat{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--muted);letter-spacing:2px;display:block;}
+  .mletter.cur{border-color:var(--gold);background:rgba(242,185,92,.1);}
+  .mletter.done{border-color:rgba(124,232,168,.6);background:rgba(124,232,168,.08);}
+  .mletter.done .pat{color:var(--green);}
+  #typed{
+    font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--gold);letter-spacing:3px;
+    min-height:1.5em;margin:4px 0 10px;
+  }
+  #mstatus{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);letter-spacing:.1em;margin-top:8px;min-height:1.2em;}
+  .morse-btns{display:flex;gap:10px;flex-wrap:wrap;}
 
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background: #e07a5f;
-            border-radius: 50%;
-            animation: pulse 1.8s ease-in-out infinite;
-            flex-shrink: 0;
-        }
+  /* ---------- Debrief ---------- */
+  .debrief{
+    margin-top:16px;border:1px solid rgba(242,185,92,.5);border-radius:var(--radius);
+    background:linear-gradient(180deg,#141f39,#0b1120);padding:20px 18px;
+  }
+  .debrief h3{font-family:'Space Grotesk',sans-serif;color:var(--gold);margin:0 0 4px;font-size:1.15rem;letter-spacing:.04em;}
+  #rank-line{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.16em;color:var(--blue);font-size:.9rem;margin:0 0 14px;text-transform:uppercase;}
+  .fin-stats{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px;}
+  .fs{
+    border:1px solid var(--line);border-radius:10px;padding:8px 14px;background:rgba(255,255,255,.03);
+    font-family:'JetBrains Mono',monospace;font-size:.78rem;color:#cfd9ec;
+  }
+  .fs b{color:var(--gold);}
+  .facts{margin:0 0 16px;padding-left:0;list-style:none;}
+  .facts li{
+    margin:10px 0;padding:10px 14px;border-left:3px solid var(--blue);
+    background:rgba(111,211,255,.06);border-radius:0 10px 10px 0;font-size:.9rem;color:#dfe6f3;
+  }
+  .facts li em{color:#cfe9ff;}
 
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.4;
-                transform: scale(0.75);
-            }
-        }
+  footer{
+    margin-top:34px;padding-top:14px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:.8rem;
+  }
+  .sr-only{
+    position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip:rect(0 0 0 0);white-space:nowrap;border:0;
+  }
 
-        .card {
-            background: white;
-            border-radius: 24px;
-            padding: 28px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
-            flex: 1;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px 18px;
-            background: #fafaf9;
-            border: 1.5px solid #e5e7eb;
-            border-radius: 16px;
-            text-decoration: none;
-            color: #1a1a2e;
-            transition: all 0.2s ease;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .item:hover {
-            border-color: #e07a5f;
-            background: white;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(224, 122, 95, 0.12);
-        }
-
-        .item .emoji {
-            font-size: 22px;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-
-        .item .name {
-            font-size: 14px;
-            font-weight: 500;
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            color: #1a1a2e;
-            transition: color 0.2s ease;
-        }
-
-        .item:hover .name {
-            color: #e07a5f;
-        }
-
-        .item .arrow {
-            font-size: 18px;
-            color: #e07a5f;
-            opacity: 0;
-            transform: translateX(-6px);
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-            line-height: 1;
-        }
-
-        .item:hover .arrow {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        footer {
-            text-align: center;
-            padding: 28px 0 8px;
-            font-size: 13px;
-            color: #6b7280;
-            font-weight: 400;
-        }
-
-        @media (max-width: 500px) {
-            body {
-                padding: 16px;
-            }
-
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-                padding-bottom: 24px;
-            }
-
-            .header-text h1 {
-                font-size: 22px;
-            }
-
-            .badge {
-                align-self: flex-start;
-            }
-
-            .card {
-                padding: 18px;
-                border-radius: 16px;
-            }
-
-            .grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .item {
-                padding: 12px 14px;
-                border-radius: 12px;
-            }
-
-            .item .name {
-                font-size: 13px;
-            }
-
-            .item .arrow {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-    </style>
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{
+      animation-duration:.01ms !important;animation-iteration-count:1 !important;
+      transition-duration:.01ms !important;
+    }
+    #narrative .w{opacity:1;}
+    #hand{animation:none !important;}
+  }
+</style>
 </head>
 <body>
-    <div class="wrapper">
-        <header>
-            <div class="header-left">
-                <span class="logo">📄</span>
-                <div class="header-text">
-                    <h1>Resources</h1>
-                    <div class="subtitle">Interstellar</div>
-                </div>
-            </div>
-            <div class="badge">
-                <span class="pulse-dot"></span>
-                PDF Files
-            </div>
-        </header>
+<canvas id="stars" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
 
-        <main class="card">
-            <div class="grid">
-                <a href="https://item1000-collab.github.io/ai/engoo/20260912-interstellar/interstellar-recoded.pdf" target="_blank" rel="noopener noreferrer" class="item">
-                    <span class="emoji">📕</span>
-                    <span class="name">interstellar-recoded.pdf</span>
-                    <span class="arrow">→</span>
-                </a>
-            </div>
-        </main>
+<div class="wrap">
 
-        <footer>
-            Powered by AI Exploration Hub
-        </footer>
+  <header class="masthead">
+    <div class="brand">
+      <div class="orb" aria-hidden="true"></div>
+      <div>
+        <h1>ENDURANCE <span>·</span> The Ultimate Finite Resource</h1>
+        <p class="tagline">An interactive mission based on the study deck <em>The Cinematic Cosmos: The Physics, Philosophy, and Architecture of Interstellar</em></p>
+      </div>
     </div>
+    <div class="ctrls">
+      <button id="sound-btn" class="ghost" type="button" aria-pressed="false">🔇 SOUND OFF</button>
+      <button id="restart-btn" class="ghost" type="button">⟲ RESTART</button>
+    </div>
+  </header>
+
+  <section class="hud" aria-label="Mission status">
+    <div class="stat time">
+      <span class="lbl">⏳ Earth Clock</span>
+      <span class="val" id="hud-time" role="meter" aria-label="Years remaining before Earth's atmosphere fails" aria-valuemin="0" aria-valuemax="55" aria-valuenow="51">51.0 YRS</span>
+      <div class="bar"><i id="bar-time"></i></div>
+    </div>
+    <div class="stat fuel">
+      <span class="lbl">⛽ Fuel</span>
+      <span class="val" id="hud-fuel" role="meter" aria-label="Fuel percentage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">100%</span>
+      <div class="bar"><i id="bar-fuel"></i></div>
+    </div>
+    <div class="stat data">
+      <span class="lbl">📡 Data Integrity</span>
+      <span class="val" id="hud-data" role="meter" aria-label="Data integrity percentage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="60">60%</span>
+      <div class="bar"><i id="bar-data"></i></div>
+    </div>
+    <div class="sector">
+      <span id="sector-name">SECTOR 01 · EARTH</span>
+      <nav class="dots" id="dots" aria-label="Mission progress"></nav>
+    </div>
+  </section>
+
+  <main>
+    <figure class="art">
+      <img id="scene-img" src="https://item1000-collab.github.io/ai/engoo/20260912-interstellar/slide-001.jpg" alt="Current mission scene" width="1600" height="900">
+      <figcaption id="scene-cap">THE CINEMATIC COSMOS</figcaption>
+    </figure>
+
+    <section class="console" id="console" aria-label="Mission log">
+      <div class="console-head">
+        <span>◢ MISSION LOG — ENDURANCE</span>
+        <span class="right" id="console-sector">SECTOR 01 · EARTH</span>
+      </div>
+      <div class="console-body">
+        <div id="narrative"></div>
+        <span class="sr-only" id="narrative-sr" aria-live="polite"></span>
+        <p class="skip-hint" id="skip-hint" hidden>▸ click the log to skip the transmission delay</p>
+        <div id="choices" role="group" aria-label="Mission decisions"></div>
+        <div id="mg"></div>
+      </div>
+    </section>
+
+    <section class="debrief" id="debrief" hidden aria-label="Mission debrief"></section>
+  </main>
+
+  <footer>
+    🛰️ Built on the study deck <em>The Cinematic Cosmos: The Physics, Philosophy, and Architecture of Interstellar</em> — every quoted line in the mission log comes from its panels. Different choices lead to different endings. Run the mission again.
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var BASE = 'https://item1000-collab.github.io/ai/engoo/20260912-interstellar/';
+  var $ = function (id) { return document.getElementById(id); };
+
+  var narrative = $('narrative'), narrativeSr = $('narrative-sr'),
+      choicesEl = $('choices'), mgEl = $('mg'), skipHint = $('skip-hint'),
+      sceneImg = $('scene-img'), sceneCap = $('scene-cap'),
+      debriefEl = $('debrief');
+
+  /* ================= state ================= */
+  var state, rafId = null, ivs = [], tos = [], typing = false, skipFlag = false;
+
+  function freshState() {
+    return { time: 51, fuel: 100, data: 60, spent: 0,
+      flags: { planB: false, millerVisited: false, mannExposed: false, fooled: false,
+               slingClean: false, morse: 'fail', earthLost: false, slingshotDone: false } };
+  }
+
+  function clearAll() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    ivs.forEach(clearInterval); ivs = [];
+    tos.forEach(clearTimeout); tos = [];
+    typing = false; skipFlag = false;
+  }
+
+  function later(fn, ms) { var t = setTimeout(fn, ms); tos.push(t); return t; }
+  function every(fn, ms) { var t = setInterval(fn, ms); ivs.push(t); return t; }
+
+  /* ================= audio ================= */
+  var AC = null, master = null, ambient = null, soundOn = false;
+
+  function ensureAudio() {
+    if (!AC) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      AC = new Ctx();
+      master = AC.createGain(); master.gain.value = 0.6; master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+  }
+  function tone(f, d, type, v, when) {
+    if (!soundOn || !AC) return;
+    var t = AC.currentTime + (when || 0);
+    var o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v || 0.11, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + d + 0.06);
+  }
+  function blip()  { tone(760, .09, 'sine', .09); }
+  function tick()  { tone(980, .05, 'square', .05); }
+  function dahS()  { tone(520, .16, 'sine', .1); }
+  function buzz()  { tone(150, .22, 'sawtooth', .08); tone(98, .3, 'sawtooth', .06); }
+  function chime() { [523.25, 659.25, 783.99].forEach(function (f, i) { tone(f, .22, 'sine', .09, i * .1); }); }
+
+  function startAmbient() {
+    if (!AC || ambient) return;
+    var g = AC.createGain(); g.gain.value = 0; g.connect(master);
+    var lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 220; lp.connect(g);
+    var o1 = AC.createOscillator(); o1.type = 'sine'; o1.frequency.value = 48; o1.connect(lp);
+    var o2 = AC.createOscillator(); o2.type = 'sine'; o2.frequency.value = 48.7; o2.connect(lp);
+    var lfo = AC.createOscillator(); lfo.frequency.value = 0.07;
+    var lg = AC.createGain(); lg.gain.value = 0.018; lfo.connect(lg); lg.connect(g.gain);
+    g.gain.setTargetAtTime(0.05, AC.currentTime, 1.2);
+    o1.start(); o2.start(); lfo.start();
+    ambient = { g: g, oscs: [o1, o2, lfo] };
+  }
+  function stopAmbient() {
+    if (!ambient) return;
+    var a = ambient; ambient = null;
+    a.g.gain.setTargetAtTime(0, AC.currentTime, 0.35);
+    later(function () { a.oscs.forEach(function (o) { try { o.stop(); } catch (e) {} }); a.g.disconnect(); }, 1100);
+  }
+  $('sound-btn').addEventListener('click', function () {
+    soundOn = !soundOn;
+    this.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+    this.textContent = soundOn ? '🔊 SOUND ON' : '🔇 SOUND OFF';
+    if (soundOn) { ensureAudio(); startAmbient(); blip(); } else { stopAmbient(); }
+  });
+
+  /* ================= starfield ================= */
+  (function () {
+    var cv = $('stars'), cx = cv.getContext('2d');
+    function size() { cv.width = window.innerWidth; cv.height = window.innerHeight; }
+    size(); window.addEventListener('resize', size);
+    var stars = [], i;
+    for (i = 0; i < 170; i++) {
+      stars.push({ x: Math.random() * cv.width, y: Math.random() * cv.height,
+        r: Math.random() * 1.4 + 0.3, s: Math.random() * 0.12 + 0.02, tw: Math.random() * 6.28 });
+    }
+    function draw() {
+      cx.clearRect(0, 0, cv.width, cv.height);
+      stars.forEach(function (st) {
+        if (!RM) { st.x -= st.s; if (st.x < 0) st.x = cv.width; st.tw += 0.02; }
+        cx.globalAlpha = 0.3 + 0.4 * Math.abs(Math.sin(st.tw));
+        cx.fillStyle = '#cfe4ff';
+        cx.beginPath(); cx.arc(st.x, st.y, st.r, 0, 7); cx.fill();
+      });
+      cx.globalAlpha = 1;
+    }
+    if (RM) { draw(); }
+    else { (function loop() { draw(); rafId = requestAnimationFrame(loop); })(); rafId = null; }
+  })();
+  /* note: starfield owns its own loop; game rafId handled separately below */
+
+  /* ================= helpers ================= */
+  function clamp(v, a, b) { return Math.max(a, Math.min(v, b)); }
+
+  function fmtTime(y) {
+    y = Math.max(0, y);
+    var yrs = Math.floor(y), rem = (y - yrs) * 12;
+    var mo = Math.floor(rem), d = Math.round((rem - mo) * 30);
+    var s = yrs + ' yrs';
+    if (mo) s += ', ' + mo + ' mo';
+    if (d) s += ', ' + d + ' d';
+    return s;
+  }
+
+  function addTime(d) {
+    state.time = Math.max(0, state.time + d); state.spent += Math.max(0, d);
+    if (state.time <= 0 && !state.flags.earthLost) {
+      state.flags.earthLost = true;
+      buzz();
+    }
+    renderHud();
+  }
+  function addFuel(d) { state.fuel = clamp(state.fuel + d, 0, 100); renderHud(); }
+  function addData(d) { state.data = clamp(state.data + d, 0, 100); renderHud(); }
+
+  function renderHud() {
+    var t = $('hud-time');
+    t.textContent = state.time.toFixed(1) + ' YRS';
+    t.setAttribute('aria-valuenow', Math.round(state.time));
+    t.classList.toggle('low', state.time < 12);
+    $('bar-time').style.width = clamp(state.time / 55 * 100, 0, 100) + '%';
+    var f = $('hud-fuel');
+    f.textContent = Math.round(state.fuel) + '%';
+    f.setAttribute('aria-valuenow', Math.round(state.fuel));
+    f.classList.toggle('low', state.fuel < 20);
+    $('bar-fuel').style.width = state.fuel + '%';
+    var d = $('hud-data');
+    d.textContent = Math.round(state.data) + '%';
+    d.setAttribute('aria-valuenow', Math.round(state.data));
+    $('bar-data').style.width = state.data + '%';
+  }
+
+  var SECTORS = ['EARTH', 'WORMHOLE', "MILLER", 'MANN', 'SLINGSHOT', 'TESSERACT', 'HOME'];
+  var SECTOR_OF = { intro:0, briefing:0, wormhole:1, miller:2, wave:2, millerSkip:2,
+    mann:3, mannVerify:3, mannBetray:3, mannOrbit:3, slingPre:4, sling:4, tesseract:5, home:6 };
+
+  var dotsEl = $('dots');
+  SECTORS.forEach(function () {
+    var s = document.createElement('span'); s.className = 'dot'; dotsEl.appendChild(s);
+  });
+  function setSector(scene) {
+    var i = SECTOR_OF[scene] || 0;
+    $('sector-name').textContent = 'SECTOR 0' + (i + 1) + ' · ' + SECTORS[i];
+    $('console-sector').textContent = 'SECTOR 0' + (i + 1) + ' · ' + SECTORS[i];
+    Array.prototype.forEach.call(dotsEl.children, function (d, k) {
+      d.className = 'dot' + (k < i ? ' done' : '') + (k === i ? ' cur' : '');
+    });
+  }
+
+  function setArt(file, caption) {
+    if (RM) { sceneImg.src = BASE + file; sceneCap.textContent = caption; return; }
+    sceneImg.style.opacity = 0;
+    later(function () {
+      sceneImg.onload = function () { sceneImg.style.opacity = 1; };
+      sceneImg.src = BASE + file;
+      sceneCap.textContent = caption;
+      later(function () { sceneImg.style.opacity = 1; }, 600);
+    }, 200);
+  }
+
+  /* typewriter: word-span reveal preserving inline markup */
+  function typeParas(items, done) {
+    narrative.innerHTML = '';
+    var full = '';
+    items.forEach(function (it) {
+      var txt = typeof it === 'string' ? it : it.t;
+      full += txt + ' ';
+    });
+    narrativeSr.textContent = full;
+    if (RM) {
+      items.forEach(function (it) {
+        var p = document.createElement('p');
+        if (typeof it !== 'string' && it.q) p.className = 'quote';
+        p.innerHTML = typeof it === 'string' ? it : it.t;
+        narrative.appendChild(p);
+      });
+      typing = false; skipHint.hidden = true;
+      done && done();
+      return;
+    }
+    typing = true; skipFlag = false; skipHint.hidden = false;
+    var idx = 0;
+    function nextPara() {
+      if (idx >= items.length) { typing = false; skipHint.hidden = true; done && done(); return; }
+      var it = items[idx++];
+      var p = document.createElement('p');
+      if (typeof it !== 'string' && it.q) p.className = 'quote';
+      var tpl = document.createElement('template');
+      tpl.innerHTML = typeof it === 'string' ? it : it.t;
+      (function wrap(node) {
+        Array.prototype.slice.call(node.childNodes).forEach(function (ch) {
+          if (ch.nodeType === 3) {
+            var df = document.createDocumentFragment();
+            ch.textContent.split(/(\s+)/).forEach(function (pt) {
+              if (pt === '') return;
+              if (/^\s+$/.test(pt)) { df.appendChild(document.createTextNode(pt)); return; }
+              var s = document.createElement('span'); s.className = 'w'; s.textContent = pt; df.appendChild(s);
+            });
+            node.replaceChild(df, ch);
+          } else if (ch.nodeType === 1) { wrap(ch); }
+        });
+      })(tpl.content);
+      while (tpl.content.firstChild) p.appendChild(tpl.content.firstChild);
+      narrative.appendChild(p);
+      var words = p.querySelectorAll('.w'), wi = 0;
+      var iv = every(function () {
+        var step = skipFlag ? 999 : 2;
+        for (var k = 0; k < step && wi < words.length; k++, wi++) words[wi].classList.add('on');
+        if (wi >= words.length) { clearInterval(iv); later(nextPara, skipFlag ? 0 : 210); }
+      }, 26);
+      ivs.push(iv);
+    }
+    nextPara();
+  }
+
+  $('console').addEventListener('click', function () { if (typing) skipFlag = true; });
+  $('console').addEventListener('keydown', function (e) {
+    if (typing && (e.key === 'Enter' || e.key === ' ')) { skipFlag = true; e.preventDefault(); }
+  });
+
+  function choices(list) {
+    choicesEl.innerHTML = '';
+    list.forEach(function (c) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'choice' + (c.danger ? ' danger' : '');
+      b.innerHTML = '<span class="c-label">' + c.label + '</span>' +
+                    (c.hint ? '<span class="c-hint">' + c.hint + '</span>' : '');
+      b.addEventListener('click', function () {
+        choicesEl.innerHTML = '';
+        blip();
+        c.run();
+      });
+      choicesEl.appendChild(b);
+    });
+  }
+
+  function go(scene) {
+    clearAll();
+    mgEl.innerHTML = '';
+    debriefEl.hidden = true;
+    setSector(scene);
+    SCENES[scene]();
+  }
+
+  /* ================= minigame: the wave ================= */
+  function waveGame() {
+    if (RM) {
+      addData(18); addFuel(-10); addTime(22.8);
+      mgEl.innerHTML =
+        '<div class="mg"><h4 class="mg-title">SURFACE OPS — MILLER\'S PLANET</h4>' +
+        '<p class="mg-sub">Reduced-motion protocol: the flight computer executed the surface schedule automatically.</p>' +
+        '<div class="mg-report"><h4>MISSION REPORT</h4>' +
+        '<p class="rep-line">⏳ <b>' + fmtTime(22.8) + '</b> of Earth time burned on the surface.</p>' +
+        '<p class="rep-line">📡 Uplink complete. <b>+18 DATA</b> · ⛽ <b>−10 FUEL</b></p>' +
+        '<p class="quote">"Time becomes the ultimate finite resource."</p>' +
+        '<button class="btn-act small" id="wave-cont" type="button">CONTINUE ▸</button></div></div>';
+      $('wave-cont').addEventListener('click', function () { blip(); go('mann'); });
+      return;
+    }
+    state.flags.millerVisited = true;
+    mgEl.innerHTML =
+      '<div class="mg" id="wave-panel">' +
+      '<div class="mg-art"><img src="' + BASE + 'slide-007.jpg" alt="A mountain-sized tidal wave crossing a shallow ocean" width="1600" height="700"></div>' +
+      '<h4 class="mg-title">SURFACE OPS — MILLER\'S PLANET</h4>' +
+      '<p class="mg-sub">"The planet\'s surface is covered in ankle-deep water, tricking orbital sensors into registering a calm, life-sustaining ocean." The calm is a lie. The longer the uplink runs, the more data survives — and the more Earth years burn.</p>' +
+      '<div class="mg-row"><span>📡 DATA UPLINK</span><span id="up-pct">0%</span></div>' +
+      '<div class="track"><div class="fill" id="up-fill"></div></div>' +
+      '<div class="mg-row"><span>🌊 WAVE PROXIMITY</span><span id="wave-pct">0%</span></div>' +
+      '<div class="track"><div class="fill" id="wave-fill"></div></div>' +
+      '<p id="yrs-big"><small>EARTH YEARS BURNED</small><span id="yrs-val">0.0 YRS</span></p>' +
+      '<p class="callout" id="wave-callout">Uplink acquiring…</p>' +
+      '<button class="btn-act" id="wave-abort" type="button">🌊 RETURN TO THE RANGER</button>' +
+      '<p class="kbd-hint">Keyboard: <kbd>Space</kbd> = abort</p>' +
+      '</div>';
+    var panel = $('wave-panel'), t0 = performance.now(), finished = false;
+    var said = {};
+    function callouts(t) {
+      var msg = null, key = null;
+      if (t > 4.5 && !said.a) { key = 'a'; msg = 'The first mountain of water appears on the horizon…'; }
+      if (t > 8.5 && !said.b) { key = 'b'; msg = '"Gargantua\'s immense gravitational pull drags the shallow water into towering, mountain-sized tidal waves."'; }
+      if (t > 11.5 && !said.c) { key = 'c'; msg = '⚠ THE WAVE IS COMING. GO. NOW.'; }
+      if (key) { said[key] = true; $('wave-callout').textContent = msg; if (key === 'c') buzz(); }
+    }
+    function finish(tSec, forced) {
+      if (finished) return;
+      finished = true;
+      if (rafId) cancelAnimationFrame(rafId);
+      var up = Math.min(1, tSec / 11);
+      var gain = Math.round(up * 18 * (forced ? 0.5 : 1));
+      var fuelCost = forced ? 18 : (tSec < 9 ? 7 : 10);
+      var yrs = 6 + 1.5 * tSec;
+      addData(gain); addFuel(-fuelCost); addTime(yrs);
+      if (!forced) chime(); else buzz();
+      panel.classList.add(forced ? 'flash' : 'shake');
+      mgEl.innerHTML =
+        '<div class="mg"><h4 class="mg-title ' + (forced ? '' : '') + '">SURFACE OPS — MILLER\'S PLANET</h4>' +
+        '<div class="mg-report"><h4 class="' + (forced ? 'bad' : '') + '">' + (forced ? '⚠ THE WAVE HIT — FORCED ABORT' : '✔ CLEAN EXTRACT') + '</h4>' +
+        '<p class="rep-line">⏳ <b>' + fmtTime(yrs) + '</b> of lost time. 📡 <b>+' + gain + ' DATA</b> · ⛽ <b>−' + fuelCost + ' FUEL</b></p>' +
+        '<p class="rep-line">' + (forced
+          ? 'The wall of water takes the ranger\'s port stabilizer and half the uplink buffer. You climb back to orbit light, wet, and older.'
+          : 'You lift off as the crest shatters the horizon behind you. The data core hums, full and warm.') + '</p>' +
+        '<p class="quote">"A brief, botched landing results in 23 years, 4 months, and 8 days of lost time. Time becomes the ultimate finite resource."</p>' +
+        '<button class="btn-act small" id="wave-cont" type="button">CONTINUE ▸</button></div></div>';
+      $('wave-cont').addEventListener('click', function () { blip(); go('mann'); });
+    }
+    $('wave-abort').addEventListener('click', function () {
+      var t = (performance.now() - t0) / 1000;
+      finish(Math.min(t, 12.9), false);
+    });
+    document.addEventListener('keydown', function spaceAbort(e) {
+      if (e.code === 'Space' && !finished && document.activeElement && panel.contains(document.activeElement)) {
+        e.preventDefault();
+        var t = (performance.now() - t0) / 1000;
+        finish(Math.min(t, 12.9), false);
+        document.removeEventListener('keydown', spaceAbort);
+      }
+    });
+    var t0r = t0;
+    (function frame(now) {
+      if (finished) return;
+      var t = (now - t0r) / 1000;
+      var w = Math.min(100, t / 13 * 100), u = Math.min(100, t / 11 * 100);
+      $('wave-fill').style.width = w + '%';
+      $('up-fill').style.width = u + '%';
+      $('wave-pct').textContent = Math.round(w) + '%';
+      $('up-pct').textContent = Math.round(u) + '%';
+      $('yrs-val').textContent = (6 + 1.5 * t).toFixed(1) + ' YRS';
+      callouts(t);
+      if (t >= 13) { finish(13, true); return; }
+      rafId = requestAnimationFrame(frame);
+    })(t0r);
+  }
+
+  /* ================= minigame: slingshot ================= */
+  function slingGame() {
+    state.flags.slingshotDone = true;
+    if (RM) {
+      addFuel(-14); addTime(-6); state.flags.slingClean = true;
+      mgEl.innerHTML =
+        '<div class="mg"><h4 class="mg-title">THE SLINGSHOT MANEUVER</h4>' +
+        '<p class="mg-sub">Reduced-motion protocol: the flight computer computed the release point and flew the trajectory.</p>' +
+        '<div class="mg-report"><h4>MISSION REPORT</h4>' +
+        '<p class="rep-line">✔ Trajectory accepted. ⛽ <b>−14 FUEL</b> · ⏳ <b>−6 YRS</b></p>' +
+        '<p class="quote">"A powered slingshot just outside the critical orbit, trading 51 years of time for gravitational momentum."</p>' +
+        '<button class="btn-act small" id="sg-cont" type="button">CONTINUE ▸</button></div></div>';
+      $('sg-cont').addEventListener('click', function () { blip(); go('tesseract'); });
+      return;
+    }
+    mgEl.innerHTML =
+      '<div class="mg" id="sg-panel">' +
+      '<div class="mg-art"><img src="' + BASE + 'slide-010.jpg" alt="Trajectory diagram of a powered slingshot around a black hole" width="1600" height="700"></div>' +
+      '<h4 class="mg-title">THE SLINGSHOT MANEUVER</h4>' +
+      '<p class="mg-sub">Release inside the <b style="color:#7ce8a8">CRITICAL ORBIT</b>. Release too wide and Gargantua keeps the difference — permanently.</p>' +
+      '<div class="sg-track" id="sg-track"><div class="sg-zone dead"></div><div class="sg-zone sweet"></div><div class="sg-zone horizon"></div><div id="sg-marker"></div></div>' +
+      '<div class="sg-labels"><span>dead zone</span><span>critical orbit</span><span>horizon</span></div>' +
+      '<p id="mstatus">ATTEMPT <span id="sg-att">1</span> / 3 — release the burn.</p>' +
+      '<button class="btn-act" id="sg-go" type="button">🚀 RELEASE</button>' +
+      '<p class="kbd-hint">Keyboard: <kbd>Enter</kbd> = release</p>' +
+      '</div>';
+    var pos = 0, dir = 1, last = null, attempts = 0, over = false;
+    function frame(now) {
+      if (over) return;
+      if (last !== null) {
+        var dt = (now - last) / 1000;
+        pos += dir * dt * 95;
+        if (pos >= 100) { pos = 100; dir = -1; }
+        if (pos <= 0) { pos = 0; dir = 1; }
+        $('sg-marker').style.left = pos + '%';
+      }
+      last = now;
+      rafId = requestAnimationFrame(frame);
+    }
+    rafId = requestAnimationFrame(frame);
+    function attempt() {
+      if (over) return;
+      attempts++;
+      $('sg-att').textContent = Math.min(attempts + 1, 3);
+      var p = pos;
+      if (p >= 76 && p <= 92) {
+        over = true; if (rafId) cancelAnimationFrame(rafId);
+        state.flags.slingClean = true; addFuel(-12); addTime(-3); chime();
+        report('✔ SLINGSHOT LOCKED', 'The Endurance whips around Gargantua inside the critical orbit. Momentum is banked; the years are paid. ⛽ −12 FUEL · ⏳ −3 YRS', false);
+      } else if (attempts >= 3) {
+        over = true; if (rafId) cancelAnimationFrame(rafId);
+        addFuel(-10); addData(-6);
+        report('🤖 TARS INTERVENES', 'Three misses. Tars detaches his craft to shed mass — "sacrificing themselves to the singularity." The trajectory closes, at a price. ⛽ −10 FUEL · 📡 −6 DATA', true);
+      } else if (p > 92) {
+        addFuel(-6); addTime(-2); buzz();
+        $('sg-panel').classList.add('flash');
+        $('mstatus').textContent = '⚠ OVERBURN — the hull groans near the horizon. Attempt ' + (attempts + 1) + ' / 3.';
+      } else {
+        addTime(-1); addFuel(-2); buzz();
+        $('sg-panel').classList.add('shake');
+        $('mstatus').textContent = '✘ UNDERSHOOT — the burn dies early. Attempt ' + (attempts + 1) + ' / 3.';
+      }
+    }
+    function report(title, text, bad) {
+      mgEl.innerHTML =
+        '<div class="mg"><div class="mg-report"><h4 class="' + (bad ? 'bad' : '') + '">' + title + '</h4>' +
+        '<p class="rep-line">' + text + '</p>' +
+        '<p class="quote">"The only way humans have ever figured out of getting somewhere is to leave something behind."</p>' +
+        '<button class="btn-act small" id="sg-cont" type="button">CONTINUE ▸</button></div></div>';
+      $('sg-cont').addEventListener('click', function () { blip(); go('tesseract'); });
+    }
+    $('sg-go').addEventListener('click', attempt);
+  }
+
+  /* ================= minigame: morse handshake ================= */
+  function morseGame() {
+    var WORD = [
+      { ch: 'S', pat: ['·', '·', '·'] },
+      { ch: 'T', pat: ['–'] },
+      { ch: 'A', pat: ['·', '–'] },
+      { ch: 'Y', pat: ['–', '·', '–', '–'] }
+    ];
+    if (RM) {
+      state.flags.morse = 'success'; addData(15); addTime(-1); chime();
+      mgEl.innerHTML =
+        '<div class="mg"><h4 class="mg-title">THE QUANTUM BARCODES — MORSE HANDSHAKE</h4>' +
+        '<p class="mg-sub">Reduced-motion protocol: the sequence is transmitted automatically through the second hand.</p>' +
+        '<div class="mg-report"><h4>HANDSHAKE COMPLETE</h4>' +
+        '<p class="rep-line">📡 <b>+15 DATA</b> · ⏳ <b>−1 YR</b> — the quantum data is on its way to Murph.</p>' +
+        '<button class="btn-act small" id="mo-cont" type="button">CONTINUE ▸</button></div></div>';
+      $('mo-cont').addEventListener('click', function () { blip(); go('home'); });
+      return;
+    }
+    mgEl.innerHTML =
+      '<div class="mg" id="mo-panel">' +
+      '<div class="mg-art"><img src="' + BASE + 'slide-012.jpg" alt="Dust lines on floorboards and a watch face close-up" width="1600" height="700"></div>' +
+      '<h4 class="mg-title">THE QUANTUM BARCODES — MORSE HANDSHAKE</h4>' +
+      '<p class="mg-sub">"Manipulating the second hand of a gifted watch to transmit the quantum data extracted from the singularity via Morse Code." The channel is old and human. The handshake is a single word: <b>STAY</b>.</p>' +
+      '<div class="morse-wrap">' +
+      '<div class="watch" id="watch" role="img" aria-label="Watch with a second hand that taps Morse code"><div id="hand"></div><div class="pin"></div></div>' +
+      '<div class="morse-main">' +
+      '<div class="mletters" id="mletters"></div>' +
+      '<p id="typed" aria-live="polite"></p>' +
+      '<div class="morse-btns">' +
+      '<button class="btn-act small" id="btn-dit" type="button">· DIT</button>' +
+      '<button class="btn-act small" id="btn-dah" type="button">— DAH</button>' +
+      '</div>' +
+      '<p id="mstatus">Transmit the pattern of the highlighted letter.</p>' +
+      '<p class="kbd-hint">Keyboard: <kbd>J</kbd> = dit · <kbd>K</kbd> = dah</p>' +
+      '</div></div></div>';
+    var li = 0, si = 0, mistakes = 0, lettersEl = $('mletters');
+    function render() {
+      lettersEl.innerHTML = '';
+      WORD.forEach(function (L, k) {
+        var d = document.createElement('div');
+        d.className = 'mletter' + (k < li ? ' done' : '') + (k === li ? ' cur' : '');
+        d.innerHTML = '<span class="ch">' + L.ch + '</span><span class="pat">' + L.pat.join('') + '</span>';
+        lettersEl.appendChild(d);
+      });
+      $('typed').textContent = WORD[li] ? WORD[li].pat.slice(0, si).join(' ') : '';
+    }
+    function input(sym) {
+      if (li >= WORD.length) return;
+      var L = WORD[li];
+      var hand = $('hand');
+      var rot = (parseFloat(hand.dataset.rot || 0) + (sym === '·' ? 24 : 68)) % 360;
+      hand.dataset.rot = rot;
+      hand.style.transform = 'rotate(' + rot + 'deg)';
+      if (sym === L.pat[si]) {
+        si++;
+        if (sym === '·') tick(); else dahS();
+        if (si >= L.pat.length) {
+          li++; si = 0;
+          tone(880, .12, 'sine', .09); tone(1174, .14, 'sine', .08, .09);
+          if (li >= WORD.length) { succeed(false); return; }
+        }
+        render();
+      } else {
+        mistakes++;
+        buzz();
+        si = 0;
+        var w = $('watch');
+        w.classList.remove('wrong'); void w.offsetWidth; w.classList.add('wrong');
+        $('mstatus').textContent = '✘ Wrong symbol. Pattern reset. (' + mistakes + ')';
+        render();
+        if (mistakes >= 6) succeed(true);
+      }
+    }
+    function succeed(assisted) {
+      state.flags.morse = 'success';
+      addData(assisted ? 12 : 20); addTime(-1);
+      chime();
+      mgEl.innerHTML =
+        '<div class="mg"><div class="mg-report"><h4>✔ HANDSHAKE COMPLETE</h4>' +
+        '<p class="rep-line">' + (assisted
+          ? 'Tars streams the sequence through your suit radio. The word reaches the watch anyway: four letters, ticking in gold.'
+          : 'Your fingers tap the grid, the second hand obeys, and the word lands in another decade: STAY.') + '</p>' +
+        '<p class="rep-line">📡 <b>+' + (assisted ? 12 : 20) + ' DATA</b> · ⏳ <b>−1 YR</b> — "solving Professor Brand\'s equation."</p>' +
+        '<button class="btn-act small" id="mo-cont" type="button">CONTINUE ▸</button></div></div>';
+      $('mo-cont').addEventListener('click', function () { blip(); go('home'); });
+    }
+    render();
+    $('btn-dit').addEventListener('click', function () { input('·'); });
+    $('btn-dah').addEventListener('click', function () { input('–'); });
+    document.addEventListener('keydown', morseKeys);
+    function morseKeys(e) {
+      var k = e.key.toLowerCase();
+      if (k === 'j') { input('·'); e.preventDefault(); }
+      if (k === 'k') { input('–'); e.preventDefault(); }
+      if (li >= WORD.length) document.removeEventListener('keydown', morseKeys);
+    }
+  }
+
+  /* ================= scenes ================= */
+  var SCENES = {
+
+    intro: function () {
+      setArt('slide-001.jpg', 'THE CINEMATIC COSMOS — cover');
+      typeParas([
+        { q: true, t: '"Earth\'s air is 80% Nitrogen. Humans do not breathe it. — The Blight: Thrives on nitrogen, systematically depleting Earth\'s oxygen."' },
+        { q: true, t: '"Wheat died 7 years ago. Okra died this year. Corn is the only surviving crop. — The last generation to starve will be the first to suffocate."' },
+        'You are the commander of the <b>Endurance</b>. One ship. Two plans. And a single currency that actually matters: <b>Earth years</b>. Every maneuver, every landing, every hesitation spends them.'
+      ], function () {
+        choices([{ label: '🚀 BEGIN MISSION', hint: 'launch clearance granted', run: function () { go('briefing'); } }]);
+      });
+    },
+
+    briefing: function () {
+      setArt('slide-002.jpg', 'THE DYING EARTH — atmosphere · blight · prognosis · timeline');
+      typeParas([
+        'Mission Control streams two plans across your console. <b>Plan A: Evacuation</b> — "Build massive space stations (centrifuges) on Earth." The obstacle: "Requires solving the gravity equation to lift the stations into orbit—a task stalled by the need for quantum data from inside a black hole."',
+        '<b>Plan B: Repopulation</b> — "The Endurance carries a Population Bomb." The payload: "5,000 fertilized eggs weighing under 900 kilos."'
+      ], function () {
+        choices([
+          { label: 'Commit to Plan A — the equation is everything.', hint: '📡 +10', run: function () { addData(10); go('wormhole'); } },
+          { label: 'Arm Plan B — insurance against the void.', hint: '⏳ +4 buffer', danger: true, run: function () { state.flags.planB = true; addTime(4); go('wormhole'); } },
+          { label: 'Re-check the anomaly near Saturn before launch.', hint: '⏳ −2 · 📡 +5', run: function () { addData(5); addTime(-2); go('wormhole'); } }
+        ]);
+      });
+    },
+
+    wormhole: function () {
+      setArt('slide-004.jpg', 'THE WORMHOLE — a literal hole in space');
+      typeParas([
+        'Near Saturn, space folds. {q}'.replace('{q}', ''),
+        { q: true, t: '"A circle in three dimensions is a sphere—a literal hole in space." — Origin: "A spacetime disturbance near Saturn, placed 48 years ago by \'Them\'." — The Shortcut: "Bends three-dimensional space across a higher dimension."' },
+        'Every instrument agrees: on the other side lies another galaxy — and three candidate worlds.'
+      ], function () {
+        choices([
+          { label: 'Send a probe through first.', hint: '⏳ −2 · 📡 +5', run: function () { addTime(-2); addData(5); go('miller'); } },
+          { label: 'Take the Endurance through. No delays.', hint: '⏳ −1 · ⛽ −8', danger: true, run: function () { addTime(-1); addFuel(-8); go('miller'); } }
+        ]);
+      });
+    },
+
+    miller: function () {
+      setArt('slide-006.jpg', 'THE MATH OF RELATIVITY — the exchange rate');
+      typeParas([
+        'First world: Miller. "Miller\'s planet circles Gargantua like a basketball around the hoop." The survey reads impossible: "130% Earth gravity, shallow global ocean, 4,000ft tidal waves."',
+        { q: true, t: '"THE EXCHANGE RATE: 1 hour on the surface = 7 years back on Earth." — Time becomes the ultimate finite resource.' },
+        'One more anomaly burns in the log: the signal from Miller is "an endless echo sent only minutes after her death, years ago in Earth time." A thumbs up, repeating forever.'
+      ], function () {
+        choices([
+          { label: 'Descend. The uplink may still hold Miller\'s data.', hint: '⚠ TIME TRAP · 📡 up to +18', danger: true, run: function () { waveGame(); } },
+          { label: 'Break orbit. The price is insane.', hint: '⏳ −1 · no surface data', run: function () { addTime(-1); go('millerSkip'); } }
+        ]);
+      });
+    },
+
+    millerSkip: function () {
+      setArt('slide-005.jpg', 'THE LAZARUS WORLDS — three candidate worlds');
+      typeParas([
+        'You log Miller as <b>unsurveyed</b> and burn for deeper space. "Status: Sterile. Hydrocarbons, but no life." The planet keeps its secrets — and its echo keeps repeating for no one.'
+      ], function () { go('mann'); });
+    },
+
+    mann: function () {
+      setArt('slide-008.jpg', 'THE SURVIVAL INSTINCT — strength and flaw');
+      typeParas([
+        'Second world: Mann. "Environment: 80% Earth gravity, 67-hour cold days, frozen ice/ammonia clouds." The transmitted data says paradise. The great explorer himself says: descend.',
+        { q: true, t: '"The survival instinct is humanity\'s greatest strength, but also its critical flaw." — "Evolution restricts deep, selfless empathy to our immediate line of sight (our children)."' },
+        'Something in the data is <b>too clean</b>. Verification costs fuel and years. Trust costs nothing — until it costs everything.'
+      ], function () {
+        choices([
+          { label: 'Run a deep-spectrum verification before descent.', hint: '⏳ −2 · ⛽ −6 · exposes the truth', run: function () { addTime(-2); addFuel(-6); go('mannVerify'); } },
+          { label: 'Trust the legend. Begin descent preparations.', hint: '⚠ unknown risk', danger: true, run: function () { state.flags.fooled = true; go('mannBetray'); } },
+          { label: 'Orbital readings only. Move on.', hint: '⏳ −1 · 📡 +2', run: function () { addTime(-1); addData(2); go('mannOrbit'); } }
+        ]);
+      });
+    },
+
+    mannVerify: function () {
+      state.flags.mannExposed = true;
+      setArt('slide-008.jpg', 'THE BETRAYAL — data as a mirror');
+      typeParas([
+        'Deep spectrum cracks the image in minutes.',
+        { q: true, t: '"Mann falsified planetary data to trigger a rescue, proving that extreme isolation corrupts objective science in favor of personal survival."' },
+        'The planet has no surface — only frozen cloud over an endless drop. Your crew quietly recalculates everything the legend ever touched. <b>+12 DATA</b>: the archive is cleaner now, and colder.'
+      ], function () {
+        choices([{ label: 'Continue ▸ toward Gargantua', hint: '', run: function () { addData(12); go('slingshotPre'); } }]);
+      });
+    },
+
+    mannBetray: function () {
+      setArt('slide-008.jpg', 'THE BETRAYAL — the docking goes wrong');
+      typeParas([
+        'The descent begins. Then the truth detonates mid-dock.',
+        { q: true, t: '"Mann falsified planetary data to trigger a rescue, proving that extreme isolation corrupts objective science in favor of personal survival."' },
+        'The hull screams. Air leaves in a white gasp. You claw back to orbit with a lighter ship, a darker log — <b>−12 DATA, −15 FUEL, −1 YR</b> — and a lesson no textbook teaches: isolation bends instruments, but it bends people first.'
+      ], function () {
+        choices([{ label: 'Continue ▸', hint: '', run: function () { addData(-12); addFuel(-15); addTime(-1); go('slingshotPre'); } }]);
+      });
+    },
+
+    mannOrbit: function () {
+      setArt('slide-005.jpg', 'THE LAZARUS WORLDS — Mann\'s planet: hostile');
+      typeParas([
+        'You log the world as <b>unverified</b> — "Status: Hostile. No surface. Faked data to force a rescue." — and burn on. The legend keeps its halo at a distance. Distance is the only reason it still has one.'
+      ], function () { go('slingshotPre'); });
+    },
+
+    slingshotPre: function () {
+      setArt('slide-010.jpg', 'THE SLINGSHOT MANEUVER — problem · solution · law');
+      if (state.fuel < 60) {
+        typeParas([
+          'The math closes like a trap.',
+          { q: true, t: '"THE PROBLEM: The Endurance lacks the fuel to break Gargantua\'s pull and reach Edmunds\' planet." — THE SOLUTION: "A powered slingshot just outside the critical orbit, trading 51 years of time for gravitational momentum."' },
+          'The ledger is short: something must go overboard. "The only way humans have ever figured out of getting somewhere is to leave something behind."'
+        ], function () {
+          choices([
+            { label: 'Jettison the lander module. Shed mass.', hint: '⛽ +22 · 📡 −10', danger: true, run: function () { addFuel(22); addData(-10); slingGame(); } },
+            { label: 'Skim the horizon\'s edge. Buy momentum with years.', hint: '⏳ −6', run: function () { addTime(-6); slingGame(); } }
+          ]);
+        });
+      } else {
+        typeParas([
+          'The math closes like a trap.',
+          { q: true, t: '"THE PROBLEM: The Endurance lacks the fuel to break Gargantua\'s pull and reach Edmunds\' planet." — THE SOLUTION: "A powered slingshot just outside the critical orbit, trading 51 years of time for gravitational momentum."' },
+          'The fuel ledger holds — barely. The maneuver is yours to fly.'
+        ], function () { slingGame(); });
+      }
+    },
+
+    tesseract: function () {
+      setArt('slide-011.jpg', 'THE TESSERACT — time as architecture');
+      addTime(-1);
+      typeParas([
+        'Gargantua takes its toll — and then the grid opens.',
+        { q: true, t: '"THE CONSTRUCT: Built by future, five-dimensional humans to allow a three-dimensional mind to comprehend and interact with infinite time." — TIME AS ARCHITECTURE: "Past and future are mapped out as a physical space. Time is a canyon you can climb into; moments are physical locations on a grid."' },
+        'Behind the bookshelf: a bedroom. Behind the bedroom: a daughter. And the realization lands softly — <b>"\'They\' didn\'t choose him—they chose Murph. He is merely the bridge translating the data."</b> The bridge is you.',
+        'On the desk sits a gifted watch. "Manipulating the second hand… to transmit the quantum data extracted from the singularity via Morse Code, solving Professor Brand\'s equation." The channel is old and human. The handshake is a single word: <b>STAY</b>.'
+      ], function () { morseGame(); });
+    },
+
+    home: function () {
+      var f = state.flags;
+      var success = f.morse === 'success';
+      var planA = success && state.data >= 75 && state.time > 0;
+      var art = planA ? 'slide-013.jpg' : (success ? 'slide-013.jpg' : 'slide-014.jpg');
+      var cap = planA ? 'GRAVITY CONQUERED — Plan A realized' : (success ? 'THE CARETAKERS SURVIVED' : 'THE FINAL FRONTIER — Plan B begins');
+      setArt(art, cap);
+      var paras = [];
+      if (f.earthLost) paras.push('The surface clock struck zero while you were still in flight. Somewhere behind you, the last field of corn let go.');
+      if (planA) {
+        paras.push({ q: true, t: '"PLAN A REALIZED: Murph\'s \'Eureka\' moment allowed humanity to harness gravity, lifting massive O\'Neill cylinders off the dying Earth."' });
+        paras.push('The equation you carried home in Morse code unlocks the centrifuges. Whole cities rise from the corn like lanterns. "The population was not abandoned" — it never even learned how close it came.');
+        paras.push({ q: true, t: 'GRAVITY CONQUERED.' });
+      } else if (success) {
+        paras.push({ q: true, t: '"THE CARETAKERS SURVIVED: The population was not abandoned. Humanity lives on in artificial habitats orbiting Saturn, waiting for the final journey through the wormhole."' });
+        paras.push('The data arrived real but incomplete — enough to seal the habitats, not enough to lift them. The watch still ticks. The equation is still solvable. Humanity waits, alive and patient, above the rings.');
+      } else {
+        paras.push('The handshake never completed. The equation stays sealed. But the ship does not come home empty: the Population Bomb begins its quiet work.');
+        paras.push({ q: true, t: '"The Execution: Incubate the first 10, use surrogacy to achieve exponential growth, yielding a colony of hundreds within 30 years."' });
+        paras.push({ q: true, t: '"Alone in a strange galaxy... setting up camp... by the light of our new sun."' });
+        paras.push('Plan B was never a defeat. It was the promise folded into the mission on the very first day.');
+      }
+      typeParas(paras, function () { showDebrief(planA, success); });
+    }
+  };
+
+  /* ================= debrief ================= */
+  function showDebrief(planA, success) {
+    var score = state.data + state.time * 0.5 + state.fuel * 0.15;
+    var rank = score >= 105 ? 'CLASS: GARGANTUA COMMANDER'
+             : score >= 80 ? 'CLASS: RANGER PILOT'
+             : score >= 55 ? 'CLASS: LANDER OPERATOR'
+             : 'CLASS: DRONE PROBE';
+    debriefEl.innerHTML =
+      '<h3>🎖 MISSION DEBRIEF</h3>' +
+      '<p id="rank-line">' + rank + '</p>' +
+      '<div class="fin-stats">' +
+      '<span class="fs">⏳ YEARS SPENT: <b>' + state.spent.toFixed(1) + '</b></span>' +
+      '<span class="fs">📡 DATA: <b>' + Math.round(state.data) + '%</b></span>' +
+      '<span class="fs">⛽ FUEL: <b>' + Math.round(state.fuel) + '%</b></span>' +
+      '<span class="fs">🧭 ENDING: <b>' + (planA ? 'PLAN A' : success ? 'CARETAKERS' : 'PLAN B') + '</b></span>' +
+      '</div>' +
+      '<ul class="facts">' +
+      '<li>⏳ <em>"1 hour on the surface = 7 years back on Earth."</em> Time is a resource you can spend — and lose forever.</li>' +
+      '<li>⚠ <em>"Mann falsified planetary data to trigger a rescue, proving that extreme isolation corrupts objective science in favor of personal survival."</em></li>' +
+      '<li>🚀 <em>"A powered slingshot just outside the critical orbit, trading 51 years of time for gravitational momentum."</em> Every gain has a price tag.</li>' +
+      '<li>📡 <em>"Manipulating the second hand of a gifted watch to transmit the quantum data extracted from the singularity via Morse Code, solving Professor Brand\'s equation."</em> The oldest technology carried the heaviest cargo.</li>' +
+      '</ul>' +
+      '<button class="btn-act" id="again" type="button">⟲ RUN THE MISSION AGAIN</button>';
+    debriefEl.hidden = false;
+    $('again').addEventListener('click', function () { blip(); startGame(); });
+  }
+
+  /* ================= boot ================= */
+  function startGame() {
+    clearAll();
+    state = freshState();
+    renderHud();
+    go('intro');
+  }
+  $('restart-btn').addEventListener('click', function () { blip(); startGame(); });
+  startGame();
+
+})();
+</script>
 </body>
 </html>
