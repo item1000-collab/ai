@@ -417,7 +417,7 @@ var srLive = $('#srLive');
 var cometEl = $('#comet');
 var pathEl = $('#path');
 
-var freshState = function(){ return { idx:-1, fire:0, masks:0, growth:0, cards:[], done:false }; };
+var freshState = function(){ return { idx:-1, fire:0, masks:0, growth:0, cards:[], done:false, ending:null }; };
 var S = freshState();
 
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
@@ -876,9 +876,15 @@ function typeHTML(container, htmlArray, done){
   s.skip=function(){
     if(s.cancelled) return;
     if(s.timer) clearInterval(s.timer);
-    if(s.texts){ s.texts.forEach(function(o){ o.n.nodeValue=o.t; }); }
-    while(++s.i < s.queue.length){
+    /* Fill the paragraph currently being typed (if any), then render
+       every paragraph that has not been inserted yet — none is lost. */
+    if(s.texts){
+      s.texts.forEach(function(o){ o.n.nodeValue=o.t; });
+      s.i++;
+    }
+    while(s.i < s.queue.length){
       var p=document.createElement('p'); p.innerHTML=s.queue[s.i]; container.insertBefore(p, hint);
+      s.i++;
     }
     finish();
   };
@@ -925,11 +931,14 @@ function showReveal(inner, continueLabel, onNext){
   var box=document.createElement('div');
   box.className='revelation';
   box.innerHTML=inner+
-    '<div class="r-actions"><button type="button" class="btn gold">'+continueLabel+'</button></div>';
+    '<div class="r-actions"><button type="button" class="btn gold">'+(continueLabel||'Continue')+'</button></div>';
   sceneEl.appendChild(box);
   requestAnimationFrame(function(){ box.classList.add('show'); });
   var b=box.querySelector('.btn');
-  b.addEventListener('click', function(){ Sound.bell(); onNext(); });
+  b.addEventListener('click', function(){
+    Sound.bell();
+    if(typeof onNext==='function') onNext();
+  });
   setTimeout(function(){ b.focus({preventScroll:true}); }, REDUCED?0:450);
 }
 function applyChoice(ch){
@@ -965,12 +974,12 @@ function renderTitle(){
       '<button type="button" class="btn gold" id="btnNew">Begin the journey</button>'+
       (saved && !saved.done && saved.idx>=0 ? '<button type="button" class="btn" id="btnCont">Continue the journey</button>' : '')+
     '</div>'+
-    (best ? '<span class="best-chip">Best path found: '+ENDINGS[best].title+'</span>' : '')+
+    (best ? '<span class="best-chip">Best path found: '+(ENDINGS[best]?ENDINGS[best].title:best)+'</span>' : '')+
     '<details class="howto"><summary>How to play</summary><ul>'+
     '<li><strong>🔥 Fire</strong> is instinct, sincerity, immediate happiness. <strong>🎭 Masks</strong> is protocol and polish. Choices tip the balance.</li>'+
     '<li><strong>✦ Growth</strong> is the guide’s quiet thesis: “her fall — a necessary step toward maturity.” The fall is a station, not a defeat. What she does after it decides the ending.</li>'+
     '<li><strong>Two mini-games</strong> anchor the path: the Mazurka (feel the beat) and the Samovar (wait for the stillness) — mirror lessons of the same fire.</li>'+
-    '<li><strong>Four endings</strong> wait at the last station — one of them hidden.</li>'+
+    '<li><strong>Four endings</strong> wait at the last station — one of them hidden. The Triumph page is earned only by the canon path.</li>'+
     '<li>Keyboard: <span class="k">Tab</span> moves, <span class="k">Enter</span>/<span class="k">Space</span> acts, clicking the text hastens the ink.</li>'+
     '</ul></details>'+
     '</div>';
@@ -981,7 +990,7 @@ function renderTitle(){
   var bc=$('#btnCont');
   if(bc) bc.addEventListener('click', function(){
     var d=loadSave();
-    if(d){ S=d; Sound.bell(); if(S.done){ renderFinale(); } else { renderScene(); } }
+    if(d){ S=d; Sound.bell(); if(S.done){ renderFinale(S.ending); } else { renderScene(); } }
   });
   sceneEl.focus({preventScroll:true});
   announce('Title screen. The Vital Force. Begin or continue the journey.');
@@ -994,6 +1003,7 @@ var cur=null;
 function renderScene(){
   clearScene();
   cur=SCENES[S.idx];
+  if(!cur){ renderTitle(); return; }
   setLean(cur.lean); FX.set(cur.fx); setComet(cur.st);
   var h='<p class="chap">'+cur.chap+'</p>'+
         '<h2 class="scene-title">'+cur.title+'</h2>'+
@@ -1005,12 +1015,6 @@ function renderScene(){
   sceneEl.appendChild(prose);
   announce(cur.chap+'. '+cur.title+'.');
 
-  var afterText=function(){
-    if(cur.autoCard){
-      addCard(cur.autoCard.id);
-      showReveal('<div>'+cardHTML(cur.autoCard.id)+'</div><p class="r-flavor">'+cur.autoCard.text+'</p>', 'Continue', proceed);
-    } else { proceed(); }
-  };
   function proceed(){
     if(cur.minigame==='dance'){ runDance(); }
     else if(cur.minigame==='samovar'){ runSamovar(); }
@@ -1030,6 +1034,13 @@ function renderScene(){
       });
     }
   }
+  var afterText=function(){
+    if(cur.autoCard){
+      addCard(cur.autoCard.id);
+      announce('Notebook: '+CARDS[cur.autoCard.id].t+'.');
+      showReveal('<div>'+cardHTML(cur.autoCard.id)+'</div><p class="r-flavor">'+cur.autoCard.text+'</p>', 'Continue', proceed);
+    } else { proceed(); }
+  };
   typeHTML(prose, cur.text, afterText);
   prose.addEventListener('click', skipTyping);
   sceneEl.focus({preventScroll:true});
@@ -1041,7 +1052,10 @@ function renderChoices(list, onDone){
   list.forEach(function(ch){
     var b=document.createElement('button');
     b.type='button'; b.className='choice'; b.innerHTML=ch.label;
-    b.addEventListener('click', function(){ Sound.pluck(); onDone(ch); });
+    b.addEventListener('click', function(){
+      Sound.pluck();
+      if(typeof onDone==='function') onDone(ch);
+    });
     box.appendChild(b);
   });
   sceneEl.appendChild(box);
@@ -1082,8 +1096,9 @@ function runDance(){
     if(raf) cancelAnimationFrame(raf);
   });
 
+  function total(){ return hits.perfect+hits.good+hits.miss; }
   function paint(){
-    scoreEl.textContent='Beats '+(hits.perfect+hits.good+hits.miss)+'/'+BEATS+
+    scoreEl.textContent='Beats '+total()+'/'+BEATS+
       ' · ✦ perfect '+hits.perfect+' · ok '+hits.good+' · miss '+hits.miss;
   }
 
@@ -1114,34 +1129,44 @@ function runDance(){
   }
   mg.querySelector('#dSkip').addEventListener('click', function(){
     if(finished) return;
+    finished=true;          /* FIX: lock the game before skipping */
+    pad.disabled=true;
     runCleanup();
     showResult({masks:1, card:'DEIGN', comment:'She counts so as not to feel. The hall approves in French; the fire, politely, dims.'});
   });
 
   if(REDUCED){
-    /* Discrete-cue version: no smooth motion, text states only */
+    /* Discrete-cue version: no smooth motion, text states only.
+       FIX: rounds are driven by judged beats only — a window that
+       expires without a step counts as one miss, same as animated. */
     var cue=mg.querySelector('#dCue');
-    var inNow=false, beat=0;
+    var inNow=false, answered=false;
     function nextBeat(){
-      if(beat>=BEATS){ finishMinigame(); return; }
-      inNow=false; cue.textContent='wait…'; cue.classList.remove('now');
+      if(total()>=BEATS){ finishMinigame(); return; }
+      inNow=false; answered=false;
+      cue.textContent='wait…'; cue.classList.remove('now');
       timers.push(setTimeout(function(){
-        if(beat>=BEATS) return;
-        inNow=true; cue.textContent='NOW!'; cue.classList.add('now');
+        if(finished) return;
+        inNow=true; answered=false;
+        cue.textContent='NOW!'; cue.classList.add('now');
         Sound.tick();
         timers.push(setTimeout(function(){
-          inNow=false; beat++;
-          paint(); nextBeat();
+          if(finished) return;
+          inNow=false;
+          if(!answered){ hits.miss++; Sound.miss(); paint(); }
+          if(total()>=BEATS){ finishMinigame(); }
+          else { nextBeat(); }
         }, 600));
       }, 900+Math.random()*700));
     }
     function press(){
       if(finished) return;
-      if(inNow){ hits.perfect++; Sound.hit(); }
-      else { hits.miss++; Sound.miss(); }
-      beat=Math.max(beat, hits.perfect+hits.good+hits.miss);
-      paint();
-      if(hits.perfect+hits.good+hits.miss>=BEATS){ finishMinigame(); }
+      if(inNow && !answered){
+        hits.perfect++; answered=true; Sound.hit(); paint();
+        if(total()>=BEATS) finishMinigame();
+      }
+      /* Tapping during “wait…” is free — the note has not been judged yet,
+         exactly like the animated version. */
     }
     pad.addEventListener('click', press);
     nextBeat();
@@ -1209,8 +1234,10 @@ function runDance(){
   }
   pad.addEventListener('click', press);
   mg.addEventListener('keydown', function(e){
-    if((e.key==='Enter'||e.key===' ') && e.target===pad) return; /* native click handles it */
-    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); press(); }
+    if(e.key!=='Enter' && e.key!==' ') return;
+    if(e.target===pad) return;                                   /* native click handles it */
+    if(e.target && e.target.closest && e.target.closest('button')) return; /* FIX: let other buttons behave */
+    e.preventDefault(); press();
   });
   timers.push(setTimeout(spawn, 600));
   raf=requestAnimationFrame(loop);
@@ -1223,7 +1250,8 @@ function runDance(){
 function runSamovar(){
   var ROUNDS=6;
   var poured=0, round=0, finished=false;
-  var phase='idle', phaseTimer=null;
+  var phase='idle';
+  var phaseTimer=null;   /* FIX: single tracked timer chain */
 
   var mg=document.createElement('div');
   mg.className='mg';
@@ -1248,7 +1276,13 @@ function runSamovar(){
   var stage=mg.querySelector('.mg-stage');
   var timers=[];
 
-  setCleanup(function(){ timers.forEach(clearTimeout); });
+  setCleanup(function(){
+    timers.forEach(clearTimeout);
+    if(phaseTimer){ clearTimeout(phaseTimer); phaseTimer=null; }  /* FIX: kill the chain */
+  });
+  function clearPhase(){
+    if(phaseTimer){ clearTimeout(phaseTimer); phaseTimer=null; }
+  }
 
   var NOISE=[
     'the kettle mutters…',
@@ -1265,6 +1299,7 @@ function runSamovar(){
     if(finished) return;
     finished=true;
     runCleanup();
+    clearPhase();
     pad.disabled=true;
     var ch;
     if(poured>=5){
@@ -1289,22 +1324,29 @@ function runSamovar(){
   }
   mg.querySelector('#bSkip').addEventListener('click', function(){
     if(finished) return;
+    finished=true;          /* FIX: lock the game before skipping */
+    pad.disabled=true;
     runCleanup();
+    clearPhase();
     addCard('SAMOVAR');
     showResult({masks:1, card:'SAMOVAR', comment:'Impatience, served with a smile. The family drinks it anyway — that is what family is for.'});
   });
 
   function nextRound(){
+    if(finished) return;
     if(round>=ROUNDS){ finishMinigame(); return; }
+    clearPhase();           /* FIX: never run two chains in parallel */
     phase='noise';
     cue.textContent=NOISE[round%NOISE.length];
     cue.classList.remove('now');
     stage.classList.remove('shake');
     phaseTimer=setTimeout(function(){
+      if(finished) return;
       phase='still';
       cue.textContent='…stillness. Pour now.';
       cue.classList.add('now');
       phaseTimer=setTimeout(function(){
+        if(finished) return;
         /* stillness missed */
         round++;
         paint();
@@ -1319,16 +1361,19 @@ function runSamovar(){
       round++;
       phase='noise';
       paint();
+      clearPhase();         /* FIX: cancel the pending “stillness missed” timer */
       phaseTimer=setTimeout(nextRound, 350);
     } else {
       Sound.hiss();
-      if(!REDUCED){ stage.classList.add('shake'); setTimeout(function(){ stage.classList.remove('shake'); }, 400); }
+      if(!REDUCED){ stage.classList.add('shake'); timers.push(setTimeout(function(){ stage.classList.remove('shake'); }, 400)); }
     }
   }
   pad.addEventListener('click', press);
   mg.addEventListener('keydown', function(e){
-    if((e.key==='Enter'||e.key===' ') && e.target===pad) return;
-    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); press(); }
+    if(e.key!=='Enter' && e.key!==' ') return;
+    if(e.target===pad) return;
+    if(e.target && e.target.closest && e.target.closest('button')) return;
+    e.preventDefault(); press();
   });
   paint();
   timers.push(setTimeout(nextRound, 800));
@@ -1340,14 +1385,15 @@ function runSamovar(){
 ============================================================ */
 function finishGame(key){
   S.done=true; S.idx=SCENES.length;
-  addCard('TRIUMPH');
+  S.ending=key;                                   /* FIX: remember the earned ending */
+  if(key==='triumph'){ addCard('TRIUMPH'); }      /* FIX: canon page only */
   saveBest(key); save();
   renderFinale(key);
 }
 function renderFinale(key){
   clearScene();
-  key=key||decideEnding();
-  var E=ENDINGS[key];
+  key=key||S.ending||decideEnding();
+  var E=ENDINGS[key]||ENDINGS.triumph;
   setLean(key==='smile'?18:(key==='candle'?55:(key==='round'?75:92)));
   FX.set(key==='candle'?'stars':(key==='smile'?null:(key==='round'?'motes':'dawn')));
   setComet(5);
