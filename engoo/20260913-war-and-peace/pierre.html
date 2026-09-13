@@ -32,13 +32,11 @@ body{
   color:var(--ink); font-family:var(--serif);
   font-size:17px; line-height:1.72; background:var(--paper);
 }
-/* paper grain */
 body::before{
   content:""; position:fixed; inset:0; z-index:400; pointer-events:none;
   mix-blend-mode:multiply; opacity:.09;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }
-/* vignette */
 body::after{
   content:""; position:fixed; inset:0; z-index:399; pointer-events:none;
   box-shadow:inset 0 0 170px rgba(48,40,24,.30);
@@ -166,7 +164,6 @@ body::after{
 /* choices */
 .choices{margin-top:1.4em; display:flex; flex-direction:column; gap:10px; opacity:0; transform:translateY(8px); transition:opacity .5s ease, transform .5s ease; pointer-events:none;}
 .choices.show{opacity:1; transform:none; pointer-events:auto;}
-.choices[role=group]{padding:0;}
 .choice{
   text-align:left; font-family:var(--serif); font-size:1rem; line-height:1.55;
   padding:14px 18px 14px 42px; border-radius:12px; cursor:pointer;
@@ -197,6 +194,8 @@ body::after{
 .scope-view img{width:100%; display:block; transition:filter .12s linear, box-shadow .5s;}
 .scope-view.focused{box-shadow:0 0 0 3px rgba(201,138,62,.55), 0 0 34px rgba(230,200,131,.55);}
 .scope-view.focused img{filter:none !important;}
+.scope-view.missing img{display:none;}
+.scope-view.missing::after{content:"❦"; display:block; text-align:center; padding:60px 0; color:var(--gold); font-size:2rem;}
 .scope-view .reticle{
   position:absolute; inset:0; pointer-events:none;
   background:radial-gradient(circle at 50% 50%, transparent 58%, rgba(30,25,12,.4));
@@ -245,6 +244,9 @@ body::after{
 .btn.ghost{background:transparent; color:var(--slate); border-color:var(--slate);}
 .btn.ghost:hover{background:var(--slate-soft);}
 
+/* inline key cap */
+.k{font-family:var(--mono); font-size:.8em; color:var(--slate); background:var(--slate-soft); padding:1px 7px; border-radius:6px;}
+
 /* ============================================================
    TITLE SCREEN
 ============================================================ */
@@ -262,7 +264,6 @@ details.howto{margin:1.8em auto 0; max-width:60ch; text-align:left; border:1px d
 details.howto summary{cursor:pointer; font-family:var(--mono); font-size:.7rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--gold);}
 details.howto ul{margin:.8em 0 .2em; padding-left:1.2em;}
 details.howto li{margin:.4em 0; font-size:.95rem;}
-details.howto .k{font-family:var(--mono); font-size:.8em; color:var(--slate); background:var(--slate-soft); padding:1px 7px; border-radius:6px;}
 .best-chip{display:inline-block; margin-top:12px; font-family:var(--mono); font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); border:1px solid var(--gold); border-radius:999px; padding:6px 14px;}
 
 /* ============================================================
@@ -415,7 +416,7 @@ var cometEl = $('#comet');
 var pathEl = $('#path');
 
 var freshState = function(){
-  return { idx:-1, soul:0, int:0, vital:10, cards:[], done:false };
+  return { idx:-1, soul:0, int:0, vital:10, cards:[], done:false, ending:null };
 };
 var S = freshState();
 
@@ -482,7 +483,7 @@ var SCENES = [
     'The question is your only luggage. At the gates a servant holds two bundles. You may carry one into the salons of Petersburg — and through the whole novel that is beginning without you.'
   ],
   autoCard:'VITAL_FORCE',
-  autoText:'Before the doors open, remember the one possession that cannot be pawned: your <strong>Vital Force</strong> — the inner fire. Missteps hollow it out. Truth refills it.',
+  autoText:'Before the doors open, remember the one possession that cannot be pawned: your inner fire. Missteps hollow it out. Truth refills it.',
   choices:[
     {label:'Your father’s last letter — written in plain, warm Russian.', soul:1,
      flavor:'The paper smells of tea and lamp oil. Words like these cannot be declined in French. You fold them close, like a coal.',
@@ -647,6 +648,12 @@ var ENDINGS = {
     hint:'Spend your Vital Force on every polished trap until nothing inside remains to burn.'
   }
 };
+
+function decideEnding(){
+  if(S.vital<=3) return 'marble';
+  if(S.int>S.soul) return 'greatman';
+  return 'awakening';
+}
 
 /* ============================================================
    SOUND — WebAudio ambience + cues (no files)
@@ -879,9 +886,15 @@ function typeHTML(container, htmlArray, done){
   s.skip=function(){
     if(s.cancelled) return;
     if(s.timer) clearInterval(s.timer);
-    if(s.texts){ s.texts.forEach(function(o){ o.n.nodeValue=o.t; }); }
-    while(++s.i < s.queue.length){
+    /* Fill the paragraph currently being typed (if any), then render
+       every paragraph that has not been inserted yet — none is lost. */
+    if(s.texts){
+      s.texts.forEach(function(o){ o.n.nodeValue=o.t; });
+      s.i++;
+    }
+    while(s.i < s.queue.length){
       var p=document.createElement('p'); p.innerHTML=s.queue[s.i]; container.insertBefore(p, hint);
+      s.i++;
     }
     finish();
   };
@@ -926,11 +939,13 @@ function showReveal(inner, continueLabel, onNext){
   var box=document.createElement('div');
   box.className='revelation';
   box.innerHTML=inner+
-    '<div class="r-actions"><button type="button" class="btn gold">'+continueLabel+'</button></div>';
+    '<div class="r-actions"><button type="button" class="btn gold">'+(continueLabel||'Continue')+'</button></div>';
   sceneEl.appendChild(box);
   requestAnimationFrame(function(){ box.classList.add('show'); });
   var b=box.querySelector('.btn');
-  b.addEventListener('click', function(){ Sound.bell(); onNext(); });
+  b.addEventListener('click', function(){
+    if(typeof onNext==='function') onNext();
+  });
   setTimeout(function(){ b.focus({preventScroll:true}); }, REDUCED?0:450);
 }
 function applyChoice(ch){
@@ -966,7 +981,7 @@ function renderTitle(){
       '<button type="button" class="btn gold" id="btnNew">Begin the journey</button>'+
       (saved && !saved.done && saved.idx>=0 ? '<button type="button" class="btn" id="btnCont">Continue the journey</button>' : '')+
     '</div>'+
-    (best ? '<span class="best-chip">Best path found: '+ENDINGS[best].title+'</span>' : '')+
+    (best ? '<span class="best-chip">Best path found: '+(ENDINGS[best]?ENDINGS[best].title:best)+'</span>' : '')+
     '<details class="howto"><summary>How to play</summary><ul>'+
     '<li><strong>Choices are the engine.</strong> Every decision tips the balance between <strong>Soul</strong> ☀ (warmth, sincerity) and <strong>Intellect</strong> ❄ (polish, analysis).</li>'+
     '<li><strong>Vital Force ♥</strong> is your inner fire. Polished traps hollow it out — if it dies, the Void claims the ending.</li>'+
@@ -982,7 +997,7 @@ function renderTitle(){
   var bc=$('#btnCont');
   if(bc) bc.addEventListener('click', function(){
     var d=loadSave();
-    if(d){ S=d; Sound.bell(); if(S.done){ renderFinale(); } else { renderScene(); } }
+    if(d){ S=d; Sound.bell(); if(S.done){ renderFinale(S.ending); } else { renderScene(); } }
   });
   sceneEl.focus({preventScroll:true});
   announce('Title screen. The Seeker’s Path. Begin or continue the journey.');
@@ -995,6 +1010,7 @@ var cur=null;
 function renderScene(){
   clearScene();
   cur=SCENES[S.idx];
+  if(!cur){ renderTitle(); return; }
   setLean(cur.lean); FX.set(cur.fx); setComet(cur.st);
   var h='<p class="chap">'+cur.chap+'</p>'+
         '<h2 class="scene-title">'+cur.title+'</h2>'+
@@ -1002,14 +1018,25 @@ function renderScene(){
   sceneEl.innerHTML=h;
   if(cur.art){ sceneEl.insertBefore(makeArt(cur.art), sceneEl.querySelector('.t-orn').nextSibling); }
   var prose=document.createElement('div');
-  prose.className='prose'; prose.setAttribute('aria-hidden','false');
+  prose.className='prose';
   sceneEl.appendChild(prose);
   announce(cur.chap+'. '+cur.title+'.');
 
-  var afterText=function(){
+  function proceed(){
     if(cur.chips){ renderChips(); }
     else if(cur.minigame){ renderScope(); }
-    else { renderChoices(cur.choices, function(ch){ resolveChoice(ch, SCENES[S.idx+1] ? 'Walk on' : 'Face the dawn'); }); }
+    else {
+      renderChoices(cur.choices, SCENES[S.idx+1] ? 'Walk on' : 'Face the dawn', function(ch){
+        resolveChoice(ch);
+      });
+    }
+  }
+  var afterText=function(){
+    if(cur.autoCard){
+      addCard(cur.autoCard);
+      announce('Notebook: '+CARDS[cur.autoCard].t+'.');
+      showReveal('<div>'+cardHTML(cur.autoCard)+'</div><p class="r-flavor">'+cur.autoText+'</p>', 'Step inside', proceed);
+    } else { proceed(); }
   };
   typeHTML(prose, cur.text, afterText);
   prose.addEventListener('click', skipTyping);
@@ -1017,20 +1044,26 @@ function renderScene(){
 }
 
 function renderChoices(list, contLabel, onDone){
+  /* Defensive arity guard: renderChoices(list, onDone) also works. */
+  if(typeof onDone !== 'function'){ onDone = contLabel; contLabel = 'Continue'; }
   var box=document.createElement('div');
   box.className='choices'; box.setAttribute('role','group'); box.setAttribute('aria-label','Choices');
-  list.forEach(function(ch, i){
+  list.forEach(function(ch){
     var b=document.createElement('button');
     b.type='button'; b.className='choice'; b.innerHTML=ch.label;
-    b.addEventListener('click', function(){ Sound.pluck(); onDone(ch, contLabel); });
+    b.addEventListener('click', function(){
+      Sound.pluck();
+      if(typeof onDone==='function') onDone(ch, contLabel);
+    });
     box.appendChild(b);
   });
   sceneEl.appendChild(box);
   requestAnimationFrame(function(){ box.classList.add('show'); });
 }
 
-function resolveChoice(ch, contLabel){
+function resolveChoice(ch){
   applyChoice(ch);
+  var label = SCENES[S.idx+1] ? 'Walk on' : 'Face the dawn';
   var inner='<div class="deltas">'+deltasHTML(ch)+'</div>';
   if(ch.flavor) inner+='<p class="r-flavor">'+ch.flavor+'</p>';
   if(ch.card){ addCard(ch.card); inner+=cardHTML(ch.card); }
@@ -1039,28 +1072,17 @@ function resolveChoice(ch, contLabel){
   var gutted = S.vital<=0;
   if(gutted){
     inner+='<p class="r-dark">The fire gutters. Somewhere, the applause continues without you.</p>';
-    contLabel='Face the silence';
+    label='Face the silence';
     Sound.bad();
   }
-  announce('Vital Force '+ch.vital+'. '+(ch.card?('Notebook: '+CARDS[ch.card].t+'. '):''));
-  showReveal(inner, contLabel, function(){
+  announce('Vital Force '+(ch.vital||0)+'. '+(ch.card?('Notebook: '+CARDS[ch.card].t+'. '):''));
+  showReveal(inner, label, function(){
     if(gutted){ finishGame('marble'); return; }
-    if(cur.autoCard && S.idx===0 && !S.cardsDone){
-      /* prologue: auto card shown on first continue — handled below via flag */
-    }
     S.idx++;
     if(S.idx>=SCENES.length){ finishGame(decideEnding()); }
     else { save(); renderScene(); }
   });
-  /* prologue auto-card: attach after main reveal via extra panel */
-  if(cur && cur.autoCard && S.idx===0 && !ch._autoShown){
-    ch._autoShown=true;
-  }
 }
-
-/* Prologue auto-card: simplest robust path — inject into first reveal.
-   We handle it by patching resolveChoice flow through an event. */
-var PROLOGUE_AUTO_SHOWN=false;
 
 function renderChips(){
   var box=document.createElement('div');
@@ -1101,7 +1123,10 @@ function renderScope(){
       '<div class="reticle" aria-hidden="true"></div>'+
     '</div>'+
     '<input type="range" id="scopeRange" min="0" max="100" step="1" value="4" aria-label="Telescope focus ring" aria-describedby="scopeHint">'+
-    '<p class="scope-hint" id="scopeHint">Turn the ring until the stars hold still — <span class="k">arrow keys</span> work too</p>';
+    '<p class="scope-hint" id="scopeHint">Turn the ring until the stars hold still — <span class="k">arrow keys</span> work too</p>'+
+    '<div class="r-actions" style="text-align:center;">'+
+      '<button type="button" class="btn ghost" id="scopeSkip">Leave the lens clouded</button>'+
+    '</div>';
   sceneEl.appendChild(scope);
 
   var img=scope.querySelector('#scopeImg');
@@ -1111,6 +1136,7 @@ function renderScope(){
   img.onerror=function(){ view.classList.add('missing'); };
 
   function paint(){
+    if(view.classList.contains('missing')) return 100;
     var v=+range.value, d=Math.abs(v-target);
     var blur=Math.min(16, 1.5+d*.55);
     img.style.filter='blur('+blur.toFixed(1)+'px) brightness('+(1-Math.min(.3, d*.012)).toFixed(2)+')';
@@ -1141,6 +1167,21 @@ function renderScope(){
       });
     });
   }
+  scope.querySelector('#scopeSkip').addEventListener('click', function(){
+    if(locked) return;
+    locked=true;
+    range.disabled=true;
+    addCard('TELESCOPE');
+    Sound.bell();
+    announce('The lens stays clouded. Notebook: The Telescope.');
+    var inner=cardHTML('TELESCOPE')+
+      '<p class="r-comment">The lens stays clouded tonight — the novel will lend you its focus on the road ahead. One instrument, two directions; choose the end you will begin with.</p>';
+    showReveal(inner, 'Look through', function(){
+      renderChoices(cur.postChoices, 'Fold the telescope', function(ch){
+        resolvePost(ch);
+      });
+    });
+  });
 }
 function resolvePost(ch){
   applyChoice(ch);
@@ -1157,21 +1198,16 @@ function resolvePost(ch){
 /* ============================================================
    FINALE
 ============================================================ */
-function decideEnding(){
-  if(S.vital<=3) return 'marble';
-  if(S.int>S.soul) return 'greatman';
-  return 'awakening';
-}
 function finishGame(key){
   S.done=true; S.idx=SCENES.length;
+  S.ending=key;
   saveBest(key); save();
   renderFinale(key);
 }
 function renderFinale(key){
   clearScene();
-  key=key||decideEnding();
-  S.best=key;
-  var E=ENDINGS[key];
+  key=key||S.ending||decideEnding();
+  var E=ENDINGS[key]||ENDINGS.awakening;
   setLean(key==='greatman'?8:(key==='marble'?18:90));
   FX.set(key==='greatman'?'embers':(key==='awakening'?'snow':null));
   setComet(5);
