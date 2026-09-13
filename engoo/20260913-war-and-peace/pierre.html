@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f4eddc">
+<meta name="description" content="The Seeker's Path — an interactive journey through Tolstoy's War and Peace, built on the visual guide 'The Architecture of Dualities'.">
+<title>The Seeker's Path — An Interactive War and Peace Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,500;1,600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS
+============================================================ */
+:root{
+  --paper:#f4eddc; --card:#fdf9f0; --card-2:#f7efdd;
+  --ink:#2c2a24; --ink-strong:#1f1d18; --em-ink:#4c4633; --ink-soft:#6b6353;
+  --line:#ddd2b8; --gold:#a5793a; --gold-soft:rgba(165,121,58,.10);
+  --slate:#3f5566; --slate-deep:#2c3e4d; --slate-soft:rgba(63,85,102,.10);
+  --wine:#8a3534; --sage:#3e6b5c;
+  --warm:#c98a3e; --cold:#5b7d99;
+  --bad:#b23b2e; --ok:#2e7d4f;
+  --serif:'Source Serif 4',Georgia,serif;
+  --display:'Playfair Display',Georgia,serif;
+  --mono:'JetBrains Mono',Consolas,monospace;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; min-height:100vh; overflow-x:hidden;
+  color:var(--ink); font-family:var(--serif);
+  font-size:17px; line-height:1.72; background:var(--paper);
+}
+/* paper grain */
+body::before{
+  content:""; position:fixed; inset:0; z-index:400; pointer-events:none;
+  mix-blend-mode:multiply; opacity:.09;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+/* vignette */
+body::after{
+  content:""; position:fixed; inset:0; z-index:399; pointer-events:none;
+  box-shadow:inset 0 0 170px rgba(48,40,24,.30);
+}
+::selection{background:#e9d9ac; color:#3a2f14;}
+::-webkit-scrollbar{width:11px;}
+::-webkit-scrollbar-track{background:var(--paper);}
+::-webkit-scrollbar-thumb{background:var(--gold); border-radius:8px; border:3px solid var(--paper);}
+
+/* ============================================================
+   BACKDROP — the split of dualities
+============================================================ */
+.bg{position:fixed; inset:0; z-index:0; overflow:hidden;}
+.bg-cold,.bg-warm{position:absolute; top:0; bottom:0; transition:width 1.2s ease;}
+.bg-cold{left:0; background:linear-gradient(115deg,#dfe7ee,#cdd9e4 60%,#c3d2df);}
+.bg-warm{right:0; background:linear-gradient(245deg,#f6e9cf,#efdcba 55%,#e7cfa2);}
+.bg .seam{
+  position:absolute; top:0; bottom:0; width:2px;
+  background:linear-gradient(180deg,transparent,rgba(230,200,131,.65),transparent);
+  filter:blur(.5px); transition:left 1.2s ease;
+}
+#fx{position:fixed; inset:0; z-index:1; pointer-events:none;}
+.glow{
+  position:fixed; left:50%; top:-18vh; width:120vw; height:70vh; z-index:2;
+  transform:translateX(-50%); pointer-events:none;
+  background:radial-gradient(ellipse at 50% 0%, rgba(255,214,140,.30), transparent 62%);
+  animation:flicker 4.2s ease-in-out infinite alternate;
+}
+@keyframes flicker{
+  0%{opacity:.65; transform:translateX(-50%) scale(1);}
+  38%{opacity:.82; transform:translateX(-50%) scale(1.02);}
+  71%{opacity:.7; transform:translateX(-50%) scale(1.005);}
+  100%{opacity:.85; transform:translateX(-50%) scale(1.025);}
+}
+
+/* ============================================================
+   HUD
+============================================================ */
+.hud{
+  position:fixed; top:0; left:0; right:0; z-index:60;
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  padding:10px 16px;
+  background:linear-gradient(180deg, rgba(244,237,220,.94), rgba(244,237,220,.78));
+  border-bottom:1px solid var(--line);
+  backdrop-filter:blur(6px);
+}
+.hud-title{font-family:var(--display); font-weight:800; font-size:.95rem; color:var(--ink-strong); white-space:nowrap;}
+.hud-title span{color:var(--gold);}
+.path{position:relative; flex:1 1 150px; min-width:130px; height:26px;}
+.rail{position:absolute; left:4px; right:4px; top:50%; height:2px; background:var(--line); border-radius:2px;}
+.node{position:absolute; top:50%; width:9px; height:9px; margin:-5.5px 0 0 -4.5px; border-radius:50%; background:var(--paper); border:2px solid var(--gold);}
+.node.past{background:var(--gold);}
+.comet{position:absolute; top:50%; left:0; width:13px; height:13px; transform:translate(-50%,-50%); transition:left .9s cubic-bezier(.4,0,.2,1);}
+.comet::before{
+  content:""; position:absolute; top:5.5px; right:9px; width:42px; height:2px; border-radius:2px;
+  background:linear-gradient(90deg, transparent, rgba(230,200,131,.95));
+  transform:rotate(-5deg); transform-origin:right center;
+}
+.comet::after{
+  content:""; position:absolute; inset:0; border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #fff3d6, #e0b25f 60%, #b4832e);
+  box-shadow:0 0 10px rgba(230,200,131,.85);
+}
+.meters{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+.gauge{display:flex; align-items:center; gap:7px;}
+.gauge .lab{font-family:var(--mono); font-size:.6rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft);}
+.bar{width:64px; height:8px; border-radius:5px; background:var(--line); overflow:hidden;}
+.bar i{display:block; height:100%; width:0; border-radius:5px; transition:width .5s ease;}
+.bar.soul i{background:linear-gradient(90deg,#d8a45c,#c98a3e);}
+.bar.int i{background:linear-gradient(90deg,#7d9bb4,#5b7d99);}
+.pips{display:flex; gap:3px;}
+.pip{width:9px; height:9px; border-radius:50%; background:var(--line); transition:background .3s;}
+.pip.on{background:var(--wine); box-shadow:0 0 5px rgba(138,53,52,.45);}
+.gauge.hurt{animation:hurt .5s ease;}
+@keyframes hurt{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}55%{transform:translateX(4px)}80%{transform:translateX(-2px)}}
+.icon-btn{
+  position:relative; width:38px; height:38px; border-radius:50%;
+  border:1px solid var(--line); background:var(--card); color:var(--ink);
+  font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:transform .2s, box-shadow .2s;
+}
+.icon-btn:hover{transform:scale(1.07); box-shadow:0 4px 12px rgba(0,0,0,.15);}
+.icon-btn:focus-visible{outline:3px solid var(--gold); outline-offset:2px;}
+.badge{
+  position:absolute; top:-5px; right:-6px; min-width:17px; height:17px; padding:0 4px;
+  border-radius:9px; background:var(--wine); color:#fdf3e3;
+  font-family:var(--mono); font-size:.6rem; font-weight:600;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* ============================================================
+   STAGE / SCENE
+============================================================ */
+.stage{position:relative; z-index:10; max-width:800px; margin:0 auto; padding:104px 18px 70px;}
+.scene{
+  background:linear-gradient(160deg, var(--card), var(--card-2));
+  border:1px solid var(--line); border-radius:20px;
+  padding:30px 32px 26px; box-shadow:0 18px 44px rgba(44,42,36,.16);
+  outline:none;
+}
+.scene.enter{animation:sceneIn .7s cubic-bezier(.2,.6,.2,1);}
+@keyframes sceneIn{from{opacity:0; transform:translateY(18px);} to{opacity:1; transform:none;}}
+@media(max-width:620px){.scene{padding:22px 16px 20px;}}
+.chap{font-family:var(--mono); font-size:.66rem; font-weight:600; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin:0 0 4px;}
+.scene-title{font-family:var(--display); font-weight:800; font-size:clamp(1.5rem,3.6vw,2.1rem); line-height:1.18; color:var(--ink-strong); margin:.1em 0 .1em;}
+.t-orn{color:var(--gold); font-size:1.05rem; margin:0 0 14px;}
+.prose{cursor:pointer;}
+.prose p{margin:.85em 0;}
+.prose em{color:var(--em-ink);}
+.prose .bigq{
+  display:block; margin:1.1em auto; max-width:34ch; text-align:center;
+  font-family:var(--display); font-style:italic; font-weight:600;
+  font-size:1.35rem; line-height:1.45; color:var(--ink-strong);
+}
+.type-hint{
+  font-family:var(--mono); font-size:.62rem; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-soft); opacity:.7; margin-top:2px;
+}
+.art{margin:1.4em 0; background:#fbf6ea; padding:10px; border:1px solid var(--line); border-radius:14px; box-shadow:0 12px 26px rgba(0,0,0,.12);}
+.art img{width:100%; height:auto; display:block; border-radius:8px; border:1px solid rgba(165,121,58,.45);}
+.art figcaption{font-size:.82rem; color:var(--ink-soft); text-align:center; margin-top:8px; font-style:italic;}
+.art.missing img{display:none;}
+.art.missing::before{content:"❦"; display:block; text-align:center; font-size:2.2rem; color:var(--gold); padding:34px 0;}
+
+/* choices */
+.choices{margin-top:1.4em; display:flex; flex-direction:column; gap:10px; opacity:0; transform:translateY(8px); transition:opacity .5s ease, transform .5s ease; pointer-events:none;}
+.choices.show{opacity:1; transform:none; pointer-events:auto;}
+.choices[role=group]{padding:0;}
+.choice{
+  text-align:left; font-family:var(--serif); font-size:1rem; line-height:1.55;
+  padding:14px 18px 14px 42px; border-radius:12px; cursor:pointer;
+  background:rgba(255,255,255,.55); border:1px solid var(--line);
+  color:var(--ink); position:relative;
+  transition:transform .18s, border-color .18s, background .18s;
+}
+.choice::before{content:"✦"; position:absolute; left:17px; top:14px; color:var(--gold); font-size:.9rem;}
+.choice:hover:not(:disabled){transform:translateX(5px); border-color:var(--gold); background:#fff;}
+.choice:focus-visible{outline:3px solid var(--gold); outline-offset:2px;}
+
+/* chips (war collectibles) */
+.chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:1.2em;}
+.chip{
+  font-family:var(--serif); font-size:.95rem; padding:9px 15px; border-radius:999px; cursor:pointer;
+  background:rgba(255,255,255,.5); border:1px solid var(--line); color:var(--ink);
+  border-bottom:2px dotted var(--wine);
+  transition:background .2s, transform .2s;
+}
+.chip:hover:not(:disabled){background:#fff; transform:translateY(-2px);}
+.chip:focus-visible{outline:3px solid var(--gold); outline-offset:2px;}
+.chip.collected{border-bottom-style:solid; border-bottom-color:var(--sage); color:var(--sage); cursor:default;}
+.chip.collected::before{content:"✓ ";}
+
+/* telescope */
+.scope{margin-top:1.3em; border:1px solid var(--line); border-radius:14px; padding:16px; background:rgba(255,255,255,.45);}
+.scope-view{position:relative; border-radius:10px; overflow:hidden; border:1px solid rgba(165,121,58,.5);}
+.scope-view img{width:100%; display:block; transition:filter .12s linear, box-shadow .5s;}
+.scope-view.focused{box-shadow:0 0 0 3px rgba(201,138,62,.55), 0 0 34px rgba(230,200,131,.55);}
+.scope-view.focused img{filter:none !important;}
+.scope-view .reticle{
+  position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(circle at 50% 50%, transparent 58%, rgba(30,25,12,.4));
+}
+.scope input[type=range]{width:100%; margin-top:14px; accent-color:var(--gold); cursor:ew-resize;}
+.scope-hint{font-family:var(--mono); font-size:.64rem; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-soft); margin-top:8px; text-align:center;}
+
+/* revelation */
+.revelation{
+  margin-top:1.4em; border:1px solid rgba(165,121,58,.4); border-left:5px solid var(--gold);
+  background:var(--gold-soft); border-radius:0 14px 14px 0;
+  padding:18px 20px; opacity:0; transform:translateY(10px);
+  transition:opacity .5s ease, transform .5s ease; pointer-events:none;
+}
+.revelation.show{opacity:1; transform:none; pointer-events:auto;}
+.r-term{display:block; font-family:var(--mono); font-size:.66rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:4px;}
+.r-term::before{content:"✳ ";}
+.r-def{margin:.2em 0 .5em; font-weight:600; color:var(--ink-strong);}
+.r-quote{font-style:italic; color:var(--em-ink); margin:.5em 0; padding-left:14px; border-left:2px solid rgba(165,121,58,.4);}
+.r-comment{margin:.6em 0 0;}
+.r-flavor{font-style:italic; color:var(--em-ink);}
+.deltas{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 2px;}
+.delta{
+  font-family:var(--mono); font-size:.64rem; font-weight:600; letter-spacing:.12em;
+  padding:5px 12px; border-radius:999px;
+}
+.delta.soul{background:rgba(201,138,62,.18); color:#8a5a1c;}
+.delta.int{background:rgba(91,125,153,.18); color:#33566e;}
+.delta.vdown{background:rgba(178,59,46,.14); color:var(--bad);}
+.delta.gutter{background:var(--bad); color:#fff; letter-spacing:.2em;}
+.r-actions{margin-top:14px;}
+.r-dark{font-family:var(--display); font-style:italic; font-size:1.1rem; color:var(--wine); margin:.8em 0 0;}
+
+/* buttons */
+.btn{
+  font-family:var(--mono); font-size:.74rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+  padding:12px 24px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--slate); background:var(--slate); color:#f6efdd;
+  transition:background .2s, transform .2s;
+}
+.btn:hover{background:var(--slate-deep);}
+.btn:active{transform:scale(.96);}
+.btn:focus-visible{outline:3px solid var(--gold); outline-offset:3px;}
+.btn.gold{border-color:var(--gold); background:var(--gold); color:#2c2410;}
+.btn.gold:hover{background:#8f682c; color:#fff;}
+.btn.ghost{background:transparent; color:var(--slate); border-color:var(--slate);}
+.btn.ghost:hover{background:var(--slate-soft);}
+
+/* ============================================================
+   TITLE SCREEN
+============================================================ */
+.title-hero{text-align:center; padding:10px 6px 4px;}
+.title-orn{color:var(--gold); font-size:1.4rem; margin:6px 0 10px;}
+.game-title{font-family:var(--display); font-weight:800; font-size:clamp(2rem,5.4vw,3rem); line-height:1.1; margin:.1em 0 .2em; color:var(--ink-strong);}
+.game-title .w{color:var(--cold);} .game-title .p{color:var(--warm);}
+.game-sub{font-style:italic; color:var(--em-ink); max-width:52ch; margin:0 auto;}
+.title-quote{
+  font-family:var(--display); font-style:italic; font-weight:600;
+  font-size:1.15rem; color:var(--ink-strong); max-width:40ch; margin:1.2em auto .2em;
+}
+.title-actions{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:1.6em;}
+details.howto{margin:1.8em auto 0; max-width:60ch; text-align:left; border:1px dashed var(--gold); border-radius:14px; padding:14px 18px; background:var(--gold-soft);}
+details.howto summary{cursor:pointer; font-family:var(--mono); font-size:.7rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--gold);}
+details.howto ul{margin:.8em 0 .2em; padding-left:1.2em;}
+details.howto li{margin:.4em 0; font-size:.95rem;}
+details.howto .k{font-family:var(--mono); font-size:.8em; color:var(--slate); background:var(--slate-soft); padding:1px 7px; border-radius:6px;}
+.best-chip{display:inline-block; margin-top:12px; font-family:var(--mono); font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); border:1px solid var(--gold); border-radius:999px; padding:6px 14px;}
+
+/* ============================================================
+   FINALE
+============================================================ */
+.scene.finale{position:relative; overflow:hidden; padding:0; min-height:74vh; display:flex; align-items:center; justify-content:center;}
+.finale-bg{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+.finale-shade{position:absolute; inset:0; background:linear-gradient(180deg, rgba(24,19,10,.5), rgba(24,19,10,.82));}
+.finale-inner{position:relative; z-index:2; text-align:center; padding:56px 26px; max-width:640px;}
+.finale-inner .chap{color:#e6c883;}
+.finale-end{font-family:var(--display); font-weight:800; font-size:clamp(1.9rem,4.6vw,2.7rem); color:#f6efdd; margin:.1em 0 .3em; text-shadow:0 2px 16px rgba(0,0,0,.5);}
+.finale-quote{font-family:var(--display); font-style:italic; font-size:1.18rem; color:#f0e4c4; max-width:42ch; margin:0 auto;}
+.finale-body{color:#e8dcc0; text-align:left; margin-top:1.2em; font-size:.99rem;}
+.gallery{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:1.8em;}
+.g-card{
+  flex:1 1 160px; max-width:220px; text-align:left;
+  border:1px dashed rgba(230,200,131,.5); border-radius:12px; padding:13px 15px;
+}
+.g-card.won{border-style:solid; border-color:var(--gold); background:rgba(230,200,131,.12);}
+.g-card h4{font-family:var(--display); font-size:1rem; margin:.05em 0 .3em; color:#f6efdd;}
+.g-card p{font-size:.8rem; color:#cfc2a2; margin:0; font-style:italic;}
+.g-card .mark{font-family:var(--mono); font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; color:#e6c883;}
+.stat-row{
+  display:flex; flex-wrap:wrap; gap:10px 22px; justify-content:center; margin-top:1.6em;
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:#d9c79a;
+}
+.finale-actions{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:1.8em;}
+
+/* ============================================================
+   NOTEBOOK
+============================================================ */
+.nb-overlay{
+  position:fixed; inset:0; z-index:500; display:none;
+  background:rgba(30,24,12,.55); backdrop-filter:blur(3px);
+  align-items:center; justify-content:center; padding:20px;
+}
+.nb-overlay.open{display:flex;}
+.nb{
+  width:min(620px, 94vw); max-height:86vh; overflow-y:auto;
+  background:linear-gradient(160deg,var(--card),var(--card-2));
+  border:1px solid var(--gold); border-radius:18px; padding:24px 26px;
+  box-shadow:0 30px 70px rgba(0,0,0,.4);
+}
+.nb-head{display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:8px;}
+.nb-head h3{font-family:var(--display); font-size:1.35rem; margin:0; color:var(--ink-strong);}
+.nb-count{font-family:var(--mono); font-size:.66rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gold);}
+.nb-plate{border:1px solid var(--line); border-radius:10px; overflow:hidden; margin:10px 0 16px;}
+.nb-plate img{width:100%; display:block;}
+.nb-list{margin:0; padding:0; list-style:none;}
+.nb-list li{border-top:1px dotted var(--line); padding:11px 2px;}
+.nb-list .term{font-family:var(--mono); font-size:.64rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--gold);}
+.nb-list .def{font-size:.92rem; margin:.2em 0 0;}
+.nb-list .q{font-size:.85rem; font-style:italic; color:var(--em-ink); margin:.25em 0 0;}
+.nb-list li.locked .term{color:var(--ink-soft);}
+.nb-list li.locked .def{color:var(--ink-soft); font-style:italic;}
+
+/* footer */
+.foot{position:relative; z-index:10; text-align:center; padding:0 18px 46px; font-size:.82rem; color:var(--ink-soft);}
+.foot a{color:var(--wine);}
+
+.sr-only{position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;}
+
+/* ============================================================
+   REDUCED MOTION
+============================================================ */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{animation:none !important; transition-duration:.001s !important;}
+  .glow{display:none;}
+  #fx{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true">
+  <div class="bg-cold" id="bgCold"></div>
+  <div class="bg-warm" id="bgWarm"></div>
+  <div class="seam" id="bgSeam"></div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="glow" aria-hidden="true"></div>
+
+<header class="hud" id="hud">
+  <span class="hud-title">The Seeker&rsquo;s <span>Path</span></span>
+  <div class="path" id="path" aria-hidden="true">
+    <div class="rail"></div>
+    <div class="comet" id="comet"><span class="sr-only">Progress</span></div>
+  </div>
+  <div class="meters">
+    <div class="gauge" id="gSoul" title="Soul — warmth, sincerity, the present moment">
+      <span class="lab">☀ Soul</span><span class="bar soul"><i id="soulBar"></i></span>
+    </div>
+    <div class="gauge" id="gInt" title="Intellect — polish, analysis, structures">
+      <span class="lab">❄ Intellect</span><span class="bar int"><i id="intBar"></i></span>
+    </div>
+    <div class="gauge" id="gVit" title="Vital Force — your inner fire">
+      <span class="lab">♥ Fire</span><span class="pips" id="vPips"></span>
+    </div>
+    <button type="button" class="icon-btn" id="nbBtn" aria-label="Open the traveler's notebook" title="Traveler's notebook">📖<span class="badge" id="nbBadge">0</span></button>
+    <button type="button" class="icon-btn" id="sndBtn" aria-pressed="false" aria-label="Toggle ambience" title="Ambience">🔇</button>
+    <button type="button" class="icon-btn" id="rstBtn" aria-label="Restart the journey" title="Restart">↺</button>
+  </div>
+</header>
+
+<main class="stage">
+  <section class="scene" id="scene" tabindex="-1" aria-label="Game scene"></section>
+</main>
+
+<footer class="foot">
+  Built on the visual guide <em>The Architecture of Dualities</em> ·
+  <a href="https://item1000-collab.github.io/ai/engoo/20260913-war-and-peace/The_Architecture_of_Dualities.pdf" target="_blank" rel="noopener noreferrer">open the original PDF</a>
+</footer>
+
+<!-- Notebook -->
+<div class="nb-overlay" id="nbOverlay">
+  <div class="nb" role="dialog" aria-modal="true" aria-label="Traveler's notebook">
+    <div class="nb-head">
+      <h3>📖 Traveler&rsquo;s Notebook</h3>
+      <span class="nb-count" id="nbCount"></span>
+    </div>
+    <div class="nb-plate">
+      <img src="https://item1000-collab.github.io/ai/engoo/20260913-war-and-peace/slide-012.jpg" alt="The Texture of 1812 — the guide's lexicon plate" loading="lazy" width="1280" height="720">
+    </div>
+    <ul class="nb-list" id="nbList"></ul>
+    <div style="text-align:center; margin-top:16px;">
+      <button type="button" class="btn ghost" id="nbClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="sr-only" aria-live="polite" id="srLive"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   HELPERS / STATE
+============================================================ */
+var $ = function(s){ return document.querySelector(s); };
+var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var IMG = 'https://item1000-collab.github.io/ai/engoo/20260913-war-and-peace/';
+var SAVE_KEY = 'wap-seekers-path-v1';
+var BEST_KEY = 'wap-seekers-best-v1';
+
+var sceneEl = $('#scene');
+var srLive = $('#srLive');
+var cometEl = $('#comet');
+var pathEl = $('#path');
+
+var freshState = function(){
+  return { idx:-1, soul:0, int:0, vital:10, cards:[], done:false };
+};
+var S = freshState();
+
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+function loadSave(){
+  try{
+    var raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return null;
+    var d = JSON.parse(raw);
+    if(!d || typeof d.idx !== 'number') return null;
+    return d;
+  }catch(e){ return null; }
+}
+function saveBest(e){ try{ localStorage.setItem(BEST_KEY, e); }catch(err){} }
+function loadBest(){ try{ return localStorage.getItem(BEST_KEY); }catch(e){ return null; } }
+
+function announce(t){ srLive.textContent = t; }
+
+/* ============================================================
+   DATA — CARDS (lexicon pool)
+============================================================ */
+var CARDS = {
+  VITAL_FORCE:{t:'Vital Force', d:'The inner fire of the heart — the engine of the journey.', q:'Emotional, chaotic, “internal fire”.'},
+  ANTEROOM:{t:'The Anteroom', d:'The waiting area where social standing is negotiated.', q:'Life is a ceremony.'},
+  FRENCH:{t:'French Language', d:'Used ironically by Tolstoy to signal artifice and separation from the “Russian” truth.', q:'The artificiality of French social norms.'},
+  MAZURKA:{t:'The Mazurka', d:'A lively Polish dance; the moment where social masks often slip.', q:'She dances the peasant spirit awake.'},
+  DEIGN:{t:'Deign', d:'To do something that one considers beneath one’s dignity.', q:'“She does not deign to be smart.” — Pierre Bezukhov'},
+  VARNISH:{t:'Varnish', d:'A glossy polish that conceals what lies beneath.', q:'“‘Varnish’ of thousands of gazes.”'},
+  MARBLE:{t:'The Marble Beauty', d:'The Trap: marriage to the “marble beauty” Helene.', q:'“The Trap: Marriage to the ‘marble beauty’ Helene.”'},
+  RADIANT:{t:'Radiant Eyes', d:'“Luminous, radiant eyes” that reveal deep spiritual work.', q:'Physically “ugly” with a heavy tread — yet luminous within.'},
+  SKY:{t:'The Lofty Sky', d:'The “lofty, infinite sky” — the measure that makes empires small.', q:'“…the pettiness of his hero, Napoleon, compared to the ‘lofty, infinite sky.’”'},
+  GREATMAN:{t:'The Great Man', d:'The illusion that will and intellect command history.', q:'“Believes he controls history through will and intellect.”'},
+  REDOUBT:{t:'Redoubt & Flèche', d:'Temporary field fortifications where death is concentrated.', q:''},
+  CAISSON:{t:'Caisson', d:'Ammunition wagons feeding the chaos.', q:''},
+  HUSSAR:{t:'Hussar & Uhlan', d:'Cavalrymen in romantic uniforms clashing with gory reality.', q:''},
+  CRISIS:{t:'Humanitarian Crisis', d:'The burning of Moscow.', q:''},
+  FREEMASONRY:{t:'Freemasonry', d:'Pierre’s failed attempt at structured ethics.', q:'Ethics with straight edges — a compass, a square, a G.'},
+  ROUNDTRUTH:{t:'The Round Truth', d:'The “round,” eternal truth of adapting to life.', q:'“Meaning is found not in grand theories, but in the ‘round,’ eternal truth of adapting to life.”'},
+  PATIENCE:{t:'Time and Patience', d:'Kutuzov’s art — riding history instead of commanding it.', q:'“Rides the wave with ‘time and patience’.”'},
+  TELESCOPE:{t:'The Telescope', d:'One instrument, two directions — history and the heart.', q:'“…a telescope put into our hands. Everything is astonishingly clear and absolutely sharp.” — Virginia Woolf'},
+  SWARM:{t:'The Swarm', d:'History as “a swarm of independent wills.”', q:'“…the massive movements of history.”'},
+  HEART:{t:'The Human Heart', d:'“The minute, vibrating contradictions of the human heart.”', q:'Look through the narrow end and hear a feeling change its mind.'},
+  KARATAEV:{t:'Platon Karataev', d:'The Peasant Truth — living entirely in the present moment.', q:'“Living entirely in the present moment.”'},
+  THEORIES:{t:'Grand Theories', d:'Beautiful roofs over empty rooms — meaning’s counterfeit.', q:'“Meaning is found not in grand theories…”'},
+  SAMOVAR:{t:'The Samovar', d:'The tea urn serving as the center of warm family life.', q:'“The Samovar: the tea urn serving as the center of warm family life.”'}
+};
+var POOL = ['VITAL_FORCE','ANTEROOM','FRENCH','MAZURKA','DEIGN','VARNISH','MARBLE','RADIANT','SKY','GREATMAN','REDOUBT','CAISSON','HUSSAR','CRISIS','FREEMASONRY','ROUNDTRUTH','PATIENCE','TELESCOPE','SWARM','HEART','KARATAEV','THEORIES','SAMOVAR'];
+
+function addCard(id){
+  if(S.cards.indexOf(id) === -1){ S.cards.push(id); updateBadge(); save(); return true; }
+  return false;
+}
+
+/* ============================================================
+   DATA — SCENES
+============================================================ */
+var SCENES = [
+{
+  id:'prologue', st:0, chap:'Prologue', title:'The Comet over Petersburg',
+  lean:50, fx:'stars', art:[['slide-001.jpg','The dagger and the sun — the two halves of the guide’s cover.'],['slide-002.jpg','The landscape: 1805–1820 — scope, cast, conflict.']],
+  text:[
+    'Night. Snow squeaks underfoot. Over the dark city hangs a comet — a needle of light sewing sky to earth. In your chest stand two rooms: one cold and tidy, full of blueprints; one warm and messy, full of fire.',
+    '<span class="bigq">“But I, what am I to do with myself?”</span>',
+    'The question is your only luggage. At the gates a servant holds two bundles. You may carry one into the salons of Petersburg — and through the whole novel that is beginning without you.'
+  ],
+  autoCard:'VITAL_FORCE',
+  autoText:'Before the doors open, remember the one possession that cannot be pawned: your <strong>Vital Force</strong> — the inner fire. Missteps hollow it out. Truth refills it.',
+  choices:[
+    {label:'Your father’s last letter — written in plain, warm Russian.', soul:1,
+     flavor:'The paper smells of tea and lamp oil. Words like these cannot be declined in French. You fold them close, like a coal.',
+     comment:'The Russian letter travels with you. Somewhere behind the coming war, a samovar hums in a house that expects you back.'},
+    {label:'The French phrasebook — polished, blue, smelling of Paris.', int:1,
+     flavor:'Le mot juste for every door. The phrasebook weighs nothing and promises everything.',
+     comment:'Sharp edges for a sharp city. The cold room in your chest straightens its papers and dims its lamp.'}
+  ]
+},
+{
+  id:'outsider', st:1, chap:'Station I', title:'The Outsider',
+  lean:15, fx:null, art:[['slide-004.jpg','The Seeker under the comet — war and intellect on one side, peace and soul on the other.']],
+  text:[
+    'The anteroom of Anna Pavlovna’s salon breathes perfume and whalebone. Waiters glide like solutions. Conversation here is lace: nothing is said, and everything is arranged.',
+    'You are the illegitimate son — rich overnight, foreign twice over. The guide whispers its first law: <em>“The Anteroom: the waiting area where social standing is negotiated.”</em>',
+    'The hostess turns toward you, and the room lowers its voice to make room for yours.'
+  ],
+  choices:[
+    {label:'Speak Russian — quietly, and mean every word.', soul:1, card:'FRENCH',
+     comment:'A few heads tilt. One pair of grey eyes refuses to look away. In this novel French is not a tongue but a lacquer — and you have just declined to be varnished.'},
+    {label:'Answer in flawless French — polish for polish.', int:1, vital:-1, card:'FRENCH',
+     comment:'The words glide; the room warms by exactly one degree, and something in you cools by two. The guide, gently: <em>“Used ironically by Tolstoy to signal artifice and separation from the ‘Russian’ truth.”</em>'},
+    {label:'Hold the silence. Study who waits — and for how long.', int:1, card:'ANTEROOM',
+     comment:'Rank, you discover, is a clock: every guest is weighed in minutes of waiting. The knowledge weighs nothing to carry.'}
+  ]
+},
+{
+  id:'ball', st:2, chap:'Station II', title:'The Ball — The Mazurka',
+  lean:55, fx:null, art:[['slide-006.jpg','The Vital Force: she does not deign to be smart.']],
+  text:[
+    'Candles multiply into a second sky. Then — the first bars of the Mazurka, and the room’s masks loosen their knots.',
+    'Natasha Rostova is led out — barely grown, entirely awake. Masters taught this room to dance; nobody has taught her. Pierre’s verdict follows her like light: <em>“She does not deign to be smart.”</em>'
+  ],
+  choices:[
+    {label:'Watch her wholly — the way she watches life.', soul:1, card:'MAZURKA',
+     comment:'She dances the peasant spirit awake in a room of French clocks. You understand it the only way it can be understood: holistically, not analytically.'},
+    {label:'Count the figures. Reduce the dance to steps.', int:1, card:'DEIGN',
+     comment:'Your notebook fills with numbers; the dance escapes between them. She reads life whole, not in parts — and tonight that is worth more than arithmetic.'}
+  ]
+},
+{
+  id:'helene', st:2, chap:'Station II', title:'The Marble Beauty',
+  lean:20, fx:null, art:[['slide-007.jpg','The antique beauty and the radiant soul.']],
+  text:[
+    'Helene Kuragina enters, and the room reorganizes itself around her — planets around a white sun. The guide writes in the margin: <em>“An unchanging smile masking a spiritual deadness.”</em>',
+    'Across the city lives Princess Marya — <em>“physically ‘ugly’ with a heavy tread”</em> — whose <em>“luminous, radiant eyes”</em> reveal deep spiritual work. Two faces of one truth.'
+  ],
+  choices:[
+    {label:'Look into Helene’s eyes until you see what looks back.', soul:1, card:'VARNISH',
+     comment:'Behind the gaze — no one. The theme stamps itself across the evening: external brilliance often hides internal emptiness.'},
+    {label:'Ask for her hand. Beauty this perfect must be fate.', int:1, vital:-2, card:'MARBLE',
+     comment:'Cold fingers answer yours. The applause is warm; the future it applauds is marble. Some traps are upholstered.'},
+    {label:'Remember Marya — the radiant eyes, the deep work.', soul:1, card:'RADIANT',
+     comment:'You file her away like a compass. Ugly, the room would say. Alive, says the guide.'}
+  ]
+},
+{
+  id:'austerlitz', st:3, chap:'Station III', title:'The Sky over Austerlitz',
+  lean:10, fx:'embers', art:[['slide-005.jpg','The lofty, infinite sky over the fallen.']],
+  text:[
+    'War arrives the way winter arrives — first as rumor, then as weather. On the field of the three emperors, Prince Andrei lies among the fallen, watching the man he worshipped.',
+    'Napoleon walks his battlefield small against the clouds. Above him stretches <em>“the lofty, infinite sky”</em> — and nothing in the little emperor can fill it.'
+  ],
+  choices:[
+    {label:'Follow Andrei’s eyes — upward.', soul:1, card:'SKY',
+     comment:'A hero collapses; a horizon opens. You will keep the sky. Greatness measured from below shrinks; truth measured from above stays.'},
+    {label:'Study Napoleon — how greatness commands a field.', int:1, vital:-1, card:'GREATMAN',
+     comment:'The pose is magnificent; the illusion is load-bearing. History, you will learn, is a swarm of independent wills — and it does not take dictation.'}
+  ]
+},
+{
+  id:'war', st:3, chap:'Station III', title:'The Anatomy of War',
+  lean:5, fx:'embers', art:[['slide-010.jpg','The anatomy of war — the machinery of 1812.']],
+  text:[
+    'The guide opens its coldest chapter: <em>“The ‘terrible line of the unknown’ separating the living from the dead”</em> — a line drawn in gunpowder.',
+    'Around you stands the machinery of 1812. Press each piece into your notebook before it becomes smoke.'
+  ],
+  chips:[
+    {card:'REDOUBT', label:'Redoubt & Flèche'},
+    {card:'CAISSON', label:'Caisson'},
+    {card:'HUSSAR', label:'Hussar & Uhlan'},
+    {card:'CRISIS', label:'Humanitarian Crisis'}
+  ]
+},
+{
+  id:'masonry', st:3, chap:'Station III', title:'Compasses and Squares',
+  lean:45, fx:null, art:[['slide-011.jpg','The quest for meaning — structured ethics, the sky, the peasant truth.']],
+  text:[
+    'Grief makes seekers of quiet men. The Masons receive you in white lambskin: ethics with straight edges, a compass, a square, a G. The guide warns gently — <em>“Pierre’s failed attempt at structured ethics.”</em>',
+    'Beyond the lodge window an old peasant crosses the yard — round, unhurried, complete. Living entirely in the present moment.'
+  ],
+  choices:[
+    {label:'Build your soul like architecture — stone by stone.', int:1, card:'FREEMASONRY',
+     comment:'The trowel is silver; the mortar is fog. Grand theories make beautiful roofs over empty rooms.'},
+    {label:'Sit with the peasant. Learn the round truth.', soul:1, card:'ROUNDTRUTH',
+     comment:'He speaks in proverbs the way rivers speak in water. Something in you stops bracing. Meaning, the guide promises, lives in the round truth of adapting to life.'},
+    {label:'Trust the wave — “time and patience”.', soul:1, card:'PATIENCE',
+     comment:'Not resignation — navigation. The wave knows the shore, and Kutuzov arrives with it.'}
+  ]
+},
+{
+  id:'telescope', st:3, chap:'Station III', title:'The Two Ends of the Telescope',
+  lean:50, fx:'stars', art:[['slide-015.jpg','Why it endures — both ends of the telescope.']],
+  text:[
+    'Night air like well water. On the hill above the road stands an old brass telescope, cold as a key. Virginia Woolf swore that this book feels like <em>“a telescope put into our hands. Everything is astonishingly clear and absolutely sharp.”</em>',
+    'Tonight the lens is clouded. Turn the ring.'
+  ],
+  minigame:true,
+  postChoices:[
+    {label:'The wide end — history: armies, empires, the flow of years.', int:1, card:'SWARM',
+     comment:'The lens drinks horizon after horizon: <em>“the massive movements of history”</em> — a swarm of independent wills riding one wave.'},
+    {label:'The narrow end — one heart, vibrating.', soul:1, card:'HEART',
+     comment:'Close enough to hear a feeling change its mind: <em>“the minute, vibrating contradictions of the human heart.”</em>'}
+  ],
+  postNote:'The guide insists on both ends. Tonight you begin with one; the novel will lend you the other.'
+},
+{
+  id:'epiphany', st:4, chap:'Station IV', title:'The Round Man',
+  lean:85, fx:'snow', art:[['slide-008.jpg','Two cities: ceremony in Petersburg, soil in Moscow.']],
+  text:[
+    'A prisoner’s column walks west through the snow, and the world simplifies: breath, boot, sky. Beside you walks Platon Karataev — round in every line, hoarding nothing, bracing at nothing.',
+    'His speech is a folk-song with no beginning and no end. Somewhere behind the war, a samovar waits on a warm table.'
+  ],
+  choices:[
+    {label:'Learn his roundness — live inside this moment.', soul:1, card:'KARATAEV',
+     comment:'The snow keeps falling; you stop counting flakes. The moment holds you like a hand. This is the Peasant Truth: living entirely in the present moment.'},
+    {label:'Demand the grand theory that will finally explain everything.', int:1, vital:-2, card:'THEORIES',
+     comment:'The theory arrives — and the moment leaks out of it like heat. The guide, gently: meaning is found in the round, eternal truth of adapting to life.'},
+    {label:'Dream forward — home, the samovar, the ordinary table.', soul:1, card:'SAMOVAR',
+     comment:'Steam rises in the mind’s kitchen. Real life, the epilogue promises, is not in the war room but in the private moments of connection.'}
+  ]
+}
+];
+
+var ENDINGS = {
+  awakening:{
+    title:'The Awakening',
+    quote:'“Real life is not in the war room, but in the private moments of connection.”',
+    body:function(){
+      var bal = (S.soul - S.int <= 1)
+        ? ' The balance you kept is its own wisdom — intellect to see the world, soul to live in it. '
+        : ' ';
+      return 'You come down from the mountain with the telescope still in your hands — and set it on a kitchen table.' + bal +
+        'Fifteen years of history fold themselves into a nursery, a garden, a loaf of bread cut at dusk. Somewhere in the next room Natasha laughs, and the sky fills up.';
+    },
+    hint:'Let the warm rooms win — mean what you say, watch wholly, live inside the moment.'
+  },
+  greatman:{
+    title:'The Great Man',
+    quote:'“Believes he controls history through will and intellect. The illusion of the ‘Great Man’.”',
+    body:function(){
+      return 'The maps obey you; the weather does not. You draw the terrible line of the unknown with a ruler, and history — a swarm of independent wills — politely walks around your blueprint. Kutuzov rides the wave with time and patience. You command the wave, and the wave does not hear.';
+    },
+    hint:'Lean into the cold rooms: the phrasebook, the figures, the wide end first.'
+  },
+  marble:{
+    title:'The Marble Beauty',
+    quote:'“‘Varnish’ of thousands of gazes. An unchanging smile masking a spiritual deadness.”',
+    body:function(){
+      return 'The applause never stops — that is the trouble. Your rooms are perfect and cold, and the smile in the mirror has stopped changing too. The void you married keeps house quietly. Somewhere a samovar hums in a life you did not choose.';
+    },
+    hint:'Spend your Vital Force on every polished trap until nothing inside remains to burn.'
+  }
+};
+
+/* ============================================================
+   SOUND — WebAudio ambience + cues (no files)
+============================================================ */
+var Sound = {
+  on:false, ctx:null, master:null, ambGain:null, built:false,
+  init:function(){
+    if(this.built) return;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = .9;
+    this.master.connect(this.ctx.destination);
+    this.built = true;
+  },
+  ambience:function(){
+    if(!this.built || this.ambGain) return;
+    var c = this.ctx;
+    var lp = c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=170;
+    this.ambGain = c.createGain(); this.ambGain.gain.value = 0;
+    var o1=c.createOscillator(), o2=c.createOscillator();
+    o1.type='sine'; o1.frequency.value=54; o2.type='sine'; o2.frequency.value=54.4;
+    o1.connect(lp); o2.connect(lp); lp.connect(this.ambGain); this.ambGain.connect(this.master);
+    var lfo=c.createOscillator(), lg=c.createGain();
+    lfo.frequency.value=.06; lg.gain.value=.006;
+    lfo.connect(lg); lg.connect(this.ambGain.gain);
+    o1.start(); o2.start(); lfo.start();
+    this.ambGain.gain.linearRampToValueAtTime(.022, c.currentTime+2.5);
+  },
+  toggle:function(){
+    this.on = !this.on;
+    if(this.on){
+      this.init();
+      if(this.ctx && this.ctx.state==='suspended') this.ctx.resume();
+      this.ambience();
+      if(this.ambGain) this.ambGain.gain.linearRampToValueAtTime(.022, this.ctx.currentTime+1);
+    } else if(this.ambGain){
+      this.ambGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime+.6);
+    }
+    return this.on;
+  },
+  tone:function(f, dur, vol, type, when){
+    if(!this.on || !this.built) return;
+    var c=this.ctx, t=(when||0)+c.currentTime;
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol,t+.02);
+    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t+dur+.05);
+  },
+  bell:function(){ this.tone(523.25,1.3,.06); this.tone(1046.5,1.1,.02,'sine',.02); },
+  pluck:function(){ this.tone(440,.12,.03,'triangle'); },
+  good:function(){ this.tone(659.25,.16,.05); this.tone(880,.3,.05,'sine',.12); },
+  bad:function(){ this.tone(98,.22,.06,'square'); },
+  motif:function(){
+    var self=this;
+    [523.25,659.25,784].forEach(function(f,i){ self.tone(f,1.2,.055,'sine', i*.28); });
+  }
+};
+
+/* ============================================================
+   FX — canvas particles (stars/embers/snow)
+============================================================ */
+var FX = {
+  canvas:null, ctx:null, mode:null, parts:[], comet:null, raf:0, nextComet:0,
+  boot:function(){
+    this.canvas = $('#fx');
+    if(!this.canvas || REDUCED) return;
+    this.ctx = this.canvas.getContext('2d');
+    var self=this;
+    var rs=function(){ self.size(); };
+    window.addEventListener('resize', rs, {passive:true});
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden){ self.stop(); } else if(self.mode){ self.run(); }
+    });
+    this.size();
+  },
+  size:function(){
+    if(!this.canvas) return;
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+  },
+  set:function(mode){
+    this.mode = mode; this.parts = []; this.comet = null;
+    this.nextComet = 0;
+    if(!this.ctx || !mode){ this.stop(); return; }
+    var w=this.canvas.width, h=this.canvas.height, i, n;
+    if(mode==='stars'){ n=Math.min(90, Math.floor(w/16)); for(i=0;i<n;i++) this.parts.push({x:Math.random()*w, y:Math.random()*h, r:.4+Math.random()*1.1, a:.15+Math.random()*.5, s:.02+Math.random()*.05}); }
+    if(mode==='embers'){ n=Math.min(46, Math.floor(w/28)); for(i=0;i<n;i++) this.parts.push(this.ember(true)); }
+    if(mode==='snow'){ n=Math.min(70, Math.floor(w/18)); for(i=0;i<n;i++) this.parts.push(this.flake(true)); }
+    this.run();
+  },
+  ember:function(spread){ return {x:Math.random()*this.canvas.width, y:spread?Math.random()*this.canvas.height:this.canvas.height+6, r:.8+Math.random()*1.8, v:.35+Math.random()*.9, d:Math.random()*6.28, w:.01+Math.random()*.03, a:.25+Math.random()*.45}; },
+  flake:function(spread){ return {x:Math.random()*this.canvas.width, y:spread?Math.random()*this.canvas.height:-4, r:.8+Math.random()*2, s:.3+Math.random()*.7, d:Math.random()*6.28, w:.004+Math.random()*.012}; },
+  run:function(){
+    var self=this;
+    this.stop();
+    var loop=function(){ self.draw(); self.raf=requestAnimationFrame(loop); };
+    this.raf=requestAnimationFrame(loop);
+  },
+  stop:function(){ if(this.raf){ cancelAnimationFrame(this.raf); this.raf=0; } },
+  draw:function(){
+    var c=this.ctx, w=this.canvas.width, h=this.canvas.height, i, p;
+    c.clearRect(0,0,w,h);
+    if(this.mode==='stars'){
+      c.fillStyle='#cfd8e6';
+      for(i=0;i<this.parts.length;i++){ p=this.parts[i]; p.y-=p.s; if(p.y<-2){p.y=h+2;p.x=Math.random()*w;}
+        c.globalAlpha=p.a; c.beginPath(); c.arc(p.x,p.y,p.r,0,6.29); c.fill(); }
+      this.nextComet-=1;
+      if(!this.comet && this.nextComet<=0){
+        this.comet={x:-60, y:40+Math.random()*h*.4, vx:3.2+Math.random()*1.4, vy:.7, life:0};
+      }
+      if(this.comet){
+        var cm=this.comet; cm.x+=cm.vx; cm.y+=cm.vy; cm.life++;
+        var tail=90;
+        var g=c.createLinearGradient(cm.x,cm.y,cm.x-tail,cm.y-tail*.25);
+        g.addColorStop(0,'rgba(255,233,184,.95)'); g.addColorStop(1,'rgba(255,233,184,0)');
+        c.globalAlpha=1; c.strokeStyle=g; c.lineWidth=2; c.lineCap='round';
+        c.beginPath(); c.moveTo(cm.x,cm.y); c.lineTo(cm.x-tail,cm.y-tail*.25); c.stroke();
+        c.fillStyle='#fff3d6'; c.beginPath(); c.arc(cm.x,cm.y,2.6,0,6.29); c.fill();
+        if(cm.x>w+80||cm.life>400){ this.comet=null; this.nextComet=420+Math.random()*300; }
+      }
+    }
+    if(this.mode==='embers'){
+      for(i=0;i<this.parts.length;i++){ p=this.parts[i];
+        p.y-=p.v; p.d+=p.w; p.x+=Math.sin(p.d)*.5;
+        if(p.y<-6){ this.parts[i]=this.ember(false); continue; }
+        c.globalAlpha=p.a*(0.6+0.4*Math.sin(p.d*3));
+        c.fillStyle= i%3===0 ? '#d0602a' : '#e8a13f';
+        c.beginPath(); c.arc(p.x,p.y,p.r,0,6.29); c.fill();
+      }
+    }
+    if(this.mode==='snow'){
+      c.fillStyle='rgba(255,255,255,.8)';
+      for(i=0;i<this.parts.length;i++){ p=this.parts[i];
+        p.y+=p.s; p.d+=p.w; p.x+=Math.sin(p.d)*.4;
+        if(p.y>h+4){ p.y=-4; p.x=Math.random()*w; }
+        c.globalAlpha=.55; c.beginPath(); c.arc(p.x,p.y,p.r,0,6.29); c.fill();
+      }
+    }
+    c.globalAlpha=1;
+  }
+};
+
+/* ============================================================
+   HUD
+============================================================ */
+var STATIONS = ['Prologue','I','II','III','IV','Finale'];
+function buildPath(){
+  pathEl.querySelectorAll('.node').forEach(function(n){ n.remove(); });
+  for(var i=0;i<STATIONS.length;i++){
+    var n=document.createElement('span');
+    n.className='node'; n.style.left=(i/(STATIONS.length-1)*100)+'%';
+    n.title=STATIONS[i];
+    pathEl.appendChild(n);
+  }
+}
+function setComet(idx){
+  cometEl.style.left=(idx/(STATIONS.length-1)*100)+'%';
+  pathEl.querySelectorAll('.node').forEach(function(n,i){ n.classList.toggle('past', i<idx); });
+}
+function setLean(lean){
+  $('#bgCold').style.width=(100-lean)+'%';
+  $('#bgWarm').style.width=lean+'%';
+  $('#bgSeam').style.left=(100-lean)+'%';
+}
+function buildPips(){
+  var box=$('#vPips'); box.innerHTML='';
+  for(var i=0;i<10;i++){ var p=document.createElement('span'); p.className='pip'; box.appendChild(p); }
+}
+function updateHUD(hurt){
+  $('#soulBar').style.width=Math.min(100, S.soul/8*100)+'%';
+  $('#intBar').style.width=Math.min(100, S.int/8*100)+'%';
+  var pips=$('#vPips').children;
+  for(var i=0;i<pips.length;i++){ pips[i].classList.toggle('on', i < S.vital); }
+  if(hurt){
+    var g=$('#gVit'); g.classList.remove('hurt'); void g.offsetWidth; g.classList.add('hurt');
+  }
+}
+function updateBadge(){
+  $('#nbBadge').textContent=S.cards.length;
+}
+
+/* ============================================================
+   TYPEWRITER (tag-aware)
+============================================================ */
+var typeSession = null;
+function typeHTML(container, htmlArray, done){
+  if(REDUCED){
+    htmlArray.forEach(function(h){ var p=document.createElement('p'); p.innerHTML=h; container.appendChild(p); });
+    done(); return;
+  }
+  var s = { timer:null, i:0, queue:htmlArray, texts:null, j:0, done:done, cancelled:false };
+  typeSession = s;
+
+  var hint=document.createElement('p');
+  hint.className='type-hint'; hint.textContent='· click to hasten the ink ·';
+  container.appendChild(hint);
+
+  function step(){
+    if(s.cancelled) return;
+    if(!s.texts){
+      if(s.i>=s.queue.length){ finish(); return; }
+      var tpl=document.createElement('template'); tpl.innerHTML=s.queue[s.i].trim();
+      var p=document.createElement('p'); p.appendChild(tpl.content.cloneNode(true));
+      var w=document.createTreeWalker(p, NodeFilter.SHOW_TEXT), list=[];
+      while(w.nextNode()){ var n=w.currentNode; list.push({n:n, t:n.nodeValue}); n.nodeValue=''; }
+      container.insertBefore(p, hint);
+      s.texts=list; s.j=0;
+      if(!list.length){ s.i++; s.texts=null; step(); return; }
+      s.timer=setInterval(tick, 15);
+    }
+  }
+  function tick(){
+    if(s.cancelled) return;
+    var o=s.texts[s.j];
+    if(!o){ s.texts=null; s.i++; clearInterval(s.timer); s.timer=null; step(); return; }
+    o.n.nodeValue=o.t.slice(0, o.n.nodeValue.length+1);
+    if(o.n.nodeValue.length>=o.t.length){ s.j++; }
+  }
+  function finish(){
+    s.cancelled=true;
+    if(s.timer) clearInterval(s.timer);
+    hint.remove(); typeSession=null;
+    s.done();
+  }
+  s.skip=function(){
+    if(s.cancelled) return;
+    if(s.timer) clearInterval(s.timer);
+    if(s.texts){ s.texts.forEach(function(o){ o.n.nodeValue=o.t; }); }
+    while(++s.i < s.queue.length){
+      var p=document.createElement('p'); p.innerHTML=s.queue[s.i]; container.insertBefore(p, hint);
+    }
+    finish();
+  };
+  step();
+  return s;
+}
+function skipTyping(){
+  if(typeSession && typeSession.skip) typeSession.skip();
+}
+
+/* ============================================================
+   RENDER — shared pieces
+============================================================ */
+function makeArt(artArr){
+  var wrap=document.createDocumentFragment();
+  artArr.forEach(function(a){
+    var fig=document.createElement('figure'); fig.className='art';
+    var img=document.createElement('img');
+    img.src=IMG+a[0]; img.alt=a[1]; img.loading='lazy'; img.width=1280; img.height=720;
+    img.onerror=function(){ fig.classList.add('missing'); };
+    var cap=document.createElement('figcaption'); cap.textContent=a[1];
+    fig.appendChild(img); fig.appendChild(cap);
+    wrap.appendChild(fig);
+  });
+  return wrap;
+}
+function cardHTML(id){
+  var c=CARDS[id];
+  var h='<span class="r-term">Pressed into the notebook — '+c.t+'</span>'+
+        '<p class="r-def">'+c.d+'</p>';
+  if(c.q) h+='<p class="r-quote">'+c.q+'</p>';
+  return h;
+}
+function deltasHTML(ch){
+  var out='';
+  if(ch.soul) out+='<span class="delta soul">+1 Soul</span>';
+  if(ch.int) out+='<span class="delta int">+1 Intellect</span>';
+  if(ch.vital) out+='<span class="delta vdown">Vital Force '+ch.vital+'</span>';
+  return out;
+}
+function showReveal(inner, continueLabel, onNext){
+  var box=document.createElement('div');
+  box.className='revelation';
+  box.innerHTML=inner+
+    '<div class="r-actions"><button type="button" class="btn gold">'+continueLabel+'</button></div>';
+  sceneEl.appendChild(box);
+  requestAnimationFrame(function(){ box.classList.add('show'); });
+  var b=box.querySelector('.btn');
+  b.addEventListener('click', function(){ Sound.bell(); onNext(); });
+  setTimeout(function(){ b.focus({preventScroll:true}); }, REDUCED?0:450);
+}
+function applyChoice(ch){
+  if(ch.soul) S.soul+=ch.soul;
+  if(ch.int) S.int+=ch.int;
+  if(ch.vital) S.vital=Math.max(0, S.vital+ch.vital);
+  updateHUD(!!ch.vital);
+  save();
+}
+function clearScene(){
+  if(typeSession && typeSession.skip) typeSession.skip();
+  typeSession=null;
+  sceneEl.innerHTML='';
+  sceneEl.className='scene';
+  void sceneEl.offsetWidth;
+  sceneEl.classList.add('enter');
+}
+
+/* ============================================================
+   RENDER — TITLE
+============================================================ */
+function renderTitle(){
+  clearScene();
+  setLean(50); FX.set('stars'); setComet(0);
+  var saved=loadSave(), best=loadBest();
+  var h='<div class="title-hero">'+
+    '<p class="chap">An interactive journey · 1805–1820</p>'+
+    '<div class="title-orn" aria-hidden="true">❦</div>'+
+    '<h1 class="game-title">The Seeker’s <span class="w">Path</span> — <span class="p">Peace</span> of the Soul</h1>'+
+    '<p class="game-sub">A walk through Tolstoy’s <em>War and Peace</em>, guided by the visual companion <em>The Architecture of Dualities</em>. Four stations. Two lights in the chest. One comet overhead.</p>'+
+    '<p class="title-quote">“Not a novel, still less an epic poem, still less a historical chronicle.”<br>— Leo Tolstoy</p>'+
+    '<div class="title-actions">'+
+      '<button type="button" class="btn gold" id="btnNew">Begin the journey</button>'+
+      (saved && !saved.done && saved.idx>=0 ? '<button type="button" class="btn" id="btnCont">Continue the journey</button>' : '')+
+    '</div>'+
+    (best ? '<span class="best-chip">Best path found: '+ENDINGS[best].title+'</span>' : '')+
+    '<details class="howto"><summary>How to play</summary><ul>'+
+    '<li><strong>Choices are the engine.</strong> Every decision tips the balance between <strong>Soul</strong> ☀ (warmth, sincerity) and <strong>Intellect</strong> ❄ (polish, analysis).</li>'+
+    '<li><strong>Vital Force ♥</strong> is your inner fire. Polished traps hollow it out — if it dies, the Void claims the ending.</li>'+
+    '<li><strong>Every revelation</strong> presses a page into the <strong>Traveler’s Notebook</strong> 📖 — the guide’s own lexicon of 1812.</li>'+
+    '<li>There is no failing here — only lessons. <strong>Three endings</strong> wait at the last station.</li>'+
+    '<li>Keyboard: <span class="k">Tab</span> moves, <span class="k">Enter</span> chooses, clicking the text hastens the ink.</li>'+
+    '</ul></details>'+
+    '</div>';
+  sceneEl.innerHTML=h;
+  $('#btnNew').addEventListener('click', function(){
+    S=freshState(); S.idx=0; save(); Sound.bell(); renderScene();
+  });
+  var bc=$('#btnCont');
+  if(bc) bc.addEventListener('click', function(){
+    var d=loadSave();
+    if(d){ S=d; Sound.bell(); if(S.done){ renderFinale(); } else { renderScene(); } }
+  });
+  sceneEl.focus({preventScroll:true});
+  announce('Title screen. The Seeker’s Path. Begin or continue the journey.');
+}
+
+/* ============================================================
+   RENDER — SCENE
+============================================================ */
+var cur=null;
+function renderScene(){
+  clearScene();
+  cur=SCENES[S.idx];
+  setLean(cur.lean); FX.set(cur.fx); setComet(cur.st);
+  var h='<p class="chap">'+cur.chap+'</p>'+
+        '<h2 class="scene-title">'+cur.title+'</h2>'+
+        '<div class="t-orn" aria-hidden="true">❦</div>';
+  sceneEl.innerHTML=h;
+  if(cur.art){ sceneEl.insertBefore(makeArt(cur.art), sceneEl.querySelector('.t-orn').nextSibling); }
+  var prose=document.createElement('div');
+  prose.className='prose'; prose.setAttribute('aria-hidden','false');
+  sceneEl.appendChild(prose);
+  announce(cur.chap+'. '+cur.title+'.');
+
+  var afterText=function(){
+    if(cur.chips){ renderChips(); }
+    else if(cur.minigame){ renderScope(); }
+    else { renderChoices(cur.choices, function(ch){ resolveChoice(ch, SCENES[S.idx+1] ? 'Walk on' : 'Face the dawn'); }); }
+  };
+  typeHTML(prose, cur.text, afterText);
+  prose.addEventListener('click', skipTyping);
+  sceneEl.focus({preventScroll:true});
+}
+
+function renderChoices(list, contLabel, onDone){
+  var box=document.createElement('div');
+  box.className='choices'; box.setAttribute('role','group'); box.setAttribute('aria-label','Choices');
+  list.forEach(function(ch, i){
+    var b=document.createElement('button');
+    b.type='button'; b.className='choice'; b.innerHTML=ch.label;
+    b.addEventListener('click', function(){ Sound.pluck(); onDone(ch, contLabel); });
+    box.appendChild(b);
+  });
+  sceneEl.appendChild(box);
+  requestAnimationFrame(function(){ box.classList.add('show'); });
+}
+
+function resolveChoice(ch, contLabel){
+  applyChoice(ch);
+  var inner='<div class="deltas">'+deltasHTML(ch)+'</div>';
+  if(ch.flavor) inner+='<p class="r-flavor">'+ch.flavor+'</p>';
+  if(ch.card){ addCard(ch.card); inner+=cardHTML(ch.card); }
+  if(ch.comment) inner+='<p class="r-comment">'+ch.comment+'</p>';
+
+  var gutted = S.vital<=0;
+  if(gutted){
+    inner+='<p class="r-dark">The fire gutters. Somewhere, the applause continues without you.</p>';
+    contLabel='Face the silence';
+    Sound.bad();
+  }
+  announce('Vital Force '+ch.vital+'. '+(ch.card?('Notebook: '+CARDS[ch.card].t+'. '):''));
+  showReveal(inner, contLabel, function(){
+    if(gutted){ finishGame('marble'); return; }
+    if(cur.autoCard && S.idx===0 && !S.cardsDone){
+      /* prologue: auto card shown on first continue — handled below via flag */
+    }
+    S.idx++;
+    if(S.idx>=SCENES.length){ finishGame(decideEnding()); }
+    else { save(); renderScene(); }
+  });
+  /* prologue auto-card: attach after main reveal via extra panel */
+  if(cur && cur.autoCard && S.idx===0 && !ch._autoShown){
+    ch._autoShown=true;
+  }
+}
+
+/* Prologue auto-card: simplest robust path — inject into first reveal.
+   We handle it by patching resolveChoice flow through an event. */
+var PROLOGUE_AUTO_SHOWN=false;
+
+function renderChips(){
+  var box=document.createElement('div');
+  box.className='chips'; box.setAttribute('role','group'); box.setAttribute('aria-label','Press the machinery into the notebook');
+  cur.chips.forEach(function(c){
+    var b=document.createElement('button');
+    b.type='button'; b.className='chip'; b.textContent=c.label;
+    var got=false;
+    b.addEventListener('click', function(){
+      if(got) return;
+      got=true;
+      b.classList.add('collected'); b.disabled=true;
+      addCard(c.card); Sound.pluck();
+      announce('Pressed into the notebook: '+CARDS[c.card].t);
+    });
+    box.appendChild(b);
+  });
+  sceneEl.appendChild(box);
+  var act=document.createElement('div');
+  act.className='r-actions';
+  var b=document.createElement('button');
+  b.type='button'; b.className='btn gold'; b.textContent='Walk on';
+  b.addEventListener('click', function(){ Sound.bell(); S.idx++; save(); renderScene(); });
+  act.appendChild(b); sceneEl.appendChild(act);
+  b.focus({preventScroll:true});
+}
+
+/* ============================================================
+   TELESCOPE MINI-GAME
+============================================================ */
+function renderScope(){
+  var target=60+Math.floor(Math.random()*9); /* 60–68 */
+  var scope=document.createElement('div');
+  scope.className='scope';
+  scope.innerHTML=
+    '<div class="scope-view" id="scopeView">'+
+      '<img id="scopeImg" src="'+IMG+'slide-015.jpg" alt="The brass telescope of the guide — clouded, awaiting focus" width="1280" height="720">'+
+      '<div class="reticle" aria-hidden="true"></div>'+
+    '</div>'+
+    '<input type="range" id="scopeRange" min="0" max="100" step="1" value="4" aria-label="Telescope focus ring" aria-describedby="scopeHint">'+
+    '<p class="scope-hint" id="scopeHint">Turn the ring until the stars hold still — <span class="k">arrow keys</span> work too</p>';
+  sceneEl.appendChild(scope);
+
+  var img=scope.querySelector('#scopeImg');
+  var view=scope.querySelector('#scopeView');
+  var range=scope.querySelector('#scopeRange');
+  var hint=scope.querySelector('#scopeHint');
+  img.onerror=function(){ view.classList.add('missing'); };
+
+  function paint(){
+    var v=+range.value, d=Math.abs(v-target);
+    var blur=Math.min(16, 1.5+d*.55);
+    img.style.filter='blur('+blur.toFixed(1)+'px) brightness('+(1-Math.min(.3, d*.012)).toFixed(2)+')';
+    range.setAttribute('aria-valuetext', d<=3?'sharp':(d<=10?'nearly focused':'out of focus'));
+    return d;
+  }
+  paint();
+  var locked=false;
+  range.addEventListener('input', function(){
+    if(locked) return;
+    var d=paint();
+    if(d<=3){ lock(); }
+  });
+  function lock(){
+    locked=true;
+    range.disabled=true;
+    view.classList.add('focused');
+    img.style.filter='none';
+    hint.textContent='The stars hold still. The eyepiece sighs.';
+    Sound.good();
+    addCard('TELESCOPE');
+    announce('The lens clears. Notebook: The Telescope.');
+    var inner=cardHTML('TELESCOPE')+
+      '<p class="r-comment">One instrument, two directions. Choose the end you will begin with.</p>';
+    showReveal(inner, 'Look through', function(){
+      renderChoices(cur.postChoices, 'Fold the telescope', function(ch){
+        resolvePost(ch);
+      });
+    });
+  }
+}
+function resolvePost(ch){
+  applyChoice(ch);
+  var inner='<div class="deltas">'+deltasHTML(ch)+'</div>';
+  if(ch.card){ addCard(ch.card); inner+=cardHTML(ch.card); }
+  if(ch.comment) inner+='<p class="r-comment">'+ch.comment+'</p>';
+  inner+='<p class="r-flavor">'+cur.postNote+'</p>';
+  announce(ch.card?('Notebook: '+CARDS[ch.card].t+'.'):'');
+  showReveal(inner, 'On to the last station', function(){
+    S.idx++; save(); renderScene();
+  });
+}
+
+/* ============================================================
+   FINALE
+============================================================ */
+function decideEnding(){
+  if(S.vital<=3) return 'marble';
+  if(S.int>S.soul) return 'greatman';
+  return 'awakening';
+}
+function finishGame(key){
+  S.done=true; S.idx=SCENES.length;
+  saveBest(key); save();
+  renderFinale(key);
+}
+function renderFinale(key){
+  clearScene();
+  key=key||decideEnding();
+  S.best=key;
+  var E=ENDINGS[key];
+  setLean(key==='greatman'?8:(key==='marble'?18:90));
+  FX.set(key==='greatman'?'embers':(key==='awakening'?'snow':null));
+  setComet(5);
+  sceneEl.classList.add('finale');
+  var artUrl=IMG+'slide-014.jpg';
+  var gal=Object.keys(ENDINGS).map(function(k){
+    var e=ENDINGS[k], won=(k===key);
+    return '<div class="g-card'+(won?' won':'')+'">'+
+      (won?'<span class="mark">✦ your path</span>':'<span class="mark">locked</span>')+
+      '<h4>'+e.title+'</h4><p>'+(won?e.quote:'“…” — '+e.hint)+'</p></div>';
+  }).join('');
+  sceneEl.innerHTML=
+    '<img class="finale-bg" src="'+artUrl+'" alt="The triumph of the ordinary — bread, wine and a toy soldier on a white table" width="1280" height="720">'+
+    '<div class="finale-shade" aria-hidden="true"></div>'+
+    '<div class="finale-inner">'+
+      '<p class="chap">Finale · '+E.title+'</p>'+
+      '<h2 class="finale-end">'+E.title+'</h2>'+
+      '<p class="finale-quote">'+E.quote+'</p>'+
+      '<p class="finale-body">'+E.body()+'</p>'+
+      '<div class="stat-row">'+
+        '<span>☀ Soul '+S.soul+'</span><span>❄ Intellect '+S.int+'</span>'+
+        '<span>♥ Vital Force '+S.vital+'/10</span><span>📖 Pages '+S.cards.length+'/'+POOL.length+'</span>'+
+      '</div>'+
+      '<div class="gallery" aria-label="Endings gallery">'+gal+'</div>'+
+      '<div class="finale-actions">'+
+        '<button type="button" class="btn gold" id="fAgain">Begin again</button>'+
+        '<button type="button" class="btn ghost" id="fNb" style="border-color:#e6c883;color:#f0e4c4;">Open the notebook</button>'+
+      '</div>'+
+    '</div>';
+  sceneEl.querySelector('#fAgain').addEventListener('click', function(){
+    S=freshState(); save(); Sound.motif(); renderTitle();
+  });
+  sceneEl.querySelector('#fNb').addEventListener('click', openNotebook);
+  Sound.motif();
+  announce('Finale. '+E.title+'. '+S.cards.length+' of '+POOL.length+' pages collected.');
+  sceneEl.focus({preventScroll:true});
+}
+
+/* ============================================================
+   NOTEBOOK
+============================================================ */
+var lastFocus=null;
+function openNotebook(){
+  lastFocus=document.activeElement;
+  var list=$('#nbList'); list.innerHTML='';
+  POOL.forEach(function(id){
+    var c=CARDS[id], has=S.cards.indexOf(id)!==-1;
+    var li=document.createElement('li');
+    if(has){
+      li.innerHTML='<span class="term">'+c.t+'</span><p class="def">'+c.d+'</p>'+(c.q?'<p class="q">'+c.q+'</p>':'');
+    } else {
+      li.className='locked';
+      li.innerHTML='<span class="term">· · ·</span><p class="def">A page not yet earned.</p>';
+    }
+    list.appendChild(li);
+  });
+  $('#nbCount').textContent=S.cards.length+' / '+POOL.length+' pages';
+  $('#nbOverlay').classList.add('open');
+  $('#nbClose').focus();
+  Sound.bell();
+}
+function closeNotebook(){
+  $('#nbOverlay').classList.remove('open');
+  if(lastFocus && lastFocus.focus) lastFocus.focus();
+}
+
+/* ============================================================
+   WIRE-UP
+============================================================ */
+ $('#nbBtn').addEventListener('click', openNotebook);
+ $('#nbClose').addEventListener('click', closeNotebook);
+ $('#nbOverlay').addEventListener('click', function(e){ if(e.target===this) closeNotebook(); });
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape' && $('#nbOverlay').classList.contains('open')) closeNotebook();
+});
+
+var sndBtn=$('#sndBtn');
+function paintSnd(){
+  sndBtn.textContent=Sound.on?'🔔':'🔇';
+  sndBtn.setAttribute('aria-pressed', String(Sound.on));
+}
+sndBtn.addEventListener('click', function(){ Sound.toggle(); paintSnd(); });
+paintSnd();
+
+ $('#rstBtn').addEventListener('click', function(){
+  S=freshState(); save(); Sound.bell(); renderTitle();
+});
+
+/* boot */
+buildPath(); buildPips(); updateBadge(); updateHUD(); FX.boot();
+var d=loadSave();
+if(d && !d.done && d.idx>=0){ S=d; }
+renderTitle();
+
+})();
+</script>
+</body>
+</html>
