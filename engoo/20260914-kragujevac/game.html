@@ -963,16 +963,12 @@ function finishLevel(sc,score,mistakes){
 
 /* ============================================================
    MINI-GAME 1 · FILL IN THE BLANKS (word bank, bounce-back)
+   ИСПРАВЛЕНО: предложения больше не перемешиваются, проверка идёт по индексу предложения
    ============================================================ */
 function gameFill(sc,area,finish){
   var root=document.createElement('div');
-  var items=shuffle(FILL_SENTENCES);
-  var bank=shuffle(FILL_BANK);
+  var bank=shuffle(FILL_BANK); // Перемешиваем только банк слов
   var score=0, mistakes=0, streak=0, fixed=0, selected=0;
-
-  var linesHTML=items.map(function(it,i){
-    return '<button class="blank" data-idx="'+i+'" aria-label="Blank '+(i+1)+', empty">____</button>';
-  }).join('');
 
   root.innerHTML=
     '<p class="g-hint">The valley lost six words. Tap a blank, then tap its word.</p>' +
@@ -980,12 +976,10 @@ function gameFill(sc,area,finish){
     '<div class="bank" id="fill-bank"></div></div>';
 
   var lines=$('#fill-lines',root);
-  /* Interleave sentences and blanks in original sentence order */
   var html='';
-  FILL_SENTENCES.forEach(function(orig){
-    var idx=items.indexOf(orig);
-    var it=items[idx];
-    html+=it.pre+'<button class="blank" data-idx="'+idx+'" aria-label="Blank, empty">____</button>'+it.post+' ';
+  // Используем оригинальный порядок предложений — idx соответствует FILL_SENTENCES
+  FILL_SENTENCES.forEach(function(it, idx){
+    html+=it.pre+'<button class="blank" data-idx="'+idx+'" aria-label="Blank '+(idx+1)+', empty">____</button>'+it.post+' ';
   });
   lines.innerHTML=html;
 
@@ -1023,12 +1017,12 @@ function gameFill(sc,area,finish){
     var rect=blankEl.getBoundingClientRect();
     var cx=rect.left+rect.width/2, cy=rect.top;
 
-    if(word.toLowerCase()===items[idx].word.toLowerCase()){
-      /* Correct placement */
-      blankEl.textContent=items[idx].word;
+    // ИСПРАВЛЕНО: сравниваем с FILL_SENTENCES[idx].word, а не с перемешанным массивом
+    if(word.toLowerCase()===FILL_SENTENCES[idx].word.toLowerCase()){
+      blankEl.textContent=FILL_SENTENCES[idx].word;
       blankEl.classList.add('fixed');
       blankEl.classList.remove('sel');
-      blankEl.setAttribute('aria-label','Blank '+(idx+1)+': '+items[idx].word);
+      blankEl.setAttribute('aria-label','Blank '+(idx+1)+': '+FILL_SENTENCES[idx].word);
       chip.classList.add('gone');
       streak++;
       var pts=100+(streak-1)*20;
@@ -1039,12 +1033,11 @@ function gameFill(sc,area,finish){
       srSay('Correct. Plus '+pts+' points.');
       var nx=firstEmpty();
       if(nx>=0){ select(nx); }
-      if(fixed===items.length){
+      if(fixed===FILL_SENTENCES.length){
         setLive(score,mistakes);
         setTimeout(function(){ finish(score,mistakes); },700);
       }
     } else {
-      /* Bounce back */
       mistakes++; streak=0;
       score=Math.max(0,score-25);
       chip.classList.remove('shake'); void chip.offsetWidth; chip.classList.add('shake');
