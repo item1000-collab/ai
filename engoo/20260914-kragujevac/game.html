@@ -543,7 +543,6 @@ function shuffle(arr){
   return a;
 }
 function refreshIcons(){
-  /* Placeholder for a CDN icon library (Lucide). Emoji are used instead. */
   if(window.lucide && window.lucide.createIcons){ try{ window.lucide.createIcons(); }catch(e){} }
 }
 function srSay(msg){ var el=$('#sr-status'); if(el) el.textContent=msg; }
@@ -694,7 +693,8 @@ var GOOD_LINES=['Golden! ✦','Sharp as a cannon!','The heart approves!','Right 
 var BAD_LINES=['The tape rewinds…','Not this reel…','The shadow says no…','Bounce! −25','Even ghosts miss sometimes…'];
 
 /* Fill-in-the-blanks data: word bank + sentences */
-var FILL_BANK=['nestled','heartbeat','nexus','seamlessly','cradle','haven','pristine','elevation'];
+/* ИСПРАВЛЕНИЕ: Заменяем 'cradle' на 'industry' в банке, чтобы соответствовать пропуску */
+var FILL_BANK=['nestled','heartbeat','nexus','seamlessly','industry','haven','pristine','elevation'];
 var FILL_SENTENCES=[
   { pre:'', post:' in the lush Lepenica valley, Kragujevac keeps its 19th-century face.', word:'Nestled' },
   { pre:'Kragujevac is the historical, economic and cultural ', post:' of central Serbia.', word:'heartbeat' },
@@ -1146,6 +1146,7 @@ function gameSort(sc,area,finish){
       if(isLocked(row)) return;
       if(+row.dataset.y===sorted[i].y){
         row.classList.add('locked');
+        row.classList.remove('bad'); // ИСПРАВЛЕНИЕ: удаляем класс bad
         row.draggable=false;
         var y=row.querySelector('.sort-year'); if(y) y.hidden=false;
         $$('.mini-btn',row).forEach(function(b){ b.disabled=true; });
@@ -1493,6 +1494,8 @@ function gameBonus(sc,area,finish){
       srSay('Wrong. Minus 10 points.');
     }
     setLive(score,mistakes);
+    // ИСПРАВЛЕНИЕ: Очищаем предыдущий таймер
+    if(flashT){ clearTimeout(flashT); flashT=null; }
     flashT=setTimeout(function(){ next(); }, ok?200:340);
   }
   optsEl.addEventListener('click', function(e){
@@ -1577,11 +1580,17 @@ function renderMap(){
     slot.innerHTML='<p class="g-hint" style="text-align:center">Finish all six reels to unlock the Finale · '+done+'/6</p>';
   }
 }
- $('#reel-grid').parentNode.addEventListener('click', function(e){
+
+/* ИСПРАВЛЕНИЕ: Выносим обработчик из renderMap, чтобы избежать дублирования */
+if(window._reelGridHandler){
+  $('#reel-grid').parentNode.removeEventListener('click', window._reelGridHandler);
+}
+window._reelGridHandler = function(e){
   var reel=e.target.closest('.reel');
   if(reel){ SFX.click(); openLevel(sceneById(reel.dataset.reel)); return; }
   if(e.target.closest('#finale-open')){ SFX.click(); showFinale(); }
-});
+};
+$('#reel-grid').parentNode.addEventListener('click', window._reelGridHandler);
 
 /* ===== Finale ===== */
 function rankFor(total){
@@ -1629,17 +1638,17 @@ function showFinale(){
 }
 
 /* ===== Static bindings ===== */
- $('#intro-start').addEventListener('click',function(){ SFX.click(); show('map'); renderMap(); });
- $('#back-map').addEventListener('click',function(){ SFX.click(); goMap(); });
- $('#map-btn').addEventListener('click',function(){ SFX.click(); goMap(); });
- $('#sound-btn').addEventListener('click',function(){
+$('#intro-start').addEventListener('click',function(){ SFX.click(); show('map'); renderMap(); });
+$('#back-map').addEventListener('click',function(){ SFX.click(); goMap(); });
+$('#map-btn').addEventListener('click',function(){ SFX.click(); goMap(); });
+$('#sound-btn').addEventListener('click',function(){
   muted=!muted;
   progress.sound=muted?'off':'on';
   saveProgress();
   renderSound();
   if(!muted){ initAudio(); SFX.click(); }
 });
- $('#hud-cells').addEventListener('click',function(e){
+$('#hud-cells').addEventListener('click',function(e){
   var c=e.target.closest('.cell');
   if(c){ SFX.click(); openLevel(sceneById(c.dataset.cell)); }
 });
@@ -1654,7 +1663,7 @@ document.addEventListener('keydown',function(e){
 /* ===== Preloader & boot ===== */
 setTimeout(function(){ $('#pl-fill').style.width='100%'; },60);
 setTimeout(function(){ $('#pl-play').hidden=false; },1050);
- $('#pl-play').addEventListener('click',function(){
+$('#pl-play').addEventListener('click',function(){
   initAudio();
   tone(988,0.08,'square',0.15);
   tone(1319,0.3,'square',0.14,0.08);
