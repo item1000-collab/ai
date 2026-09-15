@@ -141,16 +141,47 @@ h1.t{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,6vw,3rem);l
 .mopt.dim{opacity:.45}
 .mcw{min-height:1.5em;font-size:.88rem;color:rgba(247,236,217,.85);margin:13px 0 4px}
 .mnext{text-align:right}
+/* ==== MEMORY GRID (FIXED) ==== */
 .memTop{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.78rem;color:var(--gold);margin-bottom:13px}
 .mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;max-width:540px;margin:0 auto}
 @media(max-width:520px){.mgrid{grid-template-columns:repeat(3,1fr)}}
-.mc{position:relative;aspect-ratio:3/3.6;perspective:900px;background:none;border:none;padding:0;cursor:pointer;border-radius:14px}
-.mi{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.35,.15,.25,1)}
+.mc{
+  position:relative;
+  width:100%;
+  padding:0;
+  padding-top:120%;               /* фиксированная высота через padding-трюк */
+  perspective:900px;
+  background:none;border:none;
+  cursor:pointer;border-radius:14px;
+  display:block;
+}
+.mi{
+  position:absolute;inset:0;
+  transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(.35,.15,.25,1);
+}
 .mc.flip .mi{transform:rotateY(180deg)}
-.mf{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;display:grid;place-items:center;padding:7px;text-align:center;border:2px solid rgba(0,0,0,.25);box-shadow:0 4px 0 rgba(0,0,0,.3)}
-.mf.fr{background:linear-gradient(150deg,var(--tealD),#123036);font-size:1.5rem}
-.mf.bk{transform:rotateY(180deg);background:var(--paper);color:var(--ink2);font-family:var(--sans);font-weight:700;font-size:.84rem}
-.mf.bk.bw{color:var(--tealD);font-family:var(--mono)}
+.mf{
+  position:absolute;inset:0;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:14px;
+  display:grid;place-items:center;
+  padding:8px;text-align:center;
+  border:2px solid rgba(0,0,0,.25);
+  box-shadow:0 4px 0 rgba(0,0,0,.3);
+  overflow:hidden;
+}
+.mf.fr{
+  background:linear-gradient(150deg,var(--tealD),#123036);
+  font-size:1.8rem;
+}
+.mf.bk{
+  transform:rotateY(180deg);
+  background:var(--paper);color:var(--ink2);
+  font-family:var(--sans);font-weight:700;font-size:.84rem;
+  word-break:break-word;line-height:1.25;
+}
+.mf.bk.bw{color:var(--tealD);font-family:var(--mono);font-size:.9rem;font-weight:700}
 .mc.ok .mf.bk{background:#e4f2e8;border-color:var(--greenD);color:#2f5d3c}
 .mc.ok{cursor:default}
 .bbar{height:14px;border-radius:99px;background:#120c09;border:2px solid rgba(247,236,217,.2);overflow:hidden;margin-bottom:14px}
@@ -745,7 +776,7 @@ BUILDERS.l1 = function () {
 };
 
 /* ================================================================
-   GAME 2 — MYTH OR MALAWI (60s per card)
+   GAME 2 — MYTH OR MALAWI
    ================================================================ */
 BUILDERS.l2 = function () {
   var qs = shuffle(TF).slice(0, 10), idx = 0, DUR = 60000, t0 = 0, left = DUR, timer = null, lastS = -1, answered = false;
@@ -864,7 +895,7 @@ BUILDERS.l3 = function () {
 };
 
 /* ================================================================
-   GAME 4 — CICHLID MATCH (was l5, now l4)
+   GAME 4 — CICHLID MATCH (FIXED: divs + padding-top trick)
    ================================================================ */
 BUILDERS.l4 = function () {
   var deck = [];
@@ -873,14 +904,18 @@ BUILDERS.l4 = function () {
   var first = null, busy = false, matches = 0, moves = 0;
   var h = '<div class="memTop"><span>MOVES: <b id="mm">0</b></span><span>MATCHES: <b id="mc2">0</b>/6</span></div><div class="mgrid">';
   deck.forEach(function (c, i2) {
-    h += '<button class="mc" data-i="' + i2 + '" aria-label="Card ' + (i2 + 1) + ', hidden"><span class="mi">' +
-      '<span class="mf fr">🌀</span><span class="mf bk ' + (c.k === "w" ? "bw" : "") + '">' + c.t + "</span></span></button>";
+    h += '<div class="mc" data-i="' + i2 + '" role="button" tabindex="0" aria-label="Card ' + (i2 + 1) + ', hidden">'
+      + '<span class="mi">'
+      +   '<span class="mf fr">🌀</span>'
+      +   '<span class="mf bk ' + (c.k === "w" ? "bw" : "") + '">' + c.t + '</span>'
+      + '</span>'
+      + '</div>';
   });
   h += "</div>";
   gameRoot.innerHTML = h;
-  gameRoot.onclick = function (e) {
-    var el = e.target.closest(".mc");
-    if (!el || busy || el.classList.contains("flip") || el.classList.contains("ok")) return;
+
+  function flipCard(el) {
+    if (busy || el.classList.contains("flip") || el.classList.contains("ok")) return;
     sFlip(); el.classList.add("flip");
     el.setAttribute("aria-label", "Card: " + deck[Number(el.getAttribute("data-i"))].t);
     if (!first) { first = el; return; }
@@ -913,12 +948,23 @@ BUILDERS.l4 = function () {
         first = null; busy = false;
       }, 950);
     }
+  }
+
+  gameRoot.onclick = function (e) {
+    var el = e.target.closest(".mc");
+    if (el) flipCard(el);
   };
-  setCleanup(function () { gameRoot.onclick = null; });
+  gameRoot.onkeydown = function (e) {
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      var el = e.target.closest(".mc");
+      if (el) { e.preventDefault(); flipCard(el); }
+    }
+  };
+  setCleanup(function () { gameRoot.onclick = null; gameRoot.onkeydown = null; });
 };
 
 /* ================================================================
-   GAME 5 — SUNSET SPRINT (was l6, now l5)
+   GAME 5 — SUNSET SPRINT
    ================================================================ */
 BUILDERS.l5 = function () {
   var qs = shuffle(BONUS), idx = 0, ok = 0, TOTAL = 750000, endAt = 0, timer = null, lastS = -1, fin = false, answered = false;
