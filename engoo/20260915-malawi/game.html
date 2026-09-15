@@ -61,7 +61,7 @@ font-family:var(--mono);font-weight:700;font-size:.72rem;cursor:pointer}
 .chip{font-family:var(--mono);font-weight:700;font-size:.8rem;background:#120c09;border:2px solid rgba(227,179,78,.4);color:var(--gold);border-radius:99px;padding:6px 13px;white-space:nowrap}
 .ibtn{width:40px;height:40px;border-radius:12px;border:2px solid rgba(247,236,217,.22);background:var(--panel);color:var(--paper);font-size:1rem;cursor:pointer;box-shadow:0 4px 0 #120c09}
 .ibtn:active{transform:translateY(2px);box-shadow:0 2px 0 #120c09}
-@media(max-width:640px){.brand span:last-child small{display:none}.chip{display:none}}
+@media(max-width:640px){.brand small{display:none}.chip{display:none}}
 main{position:relative;z-index:1}
 .screen{display:none;min-height:calc(100vh - 62px);padding:24px 16px 56px}
 .screen.active{display:block;animation:sIn .4s ease}
@@ -73,6 +73,7 @@ h1.t{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,6vw,3rem);l
 @media(max-width:760px){.igrid{grid-template-columns:1fr}}
 .cover{position:relative;margin:0;border-radius:var(--r);overflow:hidden;box-shadow:var(--hard);border:3px solid rgba(247,236,217,.15);transform:rotate(1.4deg);background:linear-gradient(135deg,var(--terra),#241a15)}
 .cover img,.thumb img,.mprev img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.lvl > img{display:none}
 .covCap{position:relative;z-index:2;padding:60px 16px 12px;font-family:var(--hand);font-size:1.25rem;color:#fff8ec;text-align:center;background:linear-gradient(transparent,rgba(18,12,9,.85));margin-top:180px}
 .covPh{height:220px;display:grid;place-items:center;font-size:3rem}
 .diary{font-family:var(--hand);font-size:1.28rem;line-height:1.5;color:#f0e3c8;background:var(--panel);border-left:5px solid var(--terra);border-radius:0 14px 14px 0;padding:13px 17px;margin:14px 0;transform:rotate(-.5deg)}
@@ -290,8 +291,8 @@ h1.t{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,6vw,3rem);l
 <div id="fx" aria-hidden="true"></div>
 
 <script>
-/* Boot error trap: window.onerror may be masked in sandboxed previews,
-   so real diagnostics are delivered via try/catch phase tracing below. */
+/* Boot error trap: sandboxed previews may mask window.onerror details,
+   so real diagnostics are also delivered via try/catch phase tracing. */
 window.addEventListener("error", function (e) {
   var b = document.getElementById("errbox");
   if (!b) return;
@@ -334,7 +335,7 @@ function shuffle(a) {
 function pad(n) { return (n < 10 ? "0" : "") + n; }
 function starsHtml(n) { var o = "", i; for (i = 1; i <= 3; i++) o += '<span class="st' + (i <= n ? " on" : "") + '">★</span>'; return o; }
 function starsBy(m) { return m === 0 ? 3 : (m <= 2 ? 2 : 1); }
-function refreshIcons() { /* emoji icon set; hook reserved */ }
+function refreshIcons() { /* emoji icon set; hook reserved for icon libraries */ }
 
 /* ===== save / load (sandbox-safe) ===== */
 var KEY = "wha_arcade_v2";
@@ -603,7 +604,7 @@ function slideImg(src) {
   return img;
 }
 
-/* ===== map ===== */
+/* ===== map (FIXED: exactly ONE thumbnail per card, strictly inside .thumb) ===== */
 function renderMap() {
   var h = "";
   SCENES.forEach(function (s) {
@@ -617,13 +618,12 @@ function renderMap() {
   host.innerHTML = h;
   $$(".lvl", host).forEach(function (card) {
     var s = null, i;
-    for (i = 0; i < SCENES.length; i++) if (SCENES[i].id === card.getAttribute("data-id")) s = SCENES[i];
-    if (!s) return;
-    var ph = $(".thPh", card);
-    ph.textContent = s.ce;
-    card.insertBefore(slideImg(s.slide), card.firstChild); /* hidden trick: img goes into thumb */
-    var thumb = $(".thumb", card);
-    thumb.appendChild(slideImg(s.slide));
+    for (i = 0; i < SCENES.length; i++) {
+      if (SCENES[i].id === card.getAttribute("data-id")) { s = SCENES[i]; }
+    }
+    if (!s) { return; }
+    $(".thPh", card).textContent = s.ce;
+    $(".thumb", card).appendChild(slideImg(s.slide));
   });
   $("#fslot").innerHTML = allDone()
     ? '<button class="btn mega" id="btnFinale">🎬 ROLL THE FINALE</button>'
@@ -970,10 +970,11 @@ BUILDERS.l4 = function () {
    GAME 5 — CICHLID MATCH (memory, 3D flip)
    ================================================================ */
 BUILDERS.l5 = function () {
-  var deck = [], i;
+  var deck = [];
   PAIRS.forEach(function (p, id) { deck.push({ id: id, k: "w", t: p.w }); deck.push({ id: id, k: "d", t: p.d }); });
   deck = shuffle(deck);
   var first = null, busy = false, matches = 0, moves = 0;
+  /* build all markup in ONE string, assign innerHTML once */
   var h = '<div class="memTop"><span>MOVES: <b id="mm">0</b></span><span>MATCHES: <b id="mc2">0</b>/6</span></div><div class="mgrid">';
   deck.forEach(function (c, i2) {
     h += '<button class="mc" data-i="' + i2 + '" aria-label="Card ' + (i2 + 1) + ', hidden"><span class="mi">' +
@@ -1170,10 +1171,16 @@ document.addEventListener("pointerdown", ensureAudio, { once: true });
 /* ===== preloader & boot ===== */
 function boot() {
   grab();
-  phase(1, "data", function () { /* data constants already parsed above */ });
+  phase(1, "data", function () { /* data constants parsed above */ });
   phase(2, "audio", function () { ensureAudio(); });
   phase(3, "storage", function () { loadSave(); });
-  phase(4, "map", function () { gameRoot = $("#game-root"); updateHUD(); renderMap(); renderSound(); refreshIcons(); });
+  phase(4, "map", function () {
+    gameRoot = $("#game-root");
+    updateHUD(); renderMap(); renderSound(); refreshIcons();
+    /* intro cover: real slide overlays the sunset placeholder */
+    var cov = $("#introCover");
+    if (cov) { cov.insertBefore(slideImg(SLIDES + "slide-001.jpg"), cov.firstChild); }
+  });
   phase(5, "games", function () { /* builders registered above */ });
   phase(6, "ready", function () { window.__WHA_MAP_OK = true; });
 
@@ -1204,7 +1211,7 @@ function boot() {
   });
 }
 
-/* run boot on next tick so the tracer elements are definitely present */
+/* run boot on next tick so tracer elements are definitely present */
 setTimeout(boot, 0);
 
 /* ===== integrity marker: MUST be the last statement of the file ===== */
