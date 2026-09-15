@@ -1,1 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warm Heart Arcade — The Malawi Tapes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Caveat:wght@600&family=JetBrains+Mono:wght@500;700&family=Nunito+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1b1310;--bg2:#241a15;--panel:#2a1e18;--paper:#f7ecd9;--paper2:#efe0c6;--ink:#2b2118;--ink2:#6a5a48;
+--terra:#d96f3f;--terraD:#a34a20;--teal:#3fa7ad;--tealD:#22707a;--gold:#e3b34e;--goldD:#a97f22;
+--green:#7fbb8c;--greenD:#3f7048;--red:#e06552;--redD:#a3322a;--r:18px;--hard:0 6px 0 rgba(0,0,0,.38);
+--serif:'Fraunces',Georgia,serif;--sans:'Nunito Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--hand:'Caveat',cursive;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:var(--sans);font-size:16px;line-height:1.6;color:var(--paper);min-height:100vh;
+background:radial-gradient(120% 90% at 50% 115%,#3d2417 0%,var(--bg2) 45%,var(--bg) 100%)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:6px}
+button{font-family:inherit}
+#grain{position:fixed;inset:-50%;width:200%;height:200%;z-index:2000;pointer-events:none;opacity:.05;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:
+radial-gradient(55% 35% at 50% 108%,rgba(217,111,63,.22),transparent 70%),
+radial-gradient(40% 30% at 85% -5%,rgba(63,167,173,.1),transparent 70%)}
+#errbox{position:fixed;left:10px;right:10px;bottom:10px;z-index:3000;display:none;white-space:pre-wrap;max-height:40vh;overflow:auto;
+background:var(--redD);color:#fff;padding:12px 16px;border-radius:12px;font-family:var(--mono);font-size:.78rem;line-height:1.5}
+#preloader{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+background:linear-gradient(180deg,#241a15,#120c09);transition:transform .75s cubic-bezier(.7,0,.25,1)}
+#preloader.gone{transform:translateY(-102%)}
+.preSun{width:90px;height:90px;border-radius:50%;display:grid;place-items:center;font-size:2.5rem;
+background:radial-gradient(circle at 50% 78%,#ffb35c,#d96f3f 55%,#7c3418);box-shadow:0 0 60px rgba(255,179,92,.35),var(--hard)}
+.preT{font-family:var(--serif);font-weight:700;font-size:1.7rem}
+.preS{font-family:var(--mono);font-size:.7rem;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
+.loadT{width:min(320px,70vw);height:12px;border-radius:99px;background:#120c09;border:2px solid rgba(247,236,217,.2);overflow:hidden}
+.loadF{height:100%;width:0;background:linear-gradient(90deg,var(--terra),var(--gold));transition:width .25s}
+#pre-diag{font-family:var(--mono);font-size:.68rem;color:rgba(247,236,217,.65);min-height:1.2em;text-align:center;padding:0 14px}
+#btn-play{opacity:0;pointer-events:none;transform:translateY(12px);transition:all .4s cubic-bezier(.2,1.6,.4,1)}
+#preloader.ready #btn-play{opacity:1;pointer-events:auto;transform:none}
+.btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer;border:2px solid rgba(0,0,0,.28);border-radius:14px;
+padding:12px 22px;font-weight:800;font-size:1rem;color:#fff8ec;background:var(--terra);box-shadow:0 5px 0 var(--terraD);transition:transform .12s,box-shadow .12s,filter .15s}
+.btn:hover{filter:brightness(1.07)}.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--terraD)}
+.btn.big{font-size:1.12rem;padding:15px 28px;border-radius:16px}
+.btn.ghost{background:var(--panel);box-shadow:0 5px 0 #120c09;border-color:rgba(247,236,217,.22)}
+.btn.ghost:active{box-shadow:0 2px 0 #120c09}
+.btn.good{background:var(--green);box-shadow:0 5px 0 var(--greenD)}.btn.good:active{box-shadow:0 2px 0 var(--greenD)}
+.btn.bad{background:var(--red);box-shadow:0 5px 0 var(--redD)}.btn.bad:active{box-shadow:0 2px 0 var(--redD)}
+.btn.gold{background:var(--gold);color:#3a2a08;box-shadow:0 5px 0 var(--goldD)}.btn.gold:active{box-shadow:0 2px 0 var(--goldD)}
+.btn.p2{background:var(--paper2);color:var(--ink);box-shadow:0 5px 0 #cbb894}.btn.p2:active{box-shadow:0 2px 0 #cbb894}
+.btn.mega{font-family:var(--serif);font-size:1.2rem;padding:17px 38px;border-radius:18px;background:linear-gradient(135deg,var(--gold),var(--terra));box-shadow:0 6px 0 rgba(0,0,0,.45)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.key{font-family:var(--mono);font-size:.7rem;opacity:.75;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:1px 6px}
+.console{position:sticky;top:0;z-index:500;display:flex;align-items:center;gap:10px;padding:10px 14px;
+background:rgba(27,19,16,.93);border-bottom:2px solid rgba(227,179,78,.28)}
+.brand{display:flex;align-items:center;gap:9px;font-family:var(--serif);font-weight:700;font-size:1rem;white-space:nowrap}
+.bSun{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 75%,#ffb35c,#d96f3f 60%,#7c3418);box-shadow:0 3px 0 rgba(0,0,0,.4)}
+.cells{display:flex;gap:5px}
+.cell{width:27px;height:27px;border-radius:8px;border:2px solid rgba(247,236,217,.22);background:#120c09;color:rgba(247,236,217,.55);
+font-family:var(--mono);font-weight:700;font-size:.72rem;cursor:pointer}
+.cell.done{color:#fff8ec;border-color:var(--c,var(--terra));background:var(--c,var(--terra))}
+.sp{flex:1}
+.chip{font-family:var(--mono);font-weight:700;font-size:.8rem;background:#120c09;border:2px solid rgba(227,179,78,.4);color:var(--gold);border-radius:99px;padding:6px 13px;white-space:nowrap}
+.ibtn{width:40px;height:40px;border-radius:12px;border:2px solid rgba(247,236,217,.22);background:var(--panel);color:var(--paper);font-size:1rem;cursor:pointer;box-shadow:0 4px 0 #120c09}
+.ibtn:active{transform:translateY(2px);box-shadow:0 2px 0 #120c09}
+@media(max-width:640px){.brand span:last-child small{display:none}.chip{display:none}}
+main{position:relative;z-index:1}
+.screen{display:none;min-height:calc(100vh - 62px);padding:24px 16px 56px}
+.screen.active{display:block;animation:sIn .4s ease}
+@keyframes sIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.wrap{max-width:960px;margin:0 auto}
+.kick{font-family:var(--mono);font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin:0 0 8px}
+h1.t{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,6vw,3rem);line-height:1.1;margin:0 0 12px}
+.igrid{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center;margin-top:14px}
+@media(max-width:760px){.igrid{grid-template-columns:1fr}}
+.cover{position:relative;margin:0;border-radius:var(--r);overflow:hidden;box-shadow:var(--hard);border:3px solid rgba(247,236,217,.15);transform:rotate(1.4deg);background:linear-gradient(135deg,var(--terra),#241a15)}
+.cover img,.thumb img,.mprev img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.covCap{position:relative;z-index:2;padding:60px 16px 12px;font-family:var(--hand);font-size:1.25rem;color:#fff8ec;text-align:center;background:linear-gradient(transparent,rgba(18,12,9,.85));margin-top:180px}
+.covPh{height:220px;display:grid;place-items:center;font-size:3rem}
+.diary{font-family:var(--hand);font-size:1.28rem;line-height:1.5;color:#f0e3c8;background:var(--panel);border-left:5px solid var(--terra);border-radius:0 14px 14px 0;padding:13px 17px;margin:14px 0;transform:rotate(-.5deg)}
+.rules{display:flex;flex-wrap:wrap;gap:9px;margin:16px 0 22px}
+.rule{background:var(--panel);border:2px solid rgba(247,236,217,.16);border-radius:12px;padding:7px 13px;font-size:.88rem;font-weight:700}
+.fine{font-size:.8rem;color:rgba(247,236,217,.65)}.fine a{color:var(--gold)}
+.mhead{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin-bottom:4px}
+.mhead h2{font-family:var(--serif);font-size:1.8rem;margin:0}
+.fnote{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);border:1px dashed var(--teal);border-radius:99px;padding:6px 13px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin:20px 0 26px}
+.lvl{background:var(--paper);color:var(--ink);border-radius:var(--r);overflow:hidden;box-shadow:var(--hard);cursor:pointer;transition:transform .16s}
+.lvl:hover{transform:translateY(-4px) rotate(-.4deg)}
+.thumb{position:relative;aspect-ratio:16/9;border-bottom:4px solid var(--c,#d96f3f);background:linear-gradient(135deg,var(--c,#d96f3f),#241a15);overflow:hidden}
+.thPh{position:absolute;inset:0;display:grid;place-items:center;font-size:2.5rem}
+.lnum{position:absolute;top:9px;left:9px;z-index:3;font-family:var(--mono);font-weight:700;font-size:.78rem;background:#120c09;color:var(--gold);border:2px solid var(--gold);border-radius:10px;padding:2px 8px}
+.ltag{position:absolute;bottom:8px;right:8px;z-index:3;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;background:rgba(18,12,9,.85);color:#fff8ec;border-radius:99px;padding:3px 9px}
+.lbody{padding:13px 15px 15px}
+.lbody h3{font-family:var(--serif);font-size:1.15rem;margin:0 0 7px}
+.lchar{display:flex;align-items:center;gap:8px;font-size:.83rem;font-weight:700;color:var(--ink2);margin-bottom:9px}
+.av{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:2px solid rgba(0,0,0,.2);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.lmeta{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:.76rem}
+.stars .st{color:#cbb894;letter-spacing:2px}.stars .st.on{color:var(--goldD)}
+.best{color:var(--ink2);font-weight:700}
+.fslot{display:flex;flex-direction:column;align-items:center;gap:10px;padding:22px 0 4px}
+.fhint{font-family:var(--mono);font-size:.78rem;color:rgba(247,236,217,.7);text-align:center}
+.snote{text-align:center;margin-top:22px;font-size:.83rem;color:rgba(247,236,217,.6)}.snote a{color:var(--gold)}
+.sbox{max-width:760px;margin:0 auto;background:var(--panel);border:3px solid rgba(247,236,217,.14);border-radius:22px;box-shadow:0 10px 0 rgba(0,0,0,.4);overflow:hidden}
+.shead{display:flex;align-items:center;gap:13px;padding:14px 18px;border-bottom:2px dashed rgba(247,236,217,.18)}
+.shNum{font-family:var(--serif);font-weight:700;font-size:1.8rem;min-width:52px}
+.shT{flex:1;min-width:0}.shT h2{margin:0;font-family:var(--serif);font-size:1.25rem}
+.shT p{margin:2px 0 0;font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+.shC{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.7rem;font-weight:700;color:rgba(247,236,217,.75)}
+.shC .av{width:42px;height:42px;font-size:1.3rem}
+.shud{display:flex;flex-wrap:wrap;gap:8px;padding:11px 18px;border-bottom:2px dashed rgba(247,236,217,.18)}
+.hchip{font-family:var(--mono);font-weight:700;font-size:.78rem;background:#120c09;border:1px solid rgba(247,236,217,.16);border-radius:99px;padding:5px 13px}
+.hchip b{color:var(--gold)}
+#game-root{padding:18px;min-height:320px}
+.sfoot{display:flex;gap:9px;padding:13px 18px;border-top:2px dashed rgba(247,236,217,.18);flex-wrap:wrap}
+.glead{margin:0 0 14px;color:rgba(247,236,217,.85);font-size:.93rem}
+.dim{pointer-events:none;filter:saturate(.8) brightness(.96)}
+.fillT{font-family:var(--serif);font-size:1.08rem;line-height:2.1;background:var(--paper);color:var(--ink);border-radius:var(--r);padding:16px 18px;box-shadow:var(--hard);margin-bottom:16px}
+.blank{display:inline-block;min-width:104px;text-align:center;font-family:var(--mono);font-weight:700;font-size:.92rem;color:var(--terraD);background:#fff;border:2px dashed var(--terra);border-radius:10px;padding:2px 9px;cursor:pointer}
+.blank.sel{background:#ffe9d6;border-style:solid;box-shadow:0 0 0 3px rgba(217,111,63,.3)}
+.blank.ok{border:2px solid var(--greenD);color:#2f5d3c;background:#e4f2e8;cursor:default}
+.bank{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}
+.word{font-family:var(--mono);font-weight:700;font-size:.92rem;color:#fff8ec;background:var(--tealD);border:2px solid rgba(0,0,0,.25);border-radius:12px;padding:8px 14px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.35);user-select:none}
+.word.used{opacity:.28;pointer-events:none;text-decoration:line-through;box-shadow:none}
+.shake{animation:shk .45s ease}
+@keyframes shk{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.fgood{box-shadow:0 0 0 3px var(--green)!important}.fbad{box-shadow:0 0 0 3px var(--red)!important}
+.tfc{background:var(--paper);color:var(--ink);border-radius:var(--r);padding:20px;box-shadow:var(--hard);margin-bottom:16px}
+.tbar{height:10px;border-radius:99px;background:#e5d6ba;border:1px solid rgba(0,0,0,.15);overflow:hidden;margin-bottom:14px}
+.tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--teal),var(--gold))}
+.tfS{font-family:var(--serif);font-weight:700;font-size:1.15rem;line-height:1.45;margin:0}
+.tfW{min-height:1.4em;font-size:.86rem;color:var(--ink2);margin-top:9px}
+.tfcnt{font-family:var(--mono);font-size:.76rem;color:var(--gold);margin-bottom:9px}
+.tfB{display:flex;gap:13px;justify-content:center;flex-wrap:wrap}
+.bub{font-family:var(--hand);font-size:1.28rem;color:#fff8ec;background:var(--tealD);border-radius:14px 14px 14px 4px;padding:9px 15px;display:inline-block;margin-bottom:14px;box-shadow:0 4px 0 rgba(0,0,0,.3)}
+.mcq{font-family:var(--serif);font-weight:700;font-size:1.2rem;margin:0 0 14px}
+.mopts{display:grid;gap:9px}
+.mopt{display:flex;gap:11px;align-items:center;text-align:left;width:100%;padding:12px 15px;border-radius:14px;cursor:pointer;background:var(--paper);color:var(--ink);border:2px solid rgba(0,0,0,.2);box-shadow:0 4px 0 rgba(0,0,0,.3);font-size:.98rem;font-weight:700}
+.mopt .ql{font-family:var(--mono);font-size:.76rem;background:#120c09;color:var(--gold);border-radius:8px;padding:3px 8px}
+.mopt.ok{background:#e4f2e8;border-color:var(--greenD);color:#2f5d3c}
+.mopt.bad{background:#f9e4e0;border-color:var(--redD);color:var(--redD);animation:shk .45s ease}
+.mopt.dim{opacity:.45}
+.mcw{min-height:1.5em;font-size:.88rem;color:rgba(247,236,217,.85);margin:13px 0 4px}
+.mnext{text-align:right}
+.tl{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:9px}
+.trow{display:flex;align-items:center;gap:11px;background:var(--paper);color:var(--ink);border-radius:14px;padding:9px 11px;box-shadow:0 4px 0 rgba(0,0,0,.3);border:2px solid rgba(0,0,0,.18);cursor:grab;user-select:none}
+.trow.over{outline:3px dashed var(--teal);outline-offset:2px}
+.trow.lock{background:#e4f2e8;border-color:var(--greenD);cursor:default}.trow.lock .tlt{color:#2f5d3c}
+.tli{font-family:var(--mono);font-weight:700;font-size:.74rem;color:var(--ink2);width:20px;text-align:center}
+.tly{font-family:var(--mono);font-weight:700;font-size:.78rem;background:#120c09;color:var(--gold);border-radius:9px;padding:4px 9px;white-space:nowrap}
+.tlt{flex:1;font-weight:700;font-size:.92rem}
+.tarr{display:flex;gap:4px}
+.tarr button{width:29px;height:29px;border-radius:8px;border:2px solid rgba(0,0,0,.2);background:#fff;cursor:pointer;font-size:.68rem;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.memTop{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.78rem;color:var(--gold);margin-bottom:13px}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;max-width:540px;margin:0 auto}
+@media(max-width:520px){.mgrid{grid-template-columns:repeat(3,1fr)}}
+.mc{position:relative;aspect-ratio:3/3.6;perspective:900px;background:none;border:none;padding:0;cursor:pointer;border-radius:14px}
+.mi{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.35,.15,.25,1)}
+.mc.flip .mi{transform:rotateY(180deg)}
+.mf{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;display:grid;place-items:center;padding:7px;text-align:center;border:2px solid rgba(0,0,0,.25);box-shadow:0 4px 0 rgba(0,0,0,.3)}
+.mf.fr{background:linear-gradient(150deg,var(--tealD),#123036);font-size:1.5rem}
+.mf.bk{transform:rotateY(180deg);background:var(--paper);color:var(--ink2);font-family:var(--sans);font-weight:700;font-size:.84rem}
+.mf.bk.bw{color:var(--tealD);font-family:var(--mono)}
+.mc.ok .mf.bk{background:#e4f2e8;border-color:var(--greenD);color:#2f5d3c}
+.mc.ok{cursor:default}
+.bbar{height:14px;border-radius:99px;background:#120c09;border:2px solid rgba(247,236,217,.2);overflow:hidden;margin-bottom:14px}
+.bbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--gold),var(--terra))}
+.bbar.dg i{background:linear-gradient(90deg,var(--red),#ff9b8a);animation:dg .5s steps(2) infinite}
+@keyframes dg{50%{filter:brightness(1.6)}}
+.bcnt{font-family:var(--mono);font-size:.76rem;color:var(--gold);margin-bottom:9px}
+.ov{position:fixed;inset:0;z-index:900;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(10,7,5,.75)}
+.ov.open{display:flex}
+.modal{background:var(--paper);color:var(--ink);width:100%;max-width:520px;border-radius:22px;box-shadow:0 12px 0 rgba(0,0,0,.45);padding:24px;animation:pIn .4s cubic-bezier(.2,1.5,.4,1);max-height:88vh;overflow:auto}
+@keyframes pIn{from{opacity:0;transform:translateY(26px) scale(.94)}to{opacity:1;transform:none}}
+.mk{font-family:var(--mono);font-size:.64rem;letter-spacing:.24em;text-transform:uppercase;color:var(--goldD);margin:0 0 5px}
+.mt{font-family:var(--serif);font-weight:700;font-size:1.5rem;margin:0 0 11px;line-height:1.15}
+.mrow{display:flex;gap:9px;margin:9px 0;font-size:.93rem}
+.mfl{font-family:var(--hand);font-size:1.26rem;color:var(--ink2);border-left:4px solid var(--gold);padding-left:11px;margin:14px 0}
+.mprev{position:relative;width:100%;height:120px;border-radius:14px;border:3px solid rgba(0,0,0,.15);margin:5px 0;background:linear-gradient(135deg,var(--terra),#241a15);overflow:hidden}
+.mprev .ph{position:absolute;inset:0;display:grid;place-items:center;font-size:2rem;color:#fff8ec}
+.mbtns{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}
+.rstars{display:flex;justify-content:center;gap:11px;font-size:2.4rem;margin:8px 0 4px}
+.rstars .st{opacity:0;transform:scale(.3) rotate(-25deg);display:inline-block;color:#d8c7a4}
+.rstars .st.on{color:var(--goldD);animation:spop .5s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes spop{to{opacity:1;transform:scale(1) rotate(0)}}
+.rsc{text-align:center;font-family:var(--mono);font-weight:700;font-size:1.9rem;color:var(--terraD)}
+.rbs{text-align:center;font-family:var(--mono);font-size:.8rem;color:var(--ink2)}
+.nb{display:inline-block;background:var(--green);color:#fff;font-weight:800;border-radius:99px;padding:2px 11px;font-size:.72rem;margin-left:6px}
+.fin{text-align:center}
+.frank{font-family:var(--serif);font-weight:700;font-size:clamp(1.5rem,5vw,2.2rem);color:var(--gold);margin:6px 0}
+.frankd{color:rgba(247,236,217,.8);margin:0 0 16px}
+.rtab{width:100%;border-collapse:separate;border-spacing:0 7px;max-width:620px;margin:0 auto 24px}
+.rtab td{background:var(--panel);padding:9px 13px;font-size:.92rem}
+.rtab tr td:first-child{border-radius:12px 0 0 12px;font-family:var(--mono);color:var(--gold);width:48px}
+.rtab tr td:last-child{border-radius:0 12px 12px 0;text-align:right;font-family:var(--mono);white-space:nowrap}
+.rtab .tn{font-weight:800}
+#toasts{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:1500;display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none}
+.toast{background:#120c09;color:var(--paper);border:2px solid rgba(227,179,78,.5);border-radius:12px;padding:8px 16px;font-size:.86rem;font-weight:700}
+.toast.bad{border-color:var(--red)}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:1600}
+.pop{position:fixed;font-family:var(--mono);font-weight:700;font-size:1.02rem;text-shadow:0 2px 0 rgba(0,0,0,.4)}
+.pop.good{color:#9fe0b0}.pop.bad{color:#ff9b8a}
+.conf{position:fixed;width:9px;height:13px;border-radius:3px}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="grain" aria-hidden="true"></div><div class="glow" aria-hidden="true"></div>
+<div id="errbox" role="alert"></div>
 
+<div id="preloader" role="status">
+  <div class="preSun" aria-hidden="true">🌅</div>
+  <div class="preT">WARM HEART ARCADE</div>
+  <div class="preS">The Malawi Tapes · Episode 01</div>
+  <div class="loadT"><div class="loadF" id="loadF"></div></div>
+  <div id="pre-diag">waiting for engine…</div>
+  <button class="btn big gold" id="btn-play">PLAY ▶</button>
+</div>
+
+<header class="console">
+  <div class="brand"><span class="bSun" aria-hidden="true">🌅</span><span>WARM HEART <small style="font-family:var(--mono);font-size:.55rem;letter-spacing:.22em;color:var(--gold)">ARCADE</small></span></div>
+  <div class="cells" id="cells" aria-label="Level progress"></div>
+  <span class="sp"></span>
+  <span class="chip" id="hudScore">⭐ 0</span>
+  <button class="ibtn" id="btnSound" aria-label="Toggle sound">🔊</button>
+  <button class="ibtn" id="btnHome" aria-label="Back to level map">🗺️</button>
+</header>
+
+<main>
+<section class="screen active" id="scr-intro">
+  <div class="wrap igrid">
+    <div>
+      <p class="kick">The Malawi Tapes · Episode 01</p>
+      <h1 class="t">The Warm Heart<br>of Africa</h1>
+      <div class="diary">“The journal fell open on the map of Malawi — a lake with a thousand fish, granite titans, and the friendliest market in Africa. Six reels of tape are missing their endings. Fill them in, traveler.” — Zola the Guide</div>
+      <div class="rules"><span class="rule">🎮 6 mini-games</span><span class="rule">🗣️ 12 vocabulary words</span><span class="rule">🧭 Play in ANY order</span><span class="rule">💾 Progress auto-saves</span></div>
+      <button class="btn big gold" id="btnToMap">OPEN THE MAP 🗺️</button>
+      <p class="fine" style="margin-top:16px">📎 Lesson source: <a href="https://item1000-collab.github.io/ai/engoo/20260915-malawi/the-warm-heart-of-africa.pdf" target="_blank" rel="noopener noreferrer">the-warm-heart-of-africa.pdf</a></p>
+    </div>
+    <figure class="cover" id="introCover"><div class="covPh" aria-hidden="true">🌅</div><figcaption class="covCap">“You arrive for the landscapes, but leave changed by the connection.”</figcaption></figure>
+  </div>
+</section>
+
+<section class="screen" id="scr-map">
+  <div class="wrap">
+    <div class="mhead"><div><p class="kick">Reel shelf</p><h2>Expedition Map</h2></div><span class="fnote">Free order — every reel is open</span></div>
+    <div class="cards" id="cards" aria-label="Levels"></div>
+    <div class="fslot" id="fslot"></div>
+    <p class="snote">🎞️ Based on the Engoo lesson deck <em>The Warm Heart of Africa</em> · <a href="https://item1000-collab.github.io/ai/engoo/20260915-malawi/the-warm-heart-of-africa.pdf" target="_blank" rel="noopener noreferrer">open the lesson PDF</a></p>
+  </div>
+</section>
+
+<section class="screen" id="scr-scene">
+  <div class="sbox" id="sbox">
+    <div class="shead">
+      <div class="shNum" id="shNum">01</div>
+      <div class="shT"><h2 id="shTitle">—</h2><p id="shTag">—</p></div>
+      <div class="shC"><span class="av" id="shAv">🧭</span><span id="shCn">—</span></div>
+    </div>
+    <div class="shud">
+      <span class="hchip">⭐ <b id="hScore">0</b></span>
+      <span class="hchip">🔥 <b id="hStreak">0</b></span>
+      <span class="hchip">✖ <b id="hMiss">0</b></span>
+      <span class="hchip" id="hXw" hidden><b id="hX">—</b></span>
+    </div>
+    <div id="game-root" aria-live="polite"></div>
+    <div class="sfoot">
+      <button class="btn ghost" id="btnBack">🗺️ Back to map</button>
+      <button class="btn ghost" id="btnRestart">↻ Restart level</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="scr-finale">
+  <div class="wrap fin">
+    <p class="kick">🎞️ End of tape · Episode 01</p>
+    <h1 class="t">The Reel Is Complete</h1>
+    <div class="frank" id="finRank">—</div>
+    <p class="frankd" id="finRankD">—</p>
+    <div class="rules" style="justify-content:center"><span class="chip">⭐ TOTAL <b id="finScore">0</b></span><span class="chip">🌟 <b id="finStars">0</b>/18</span></div>
+    <table class="rtab" id="finTable" aria-label="Results by level"></table>
+    <div class="rules" style="justify-content:center">
+      <button class="btn ghost" id="finMap">🗺️ Back to map</button>
+      <button class="btn bad" id="finRewind">⏪ Rewind the tape</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="ov" id="ov"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<div id="toasts" aria-live="polite"></div>
+<div id="fx" aria-hidden="true"></div>
+
+<script>
+/* Boot error trap: window.onerror may be masked in sandboxed previews,
+   so real diagnostics are delivered via try/catch phase tracing below. */
+window.addEventListener("error", function (e) {
+  var b = document.getElementById("errbox");
+  if (!b) return;
+  b.style.display = "block";
+  b.textContent = "⚠️ " + (e.message || "Script error") + (e.lineno ? " · line " + e.lineno : "");
+});
+</script>
+
+<script>
+(function () {
+"use strict";
+
+/* ===== phase tracer: real messages via try/catch, shown on preloader ===== */
+var EL = {};
+function grab() {
+  EL.diag = document.getElementById("pre-diag");
+  EL.err = document.getElementById("errbox");
+}
+function say(t) { if (EL.diag) EL.diag.textContent = t; }
+function fail(name, e) {
+  var m = (e && e.message) ? e.message : String(e);
+  say("boot … FAIL at [" + name + "]");
+  if (EL.err) { EL.err.style.display = "block"; EL.err.textContent = "⚠️ [" + name + "] " + m; }
+}
+function phase(n, name, fn) {
+  say("boot " + n + "/6 · " + name + " …");
+  try { fn(); say("boot " + n + "/6 · " + name + " … OK"); }
+  catch (e) { fail(name, e); }
+}
+
+/* ===== utils ===== */
+function $(s, r) { return (r || document).querySelector(s); }
+function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function shuffle(a) {
+  var x = a.slice(), i, j, t;
+  for (i = x.length - 1; i > 0; i--) { j = Math.floor(Math.random() * (i + 1)); t = x[i]; x[i] = x[j]; x[j] = t; }
+  return x;
+}
+function pad(n) { return (n < 10 ? "0" : "") + n; }
+function starsHtml(n) { var o = "", i; for (i = 1; i <= 3; i++) o += '<span class="st' + (i <= n ? " on" : "") + '">★</span>'; return o; }
+function starsBy(m) { return m === 0 ? 3 : (m <= 2 ? 2 : 1); }
+function refreshIcons() { /* emoji icon set; hook reserved */ }
+
+/* ===== save / load (sandbox-safe) ===== */
+var KEY = "wha_arcade_v2";
+var save = { muted: false, levels: {} };
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
+function loadSave() {
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var p = JSON.parse(raw);
+      if (p && typeof p === "object") {
+        save.muted = !!p.muted;
+        save.levels = (p.levels && typeof p.levels === "object") ? p.levels : {};
+      }
+    }
+  } catch (e) {}
+}
+function lvl(id) { return save.levels[id] || { stars: 0, best: 0, plays: 0 }; }
+
+/* ===== game data ===== */
+var SLIDES = "https://item1000-collab.github.io/ai/engoo/20260915-malawi/";
+var PDF = SLIDES + "the-warm-heart-of-africa.pdf";
+
+var SCENES = [
+ { id:"l1", num:1, title:"Word Caravan", ch:"Zola the Guide", ce:"🧭", color:"#d96f3f", slide:SLIDES+"slide-002.jpg", tag:"Fill the Blanks",
+   obj:"Load the caravan with 8 travel-writing words from the deck.",
+   tip:"Click a blank, then tap a word from the bank. Wrong words bounce back and cost points.",
+   fl:"“Every expedition begins with the right words packed.” — Zola" },
+ { id:"l2", num:2, title:"Myth or Malawi", ch:"Professor Finch", ce:"🔬", color:"#3fa7ad", slide:SLIDES+"slide-003.jpg", tag:"Real / Delusion",
+   obj:"Separate 10 expedition facts from tall tales before the clock eats them.",
+   tip:"6 seconds per card. Arrow keys: Left = Real, Right = Delusion.",
+   fl:"“Facts are stubborn, but myths are fast.” — Professor Finch" },
+ { id:"l3", num:3, title:"Summit Choice", ch:"Ranger Kande", ce:"🏔️", color:"#e3b34e", slide:SLIDES+"slide-006.jpg", tag:"Multiple Choice",
+   obj:"Answer 5 questions on the climb to Sapitwa Peak.",
+   tip:"One attempt per question — no second rope.",
+   fl:"“The mountain rewards those who read the map twice.” — Ranger Kande" },
+ { id:"l4", num:4, title:"River of Time", ch:"Elder Nasiwo", ce:"🐘", color:"#7fbb8c", slide:SLIDES+"slide-008.jpg", tag:"Timeline Sort",
+   obj:"Restore the order of six entries from the expedition journal.",
+   tip:"Drag rows, or nudge with the arrow buttons. CHECK locks correct rows green.",
+   fl:"“The river remembers every turn of its current.” — Elder Nasiwo" },
+ { id:"l5", num:5, title:"Cichlid Match", ch:"Professor Finch", ce:"🐠", color:"#0e6372", slide:SLIDES+"slide-005.jpg", tag:"Memory Pairs",
+   obj:"Pair 6 words with their meanings using the fewest flips.",
+   tip:"Flip two cards at a time. Consecutive matches multiply your score.",
+   fl:"“A thousand species, one good memory.” — Professor Finch" },
+ { id:"l6", num:6, title:"Sunset Sprint", ch:"Zola the Guide", ce:"🌅", color:"#e06552", slide:SLIDES+"slide-011.jpg", tag:"Timed Bonus",
+   obj:"Answer as many questions as you can in 75 seconds.",
+   tip:"Questions come from every topic. Guard your streak multiplier.",
+   fl:"“The sun waits for no one. Run, traveler!” — Zola" }
+];
+
+var FILL = [
+ { b:"While Malawi ", a:" lush mountains and shimmering lakes, its defining characteristic is its people.", w:"boasts" },
+ { b:"“The Warm Heart of Africa” is a ", a:" that became the official identifier of the nation.", w:"moniker" },
+ { b:"Community serves as the ", a:" of Malawian culture.", w:"bedrock" },
+ { b:"…a deeply ", a:" tradition of neighbors helping neighbors.", w:"ingrained" },
+ { b:"The park was established to preserve a ", a:" sample of the lake’s biome.", w:"pristine" },
+ { b:"All but 5 of the 400+ Mbuna species are completely ", a:" to Lake Malawi.", w:"endemic" },
+ { b:"The park was ", a:" by tens of thousands of wire snares.", w:"plagued" },
+ { b:"…creating an ", a:" sea of vibrant green over the hills.", w:"undulating" }
+];
+var FILL_DECOYS = ["crucible", "haven", "resurgence"];
+
+var TF = [
+ { s:"The nickname “The Warm Heart of Africa” was coined in 1973.", a:true, w:"Frank Johnston, an Irish photographer, coined it in 1973." },
+ { s:"Lake Malawi holds the highest number of fish species of any lake on Earth.", a:true, w:"~1,000 species — the world record for lakes." },
+ { s:"The Mulanje Massif contains the lowest point in Malawi.", a:false, w:"It hosts Sapitwa Peak — the HIGHEST point, 3,000 m." },
+ { s:"Lake Malawi National Park was the world’s first freshwater national park.", a:true, w:"A UNESCO World Heritage Site since 1984." },
+ { s:"99% of Mbuna cichlids also live in other African lakes.", a:false, w:"All but 5 of 400+ species live only in Lake Malawi." },
+ { s:"Sapitwa Peak rises to 3,000 meters above sea level.", a:true, w:"3,000 m (10,000 ft) — the summit of Mulanje." },
+ { s:"Tea has been cultivated in Thyolo since 1908.", a:true, w:"Over a century of cultivation in the south." },
+ { s:"The rock art at Chongoni was painted in the 1990s.", a:false, w:"It stretches back millennia, to the late Stone Age." },
+ { s:"Liwonde National Park covers less than 100 km².", a:false, w:"It is a thriving 584 km² sanctuary." },
+ { s:"About 25,000 people live in five enclave villages by the park.", a:true, w:"They subsist on fishing and farming." },
+ { s:"Zomba Plateau lies in the north of Malawi.", a:false, w:"Zomba is in the south; Nyika is the north." },
+ { s:"The Nyika Plateau feels almost European.", a:true, w:"Cool and misty whaleback grassland at 2,000 m." }
+];
+
+var MC = [
+ { q:"Who coined the moniker “The Warm Heart of Africa”?", o:["A UNESCO committee","Frank Johnston, an Irish photographer","A Malawian head of state"], a:1, w:"Coined in 1973 by Frank Johnston." },
+ { q:"Roughly how many fish species live in Lake Malawi?", o:["~100","~400","~1,000"], a:2, w:"~1,000 — the highest of any lake in the world." },
+ { q:"What share of all known cichlid species lives in the lake?", o:["30%","60%","10%"], a:0, w:"30% of all known cichlid species globally." },
+ { q:"Sapitwa Peak is…", o:["the highest peak in Malawi and central Africa","a fishing village","a northern plateau"], a:0, w:"3,000 m — highest in Malawi and central Africa." },
+ { q:"Which “Big 5” now roam Liwonde?", o:["Elephant, buffalo, lion, leopard, rhino","Cheetah, zebra, giraffe, hippo, crocodile","Zebra, warthog, monkey, baboon, antelope"], a:0, w:"Plus cheetahs and sable antelopes." },
+ { q:"The Chongoni Rock Art records…", o:["the transition from foraging to farming","the first cities","the invention of tea"], a:0, w:"A permanent record of that profound transition." },
+ { q:"Tea in Thyolo has been cultivated since…", o:["1858","1908","1964"], a:1, w:"Since 1908 — over a century." },
+ { q:"Lake Malawi NP became a UNESCO site in…", o:["1973","1984","2004"], a:1, w:"Designated in 1984." }
+];
+
+var TL = [
+ { y:"1908", t:"Tea cultivation begins in the Thyolo highlands" },
+ { y:"1973", t:"Frank Johnston coins “The Warm Heart of Africa”" },
+ { y:"1984", t:"Lake Malawi NP becomes a UNESCO World Heritage Site" },
+ { y:"2015", t:"Crisis: Liwonde is plagued by wire snares" },
+ { y:"THEN", t:"Intervention: snare removal and wildlife translocation" },
+ { y:"NOW", t:"Resurgence: a secure haven for the Big 5" }
+];
+
+var PAIRS = [
+ { w:"boasts", d:"proudly has" },
+ { w:"moniker", d:"a telling nickname" },
+ { w:"bedrock", d:"the foundation" },
+ { w:"pristine", d:"untouched, unspoiled" },
+ { w:"endemic", d:"found only here" },
+ { w:"haven", d:"a safe refuge" }
+];
+
+var BONUS = [
+ { t:"tf", s:"The Great Rift Valley harbors Lake Malawi on the eastern border.", a:1 },
+ { t:"tf", s:"The Cape Maclear Peninsula belongs to Zambia.", a:0 },
+ { t:"mc", q:"The Mbuna are…", o:["rock-dwelling cichlids","lake-faring fishermen","ancient rock painters"], a:0 },
+ { t:"tf", s:"Nyika Plateau sits at 2,000 meters.", a:1 },
+ { t:"mc", q:"Zomba Plateau is covered in…", o:["cedar, pine and cypress","tea and coffee","salt marshes"], a:0 },
+ { t:"tf", s:"Liwonde’s turnaround began with massive restoration efforts.", a:1 },
+ { t:"mc", q:"“Plagued by” means…", o:["persistently troubled","carefully decorated","lightly seasoned"], a:0 },
+ { t:"tf", s:"The deck calls the lake “an evolutionary crucible”.", a:1 },
+ { t:"mc", q:"“Resurgence” means…", o:["a recovery after decline","a sudden downfall","a quiet goodbye"], a:0 },
+ { t:"tf", s:"Sapitwa Peak is lower than the Phalombe Plains.", a:0 },
+ { t:"mc", q:"“Endemic” species are found…", o:["nowhere else in the wild","on every continent","only in captivity"], a:0 },
+ { t:"tf", s:"Malawi’s defining characteristic is its people.", a:1 },
+ { t:"mc", q:"“Undulating” describes…", o:["gentle wavelike curves","sharp rocky cliffs","total stillness"], a:0 },
+ { t:"tf", s:"The deck ends: “Its very people make the journey worthwhile.”", a:1 },
+ { t:"mc", q:"“Haven” means…", o:["a safe refuge","a loud market","a deep canyon"], a:0 }
+];
+
+var PRAISE = ["“Sharp eyes, traveler!”","“The mountain nods in approval.”","“Exactly right — onward!”","“You read the map perfectly.”"];
+var OOPS = ["“Even guides miss a trail sometimes.”","“The mist got this one. Onward!”","“Noted in the journal — next one is yours.”"];
+
+/* ===== audio ===== */
+var AC = null;
+function ensureAudio() {
+  if (!AC) {
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (C) { try { AC = new C(); } catch (e) { AC = null; } }
+  }
+  if (AC && AC.state === "suspended") { try { AC.resume(); } catch (e) {} }
+}
+function tone(f, d, ty, v, at) {
+  if (!AC || save.muted) return;
+  try {
+    var t = (at || 0) + AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+    o.type = ty || "sine"; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v || 0.15, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + 0.06);
+  } catch (e) {}
+}
+function noise(d, v) {
+  if (!AC || save.muted) return;
+  try {
+    var n = Math.max(1, Math.floor(AC.sampleRate * d)), buf = AC.createBuffer(1, n, AC.sampleRate), dt = buf.getChannelData(0), i;
+    for (i = 0; i < n; i++) dt[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var s = AC.createBufferSource(), g = AC.createGain(), f = AC.createBiquadFilter();
+    f.type = "bandpass"; f.frequency.value = 2400;
+    s.buffer = buf; g.gain.value = v || 0.15;
+    s.connect(f); f.connect(g); g.connect(AC.destination); s.start();
+  } catch (e) {}
+}
+function sClick()  { tone(660, 0.06, "square", 0.07); }
+function sFlip()   { tone(440, 0.07, "triangle", 0.11); tone(660, 0.08, "triangle", 0.09, 0.06); }
+function sGood()   { tone(523, 0.12, "sine", 0.16); tone(659, 0.12, "sine", 0.16, 0.09); tone(784, 0.18, "sine", 0.16, 0.18); }
+function sBad()    { tone(196, 0.22, "sawtooth", 0.12); tone(147, 0.28, "sawtooth", 0.1, 0.1); }
+function sMatch()  { tone(659, 0.1, "triangle", 0.14); tone(880, 0.1, "triangle", 0.14, 0.08); tone(1175, 0.16, "triangle", 0.12, 0.16); }
+function sFanfare(){ var fs = [523, 659, 784, 1047], i; for (i = 0; i < fs.length; i++) tone(fs[i], 0.22, "sine", 0.16, i * 0.13); noise(0.5, 0.1); }
+function sTick()   { tone(880, 0.04, "square", 0.05); }
+function sCheer()  { noise(0.8, 0.16); var fs = [659, 784, 1047], i; for (i = 0; i < fs.length; i++) tone(fs[i], 0.2, "sine", 0.13, i * 0.12); }
+
+/* ===== fx ===== */
+var RM = false;
+try { RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+function toast(msg, ty) {
+  var box = $("#toasts"), t = document.createElement("div");
+  t.className = "toast" + (ty ? " " + ty : ""); t.textContent = msg;
+  box.appendChild(t);
+  setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2600);
+}
+function pop(x, y, txt, good) {
+  if (RM) return;
+  var el = document.createElement("span");
+  el.className = "pop " + (good ? "good" : "bad"); el.textContent = txt;
+  el.style.left = clamp(x - 20, 4, innerWidth - 110) + "px";
+  el.style.top = clamp(y - 16, 4, innerHeight - 60) + "px";
+  $("#fx").appendChild(el);
+  setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 900);
+}
+function popC(txt, good) {
+  var r = $("#game-root").getBoundingClientRect();
+  pop(r.left + r.width / 2, r.top + r.height / 3, txt, good);
+}
+var CONF = ["#d96f3f", "#e3b34e", "#3fa7ad", "#7fbb8c", "#e06552", "#f7ecd9"];
+function confetti(cx, cy, n) {
+  if (RM) return;
+  var i;
+  for (i = 0; i < (n || 26); i++) {
+    (function () {
+      var p = document.createElement("span");
+      p.className = "conf"; p.style.background = CONF[i % CONF.length];
+      p.style.left = cx + "px"; p.style.top = cy + "px";
+      $("#fx").appendChild(p);
+      var dx = (Math.random() - 0.5) * 340, dy = 160 + Math.random() * 260, rot = (Math.random() - 0.5) * 720;
+      setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 1500);
+      try {
+        p.animate(
+          [{ transform: "translate(0,0) rotate(0)", opacity: 1 }, { transform: "translate(" + dx + "px," + dy + "px) rotate(" + rot + "deg)", opacity: 0 }],
+          { duration: 1100, easing: "cubic-bezier(.2,.6,.3,1)" });
+      } catch (e) {}
+    })();
+  }
+}
+
+/* ===== timers / cleanup ===== */
+var timers = [], cleanupFn = null, keyHandler = null;
+function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
+function every(fn, ms) { var t = setInterval(fn, ms); timers.push(t); return t; }
+function setCleanup(fn) { cleanupFn = fn; }
+function runCleanup() {
+  var i;
+  for (i = 0; i < timers.length; i++) { clearTimeout(timers[i]); clearInterval(timers[i]); }
+  timers = [];
+  if (cleanupFn) { try { cleanupFn(); } catch (e) {} cleanupFn = null; }
+  keyHandler = null;
+}
+
+/* ===== shell state ===== */
+var gameRoot, cur = null, hud = { score: 0, streak: 0, miss: 0, extra: "" }, curScreen = "intro";
+function showScreen(n) {
+  if (curScreen === "scene" && n !== "scene") runCleanup();
+  $$(".screen").forEach(function (s) { s.classList.remove("active"); });
+  var t = $("#scr-" + n); if (t) t.classList.add("active");
+  curScreen = n; window.scrollTo(0, 0);
+}
+function hudScene() {
+  $("#hScore").textContent = hud.score;
+  $("#hStreak").textContent = hud.streak;
+  $("#hMiss").textContent = hud.miss;
+  var w = $("#hXw");
+  if (hud.extra) { w.hidden = false; $("#hX").textContent = hud.extra; } else { w.hidden = true; }
+}
+function updateHUD() {
+  var total = 0, i;
+  for (i = 0; i < SCENES.length; i++) total += lvl(SCENES[i].id).best;
+  $("#hudScore").textContent = "⭐ " + total;
+  var c = "";
+  SCENES.forEach(function (s) {
+    var v = lvl(s.id);
+    c += '<button class="cell' + (v.stars > 0 ? " done" : "") + '" style="--c:' + s.color + '" data-cell="' + s.id + '" title="Reel ' + s.num + " — " + v.stars + '★">' + s.num + "</button>";
+  });
+  $("#cells").innerHTML = c;
+}
+function allDone() { return SCENES.every(function (s) { return lvl(s.id).stars > 0; }); }
+function renderSound() {
+  var b = $("#btnSound");
+  b.textContent = save.muted ? "🔇" : "🔊";
+  b.setAttribute("aria-label", save.muted ? "Unmute sound" : "Mute sound");
+}
+
+/* ===== slide images: optional, emoji placeholder sits underneath ===== */
+function slideImg(src) {
+  var img = document.createElement("img");
+  img.loading = "lazy"; img.alt = "";
+  img.addEventListener("error", function () {
+    img.style.display = "none";
+    if (!slideImg.warned) { slideImg.warned = true; toast("🖼 Slides offline — sunset placeholders shown."); }
+  });
+  img.src = src;
+  return img;
+}
+
+/* ===== map ===== */
+function renderMap() {
+  var h = "";
+  SCENES.forEach(function (s) {
+    var v = lvl(s.id);
+    h += '<article class="lvl" data-id="' + s.id + '" role="button" tabindex="0" style="--c:' + s.color + '" aria-label="Reel ' + s.num + ": " + s.title + ", " + v.stars + ' of 3 stars. Enter to play.">'
+      + '<div class="thumb"><span class="thPh" aria-hidden="true"></span><span class="lnum">REEL ' + pad(s.num) + '</span><span class="ltag">' + s.tag + "</span></div>"
+      + '<div class="lbody"><h3>' + s.title + '</h3><div class="lchar"><span class="av">' + s.ce + "</span>" + s.ch + "</div>"
+      + '<div class="lmeta"><span class="stars">' + starsHtml(v.stars) + '</span><span class="best">BEST ' + (v.best || "—") + "</span></div></div></article>";
+  });
+  var host = $("#cards");
+  host.innerHTML = h;
+  $$(".lvl", host).forEach(function (card) {
+    var s = null, i;
+    for (i = 0; i < SCENES.length; i++) if (SCENES[i].id === card.getAttribute("data-id")) s = SCENES[i];
+    if (!s) return;
+    var ph = $(".thPh", card);
+    ph.textContent = s.ce;
+    card.insertBefore(slideImg(s.slide), card.firstChild); /* hidden trick: img goes into thumb */
+    var thumb = $(".thumb", card);
+    thumb.appendChild(slideImg(s.slide));
+  });
+  $("#fslot").innerHTML = allDone()
+    ? '<button class="btn mega" id="btnFinale">🎬 ROLL THE FINALE</button>'
+    : '<p class="fhint">⏳ Finish all six reels — any order counts — to unlock the Finale.</p>';
+}
+
+/* ===== modal ===== */
+var ov = $("#ov"), modal = $("#modal"), lastFocus = null;
+function openModal(h, focusSel) {
+  lastFocus = document.activeElement;
+  modal.innerHTML = h;
+  ov.classList.add("open");
+  var f = focusSel ? $(focusSel, modal) : $("button", modal);
+  if (f) f.focus();
+}
+function closeModal() {
+  ov.classList.remove("open"); modal.innerHTML = "";
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+  lastFocus = null;
+}
+var pendingId = null;
+function openBriefing(id) {
+  pendingId = id;
+  var s = null, i;
+  for (i = 0; i < SCENES.length; i++) if (SCENES[i].id === id) s = SCENES[i];
+  if (!s) return;
+  var v = lvl(id), h = "";
+  h += '<p class="mk">Reel ' + pad(s.num) + " · " + s.tag + (v.plays ? " · replay " + v.plays : "") + "</p>";
+  h += '<h3 class="mt">' + s.title + "</h3>";
+  h += '<div class="mprev"><span class="ph">' + s.ce + '</span></div>';
+  h += '<div class="lchar" style="color:var(--ink)"><span class="av" style="font-size:1.3rem;width:40px;height:40px">' + s.ce + "</span>" + s.ch + "</div>";
+  h += '<div class="mrow"><span>🎯</span><span><b>Objective:</b> ' + s.obj + "</span></div>";
+  h += '<div class="mrow"><span>💡</span><span>' + s.tip + "</span></div>";
+  h += '<p class="mfl">' + s.fl + "</p>";
+  if (v.best) h += '<p style="font-family:var(--mono);font-size:.78rem;color:var(--ink2)">Best: ' + v.best + " · " + starsHtml(v.stars) + "</p>";
+  h += '<div class="mbtns"><button class="btn" data-act="start">▶ START REEL</button><button class="btn p2" data-act="tomap">Back to map</button></div>';
+  openModal(h, '[data-act="start"]');
+  var pv = $(".mprev", modal);
+  if (pv) pv.appendChild(slideImg(s.slide));
+}
+function openResults(s, res, isNew) {
+  var h = "";
+  h += '<p class="mk">Reel ' + pad(s.num) + " · " + s.title + "</p>";
+  h += '<h3 class="mt">' + (res.stars === 3 ? "Flawless run!" : "Reel complete!") + "</h3>";
+  h += '<div class="rstars" aria-label="' + res.stars + ' of 3 stars"><span class="st">★</span><span class="st">★</span><span class="st">★</span></div>';
+  h += '<div class="rsc">⭐ ' + res.score + "</div>";
+  h += '<p class="rbs">Best: ' + Math.max(res.score, lvl(s.id).best) + (isNew ? '<span class="nb">NEW BEST!</span>' : "") + "</p>";
+  h += '<div class="mbtns" style="justify-content:center"><button class="btn p2" data-act="replay">↻ Replay</button><button class="btn" data-act="tomap">🗺️ Map</button>';
+  if (allDone()) h += '<button class="btn gold" data-act="gofinale">🎬 Finale</button>';
+  h += "</div>";
+  openModal(h, '[data-act="tomap"]');
+  $$(".rstars .st", modal).forEach(function (el, i) { if (i < res.stars) el.classList.add("on"); });
+  if (res.stars === 3) {
+    var r = modal.getBoundingClientRect();
+    confetti(r.left + r.width / 2, r.top + 80, 34); sFanfare();
+  } else if (res.stars === 2) sCheer();
+}
+
+/* ===== scene framework ===== */
+var BUILDERS = {};
+function startScene(id) {
+  runCleanup();
+  var s = null, i;
+  for (i = 0; i < SCENES.length; i++) if (SCENES[i].id === id) s = SCENES[i];
+  if (!s) return;
+  cur = s;
+  hud = { score: 0, streak: 0, miss: 0, extra: "" };
+  $("#shNum").textContent = pad(s.num);
+  $("#shTitle").textContent = s.title;
+  $("#shTag").textContent = s.tag;
+  $("#shAv").textContent = s.ce;
+  $("#shCn").textContent = s.ch;
+  $("#shNum").style.color = s.color;
+  showScreen("scene");
+  hudScene();
+  try { BUILDERS[s.id](); }
+  catch (e) { gameRoot.innerHTML = '<p class="glead">⚠️ This reel failed to start: ' + e.message + "</p>"; }
+}
+function sceneFinish(res) {
+  runCleanup();
+  hud.extra = ""; hudScene();
+  var prev = lvl(cur.id), isNew = res.score > prev.best;
+  save.levels[cur.id] = { stars: Math.max(prev.stars, res.stars), best: Math.max(prev.best, res.score), plays: (prev.plays || 0) + 1 };
+  persist(); updateHUD(); renderMap();
+  openResults(cur, res, isNew);
+}
+
+/* ================================================================
+   GAME 1 — WORD CARAVAN (fill in the blanks, delegation)
+   ================================================================ */
+BUILDERS.l1 = function () {
+  var items = shuffle(FILL), bank = shuffle(items.map(function (i) { return i.w; }).concat(FILL_DECOYS));
+  var sel = null, done = 0, miss = 0;
+  var h = '<p class="glead">Tap a blank, then tap the word that fits. ' + items.length + " blanks, " + bank.length + " words — three are stowaways.</p><div class=\"fillT\">";
+  items.forEach(function (it, i) {
+    h += it.b + '<button class="blank" data-i="' + i + '">＿＿</button>' + it.a + " ";
+  });
+  h += '</div><div class="bank">';
+  bank.forEach(function (w) { h += '<button class="word" data-w="' + w + '">' + w + "</button>"; });
+  h += "</div>";
+  gameRoot.innerHTML = h;
+  function firstEmpty() {
+    var l = $$(".blank", gameRoot), i;
+    for (i = 0; i < l.length; i++) if (!l[i].classList.contains("ok")) return Number(l[i].getAttribute("data-i"));
+    return null;
+  }
+  gameRoot.onclick = function (e) {
+    var bl = e.target.closest(".blank"), wd = e.target.closest(".word");
+    if (bl && !bl.classList.contains("ok")) {
+      sClick();
+      var i = Number(bl.getAttribute("data-i"));
+      $$(".blank", gameRoot).forEach(function (b) { b.classList.toggle("sel", Number(b.getAttribute("data-i")) === (sel === i ? -1 : i)); });
+      sel = (sel === i) ? null : i;
+      return;
+    }
+    if (!wd || wd.classList.contains("used")) return;
+    if (sel === null) { var fe = firstEmpty(); if (fe === null) return; sel = fe; $(".blank[data-i=\"" + fe + "\"]", gameRoot).classList.add("sel"); }
+    var w = wd.getAttribute("data-w"), target = items[sel].w;
+    var be = $('.blank[data-i="' + sel + '"]', gameRoot);
+    if (!be) return;
+    if (w === target) {
+      be.textContent = w; be.classList.add("ok"); be.classList.remove("sel");
+      wd.classList.add("used"); done++; hud.streak++;
+      var gain = 150 + Math.min(100, (hud.streak - 1) * 25);
+      hud.score += gain; sGood();
+      var r = be.getBoundingClientRect(); pop(r.left + r.width / 2, r.top, "+" + gain, true);
+      sel = null;
+      var nx = firstEmpty();
+      if (nx !== null && done < items.length) { sel = nx; $(".blank[data-i=\"" + nx + "\"]", gameRoot).classList.add("sel"); }
+      if (done === items.length) {
+        gameRoot.classList.add("dim");
+        later(function () { sceneFinish({ score: hud.score, stars: starsBy(miss) }); }, 900);
+      }
+    } else {
+      miss++; hud.miss = miss; hud.streak = 0;
+      hud.score = Math.max(0, hud.score - 25);
+      sBad(); wd.classList.add("shake"); be.classList.add("shake");
+      pop(wd.getBoundingClientRect().left + 30, wd.getBoundingClientRect().top, "−25", false);
+      later(function () { wd.classList.remove("shake"); be.classList.remove("shake"); }, 480);
+    }
+    hudScene();
+  };
+  setCleanup(function () { gameRoot.onclick = null; });
+};
+
+/* ================================================================
+   GAME 2 — MYTH OR MALAWI (true/false, 6s timer)
+   ================================================================ */
+BUILDERS.l2 = function () {
+  var qs = shuffle(TF).slice(0, 10), idx = 0, DUR = 6000, t0 = 0, left = DUR, timer = null, lastS = -1, answered = false;
+  gameRoot.innerHTML =
+    '<div class="tfcnt" id="tfc"></div><div class="tfc" id="tfcC"><div class="tbar"><i id="tbf"></i></div>' +
+    '<p class="tfS" id="tfS"></p><div class="tfW" id="tfW" aria-live="polite"></div></div>' +
+    '<div class="tfB"><button class="btn big good" data-tf="1">✅ REAL <span class="key">←</span></button>' +
+    '<button class="btn big bad" data-tf="0">🌀 DELUSION <span class="key">→</span></button></div>';
+  function show() {
+    answered = false; left = DUR; lastS = -1;
+    $("#tfS").textContent = qs[idx].s;
+    $("#tfW").textContent = "";
+    $("#tfcC").className = "tfc";
+    $("#tfc").textContent = "CARD " + (idx + 1) + " / " + qs.length;
+    var f = $("#tbf");
+    f.style.transition = "none"; f.style.width = "100%";
+    void f.offsetWidth;
+    f.style.transition = "width " + DUR + "ms linear"; f.style.width = "0%";
+    t0 = performance.now();
+    if (timer) clearInterval(timer);
+    timer = every(function () {
+      left = Math.max(0, DUR - (performance.now() - t0));
+      var s = Math.ceil(left / 1000);
+      if (s <= 3 && s !== lastS && s > 0) { lastS = s; sTick(); }
+      if (left <= 0) answer(null);
+    }, 100);
+  }
+  function answer(c) {
+    if (answered) return;
+    answered = true;
+    if (timer) { clearInterval(timer); timer = null; }
+    var q = qs[idx], ok = c !== null && (c === 1) === q.a, card = $("#tfcC");
+    if (ok) {
+      hud.streak++;
+      var g = 150 + Math.ceil(left / 1000) * 10 + Math.min(120, hud.streak * 30);
+      hud.score += g; sGood(); card.classList.add("fgood");
+      popC("+" + g, true); $("#tfW").textContent = "✔ " + q.w;
+    } else {
+      hud.miss++; hud.streak = 0;
+      hud.score = Math.max(0, hud.score - 40);
+      sBad(); card.classList.add("fbad");
+      popC("−40", false); $("#tfW").textContent = (c === null ? "⏰ Time! " : "✖ ") + q.w;
+    }
+    hudScene();
+    later(function () {
+      idx++;
+      if (idx >= qs.length) sceneFinish({ score: hud.score, stars: starsBy(hud.miss) });
+      else show();
+    }, ok ? 900 : 1750);
+  }
+  gameRoot.onclick = function (e) {
+    var b = e.target.closest("[data-tf]");
+    if (b) answer(Number(b.getAttribute("data-tf")));
+  };
+  keyHandler = function (e) {
+    if (e.key === "ArrowLeft") { e.preventDefault(); answer(1); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); answer(0); }
+  };
+  show();
+  setCleanup(function () { gameRoot.onclick = null; if (timer) clearInterval(timer); });
+};
+
+/* ================================================================
+   GAME 3 — SUMMIT CHOICE (multiple choice)
+   ================================================================ */
+BUILDERS.l3 = function () {
+  var qs = shuffle(MC).slice(0, 5), idx = 0, answered = false;
+  gameRoot.innerHTML = '<div class="bub" id="mb">🏔️ Base camp. Breathe.</div><p class="mcq" id="mq"></p>' +
+    '<div class="mopts" id="mo"></div><p class="mcw" id="mw" aria-live="polite"></p>' +
+    '<div class="mnext"><button class="btn" id="mn" hidden>Climb on →</button></div>';
+  function show() {
+    answered = false;
+    var q = qs[idx];
+    hud.extra = "Q " + (idx + 1) + "/" + qs.length; hudScene();
+    $("#mb").textContent = idx === 0 ? "🏔️ Base camp. Breathe." : "🏔️ Next ledge…";
+    $("#mq").textContent = q.q; $("#mw").textContent = ""; $("#mn").hidden = true;
+    var h = "";
+    q.o.forEach(function (o, i) { h += '<button class="mopt" data-i="' + i + '"><span class="ql">' + String.fromCharCode(65 + i) + "</span>" + o + "</button>"; });
+    $("#mo").innerHTML = h;
+  }
+  gameRoot.onclick = function (e) {
+    var op = e.target.closest(".mopt");
+    if (op && !answered) {
+      answered = true;
+      var q = qs[idx], i = Number(op.getAttribute("data-i")), ok = i === q.a;
+      $$(".mopt", gameRoot).forEach(function (b) {
+        var j = Number(b.getAttribute("data-i")); b.disabled = true;
+        if (j === q.a) b.classList.add("ok");
+        else if (j === i) b.classList.add("bad");
+        else b.classList.add("dim");
+      });
+      if (ok) { hud.score += 250; hud.streak++; sGood(); popC("+250", true); $("#mb").textContent = PRAISE[Math.floor(Math.random() * PRAISE.length)]; }
+      else { hud.miss++; hud.streak = 0; sBad(); $("#mb").textContent = OOPS[Math.floor(Math.random() * OOPS.length)]; }
+      $("#mw").textContent = "💡 " + q.w;
+      var nb = $("#mn");
+      nb.textContent = idx === qs.length - 1 ? "Reach the summit 🏔" : "Climb on →";
+      nb.hidden = false; nb.focus();
+      hudScene(); return;
+    }
+    if (e.target.closest("#mn")) {
+      sClick(); idx++;
+      if (idx >= qs.length) sceneFinish({ score: hud.score, stars: starsBy(hud.miss) });
+      else show();
+    }
+  };
+  show();
+  setCleanup(function () { gameRoot.onclick = null; });
+};
+
+/* ================================================================
+   GAME 4 — RIVER OF TIME (timeline drag + arrows)
+   ================================================================ */
+BUILDERS.l4 = function () {
+  var order = shuffle([0, 1, 2, 3, 4, 5]), lock = [false, false, false, false, false, false], miss = 0, drag = null;
+  gameRoot.innerHTML = '<p class="glead">Six journal entries fell out of order. Drag them (or nudge ▲▼), then CHECK. Correct rows lock green.</p>' +
+    '<ol class="tl" id="tll"></ol><div style="text-align:center"><button class="btn" id="tlc">🧵 CHECK ORDER</button></div>';
+  function seq() { var s = []; order.forEach(function (i) { if (!lock[i]) s.push(i); }); return s; }
+  function render(shakeList) {
+    var h = "";
+    order.forEach(function (item, pos) {
+      var lk = lock[item], sh = shakeList && shakeList.indexOf(item) >= 0;
+      h += '<li class="trow' + (lk ? " lock" : "") + (sh ? " shake" : "") + '"' + (lk ? "" : ' draggable="true"') + ' data-item="' + item + '">' +
+        '<span class="tli">' + (pos + 1) + '</span><span class="tly">' + TL[item].y + '</span><span class="tlt">' + TL[item].t + "</span>";
+      if (!lk) h += '<span class="tarr"><button class="up" aria-label="Move up">▲</button><button class="dn" aria-label="Move down">▼</button></span>';
+      else h += '<span class="tli" aria-hidden="true">✔</span>';
+      h += "</li>";
+    });
+    $("#tll").innerHTML = h;
+  }
+  function check() {
+    var fresh = 0, wrong = [];
+    order.forEach(function (item, pos) {
+      if (lock[item]) return;
+      if (item === pos) { lock[item] = true; fresh++; hud.score += 150; }
+      else wrong.push(item);
+    });
+    if (wrong.length) {
+      miss++; hud.miss = miss; hud.score = Math.max(0, hud.score - 60);
+      sBad(); popC("−60", false);
+      toast("✖ " + wrong.length + " row(s) out of place — −60", "bad");
+    }
+    if (fresh) sGood();
+    hudScene(); render(wrong);
+    if (order.every(function (i) { return lock[i]; })) {
+      $("#tlc").disabled = true; sFanfare();
+      later(function () { sceneFinish({ score: hud.score, stars: starsBy(miss) }); }, 850);
+    }
+  }
+  gameRoot.onclick = function (e) {
+    var up = e.target.closest(".up"), dn = e.target.closest(".dn"), row, item, s, i, j, pi, pj, dir;
+    if (up || dn) {
+      row = (up || dn).closest(".trow"); item = Number(row.getAttribute("data-item"));
+      s = seq(); i = s.indexOf(item); dir = up ? -1 : 1; j = i + dir;
+      if (i >= 0 && j >= 0 && j < s.length) {
+        pi = order.indexOf(s[i]); pj = order.indexOf(s[j]);
+        order[pi] = s[j]; order[pj] = s[i]; render(); sClick();
+      }
+      return;
+    }
+    if (e.target.closest("#tlc")) check();
+  };
+  gameRoot.ondragstart = function (e) {
+    var row = e.target.closest(".trow");
+    if (row && !row.classList.contains("lock")) {
+      drag = Number(row.getAttribute("data-item"));
+      e.dataTransfer.effectAllowed = "move";
+      try { e.dataTransfer.setData("text/plain", String(drag)); } catch (er) {}
+    } else e.preventDefault();
+  };
+  gameRoot.ondragover = function (e) {
+    var row = e.target.closest(".trow");
+    if (row && !row.classList.contains("lock")) { e.preventDefault(); row.classList.add("over"); }
+  };
+  gameRoot.ondragleave = function (e) { var row = e.target.closest(".trow"); if (row) row.classList.remove("over"); };
+  gameRoot.ondrop = function (e) {
+    var row = e.target.closest(".trow");
+    if (row && drag !== null && !row.classList.contains("lock")) {
+      e.preventDefault();
+      var target = Number(row.getAttribute("data-item")), s = seq(), from = s.indexOf(drag), to = s.indexOf(target), k = 0;
+      if (from >= 0 && to >= 0 && from !== to) {
+        s.splice(to, 0, s.splice(from, 1)[0]);
+        order = order.map(function (x) { return lock[x] ? x : s[k++]; });
+        render(); sClick();
+      }
+    }
+    drag = null;
+  };
+  gameRoot.ondragend = function () { drag = null; $$(".trow", gameRoot).forEach(function (r) { r.classList.remove("over"); }); };
+  render();
+  setCleanup(function () {
+    gameRoot.onclick = null; gameRoot.ondragstart = null; gameRoot.ondragover = null;
+    gameRoot.ondragleave = null; gameRoot.ondrop = null; gameRoot.ondragend = null;
+  });
+};
+
+/* ================================================================
+   GAME 5 — CICHLID MATCH (memory, 3D flip)
+   ================================================================ */
+BUILDERS.l5 = function () {
+  var deck = [], i;
+  PAIRS.forEach(function (p, id) { deck.push({ id: id, k: "w", t: p.w }); deck.push({ id: id, k: "d", t: p.d }); });
+  deck = shuffle(deck);
+  var first = null, busy = false, matches = 0, moves = 0;
+  var h = '<div class="memTop"><span>MOVES: <b id="mm">0</b></span><span>MATCHES: <b id="mc2">0</b>/6</span></div><div class="mgrid">';
+  deck.forEach(function (c, i2) {
+    h += '<button class="mc" data-i="' + i2 + '" aria-label="Card ' + (i2 + 1) + ', hidden"><span class="mi">' +
+      '<span class="mf fr">🌀</span><span class="mf bk ' + (c.k === "w" ? "bw" : "") + '">' + c.t + "</span></span></button>";
+  });
+  h += "</div>";
+  gameRoot.innerHTML = h;
+  gameRoot.onclick = function (e) {
+    var el = e.target.closest(".mc");
+    if (!el || busy || el.classList.contains("flip") || el.classList.contains("ok")) return;
+    sFlip(); el.classList.add("flip");
+    el.setAttribute("aria-label", "Card: " + deck[Number(el.getAttribute("data-i"))].t);
+    if (!first) { first = el; return; }
+    moves++; $("#mm").textContent = moves;
+    var a = deck[Number(first.getAttribute("data-i"))], b = deck[Number(el.getAttribute("data-i"))];
+    if (a.id === b.id && a.k !== b.k) {
+      first.classList.add("ok"); el.classList.add("ok");
+      matches++; hud.streak++;
+      var mult = Math.min(1 + 0.5 * (hud.streak - 1), 3);
+      var gain = Math.round(180 * mult);
+      hud.score += gain; $("#mc2").textContent = matches; sMatch();
+      var r = el.getBoundingClientRect();
+      pop(r.left + r.width / 2, r.top, "+" + gain + (mult > 1 ? " ×" + mult : ""), true);
+      first = null; hudScene();
+      if (matches === PAIRS.length) {
+        gameRoot.classList.add("dim");
+        later(function () {
+          var m = moves - PAIRS.length;
+          sceneFinish({ score: hud.score, stars: m <= 2 ? 3 : (m <= 5 ? 2 : 1) });
+        }, 900);
+      }
+    } else {
+      busy = true; hud.miss++; hud.streak = 0;
+      hud.score = Math.max(0, hud.score - 20);
+      sBad(); hudScene();
+      var e1 = first, e2 = el;
+      later(function () {
+        e1.classList.remove("flip"); e2.classList.remove("flip");
+        e1.setAttribute("aria-label", "Card, hidden"); e2.setAttribute("aria-label", "Card, hidden");
+        first = null; busy = false;
+      }, 950);
+    }
+  };
+  setCleanup(function () { gameRoot.onclick = null; });
+};
+
+/* ================================================================
+   GAME 6 — SUNSET SPRINT (75 seconds)
+   ================================================================ */
+BUILDERS.l6 = function () {
+  var qs = shuffle(BONUS), idx = 0, ok = 0, TOTAL = 75000, endAt = 0, timer = null, lastS = -1, fin = false, answered = false;
+  gameRoot.innerHTML = '<div class="bbar" id="bb"><i id="bf"></i></div><div class="bcnt" id="bc"></div><div id="bstage"></div>';
+  function show() {
+    if (idx >= qs.length) { hud.score += 500; popC("+500 PERFECT RUN", true); later(finish, 700); return; }
+    answered = false;
+    var q = qs[idx], h = "";
+    $("#bc").textContent = "Q " + (idx + 1) + " · STREAK ×" + (1 + Math.min(hud.streak, 8) * 0.25).toFixed(2);
+    if (q.t === "tf") {
+      h += '<p class="tfS" style="margin-bottom:14px">' + q.s + "</p><div class=\"mopts\">" +
+        '<button class="btn good" data-v="1">✅ REAL <span class="key">←</span></button>' +
+        '<button class="btn bad" data-v="0">🌀 DELUSION <span class="key">→</span></button></div>';
+    } else {
+      h += '<p class="mcq">' + q.q + "</p><div class=\"mopts\">";
+      q.o.forEach(function (o, i) { h += '<button class="mopt" data-v="' + i + '"><span class="ql">' + String.fromCharCode(65 + i) + "</span>" + o + "</button>"; });
+      h += "</div>";
+    }
+    $("#bstage").innerHTML = h;
+  }
+  function answer(v) {
+    if (answered || fin) return;
+    answered = true;
+    var q = qs[idx], good = v === q.a;
+    if (good) {
+      hud.streak++; ok++;
+      var g = 100 + 25 * Math.min(hud.streak, 8);
+      hud.score += g; sGood(); popC("+" + g, true);
+    } else {
+      hud.miss++; hud.streak = 0;
+      hud.score = Math.max(0, hud.score - 40);
+      sBad(); popC("−40", false);
+    }
+    hudScene();
+    later(function () { idx++; show(); }, 430);
+  }
+  function finish() {
+    if (fin) return;
+    fin = true;
+    if (timer) { clearInterval(timer); timer = null; }
+    sceneFinish({ score: hud.score, stars: ok >= 10 ? 3 : (ok >= 6 ? 2 : 1) });
+  }
+  gameRoot.onclick = function (e) {
+    var b = e.target.closest("[data-v]");
+    if (b) answer(Number(b.getAttribute("data-v")));
+  };
+  keyHandler = function (e) {
+    var q = qs[idx];
+    if (!q) return;
+    if (q.t === "tf") {
+      if (e.key === "ArrowLeft") { e.preventDefault(); answer(1); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); answer(0); }
+    } else {
+      if (e.key === "1") answer(0); else if (e.key === "2") answer(1); else if (e.key === "3") answer(2);
+    }
+  };
+  show();
+  endAt = performance.now() + TOTAL;
+  timer = every(function () {
+    var left = Math.max(0, endAt - performance.now());
+    $("#bf").style.width = (left / TOTAL * 100) + "%";
+    var s = Math.ceil(left / 1000);
+    hud.extra = "⏱ " + s + "s"; hudScene();
+    if (left <= 10500) $("#bb").classList.add("dg");
+    if (s !== lastS && left <= 10500 && left > 0) { lastS = s; sTick(); }
+    if (left <= 0) finish();
+  }, 100);
+  setCleanup(function () { gameRoot.onclick = null; if (timer) clearInterval(timer); });
+};
+
+/* ===== finale ===== */
+function rankFor(t) {
+  if (t >= 9000) return { r: "🏆 Guardian of the Warm Heart", d: "Legendary expedition — the tape bows to you." };
+  if (t >= 7000) return { r: "🥇 Keeper of the Lake", d: "A thousand species salute your memory." };
+  if (t >= 5000) return { r: "🥈 Trail Ranger", d: "Solid boots on the mountain path." };
+  return { r: "🥉 Curious Traveler", d: "The journey has only begun — rewind and roam again." };
+}
+function openFinale() {
+  showScreen("finale");
+  var t = 0, stars = 0, rows = "";
+  SCENES.forEach(function (s) { var v = lvl(s.id); t += v.best; stars += v.stars; });
+  var rk = rankFor(t);
+  $("#finRank").textContent = rk.r;
+  $("#finRankD").textContent = rk.d;
+  $("#finScore").textContent = t;
+  $("#finStars").textContent = stars;
+  SCENES.forEach(function (s) {
+    var v = lvl(s.id);
+    rows += "<tr><td>" + pad(s.num) + '</td><td class="tn">' + s.title + "</td><td>" + starsHtml(v.stars) + "</td><td>" + (v.best || "—") + "</td></tr>";
+  });
+  $("#finTable").innerHTML = "<tbody>" + rows + "</tbody>";
+  sCheer(); confetti(innerWidth / 2, innerHeight * 0.3, 40);
+}
+
+/* ===== global events (delegation) ===== */
+ $("#cards").addEventListener("click", function (e) {
+  var c = e.target.closest(".lvl"); if (c) openBriefing(c.getAttribute("data-id"));
+});
+ $("#cards").addEventListener("keydown", function (e) {
+  if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+    var c = e.target.closest(".lvl");
+    if (c) { e.preventDefault(); openBriefing(c.getAttribute("data-id")); }
+  }
+});
+ $("#cells").addEventListener("click", function (e) {
+  var c = e.target.closest("[data-cell]"); if (c) openBriefing(c.getAttribute("data-cell"));
+});
+ $("#fslot").addEventListener("click", function (e) {
+  if (e.target.closest("#btnFinale")) openFinale();
+});
+modal.addEventListener("click", function (e) {
+  var b = e.target.closest("[data-act]"); if (!b) return;
+  var a = b.getAttribute("data-act");
+  if (a === "start" || a === "replay") { var id = pendingId; closeModal(); startScene(id); }
+  else if (a === "tomap") { closeModal(); showScreen("map"); }
+  else if (a === "gofinale") { closeModal(); openFinale(); }
+  else if (a === "rw-yes") { save.levels = {}; persist(); updateHUD(); renderMap(); closeModal(); showScreen("map"); toast("⏪ Tape rewound — the journal is blank again.", "bad"); }
+  else if (a === "rw-no") closeModal();
+});
+ov.addEventListener("click", function (e) { if (e.target === ov) closeModal(); });
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    if (ov.classList.contains("open")) closeModal();
+    else if (curScreen === "scene") showScreen("map");
+    return;
+  }
+  if (ov.classList.contains("open")) return;
+  if (keyHandler) keyHandler(e);
+});
+ $("#btnBack").addEventListener("click", function () { showScreen("map"); });
+ $("#btnRestart").addEventListener("click", function () { if (cur) startScene(cur.id); });
+ $("#btnHome").addEventListener("click", function () { showScreen("map"); });
+ $("#btnToMap").addEventListener("click", function () { sClick(); showScreen("map"); });
+ $("#finMap").addEventListener("click", function () { showScreen("map"); });
+ $("#finRewind").addEventListener("click", function () {
+  openModal('<p class="mk">⏪ Rewind</p><h3 class="mt">Erase all progress?</h3><p>Every star and best score will be wiped from the journal. This cannot be undone.</p>' +
+    '<div class="mbtns"><button class="btn bad" data-act="rw-yes">Yes, rewind the tape</button><button class="btn p2" data-act="rw-no">Keep my journey</button></div>', '[data-act="rw-no"]');
+});
+ $("#btnSound").addEventListener("click", function () {
+  save.muted = !save.muted; persist(); renderSound();
+  toast(save.muted ? "🔇 Sound off" : "🔊 Sound on");
+  if (!save.muted) sClick();
+});
+document.addEventListener("pointerdown", ensureAudio, { once: true });
+
+/* ===== preloader & boot ===== */
+function boot() {
+  grab();
+  phase(1, "data", function () { /* data constants already parsed above */ });
+  phase(2, "audio", function () { ensureAudio(); });
+  phase(3, "storage", function () { loadSave(); });
+  phase(4, "map", function () { gameRoot = $("#game-root"); updateHUD(); renderMap(); renderSound(); refreshIcons(); });
+  phase(5, "games", function () { /* builders registered above */ });
+  phase(6, "ready", function () { window.__WHA_MAP_OK = true; });
+
+  var p = 0;
+  var lt = setInterval(function () {
+    p += 14 + Math.random() * 18;
+    $("#loadF").style.width = clamp(p, 0, 100) + "%";
+    if (p >= 100) {
+      clearInterval(lt);
+      $("#preloader").classList.add("ready");
+      say(window.__WHA_MAP_OK ? "engine ready · tap PLAY ▶" : "engine INCOMPLETE — see the red banner below");
+    }
+  }, 130);
+
+  $("#btn-play").addEventListener("click", function () {
+    ensureAudio();
+    if (!window.__WHA_MAP_OK) {
+      if (EL.err) {
+        EL.err.style.display = "block";
+        EL.err.textContent = "⚠️ The engine did not finish loading. The code was most likely CUT OFF while copying into the preview. Please copy the ENTIRE code block again and save it as a full .html file.";
+      }
+      return;
+    }
+    sFanfare();
+    $("#preloader").classList.add("gone");
+    setTimeout(function () { $("#preloader").style.display = "none"; }, 800);
+    showScreen("intro");
+  });
+}
+
+/* run boot on next tick so the tracer elements are definitely present */
+setTimeout(boot, 0);
+
+/* ===== integrity marker: MUST be the last statement of the file ===== */
+window.__WHA_OK = true;
+
+})();
+</script>
+</body>
+</html>
