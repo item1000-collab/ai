@@ -1,1234 +1,1835 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Warm Heart Arcade — The Malawi Tapes</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Caveat:wght@600&family=JetBrains+Mono:wght@500;700&family=Nunito+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt Engine</title>
 <style>
-:root{--bg:#1b1310;--bg2:#241a15;--panel:#2a1e18;--paper:#f7ecd9;--paper2:#efe0c6;--ink:#2b2118;--ink2:#6a5a48;
---terra:#d96f3f;--terraD:#a34a20;--teal:#3fa7ad;--tealD:#22707a;--gold:#e3b34e;--goldD:#a97f22;
---green:#7fbb8c;--greenD:#3f7048;--red:#e06552;--redD:#a3322a;--r:18px;--hard:0 6px 0 rgba(0,0,0,.38);
---serif:'Fraunces',Georgia,serif;--sans:'Nunito Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--hand:'Caveat',cursive;}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:var(--sans);font-size:16px;line-height:1.6;color:var(--paper);min-height:100vh;
-background:radial-gradient(120% 90% at 50% 115%,#3d2417 0%,var(--bg2) 45%,var(--bg) 100%)}
-:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:6px}
-button{font-family:inherit}
-#grain{position:fixed;inset:-50%;width:200%;height:200%;z-index:2000;pointer-events:none;opacity:.05;
-background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-.glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:
-radial-gradient(55% 35% at 50% 108%,rgba(217,111,63,.22),transparent 70%),
-radial-gradient(40% 30% at 85% -5%,rgba(63,167,173,.1),transparent 70%)}
-#errbox{position:fixed;left:10px;right:10px;bottom:10px;z-index:3000;display:none;white-space:pre-wrap;max-height:40vh;overflow:auto;
-background:var(--redD);color:#fff;padding:12px 16px;border-radius:12px;font-family:var(--mono);font-size:.78rem;line-height:1.5}
-#preloader{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-background:linear-gradient(180deg,#241a15,#120c09);transition:transform .75s cubic-bezier(.7,0,.25,1)}
-#preloader.gone{transform:translateY(-102%)}
-.preSun{width:90px;height:90px;border-radius:50%;display:grid;place-items:center;font-size:2.5rem;
-background:radial-gradient(circle at 50% 78%,#ffb35c,#d96f3f 55%,#7c3418);box-shadow:0 0 60px rgba(255,179,92,.35),var(--hard)}
-.preT{font-family:var(--serif);font-weight:700;font-size:1.7rem}
-.preS{font-family:var(--mono);font-size:.7rem;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
-.loadT{width:min(320px,70vw);height:12px;border-radius:99px;background:#120c09;border:2px solid rgba(247,236,217,.2);overflow:hidden}
-.loadF{height:100%;width:0;background:linear-gradient(90deg,var(--terra),var(--gold));transition:width .25s}
-#pre-diag{font-family:var(--mono);font-size:.68rem;color:rgba(247,236,217,.65);min-height:1.2em;text-align:center;padding:0 14px}
-#btn-play{opacity:0;pointer-events:none;transform:translateY(12px);transition:all .4s cubic-bezier(.2,1.6,.4,1)}
-#preloader.ready #btn-play{opacity:1;pointer-events:auto;transform:none}
-.btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer;border:2px solid rgba(0,0,0,.28);border-radius:14px;
-padding:12px 22px;font-weight:800;font-size:1rem;color:#fff8ec;background:var(--terra);box-shadow:0 5px 0 var(--terraD);transition:transform .12s,box-shadow .12s,filter .15s}
-.btn:hover{filter:brightness(1.07)}.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--terraD)}
-.btn.big{font-size:1.12rem;padding:15px 28px;border-radius:16px}
-.btn.ghost{background:var(--panel);box-shadow:0 5px 0 #120c09;border-color:rgba(247,236,217,.22)}
-.btn.ghost:active{box-shadow:0 2px 0 #120c09}
-.btn.good{background:var(--green);box-shadow:0 5px 0 var(--greenD)}.btn.good:active{box-shadow:0 2px 0 var(--greenD)}
-.btn.bad{background:var(--red);box-shadow:0 5px 0 var(--redD)}.btn.bad:active{box-shadow:0 2px 0 var(--redD)}
-.btn.gold{background:var(--gold);color:#3a2a08;box-shadow:0 5px 0 var(--goldD)}.btn.gold:active{box-shadow:0 2px 0 var(--goldD)}
-.btn.p2{background:var(--paper2);color:var(--ink);box-shadow:0 5px 0 #cbb894}.btn.p2:active{box-shadow:0 2px 0 #cbb894}
-.btn.mega{font-family:var(--serif);font-size:1.2rem;padding:17px 38px;border-radius:18px;background:linear-gradient(135deg,var(--gold),var(--terra));box-shadow:0 6px 0 rgba(0,0,0,.45)}
-.btn:disabled{opacity:.45;cursor:default;transform:none}
-.key{font-family:var(--mono);font-size:.7rem;opacity:.75;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:1px 6px}
-.console{position:sticky;top:0;z-index:500;display:flex;align-items:center;gap:10px;padding:10px 14px;
-background:rgba(27,19,16,.93);border-bottom:2px solid rgba(227,179,78,.28)}
-.brand{display:flex;align-items:center;gap:9px;font-family:var(--serif);font-weight:700;font-size:1rem;white-space:nowrap}
-.bSun{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 75%,#ffb35c,#d96f3f 60%,#7c3418);box-shadow:0 3px 0 rgba(0,0,0,.4)}
-.cells{display:flex;gap:5px}
-.cell{width:27px;height:27px;border-radius:8px;border:2px solid rgba(247,236,217,.22);background:#120c09;color:rgba(247,236,217,.55);
-font-family:var(--mono);font-weight:700;font-size:.72rem;cursor:pointer}
-.cell.done{color:#fff8ec;border-color:var(--c,var(--terra));background:var(--c,var(--terra))}
-.sp{flex:1}
-.chip{font-family:var(--mono);font-weight:700;font-size:.8rem;background:#120c09;border:2px solid rgba(227,179,78,.4);color:var(--gold);border-radius:99px;padding:6px 13px;white-space:nowrap}
-.ibtn{width:40px;height:40px;border-radius:12px;border:2px solid rgba(247,236,217,.22);background:var(--panel);color:var(--paper);font-size:1rem;cursor:pointer;box-shadow:0 4px 0 #120c09}
-.ibtn:active{transform:translateY(2px);box-shadow:0 2px 0 #120c09}
-@media(max-width:640px){.brand small{display:none}.chip{display:none}}
-main{position:relative;z-index:1}
-.screen{display:none;min-height:calc(100vh - 62px);padding:24px 16px 56px}
-.screen.active{display:block;animation:sIn .4s ease}
-@keyframes sIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.wrap{max-width:960px;margin:0 auto}
-.kick{font-family:var(--mono);font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin:0 0 8px}
-h1.t{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,6vw,3rem);line-height:1.1;margin:0 0 12px}
-.igrid{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center;margin-top:14px}
-@media(max-width:760px){.igrid{grid-template-columns:1fr}}
-.cover{position:relative;margin:0;border-radius:var(--r);overflow:hidden;box-shadow:var(--hard);border:3px solid rgba(247,236,217,.15);transform:rotate(1.4deg);background:linear-gradient(135deg,var(--terra),#241a15)}
-.cover img,.thumb img,.mprev img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.lvl > img{display:none}
-.covCap{position:relative;z-index:2;padding:60px 16px 12px;font-family:var(--hand);font-size:1.25rem;color:#fff8ec;text-align:center;background:linear-gradient(transparent,rgba(18,12,9,.85));margin-top:180px}
-.covPh{height:220px;display:grid;place-items:center;font-size:3rem}
-.diary{font-family:var(--hand);font-size:1.28rem;line-height:1.5;color:#f0e3c8;background:var(--panel);border-left:5px solid var(--terra);border-radius:0 14px 14px 0;padding:13px 17px;margin:14px 0;transform:rotate(-.5deg)}
-.rules{display:flex;flex-wrap:wrap;gap:9px;margin:16px 0 22px}
-.rule{background:var(--panel);border:2px solid rgba(247,236,217,.16);border-radius:12px;padding:7px 13px;font-size:.88rem;font-weight:700}
-.fine{font-size:.8rem;color:rgba(247,236,217,.65)}.fine a{color:var(--gold)}
-.mhead{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin-bottom:4px}
-.mhead h2{font-family:var(--serif);font-size:1.8rem;margin:0}
-.fnote{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);border:1px dashed var(--teal);border-radius:99px;padding:6px 13px}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin:20px 0 26px}
-.lvl{background:var(--paper);color:var(--ink);border-radius:var(--r);overflow:hidden;box-shadow:var(--hard);cursor:pointer;transition:transform .16s}
-.lvl:hover{transform:translateY(-4px) rotate(-.4deg)}
-.thumb{position:relative;aspect-ratio:16/9;border-bottom:4px solid var(--c,#d96f3f);background:linear-gradient(135deg,var(--c,#d96f3f),#241a15);overflow:hidden}
-.thPh{position:absolute;inset:0;display:grid;place-items:center;font-size:2.5rem}
-.lnum{position:absolute;top:9px;left:9px;z-index:3;font-family:var(--mono);font-weight:700;font-size:.78rem;background:#120c09;color:var(--gold);border:2px solid var(--gold);border-radius:10px;padding:2px 8px}
-.ltag{position:absolute;bottom:8px;right:8px;z-index:3;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;background:rgba(18,12,9,.85);color:#fff8ec;border-radius:99px;padding:3px 9px}
-.lbody{padding:13px 15px 15px}
-.lbody h3{font-family:var(--serif);font-size:1.15rem;margin:0 0 7px}
-.lchar{display:flex;align-items:center;gap:8px;font-size:.83rem;font-weight:700;color:var(--ink2);margin-bottom:9px}
-.av{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:2px solid rgba(0,0,0,.2);box-shadow:0 2px 0 rgba(0,0,0,.25)}
-.lmeta{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:.76rem}
-.stars .st{color:#cbb894;letter-spacing:2px}.stars .st.on{color:var(--goldD)}
-.best{color:var(--ink2);font-weight:700}
-.fslot{display:flex;flex-direction:column;align-items:center;gap:10px;padding:22px 0 4px}
-.fhint{font-family:var(--mono);font-size:.78rem;color:rgba(247,236,217,.7);text-align:center}
-.snote{text-align:center;margin-top:22px;font-size:.83rem;color:rgba(247,236,217,.6)}.snote a{color:var(--gold)}
-.sbox{max-width:760px;margin:0 auto;background:var(--panel);border:3px solid rgba(247,236,217,.14);border-radius:22px;box-shadow:0 10px 0 rgba(0,0,0,.4);overflow:hidden}
-.shead{display:flex;align-items:center;gap:13px;padding:14px 18px;border-bottom:2px dashed rgba(247,236,217,.18)}
-.shNum{font-family:var(--serif);font-weight:700;font-size:1.8rem;min-width:52px}
-.shT{flex:1;min-width:0}.shT h2{margin:0;font-family:var(--serif);font-size:1.25rem}
-.shT p{margin:2px 0 0;font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
-.shC{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.7rem;font-weight:700;color:rgba(247,236,217,.75)}
-.shC .av{width:42px;height:42px;font-size:1.3rem}
-.shud{display:flex;flex-wrap:wrap;gap:8px;padding:11px 18px;border-bottom:2px dashed rgba(247,236,217,.18)}
-.hchip{font-family:var(--mono);font-weight:700;font-size:.78rem;background:#120c09;border:1px solid rgba(247,236,217,.16);border-radius:99px;padding:5px 13px}
-.hchip b{color:var(--gold)}
-#game-root{padding:18px;min-height:320px}
-.sfoot{display:flex;gap:9px;padding:13px 18px;border-top:2px dashed rgba(247,236,217,.18);flex-wrap:wrap}
-.glead{margin:0 0 14px;color:rgba(247,236,217,.85);font-size:.93rem}
-.dim{pointer-events:none;filter:saturate(.8) brightness(.96)}
-.fillT{font-family:var(--serif);font-size:1.08rem;line-height:2.1;background:var(--paper);color:var(--ink);border-radius:var(--r);padding:16px 18px;box-shadow:var(--hard);margin-bottom:16px}
-.blank{display:inline-block;min-width:104px;text-align:center;font-family:var(--mono);font-weight:700;font-size:.92rem;color:var(--terraD);background:#fff;border:2px dashed var(--terra);border-radius:10px;padding:2px 9px;cursor:pointer}
-.blank.sel{background:#ffe9d6;border-style:solid;box-shadow:0 0 0 3px rgba(217,111,63,.3)}
-.blank.ok{border:2px solid var(--greenD);color:#2f5d3c;background:#e4f2e8;cursor:default}
-.bank{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}
-.word{font-family:var(--mono);font-weight:700;font-size:.92rem;color:#fff8ec;background:var(--tealD);border:2px solid rgba(0,0,0,.25);border-radius:12px;padding:8px 14px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.35);user-select:none}
-.word.used{opacity:.28;pointer-events:none;text-decoration:line-through;box-shadow:none}
-.shake{animation:shk .45s ease}
-@keyframes shk{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
-.fgood{box-shadow:0 0 0 3px var(--green)!important}.fbad{box-shadow:0 0 0 3px var(--red)!important}
-.tfc{background:var(--paper);color:var(--ink);border-radius:var(--r);padding:20px;box-shadow:var(--hard);margin-bottom:16px}
-.tbar{height:10px;border-radius:99px;background:#e5d6ba;border:1px solid rgba(0,0,0,.15);overflow:hidden;margin-bottom:14px}
-.tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--teal),var(--gold))}
-.tfS{font-family:var(--serif);font-weight:700;font-size:1.15rem;line-height:1.45;margin:0}
-.tfW{min-height:1.4em;font-size:.86rem;color:var(--ink2);margin-top:9px}
-.tfcnt{font-family:var(--mono);font-size:.76rem;color:var(--gold);margin-bottom:9px}
-.tfB{display:flex;gap:13px;justify-content:center;flex-wrap:wrap}
-.bub{font-family:var(--hand);font-size:1.28rem;color:#fff8ec;background:var(--tealD);border-radius:14px 14px 14px 4px;padding:9px 15px;display:inline-block;margin-bottom:14px;box-shadow:0 4px 0 rgba(0,0,0,.3)}
-.mcq{font-family:var(--serif);font-weight:700;font-size:1.2rem;margin:0 0 14px}
-.mopts{display:grid;gap:9px}
-.mopt{display:flex;gap:11px;align-items:center;text-align:left;width:100%;padding:12px 15px;border-radius:14px;cursor:pointer;background:var(--paper);color:var(--ink);border:2px solid rgba(0,0,0,.2);box-shadow:0 4px 0 rgba(0,0,0,.3);font-size:.98rem;font-weight:700}
-.mopt .ql{font-family:var(--mono);font-size:.76rem;background:#120c09;color:var(--gold);border-radius:8px;padding:3px 8px}
-.mopt.ok{background:#e4f2e8;border-color:var(--greenD);color:#2f5d3c}
-.mopt.bad{background:#f9e4e0;border-color:var(--redD);color:var(--redD);animation:shk .45s ease}
-.mopt.dim{opacity:.45}
-.mcw{min-height:1.5em;font-size:.88rem;color:rgba(247,236,217,.85);margin:13px 0 4px}
-.mnext{text-align:right}
-
-/* ==== MATCH THE MEANING (слово ↔ значение) ==== */
-.memTop{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.78rem;color:var(--gold);margin-bottom:13px}
-.memWrap{display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:640px;margin:0 auto}
-@media(max-width:560px){.memWrap{grid-template-columns:1fr;gap:14px}}
-.memCol h4{
-  font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;
-  margin:0 0 10px;color:rgba(247,236,217,.75);text-align:center;
+:root {
+  --bg: #f5f3ef;
+  --card-bg: #ffffff;
+  --card-border: #e7e3dc;
+  --text: #1a1a1a;
+  --heading: #1f2b2c;
+  --label: #7b6e5d;
+  --hint: #8f887d;
+  --input-bg: #fefcf9;
+  --input-border: #ddd8cf;
+  --input-border-hover: #b7aa98;
+  --accent: #b7aa98;
+  --accent-dark: #9e8f7c;
+  --btn-bg: #f0ede8;
+  --btn-bg-hover: #e2d9cf;
+  --btn-text: #2b4a4d;
+  --btn-border: #ddd2c4;
+  --display-bg: #1e2829;
+  --display-text: #e5e9e8;
+  --display-border: #3b4b4a;
+  --status-info: #6f6a60;
+  --status-success: #2c4b4e;
+  --status-error: #a05252;
 }
-.memCol.words h4{color:var(--teal)}
-.memCol.defs  h4{color:var(--gold)}
-.memList{display:grid;gap:9px}
-.card2{
-  display:flex;align-items:center;gap:10px;
-  padding:12px 14px;border-radius:14px;cursor:pointer;
-  background:var(--paper);color:var(--ink);
-  border:2px solid rgba(0,0,0,.2);
-  box-shadow:0 4px 0 rgba(0,0,0,.3);
-  font-weight:700;font-size:.95rem;
-  transition:transform .12s,box-shadow .12s,background .15s;
-  text-align:left;width:100%;
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); font-family: 'Inter', system-ui, -apple-system, sans-serif; color: var(--text); padding: 2rem 0; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+.card { background: var(--card-bg); border-radius: 28px; padding: 2rem; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border: 1px solid var(--card-border); }
+h1 { font-size: 1.8rem; font-weight: 600; color: var(--heading); margin-bottom: 1.5rem; }
+.selector-group { margin-bottom: 1.5rem; }
+.input-group { margin-bottom: 1.2rem; }
+label { display: block; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--label); margin-bottom: 0.5rem; }
+.custom-select { position: relative; width: 100%; user-select: none; }
+.custom-select-trigger { width: 100%; padding: 0.8rem 2.8rem 0.8rem 1rem; border-radius: 16px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 0.9rem; font-family: inherit; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; min-height: 52px; word-break: break-word; }
+.custom-select-trigger:hover { border-color: var(--input-border-hover); }
+.custom-select-trigger .arrow { flex-shrink: 0; transition: transform 0.2s ease; color: var(--label); font-size: 0.7rem; }
+.custom-select.open .custom-select-trigger .arrow { transform: rotate(180deg); }
+.custom-select-trigger .selected-text { flex: 1; word-break: break-word; white-space: normal; line-height: 1.4; }
+.custom-select-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border-radius: 16px; border: 1px solid var(--input-border); box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 400px; overflow-y: auto; z-index: 1000; display: none; padding: 0.4rem; }
+.custom-select.open .custom-select-dropdown { display: block; }
+.custom-select-option { padding: 0.7rem 0.9rem; border-radius: 12px; cursor: pointer; font-size: 0.9rem; font-family: inherit; transition: background 0.15s ease; word-break: break-word; white-space: normal; line-height: 1.4; color: var(--text); }
+.custom-select-option:hover { background: #f0ede8; }
+.custom-select-option.selected { background: #e8e0d6; font-weight: 500; }
+.custom-select-option:not(:last-child) { border-bottom: 1px solid #f0ede8; }
+input[type="text"] { width: 100%; padding: 0.8rem 1rem; border-radius: 16px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 0.9rem; font-family: inherit; transition: all 0.2s ease; }
+input[type="text"]:hover { border-color: var(--input-border-hover); }
+input[type="text"]:focus { outline: none; border-color: var(--input-border-hover); background: #fff; }
+textarea { width: 100%; padding: 1rem 1.2rem; border-radius: 16px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 0.95rem; font-family: inherit; transition: all 0.2s ease; resize: vertical; min-height: 120px; line-height: 1.6; }
+textarea:hover { border-color: var(--input-border-hover); }
+textarea:focus { outline: none; border-color: var(--input-border-hover); background: #fff; box-shadow: 0 0 0 3px rgba(183,170,152,0.15); }
+textarea.large-aesthetic {
+  min-height: 200px;
+  font-size: 0.95rem;
+  padding: 1.2rem 1.4rem;
 }
-.card2:hover{transform:translateY(-1px)}
-.card2:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.3)}
-.card2 .tag{
-  font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;
-  padding:2px 6px;border-radius:6px;flex-shrink:0;
+.inline-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+.inline-group .input-group { flex: 1 1 200px; margin-bottom: 1.2rem; }
+.dynamic-group { margin-bottom: 1.2rem; }
+.group-options { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.group-options .btn { font-size: 0.75rem; padding: 0.4rem 1.2rem; }
+.group-options .btn.active { background: var(--accent); color: white; border-color: var(--accent-dark); }
+.prompt-display { background: var(--display-bg); color: var(--display-text); padding: 1.2rem; border-radius: 16px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; margin: 1rem 0; border: 1px solid var(--display-border); min-height: 100px; max-height: 400px; overflow-y: auto; }
+.button-group { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
+.btn { padding: 0.7rem 1.8rem; border-radius: 40px; border: none; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+.btn-secondary { background: var(--btn-bg); color: var(--btn-text); border: 1px solid var(--btn-border); }
+.btn-secondary:hover { background: var(--btn-bg-hover); }
+.status { font-size: 0.8rem; margin-top: 0.5rem; }
+.status--info { color: var(--status-info); }
+.status--success { color: var(--status-success); }
+.status--error { color: var(--status-error); }
+.hint { font-size: 0.75rem; color: var(--hint); margin-top: 0.4rem; }
+.hidden { display: none !important; }
+@media (max-width: 600px) {
+  .custom-select-trigger { font-size: 0.85rem; padding: 0.7rem 2.5rem 0.7rem 0.9rem; }
+  .custom-select-option { font-size: 0.85rem; padding: 0.6rem 0.8rem; }
+  .card { padding: 1.2rem; }
+  textarea.large-aesthetic { min-height: 160px; }
 }
-.card2.word  .tag{background:rgba(63,167,173,.18);color:var(--tealD)}
-.card2.def   .tag{background:rgba(227,179,78,.22);color:var(--goldD)}
-.card2.word  .val{font-family:var(--mono);color:var(--tealD)}
-.card2.def   .val{color:var(--ink)}
-.card2.sel{
-  background:#fff4e6;border-color:var(--terra);
-  box-shadow:0 0 0 3px rgba(217,111,63,.3),0 4px 0 rgba(0,0,0,.3);
-}
-.card2.paired{
-  background:#e4f2e8;border-color:var(--greenD);color:#2f5d3c;
-  cursor:default;pointer-events:none;
-}
-.card2.paired .val{color:#2f5d3c}
-.card2.paired .tag{background:rgba(63,112,72,.18);color:var(--greenD)}
-.card2.shakeX{animation:shk .45s ease}
-.memHowto{
-  margin:18px auto 0;max-width:640px;
-  background:rgba(18,12,9,.55);border:1px dashed rgba(227,179,78,.35);
-  border-radius:12px;padding:12px 15px;
-  font-size:.85rem;line-height:1.6;color:rgba(247,236,217,.88);
-}
-.memHowto b{color:var(--gold)}
-.memHowto ol{margin:6px 0 0;padding-left:20px}
-.memHowto li{margin:3px 0}
-.memEx{
-  font-family:var(--mono);font-size:.78rem;color:var(--gold);
-  background:#120c09;border-radius:8px;padding:6px 10px;
-  display:inline-block;margin:4px 4px 0 0;
-}
-
-.bbar{height:14px;border-radius:99px;background:#120c09;border:2px solid rgba(247,236,217,.2);overflow:hidden;margin-bottom:14px}
-.bbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--gold),var(--terra))}
-.bbar.dg i{background:linear-gradient(90deg,var(--red),#ff9b8a);animation:dg .5s steps(2) infinite}
-@keyframes dg{50%{filter:brightness(1.6)}}
-.bcnt{font-family:var(--mono);font-size:.76rem;color:var(--gold);margin-bottom:9px}
-.ov{position:fixed;inset:0;z-index:900;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(10,7,5,.75)}
-.ov.open{display:flex}
-.modal{background:var(--paper);color:var(--ink);width:100%;max-width:520px;border-radius:22px;box-shadow:0 12px 0 rgba(0,0,0,.45);padding:24px;animation:pIn .4s cubic-bezier(.2,1.5,.4,1);max-height:88vh;overflow:auto}
-@keyframes pIn{from{opacity:0;transform:translateY(26px) scale(.94)}to{opacity:1;transform:none}}
-.mk{font-family:var(--mono);font-size:.64rem;letter-spacing:.24em;text-transform:uppercase;color:var(--goldD);margin:0 0 5px}
-.mt{font-family:var(--serif);font-weight:700;font-size:1.5rem;margin:0 0 11px;line-height:1.15}
-.mrow{display:flex;gap:9px;margin:9px 0;font-size:.93rem}
-.mfl{font-family:var(--hand);font-size:1.26rem;color:var(--ink2);border-left:4px solid var(--gold);padding-left:11px;margin:14px 0}
-.mprev{position:relative;width:100%;height:120px;border-radius:14px;border:3px solid rgba(0,0,0,.15);margin:5px 0;background:linear-gradient(135deg,var(--terra),#241a15);overflow:hidden}
-.mprev .ph{position:absolute;inset:0;display:grid;place-items:center;font-size:2rem;color:#fff8ec}
-.mbtns{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}
-.rstars{display:flex;justify-content:center;gap:11px;font-size:2.4rem;margin:8px 0 4px}
-.rstars .st{opacity:0;transform:scale(.3) rotate(-25deg);display:inline-block;color:#d8c7a4}
-.rstars .st.on{color:var(--goldD);animation:spop .5s cubic-bezier(.2,1.6,.4,1) forwards}
-@keyframes spop{to{opacity:1;transform:scale(1) rotate(0)}}
-.rsc{text-align:center;font-family:var(--mono);font-weight:700;font-size:1.9rem;color:var(--terraD)}
-.rbs{text-align:center;font-family:var(--mono);font-size:.8rem;color:var(--ink2)}
-.nb{display:inline-block;background:var(--green);color:#fff;font-weight:800;border-radius:99px;padding:2px 11px;font-size:.72rem;margin-left:6px}
-.fin{text-align:center}
-.frank{font-family:var(--serif);font-weight:700;font-size:clamp(1.5rem,5vw,2.2rem);color:var(--gold);margin:6px 0}
-.frankd{color:rgba(247,236,217,.8);margin:0 0 16px}
-.rtab{width:100%;border-collapse:separate;border-spacing:0 7px;max-width:620px;margin:0 auto 24px}
-.rtab td{background:var(--panel);padding:9px 13px;font-size:.92rem}
-.rtab tr td:first-child{border-radius:12px 0 0 12px;font-family:var(--mono);color:var(--gold);width:48px}
-.rtab tr td:last-child{border-radius:0 12px 12px 0;text-align:right;font-family:var(--mono);white-space:nowrap}
-.rtab .tn{font-weight:800}
-#toasts{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:1500;display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none}
-.toast{background:#120c09;color:var(--paper);border:2px solid rgba(227,179,78,.5);border-radius:12px;padding:8px 16px;font-size:.86rem;font-weight:700}
-.toast.bad{border-color:var(--red)}
-#fx{position:fixed;inset:0;pointer-events:none;z-index:1600}
-.pop{position:fixed;font-family:var(--mono);font-weight:700;font-size:1.02rem;text-shadow:0 2px 0 rgba(0,0,0,.4)}
-.pop.good{color:#9fe0b0}.pop.bad{color:#ff9b8a}
-.conf{position:fixed;width:9px;height:13px;border-radius:3px}
-@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
-<div id="grain" aria-hidden="true"></div><div class="glow" aria-hidden="true"></div>
-<div id="errbox" role="alert"></div>
+<div class="container">
+  <div class="card">
+    <h1>⚙️ Prompt Engine</h1>
 
-<div id="preloader" role="status">
-  <div class="preSun" aria-hidden="true">🌅</div>
-  <div class="preT">WARM HEART ARCADE</div>
-  <div class="preS">The Malawi Tapes · Episode 01</div>
-  <div class="loadT"><div class="loadF" id="loadF"></div></div>
-  <div id="pre-diag">waiting for engine…</div>
-  <button class="btn big gold" id="btn-play">PLAY ▶</button>
+    <div class="selector-group">
+      <label>⭐ Favorite Prompts</label>
+      <div class="custom-select" id="customSelect">
+        <div class="custom-select-trigger" id="selectTrigger" role="button" aria-haspopup="listbox" aria-expanded="false" tabindex="0">
+          <span class="selected-text">— Choose a preset —</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="custom-select-dropdown" id="selectDropdown" role="listbox"></div>
+      </div>
+    </div>
+
+    <div id="dynamicControls"></div>
+
+    <div id="customTextGroup" class="hidden">
+      <div class="input-group">
+        <label>📝 Optional: Add your custom text</label>
+        <textarea id="customText" placeholder="Paste your text here (optional). It will be prepended to the prompt."></textarea>
+        <div class="hint">If filled, this text will appear at the beginning of the prompt, followed by a blank line and the selected prompt.</div>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button id="copyBtn" class="btn btn-secondary">📋 Copy Prompt</button>
+    </div>
+
+    <div class="prompt-display" id="promptDisplay">Select a preset to load a prompt template.</div>
+    <div class="status status--info" id="statusMessage">💡 Choose a preset from the dropdown above</div>
+  </div>
 </div>
 
-<header class="console">
-  <div class="brand"><span class="bSun" aria-hidden="true">🌅</span><span>WARM HEART <small style="font-family:var(--mono);font-size:.55rem;letter-spacing:.22em;color:var(--gold)">ARCADE</small></span></div>
-  <div class="cells" id="cells" aria-label="Level progress"></div>
-  <span class="sp"></span>
-  <span class="chip" id="hudScore">⭐ 0</span>
-  <button class="ibtn" id="btnSound" aria-label="Toggle sound">🔊</button>
-  <button class="ibtn" id="btnHome" aria-label="Back to level map">🗺️</button>
-</header>
-
-<main>
-<section class="screen active" id="scr-intro">
-  <div class="wrap igrid">
-    <div>
-      <p class="kick">The Malawi Tapes · Episode 01</p>
-      <h1 class="t">The Warm Heart<br>of Africa</h1>
-      <div class="diary">"The journal fell open on the map of Malawi — a lake with a thousand fish, granite titans, and the friendliest market in Africa. Five reels of tape are missing their endings. Fill them in, traveler." — Zola the Guide</div>
-      <div class="rules"><span class="rule">🎮 5 mini-games</span><span class="rule">🗣️ 12 vocabulary words</span><span class="rule">🧭 Play in ANY order</span><span class="rule">💾 Progress auto-saves</span></div>
-      <button class="btn big gold" id="btnToMap">OPEN THE MAP 🗺️</button>
-      <p class="fine" style="margin-top:16px">📎 Lesson source: <a href="https://item1000-collab.github.io/ai/engoo/20260915-malawi/the-warm-heart-of-africa.pdf" target="_blank" rel="noopener noreferrer">the-warm-heart-of-africa.pdf</a></p>
-    </div>
-    <figure class="cover" id="introCover"><div class="covPh" aria-hidden="true">🌅</div><figcaption class="covCap">"You arrive for the landscapes, but leave changed by the connection."</figcaption></figure>
-  </div>
-</section>
-
-<section class="screen" id="scr-map">
-  <div class="wrap">
-    <div class="mhead"><div><p class="kick">Reel shelf</p><h2>Expedition Map</h2></div><span class="fnote">Free order — every reel is open</span></div>
-    <div class="cards" id="cards" aria-label="Levels"></div>
-    <div class="fslot" id="fslot"></div>
-    <p class="snote">🎞️ Based on the Engoo lesson deck <em>The Warm Heart of Africa</em> · <a href="https://item1000-collab.github.io/ai/engoo/20260915-malawi/the-warm-heart-of-africa.pdf" target="_blank" rel="noopener noreferrer">open the lesson PDF</a></p>
-  </div>
-</section>
-
-<section class="screen" id="scr-scene">
-  <div class="sbox" id="sbox">
-    <div class="shead">
-      <div class="shNum" id="shNum">01</div>
-      <div class="shT"><h2 id="shTitle">—</h2><p id="shTag">—</p></div>
-      <div class="shC"><span class="av" id="shAv">🧭</span><span id="shCn">—</span></div>
-    </div>
-    <div class="shud">
-      <span class="hchip">⭐ <b id="hScore">0</b></span>
-      <span class="hchip">🔥 <b id="hStreak">0</b></span>
-      <span class="hchip">✖ <b id="hMiss">0</b></span>
-      <span class="hchip" id="hXw" hidden><b id="hX">—</b></span>
-    </div>
-    <div id="game-root" aria-live="polite"></div>
-    <div class="sfoot">
-      <button class="btn ghost" id="btnBack">🗺️ Back to map</button>
-      <button class="btn ghost" id="btnRestart">↻ Restart level</button>
-    </div>
-  </div>
-</section>
-
-<section class="screen" id="scr-finale">
-  <div class="wrap fin">
-    <p class="kick">🎞️ End of tape · Episode 01</p>
-    <h1 class="t">The Reel Is Complete</h1>
-    <div class="frank" id="finRank">—</div>
-    <p class="frankd" id="finRankD">—</p>
-    <div class="rules" style="justify-content:center"><span class="chip">⭐ TOTAL <b id="finScore">0</b></span><span class="chip">🌟 <b id="finStars">0</b>/15</span></div>
-    <table class="rtab" id="finTable" aria-label="Results by level"></table>
-    <div class="rules" style="justify-content:center">
-      <button class="btn ghost" id="finMap">🗺️ Back to map</button>
-      <button class="btn bad" id="finRewind">⏪ Rewind the tape</button>
-    </div>
-  </div>
-</section>
-</main>
-
-<div class="ov" id="ov"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
-<div id="toasts" aria-live="polite"></div>
-<div id="fx" aria-hidden="true"></div>
-
 <script>
-window.addEventListener("error", function (e) {
-  var b = document.getElementById("errbox");
-  if (!b) return;
-  b.style.display = "block";
-  b.textContent = "⚠️ " + (e.message || "Script error") + (e.lineno ? " · line " + e.lineno : "");
-});
-</script>
+'use strict';
 
-<script>
-(function () {
-"use strict";
+// ============================================================
+// 1. PROMPT LIBRARY (data)
+// ============================================================
+const PROMPTS = {
 
-var EL = {};
-function grab() {
-  EL.diag = document.getElementById("pre-diag");
-  EL.err = document.getElementById("errbox");
-}
-function say(t) { if (EL.diag) EL.diag.textContent = t; }
-function fail(name, e) {
-  var m = (e && e.message) ? e.message : String(e);
-  say("boot … FAIL at [" + name + "]");
-  if (EL.err) { EL.err.style.display = "block"; EL.err.textContent = "⚠️ [" + name + "] " + m; }
-}
-function phase(n, name, fn) {
-  say("boot " + n + "/6 · " + name + " …");
-  try { fn(); say("boot " + n + "/6 · " + name + " … OK"); }
-  catch (e) { fail(name, e); }
+  // ----------------------------------------------------------
+  enrutranslator: {
+    name: '📊 English-Russian Translation (source optional: txt file)',
+    customText: true,
+    template: `Translate the following text from English to Russian. Provide a clear, accurate translation with a focus on natural language flow.
+
+REQUIREMENTS:
+
+    Provide a complete translation of the entire source text.
+
+    Highlight in bold in the main text any advanced vocabulary – this includes both the English source text and the Russian translation. Every term that appears in the glossary must be bolded in both columns of the table (English and Russian).
+
+    Include a short glossary of key terms at the end of each episode. The glossary should include ONLY idioms, fixed expressions, phrasal verbs, and complex collocations — NOT simple standalone words (e.g., include "to give away", "to work out", "can't get the monkey off your back", but NOT "monkey", "jungle", "sad").
+
+    The source text must be divided into episodes (logical segments: chapters, scenes, time blocks, or thematic parts) — each episode must be translated separately.
+
+    In the output, each episode must start with a separator indicating the episode number and title (e.g., «— Episode 1: Title —» or «— Эпизод 1: Название —»).
+
+    Do NOT mix content from different episodes.
+
+    If the source contains clear episode markers (e.g., "Episode 1", "Part 2", "Scene 3", timestamps, or section headings), use them exactly as they appear.
+
+    If no explicit episode markers exist, divide the text into equal logical parts (by paragraphs, scenes, or every ~200–300 words) and label them as «Episode 1», «Episode 2», etc.
+
+CRITICAL FORMATTING RULE — BOLD IN BOTH COLUMNS:
+
+    For EVERY term listed in the glossary for a given episode, you MUST bold that term in BOTH the English column AND the Russian column of the translation table for that episode. This applies to ALL episodes, not just the first one. Every occurrence of every glossary term in the translation table must be enclosed in **bold** markers (e.g., **to give away** in English and **отдать** in Russian). If a term appears multiple times in the table, bold it each time.`,
+    variants: [{
+      id: 'format',
+      label: '📄 Output Format',
+      hint: 'Choose how the translation should be formatted in the output.',
+      default: 'table',
+      options: [
+        {
+          id: 'table',
+          label: '📊 Table',
+          shortLabel: 'Table',
+          suffix: `
+
+OUTPUT FORMAT: Table
+
+The ENTIRE translation output must be formatted as a two-column table:
+| English (original) | Russian (translation) |
+Every sentence, phrase, or segment from the source must appear in the left column, with its corresponding Russian version in the right column.
+
+For each episode, add a glossary section after the translation table:
+### Glossary for Episode X
+| English term | Russian translation | Explanation |
+|--------------|---------------------|-------------|
+| ... | ... | ... |
+
+IMPORTANT: Every term listed in the glossary must be bolded in BOTH columns of the translation table — the English column AND the Russian column. This applies to ALL episodes, not just the first one. Every occurrence of each glossary term in the table must be bolded.
+
+OUTPUT: Return only the table and glossaries. No extra commentary, no introductory or concluding text.`
+        },
+        {
+          id: 'gist',
+          label: '📝 Gist Markdown',
+          shortLabel: 'Gist Markdown',
+          suffix: `
+
+OUTPUT FORMAT: Gist Markdown
+
+Format the translation as a structured Markdown document suitable for a GitHub Gist:
+
+1. The entire output must be inside a single Markdown code block with \`\`\`markdown ... \`\`\` delimiters.
+
+2. Use this structure:
+    # Translation: [Title of the source text]
+
+    ## Episode 1: [Title]
+    | English (original) | Russian (translation) |
+    |---------------------|------------------------|
+    | ... | ... |
+
+    ### Glossary for Episode 1
+    | English term | Russian translation | Explanation |
+    |--------------|---------------------|-------------|
+    | ... | ... | ... |
+
+    ## Episode 2: [Title]
+    | English (original) | Russian (translation) |
+    |---------------------|------------------------|
+    | ... | ... |
+
+    ### Glossary for Episode 2
+    | English term | Russian translation | Explanation |
+    |--------------|---------------------|-------------|
+    | ... | ... | ... |
+
+    (Continue this pattern for all episodes)
+
+3. Each episode must be a separate Markdown section with its own table.
+
+4. Each episode must have its own glossary table immediately following the translation table.
+
+5. Bold the advanced vocabulary in both the English and Russian columns using **bold** markers. IMPORTANT: The bolded terms in the left (English) column and the right (Russian) column must match the terms listed in the glossary for that episode. This must be done for EVERY episode, not just the first one.
+
+6. Do NOT include any text outside the Markdown block. No introductory or concluding remarks.
+
+7. The output must be valid Markdown that renders correctly in a Gist.
+
+OUTPUT: Return only the Markdown block.`
+        },
+        {
+          id: 'plaintext',
+          label: '📄 Plain Text',
+          shortLabel: 'Plain Text',
+          suffix: `
+
+OUTPUT FORMAT: Plain Text
+
+Format the translation as plain text (no tables, no Markdown).
+
+1. Each episode must start with a separator line:
+    — Episode 1: [Title] —
+    (followed by a blank line)
+
+2. For each sentence or phrase:
+    - Write the English original on one line.
+    - Write the Russian translation on the next line.
+    - Leave a blank line between each pair.
+
+3. Highlight advanced vocabulary in BOTH English and Russian using **bold** markers (e.g., **advanced word**). IMPORTANT: The bolded terms in the English text and the Russian text must match the terms listed in the glossary for that episode. This must be done for EVERY episode, not just the first one.
+
+4. At the end of each episode, add a glossary for that episode:
+    Glossary for Episode X:
+    - English term — Russian translation — Explanation
+
+5. Do NOT use any tables, columns, or Markdown formatting (except bold).
+
+6. Do NOT include any introductory or concluding text — only the translation and glossaries.
+
+OUTPUT: Return only the plain text translation with glossaries after each episode.`
+        }
+      ]
+    }]
+  },
+
+  // ----------------------------------------------------------
+  zenwriter: {
+    name: '📝 Article for Zen (full slide-by-slide)',
+    variants: [{
+      id: 'mode',
+      label: '🌐 Language Mode',
+      hint: 'Ru-En: for English slides with translation. Ru: for Russian-only slides (no English content).',
+      default: 'ru-en',
+      options: [
+        {
+          id: 'ru-en',
+          label: '🇷🇺🇬🇧 Ru-En (default)',
+          shortLabel: '🇷🇺🇬🇧 Ru-En',
+          template: `Напиши статью для Дзен на основе вложенных файлов (PDF-презентация и транскрипция мероприятия).
+
+**ЯЗЫК СТАТЬИ:** русский.
+
+**ГЛАВНОЕ ТРЕБОВАНИЕ:** последовательно разбери ВСЕ слайды презентации по порядку их следования. Каждый слайд должен найти отражение в статье. На основе этого полного разбора построй увлекательное, связное повествование, которое читается как живой рассказ, а не как техническая инструкция.
+
+---
+
+**1. РАБОТА СО СЛАЙДАМИ (обязательные правила):**
+- В тексте статьи используй номера слайдов строго в квадратных скобках: [SLIDE X].
+- Номера слайдов идут последовательно: [SLIDE 1], [SLIDE 2], [SLIDE 3] ... и так до последнего слайда.
+- Если на слайде англоязычный текст — продублируй его на английском, затем дай русский перевод и пояснение.
+- Если на слайде русский текст — процитируй его и поясни в контексте материала.
+- Если в материале использовался AI — приведи полный текст AI на английском, затем дай перевод и пояснение на русском.
+- Не пропускай слайды. Даже если слайд кажется техническим или незначительным — найди способ вписать его в повествование, показав его роль в общей логике материала.
+
+**2. ЛЕКСИКА (если на слайдах есть вокабуляр):**
+Разбери всю значимую лексику, которая встречается на слайдах. Для каждой единицы укажи:
+— Саму фразу/слово на английском.
+— Буквальное значение (если применимо).
+— Значение в контексте.
+— Пример из материала (цитата + перевод).
+— Как эта лексика объясняется в методичке (цитата из слайда + перевод).
+Лексику оформляй маркированным списком (НЕ ТАБЛИЦА). Вплетай разбор лексики в основной текст, а не выноси в отдельный скучный словарь.
+
+**3. МЕТАФОРЫ, СИМВОЛЫ, КЛЮЧЕВЫЕ ИДЕИ:**
+Выдели все значимые метафоры, символы и ключевые тезисы из материала. Дай объяснение их значения на русском. Обязательно приведи цитату из слайда с трактовкой. Покажи, как эти глубинные смыслы связаны с языком и культурой.
+
+---
+
+**4. СТРУКТУРА СТАТЬИ (строго соблюдай):**
+
+**ЗАГОЛОВОК:**
+Кликабельный, информативный. Обязательно содержит тему и источник (название мероприятия, издание или автора). Пример: «Как носители говорят на самом деле: полный разбор живого урока с BBC».
+
+**ВСТУПЛЕНИЕ (1–2 абзаца):**
+— Начни с яркого факта, наблюдения или интригующей детали, которая цепляет внимание.
+— Кратко представь материал, его формат и познавательную ценность для изучающих язык.
+— ВСЕ ПРЕДЛОЖЕНИЯ — ТОЛЬКО УТВЕРДИТЕЛЬНЫЕ. Запрещены любые вопросы.
+— Излагай как рассказчик, а не как собеседник.
+
+**ОСНОВНАЯ ЧАСТЬ (разбита на подзаголовки ##):**
+— Двигайся последовательно по слайдам. Каждый слайд — это новый логический шаг в повествовании.
+— Для каждого слайда:
+  * Приведи цитату идеи из слайда (текст с самого слайда).
+  * Объясни, что означает эта идея и как она вписывается в общий замысел материала.
+  * Если на слайде есть лексика — разбери её здесь же, в контексте.
+  * Если на слайде есть метафора или символ — поясни его глубинный смысл.
+  * Приведи живой пример из урока (диалог учителя, ученика или AI), который иллюстрирует эту идею.
+  * Дай практический совет для читателя, развивающий мысль из слайда.
+- Следи за логическими переходами между слайдами. Статья не должна выглядеть как простой список. Выстраивай нарратив: от вводных слайдов — к ключевым идеям — к практическим выводам — к итоговому обобщению.
+
+**ЗАКЛЮЧЕНИЕ (2–3 абзаца):**
+— Приведи резюмирующий комментарий, который собирает воедино все ключевые идеи, прозвучавшие на слайдах.
+— Сформулируй главный вывод, опираясь на финальный слайд и общую логику всего материала. Вывод должен быть практическим и вдохновляющим — читатель должен понять, что именно он выносит из этого разбора.
+— Обязательно используй в заключении хотя бы одну цитату из последних слайдов или итогового комментария учителя.
+— Закончи яркой, запоминающейся фразой, которая останется у читателя в голове.
+
+---
+
+**5. СТИЛЬ И ФОРМАТИРОВАНИЕ (для Дзена):**
+
+**СТИЛЬ ИЗЛОЖЕНИЯ:**
+— Тон — увлечённый исследователь, который делится захватывающим открытием. Спокойный, уверенный, вдохновляющий.
+— Разговорный, но грамотный. Избегай канцеляризмов и сухости.
+— ИСКЛЮЧИТЕЛЬНО повествовательный стиль. ВСЕ ПРЕДЛОЖЕНИЯ — УТВЕРДИТЕЛЬНЫЕ.
+— ЗАПРЕЩЕНЫ ЛЮБЫЕ ВИДЫ ВОПРОСОВ. Вместо них используй обороты: «Важно понимать, что...», «Стоит обратить внимание на...», «Следует отметить...», «Обратите внимание...», «Интересно, что...», «Ключевой момент заключается в том...», «Стоит запомнить...», «Обращает на себя внимание...», «Показательно, что...».
+
+**ПРИМЕР ПРАВИЛЬНОЙ ИНТОНАЦИИ (ориентируйся на это):**
+*«Интересно, что британские журналисты намеренно используют короткие глаголы в прямых эфирах. Ключевой момент заключается в том, что это экономит время и создаёт эффект доверительного разговора. Стоит запомнить этот приём для повседневной речи»*.
+
+**ФОРМАТИРОВАНИЕ:**
+— НЕ использовать таблицы (только маркированные или нумерованные списки).
+— Ключевые фразы, термины и выводы выделять **жирным шрифтом**.
+— Цитаты на русском языке выделять *курсивом*.
+— Разделы оформлять подзаголовками с ##.
+— Использовать эмодзи для визуального разнообразия: 📚, 💡, 📌, ⚠️, 🎓, 🔥, 🗝️.
+— Ссылки на слайды ставить строго в квадратных скобках [SLIDE X] сразу после упоминания идеи со слайда.
+— Оригинал на английском → перевод на русском выделять **жирным** или отдельным абзацем.
+
+---
+
+**6. ЕСЛИ В ИСХОДНЫХ ФАЙЛАХ НЕ ХВАТАЕТ ДАННЫХ:**
+Если для какого-то слайда нет пояснений в транскрипции или перевода — дай собственную интерпретацию, основываясь на контексте всего материала. Если слайд технический (например, просто заголовок раздела) — покажи его роль в структуре урока и перейди к следующему.
+
+---
+
+**ГЛАВНАЯ ЦЕЛЬ СТАТЬИ:**
+Читатель должен пройти вместе с автором весь путь от первого до последнего слайда, увидеть, как выстраивается логика материала, обогатиться новой лексикой и идеями, вдохновиться и захотеть пересмотреть исходный материал в оригинале. Статья должна читаться как увлекательный репортаж с разбора, а не как сухой конспект.`
+        },
+        {
+          id: 'ru',
+          label: '🇷🇺 Ru only',
+          shortLabel: '🇷🇺 Ru only',
+          template: `Напиши статью для Дзен на основе вложенных файлов (PDF-презентация и транскрипция мероприятия).
+
+**ЯЗЫК СТАТЬИ:** русский.
+
+**ГЛАВНОЕ ТРЕБОВАНИЕ:** последовательно разбери ВСЕ слайды презентации по порядку их следования. Каждый слайд должен найти отражение в статье. На основе этого полного разбора построй увлекательное, связное повествование, которое читается как живой рассказ, а не как техническая инструкция.
+
+---
+
+**1. РАБОТА СО СЛАЙДАМИ (обязательные правила):**
+- В тексте статьи используй номера слайдов строго в квадратных скобках: [SLIDE X].
+- Номера слайдов идут последовательно: [SLIDE 1], [SLIDE 2], [SLIDE 3] ... и так до последнего слайда.
+- Если на слайде русский текст — процитируй его и поясни в контексте материала.
+- Если использовался AI — приведи полностью текст AI на русском.
+- Не пропускай слайды. Даже если слайд кажется техническим или незначительным — найди способ вписать его в повествование, показав его роль в общей логике материала.
+
+**2. КЛЮЧЕВЫЕ ТЕРМИНЫ И ПОНЯТИЯ:**
+Разбери все значимые термины и понятия, которые встречаются на слайдах. Для каждой единицы укажи:
+— Сам термин/понятие на русском.
+— Определение или пояснение.
+— Пример из материала (цитата из слайда или транскрипции).
+— Как этот термин объясняется в исходных материалах (цитата из слайда).
+Оформляй маркированным списком (НЕ ТАБЛИЦА). Вплетай разбор в основной текст.
+
+**3. МЕТАФОРЫ, СИМВОЛЫ, КЛЮЧЕВЫЕ ИДЕИ:**
+Выдели все значимые метафоры, символы и ключевые тезисы из материала. Дай объяснение их значения на русском. Обязательно приведи цитату из слайда с трактовкой.
+
+---
+
+**4. СТРУКТУРА СТАТЬИ (строго соблюдай):**
+
+**ЗАГОЛОВОК:**
+Кликабельный, информативный. Обязательно содержит тему и источник (название мероприятия, доклада или тема презентации).
+
+**ВСТУПЛЕНИЕ (1–2 абзаца):**
+— Начни с яркого факта, наблюдения или интригующей детали, которая цепляет внимание.
+— Кратко представь материал, его формат и познавательную ценность.
+— ВСЕ ПРЕДЛОЖЕНИЯ — ТОЛЬКО УТВЕРДИТЕЛЬНЫЕ. Запрещены любые вопросы.
+— Излагай как рассказчик, а не как собеседник.
+
+**ОСНОВНАЯ ЧАСТЬ (разбита на подзаголовки ##):**
+— Двигайся последовательно по слайдам. Каждый слайд — это новый логический шаг в повествовании.
+— Для каждого слайда:
+  * Приведи цитату идеи из слайда (текст с самого слайда).
+  * Объясни, что означает эта идея и как она вписывается в общий замысел материала.
+  * Если на слайде есть ключевые термины — разбери их здесь же, в контексте.
+  * Если на слайде есть метафора или символ — поясни его глубинный смысл.
+  * Приведи живой пример из материала (кейс, ситуация, фрагмент выступления, диалог или работа AI), который иллюстрирует эту идею.
+  * Дай практический совет для читателя, развивающий мысль из слайда.
+- Следи за логическими переходами между слайдами. Статья не должна выглядеть как простой список. Выстраивай нарратив: от вводных слайдов — к ключевым идеям — к практическим выводам — к итоговому обобщению.
+
+**ЗАКЛЮЧЕНИЕ (2–3 абзаца):**
+— Приведи резюмирующий комментарий, который собирает воедино все ключевые идеи, прозвучавшие на слайдах.
+— Сформулируй главный вывод, опираясь на финальный слайд и общую логику всего материала.
+— Обязательно используй в заключении хотя бы одну цитату из последних слайдов или итогового комментария спикера.
+— Закончи яркой, запоминающейся фразой.
+
+---
+
+**5. СТИЛЬ И ФОРМАТИРОВАНИЕ (для Дзена):**
+
+**СТИЛЬ ИЗЛОЖЕНИЯ:**
+— Тон — увлечённый исследователь, который делится захватывающим открытием. Спокойный, уверенный, вдохновляющий.
+— Разговорный, но грамотный. Избегай канцеляризмов и сухости.
+— ИСКЛЮЧИТЕЛЬНО повествовательный стиль. ВСЕ ПРЕДЛОЖЕНИЯ — УТВЕРДИТЕЛЬНЫЕ.
+— ЗАПРЕЩЕНЫ ЛЮБЫЕ ВИДЫ ВОПРОСОВ. Вместо них используй обороты: «Важно понимать, что...», «Стоит обратить внимание на...», «Следует отметить...», «Обратите внимание...», «Интересно, что...», «Ключевой момент заключается в том...», «Стоит запомнить...», «Обращает на себя внимание...», «Показательно, что...».
+
+**ФОРМАТИРОВАНИЕ:**
+— НЕ использовать таблицы (только маркированные или нумерованные списки).
+— Ключевые фразы, термины и выводы выделять **жирным шрифтом**.
+— Цитаты выделять *курсивом*.
+— Разделы оформлять подзаголовками с ##.
+— Использовать эмодзи для визуального разнообразия: 📚, 💡, 🔍, ⚠️, 🎯, 🎤, 🔥.
+— Ссылки на слайды ставить строго в квадратных скобках [SLIDE X] сразу после упоминания идеи со слайда.
+
+---
+
+**ГЛАВНАЯ ЦЕЛЬ СТАТЬИ:**
+Читатель должен пройти вместе с автором весь путь от первого до последнего слайда, увидеть, как выстраивается логика материала, обогатиться новыми идеями, вдохновиться и захотеть углубиться в тему. Статья должна читаться как увлекательный репортаж с разбора, а не как сухой конспект.`
+        }
+      ]
+    }]
+  },
+
+  // ----------------------------------------------------------
+  indexofevent: {
+    name: '📋 Index of Event (generate index page) — (source: screen)',
+    template: `Create a complete, self-contained index page that displays a list of lesson files based on a screenshot or a provided file list.
+
+## INPUT DATA (extract from the screenshot or file list):
+- Determine the lesson theme/title (e.g., series name, season, episode, date) if shown in the screenshot. If the date is not obvious — do not include it in the subtitle, use only what is clearly visible.
+- If a part of the URL after /ai/ is visible in the screenshot — extract this path for building links. Use EXACTLY the path shown in the screenshot.
+- Extract the file names that match the format selected below (PDF files, HTML files, or both). Include ONLY files with the matching extension(s) — ignore folders, directories, and files with a different extension.`,
+    variants: [{
+      id: 'format',
+      label: '📄 File Type',
+      hint: 'Choose which file type(s) to index: PDF documents, HTML pages, or both combined.',
+      default: 'pdf',
+      options: [
+        {
+          id: 'pdf',
+          label: '📕 PDF',
+          shortLabel: 'PDF',
+          suffix: `
+
+## FILE TYPE: PDF
+
+Include ONLY files with the .pdf extension — ignore folders, directories, and files without .pdf extension.
+
+### 1. PAGE STRUCTURE:
+- Header with logo (📄 icon), title "Resources", subtitle with lesson theme (extracted from the screenshot — e.g., series name, season, episode).
+- Badge on the right with a pulsing dot indicator and label "PDF Files" (without a count).
+- Main block with a card containing a grid of PDF files.
+- Footer with text "Powered by AI Exploration Hub".
+
+### 2. EACH PDF FILE CARD:
+For each file, create an <a> element with class "item" containing:
+- An emoji (choose appropriate: 📕, 📘, 📗, 📙, 📄 — alternate or pick by meaning).
+- File name (exactly as in the screenshot, with .pdf extension — letter by letter, case sensitive).
+- Right arrow → (appears on hover).
+- Link built using this template:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/[FILE_NAME]
+  Where [PATH_FROM_SCREENSHOT] is the part of the URL visible in the screenshot after /ai/ (e.g., if the screenshot shows "engoo/20260813-friends-s1e24/", use that exact path).
+- target="_blank" and rel="noopener noreferrer" attributes to open in a new tab with security.
+
+### 3. STYLES (exact copy from the reference):
+Use these CSS variables and styling:
+- Background: #f8f6f3
+- Cards: white with shadows, rounded corners (16px and 24px)
+- Colors: accent #e07a5f, text #1a1a2e, secondary #6b7280
+- Font: DM Sans (load from Google Fonts)
+- File grid: 2 columns on wide screens, 1 column on narrow (≤500px)
+- On hover: accent border highlight, slight lift, arrow appears
+- Pulsing dot animation for the badge
+- All hover effects, shadows, spacing — exactly as in the reference example
+
+### 4. CODE REQUIREMENTS:
+- Valid, semantic HTML with proper structure.
+- All styles inside <style> tag in <head>.
+- No external files (except Google Fonts).
+- All links must be working and point to real PDF files using the specified template.
+- File names in links must exactly match the names in the screenshot (case sensitive).
+- Path in URL must be taken ONLY from the screenshot. If no path is specified — don't add extra folders, use base URL: https://item1000-collab.github.io/ai/[FILE_NAME]
+- NO file counter (no "count" class or number next to "PDF Files").
+- DO NOT display the number of files anywhere on the page.
+- Include ONLY files with .pdf extension. Do NOT include folders, directories, or files without .pdf extension.
+
+### 5. EXAMPLE OF BUILDING A LINK:
+If the screenshot shows the path "engoo/20260813-friends-s1e24/" and the file name is "friends-english-lesson.pdf", the link should be:
+https://item1000-collab.github.io/ai/engoo/20260813-friends-s1e24/friends-english-lesson.pdf
+
+If the screenshot shows no path, only the file name "friends-english-lesson.pdf", the link is:
+https://item1000-collab.github.io/ai/friends-english-lesson.pdf
+
+### 6. EXAMPLE OF ONE ELEMENT (for format reference):
+<a href="https://item1000-collab.github.io/ai/engoo/20260813-friends-s1e24/friends-english-lesson.pdf" target="_blank" rel="noopener noreferrer" class="item">
+    <span class="emoji">📕</span>
+    <span class="name">friends-english-lesson.pdf</span>
+    <span class="arrow">→</span>
+</a>
+
+### 7. FINAL OUTPUT:
+Output a complete HTML code that can be saved as a .html file and opened in a browser — it should work without any modifications.
+
+## IMPORTANT:
+- Date in subtitle is included ONLY if clearly visible in the screenshot. If there's no date — don't invent it.
+- Path in URL is taken ONLY from the screenshot (the part after /ai/).
+- NO file counter anywhere on the page.
+- Include ONLY .pdf files. Ignore folders and files without .pdf extension.
+- File names must be EXACT matches (case sensitive) — copy letter by letter from the screenshot.
+- All links must have both target="_blank" and rel="noopener noreferrer".
+- No comments or explanations in the final code, only clean HTML.
+- Preserve all visual details: spacing, font sizes, rounding, shadows, colors.
+
+Generate the HTML based on the attached screenshot.`
+        },
+        {
+          id: 'html',
+          label: '🌐 HTML',
+          shortLabel: 'HTML',
+          suffix: `
+
+## FILE TYPE: HTML
+
+Include ONLY files with the .html extension — ignore folders, directories, and files without .html extension.
+
+### 1. PAGE STRUCTURE:
+- Header with logo (🌐 icon), title "Resources", subtitle with lesson theme (extracted from the screenshot — e.g., series name, season, episode).
+- Badge on the right with a pulsing dot indicator and label "HTML Pages" (without a count).
+- Main block with a card containing a grid of HTML pages.
+- Footer with text "Powered by AI Exploration Hub".
+
+### 2. EACH HTML FILE CARD:
+For each file, create an <a> element with class "item" containing:
+- An emoji (choose appropriate: 🌐, 📄, 🧩, 🖥️, 📃 — alternate or pick by meaning).
+- File name (exactly as in the screenshot, with .html extension — letter by letter, case sensitive).
+- Right arrow → (appears on hover).
+- Link built using this template:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/[FILE_NAME]
+  Where [PATH_FROM_SCREENSHOT] is the part of the URL visible in the screenshot after /ai/ (e.g., if the screenshot shows "engoo/20260813-friends-s1e24/", use that exact path).
+- target="_blank" and rel="noopener noreferrer" attributes to open in a new tab with security.
+
+### 3. STYLES (exact copy from the reference):
+Use these CSS variables and styling:
+- Background: #f8f6f3
+- Cards: white with shadows, rounded corners (16px and 24px)
+- Colors: accent #e07a5f, text #1a1a2e, secondary #6b7280
+- Font: DM Sans (load from Google Fonts)
+- File grid: 2 columns on wide screens, 1 column on narrow (≤500px)
+- On hover: accent border highlight, slight lift, arrow appears
+- Pulsing dot animation for the badge
+- All hover effects, shadows, spacing — exactly as in the reference example
+
+### 4. CODE REQUIREMENTS:
+- Valid, semantic HTML with proper structure.
+- All styles inside <style> tag in <head>.
+- No external files (except Google Fonts).
+- All links must be working and point to real HTML pages using the specified template.
+- File names in links must exactly match the names in the screenshot (case sensitive).
+- Path in URL must be taken ONLY from the screenshot. If no path is specified — don't add extra folders, use base URL: https://item1000-collab.github.io/ai/[FILE_NAME]
+- NO file counter (no "count" class or number next to "HTML Pages").
+- DO NOT display the number of files anywhere on the page.
+- Include ONLY files with .html extension. Do NOT include folders, directories, or files without .html extension.
+
+### 5. EXAMPLE OF BUILDING A LINK:
+If the screenshot shows the path "engoo/20260813-friends-s1e24/" and the file name is "friends-english-lesson.html", the link should be:
+https://item1000-collab.github.io/ai/engoo/20260813-friends-s1e24/friends-english-lesson.html
+
+If the screenshot shows no path, only the file name "friends-english-lesson.html", the link is:
+https://item1000-collab.github.io/ai/friends-english-lesson.html
+
+### 6. EXAMPLE OF ONE ELEMENT (for format reference):
+<a href="https://item1000-collab.github.io/ai/engoo/20260813-friends-s1e24/friends-english-lesson.html" target="_blank" rel="noopener noreferrer" class="item">
+    <span class="emoji">🌐</span>
+    <span class="name">friends-english-lesson.html</span>
+    <span class="arrow">→</span>
+</a>
+
+### 7. FINAL OUTPUT:
+Output a complete HTML code that can be saved as a .html file and opened in a browser — it should work without any modifications.
+
+## IMPORTANT:
+- Date in subtitle is included ONLY if clearly visible in the screenshot. If there's no date — don't invent it.
+- Path in URL is taken ONLY from the screenshot (the part after /ai/).
+- NO file counter anywhere on the page.
+- Include ONLY .html files. Ignore folders and files without .html extension.
+- File names must be EXACT matches (case sensitive) — copy letter by letter from the screenshot.
+- All links must have both target="_blank" and rel="noopener noreferrer".
+- No comments or explanations in the final code, only clean HTML.
+- Preserve all visual details: spacing, font sizes, rounding, shadows, colors.
+
+Generate the HTML based on the attached screenshot.`
+        },
+        {
+          id: 'both',
+          label: '📕🌐 PDF + HTML',
+          shortLabel: 'PDF + HTML',
+          suffix: `
+
+## FILE TYPES: PDF + HTML (combined)
+
+Include BOTH .pdf and .html files from the screenshot. Ignore folders, directories, and files with any other extension.
+
+### 1. PAGE STRUCTURE:
+- Header with logo (🗂️ icon), title "Resources", subtitle with lesson theme (extracted from the screenshot — e.g., series name, season, episode).
+- TWO badges on the right side, each with its own pulsing dot indicator and label: "PDF Files" and "HTML Pages" (neither shows a count).
+- Main block with a card containing the combined grid of files, grouped into two labelled sections:
+    * Section "PDF Files" with all .pdf files.
+    * Section "HTML Pages" with all .html files.
+- Footer with text "Powered by AI Exploration Hub".
+
+### 2. EACH FILE CARD:
+For each PDF file, create an <a> element with class "item" containing:
+- An emoji (📕, 📘, 📗, 📙, 📄 — alternate or pick by meaning).
+- File name (exactly as in the screenshot, with .pdf extension — letter by letter, case sensitive).
+- Right arrow → (appears on hover).
+- Link built using this template:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/[FILE_NAME]
+  Where [PATH_FROM_SCREENSHOT] is the part of the URL visible in the screenshot after /ai/.
+- target="_blank" and rel="noopener noreferrer" attributes.
+
+For each HTML file, create an <a> element with class "item" containing:
+- An emoji (🌐, 📄, 🧩, 🖥️, 📃 — alternate or pick by meaning).
+- File name (exactly as in the screenshot, with .html extension — letter by letter, case sensitive).
+- Right arrow → (appears on hover).
+- Link built using the same template:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/[FILE_NAME]
+- target="_blank" and rel="noopener noreferrer" attributes.
+
+### 3. STYLES (exact copy from the reference):
+Use these CSS variables and styling:
+- Background: #f8f6f3
+- Cards: white with shadows, rounded corners (16px and 24px)
+- Colors: accent #e07a5f, text #1a1a2e, secondary #6b7280
+- Font: DM Sans (load from Google Fonts)
+- File grid: 2 columns on wide screens, 1 column on narrow (≤500px)
+- Section headings inside the main card: clearly visible, but NOT counters (e.g. "PDF Files" / "HTML Pages" with a small icon, no numbers)
+- On hover: accent border highlight, slight lift, arrow appears
+- Pulsing dot animation for each badge
+- All hover effects, shadows, spacing — exactly as in the reference example
+
+### 4. CODE REQUIREMENTS:
+- Valid, semantic HTML with proper structure.
+- All styles inside <style> tag in <head>.
+- No external files (except Google Fonts).
+- All links must be working and point to real files using the specified template.
+- File names in links must exactly match the names in the screenshot (case sensitive).
+- Path in URL must be taken ONLY from the screenshot. If no path is specified — don't add extra folders, use base URL: https://item1000-collab.github.io/ai/[FILE_NAME]
+- NO file counter anywhere (no "count" class, no number next to "PDF Files" or "HTML Pages", no numbers next to the section headings).
+- DO NOT display the number of files anywhere on the page.
+- Include ONLY .pdf and .html files. Do NOT include folders, directories, or files with other extensions.
+- If one of the two groups is empty in the screenshot — do NOT render its section heading, but keep the other group's section intact.
+
+### 5. EXAMPLE OF BUILDING A LINK:
+If the screenshot shows the path "engoo/20260813-friends-s1e24/" and the file name is "friends-english-lesson.pdf", the link should be:
+https://item1000-collab.github.io/ai/engoo/20260813-friends-s1e24/friends-english-lesson.pdf
+
+If the screenshot shows the same path but the file name is "friends-english-lesson.html", the link is:
+https://item1000-collab.github.io/ai/engoo/20260813-friends-s1e24/friends-english-lesson.html
+
+If the screenshot shows no path, only the file name "friends-english-lesson.pdf", the link is:
+https://item1000-collab.github.io/ai/friends-english-lesson.pdf
+
+### 6. EXAMPLE OF ELEMENTS (for format reference):
+<a href="https://item1000-collab.github.io/ai/engoo/20260813-friends-s1e24/friends-english-lesson.pdf" target="_blank" rel="noopener noreferrer" class="item">
+    <span class="emoji">📕</span>
+    <span class="name">friends-english-lesson.pdf</span>
+    <span class="arrow">→</span>
+</a>
+
+<a href="https://item1000-collab.github.io/ai/engoo/20260813-friends-s1e24/friends-english-lesson.html" target="_blank" rel="noopener noreferrer" class="item">
+    <span class="emoji">🌐</span>
+    <span class="name">friends-english-lesson.html</span>
+    <span class="arrow">→</span>
+</a>
+
+### 7. FINAL OUTPUT:
+Output a complete HTML code that can be saved as a .html file and opened in a browser — it should work without any modifications.
+
+## IMPORTANT:
+- Date in subtitle is included ONLY if clearly visible in the screenshot. If there's no date — don't invent it.
+- Path in URL is taken ONLY from the screenshot (the part after /ai/).
+- NO file counter anywhere on the page.
+- Include ONLY .pdf and .html files. Ignore folders and files with other extensions.
+- File names must be EXACT matches (case sensitive) — copy letter by letter from the screenshot.
+- All links must have both target="_blank" and rel="noopener noreferrer".
+- Preserve all visual details: spacing, font sizes, rounding, shadows, colors.
+- Group the files into two clearly labelled sections ("PDF Files" and "HTML Pages").
+
+Generate the HTML based on the attached screenshot.`
+        }
+      ]
+    }]
+  },
+
+  // ----------------------------------------------------------
+  englishlessonarticle: {
+    name: '✍️ English lesson article (sources: txt, pdf and screen)',
+    customText: true,
+    template: `Write an engaging, informative article in English based on the following source materials:
+- PDF presentation (slides)
+- Event transcript (text file)
+- Screenshot showing available lesson files
+
+The article should be interesting, educational, and suitable for an English-language blog (e.g., Medium, Substack).
+
+**CRITICAL OUTPUT FORMAT:**
+- The output MUST be a complete, self-contained HTML document.
+- The HTML page MUST display the article with proper formatting (headings, paragraphs, bold, italics, emojis).
+- The HTML page MUST include images of the slides referenced in the article.
+- Image URLs must be built using the same path as the PDF files from the screenshot:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/slide-001.jpg
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/slide-002.jpg
+  etc.
+- The PATH_FROM_SCREENSHOT is the part of the URL visible in the screenshot after /ai/ (e.g., "engoo/20260818-friends-203/").
+- All slide images (slide-001.jpg, slide-002.jpg, etc.) are expected to be available at the same resource location as the PDF files.
+- Do NOT use placeholder images — use the actual constructed URLs.
+
+**CRITICAL REQUIREMENT — NO SLIDE NUMBERS IN THE ARTICLE TEXT:**
+- The final article text MUST NOT contain any slide numbers, references like [SLIDE X], "Slide 5", "on slide 10", or any similar explicit mention of slide numbering.
+- The article must read as a natural, flowing narrative without any textual references to slides.
+- The visual placement of slide images in the HTML will indicate which content corresponds to which slide — no textual references are needed.
+- All content from the slides must be seamlessly integrated into the article without mentioning the slides themselves.
+
+**STRICT RULE FOR IMAGE PLACEMENT:**
+- To place an image in the HTML, use an HTML comment like <!-- SLIDE-IMAGE: slide-001.jpg --> directly above or below the paragraph that discusses the content of that slide.
+- The final HTML output must NOT contain the literal text [SLIDE X] or slide-001 anywhere in the visible article text — it may only appear in the HTML comments or src attributes of the <img> tags.
+- For each slide, include the corresponding image using the URL: https://item1000-collab.github.io/ai/[PATH]/slide-00X.jpg (with leading zeros, e.g., slide-001.jpg, slide-002.jpg, etc.){{TEACHER_BLOCK}}{{COUNTRY_BLOCK}}
+
+REQUIREMENTS FOR THE ARTICLE:
+
+1. LANGUAGE:
+- The article must be written in English.
+- Use a conversational but polished style — inspiring and motivating.
+- All sentences must be DECLARATIVE (no questions of any kind: rhetorical, clarifying, or introductory). Use statements like: "It is important to understand that...", "Pay attention to...", "It should be noted that...", "Notice that...", "Interestingly...", "The key point is...", "Remember that...".
+
+2. USING SOURCE MATERIALS:
+- If a slide contains English text, quote it directly and provide explanations in English.
+- If AI was used in the lesson (e.g., ChatGPT, Maya, or any AI assistant), quote the full AI-generated text in English and provide explanations and commentary in English.
+
+3. VOCABULARY SECTION:
+- Rely on vocabulary slides from the PDF.
+- Present vocabulary in plain text format (NO TABLES).
+- For each vocabulary item, provide:
+   — The English phrase/word.
+   — Literal meaning (if applicable).
+   — Figurative / contextual meaning.
+   — Example from the material (quote + explanation).
+   — How the material explains this vocabulary (quote from the slide + explanation).
+
+4. INTERACTIVE ELEMENTS (mandatory — must be embedded in the article as self-contained HTML/CSS/JS components):
+
+The article MUST include the following THREE interactive components, built with pure HTML, CSS, and Vanilla JS (no external libraries, no frameworks). Each component must match the article's typography and color palette and feel like a native part of the page, not an embedded widget.
+
+4.1. VOCABULARY FLIP-CARDS:
+- Build a set of interactive flip-cards for the key vocabulary of the lesson (one card per key term).
+- Each card flips on click with a 3D rotateY animation and shows two sides:
+   — FRONT: the English term, its part of speech, and a short teaser (literal meaning or a one-line hook).
+   — BACK: literal meaning, contextual meaning, an example from the material, and a short "why it matters" note.
+- Cards must be arranged in a responsive grid (3 columns on desktop, 2 on tablet, 1 on mobile).
+- Include a "Flip all cards" button that turns every card over at once.
+- Cards must be keyboard-accessible (Tab + Enter/Space) and must set aria-pressed on toggle.
+- Rotate through 4–5 accent colors (one per card) to give each card a distinct visual identity.
+- Respect prefers-reduced-motion: disable the 3D flip and swap the sides without rotation.
+
+4.2. COMPREHENSION QUIZ WITH INSTANT FEEDBACK:
+- Build an interactive multiple-choice quiz (6–8 questions) from the actual content of the lesson (comprehension, vocabulary in context, true/false, fill-in-the-blank).
+- Each question must give INSTANT feedback on click:
+   — The correct option is highlighted green and the wrong option red.
+   — The wrong option plays a short shake animation.
+   — All other options are dimmed and disabled.
+   — A short explanation is revealed below the question.
+- Include a live score counter ("SCORE X/N") and a row of progress dots that turn green (correct) or red (wrong).
+- On each answer, show a floating animated pop above the quiz bar: "APPLAUSE!" for a correct answer, "BUZZ!" for a wrong one.
+- On finishing all questions, reveal a result panel with:
+   — The final score in a large display font.
+   — A short message that changes based on the score (perfect / good / try again).
+   — A "Watch it again" button that resets the quiz, clears the dots, and re-renders the questions.
+- Build the quiz from a JS array of question objects (tag, text, options, answer, explanation) and render it dynamically — do NOT hardcode the HTML for each question.
+- Keep the quiz fully keyboard-accessible and screen-reader friendly.
+
+4.3. TERM TOOLTIPS:
+- Mark key terms in the article body with a dotted underline and data attributes carrying the term and its short definition.
+- On hover (desktop) and on click/tap (mobile), show a floating tooltip with:
+   — The term in uppercase (monospace label).
+   — A one-sentence definition.
+- The tooltip must follow the cursor position, stay inside the viewport, and flip above/below the term depending on available space.
+- A single tooltip element must be reused for all terms (no per-term DOM duplication).
+- The tooltip must hide on scroll, on mouseout, and on outside click, and must be hidden for users with prefers-reduced-motion (they read the definition inline instead).
+
+4.4. CODE QUALITY FOR INTERACTIVE COMPONENTS:
+- All CSS for the interactive components lives inside the same <style> block in <head>.
+- All JS for the interactive components lives inside the same <script> block at the end of <body>, wrapped in an IIFE with "use strict".
+- No external libraries (pure HTML, CSS, Vanilla JS). Only Google Fonts are allowed.
+- Data-driven rendering: vocabulary cards and quiz questions must be defined as JS arrays/objects and rendered dynamically.
+- Use event delegation for card flips and quiz answers (no per-element listeners in a loop).
+- Clean up timers on reset (especially in the quiz) to avoid leaks.
+- Respect prefers-reduced-motion across all three interactive components.
+- All interactive elements must be keyboard-accessible and have proper aria-attributes.
+
+5. METAPHORS, SYMBOLS, AND KEY IDEAS:
+- Identify 3–4 key elements from the material (symbols, metaphors, core theses) based on the slides.
+- Explain their significance in English.
+- Quote the slide's interpretation.
+
+6. ARTICLE STRUCTURE:
+
+Title:
+— Clickable and informative — include the topic and a key learning goal.
+— Mention the source of the material (e.g., the TV show, event name, or platform).
+
+Introduction (1–2 paragraphs):
+— An interesting fact or observation related to the topic.
+— ALL SENTENCES MUST BE DECLARATIVE. NO QUESTIONS.
+— Write as a storyteller, not as a conversational partner.
+— Briefly introduce the material and its educational value (based on the introductory slides).
+
+Main Body — Section 1: Content and Context
+— Brief summary of the material's essence (2–3 paragraphs).
+— Key points important for language learning.
+— For each slide, provide a quote of the idea from the slide.
+— A real-life example from the lesson (teacher, student, or AI dialogue) that ILLUSTRATES this idea from the slide.
+— Practical advice for the reader that expands on the slide's idea.
+— Teacher's commentary from the transcript (if available).
+
+Main Body — Section 2: Vocabulary and Language Takeaways
+— Present key vocabulary with explanations as described above.
+— Show how these words/phrases are used in context.
+— Connect vocabulary to the overall theme of the material.
+— Embed the INTERACTIVE FLIP-CARDS (section 4.1) here as the centerpiece of this section.
+
+Main Body — Section 3: Deeper Meaning — Metaphors and Symbols
+— Analyze 3–4 symbols or metaphors from the slides.
+— Explain their significance and how they enhance understanding of the topic.
+
+Main Body — Section 4: Comprehension Check
+— Embed the interactive QUIZ (section 4.2) as a standalone section, clearly separated from the reading text.
+— Frame it with a short declarative intro (no questions in the article text itself — questions belong only inside the quiz mechanics).
+
+Conclusion (1–2 paragraphs):
+— An inspiring quote from the slides or material.
+— The main takeaway for language learners, based on the final slide.
+— A call to action (practice, review the original material, apply knowledge, etc.).
+
+PDF RESOURCES (at the very end of the page, after the conclusion):
+— Add ONE single block at the very bottom of the page titled "📎 Lesson Files" (or similar).
+— This block must contain links to ALL the PDF files that are visible in the screenshot.
+— Each link must open the PDF in a NEW TAB (target="_blank" and rel="noopener noreferrer") — NOT a download link.
+— Do NOT use the "download" attribute on these links.
+— Use the exact file names and paths from the screenshot:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/[FILE_NAME].pdf
+- The block must appear ONLY ONCE, at the very end of the page. Do NOT repeat these links anywhere else in the article.
+- ONLY the PDF files from the screenshot should be referenced. Do NOT include TXT, HTML, or any other file types.
+
+7. FORMATTING:
+- Use subheadings (##) to separate sections.
+- Use **bold** for key phrases.
+- Use *italics* for quotes.
+- Use emojis (📚, 💡, 📌, ⚠️) for visual variety.
+- For quotes:
+   — Quote the original in English.
+   — Provide explanations in English.
+   — Mark teacher's comments with 🎓 and put them in *italics*.
+- Do NOT use tables.
+
+8. CRITICAL REMINDERS:
+- Verify that all content in the article corresponds to the PDF slides.
+- Include teacher comments from the transcript to connect slide theory with live practice (if available).
+- If AI was used, provide the full AI-generated text in English and add explanations in English.
+- All text on the page MUST be in English only — no Russian, no other languages.
+- The article must be a complete, self-contained piece ready for publication.
+- The HTML page must include all slide images using the constructed URLs.
+- ONLY the PDF files from the screenshot should be referenced, and ONLY ONCE at the very end of the page as open-in-new-tab links (NOT download links).
+- The final HTML must contain NO visible text like slide-001 or [SLIDE 1] — only the <img src="..."> tags and HTML comments for positioning.
+- The three interactive components (flip-cards, quiz, tooltips) MUST be present and fully functional in the final HTML.
+
+**PATH FOR IMAGES AND PDFs:**
+Extract the path from the screenshot (the part after /ai/). For example, if the screenshot shows "engoo/20260818-friends-203/", use:
+- PDF base URL: https://item1000-collab.github.io/ai/engoo/20260818-friends-203/
+- Image base URL: https://item1000-collab.github.io/ai/engoo/20260818-friends-203/
+- Image filenames: slide-001.jpg, slide-002.jpg, slide-003.jpg, etc. (with leading zeros).
+
+If the path is not clearly visible, use the most specific path available from the screenshot.
+
+Generate the complete HTML document with all styles embedded.
+
+**STRICT RULE FOR FILE PATHS AND URLS:**
+- The final HTML MUST contain EXACTLY the file names and paths as they appear in the provided screenshot.
+- Do NOT guess, alter, or "correct" any file names. For example, if the screenshot shows "summary-20260903165758Inn4Px.pdf", the link MUST be exactly:
+  https://item1000-collab.github.io/ai/engoo/20260903-friends-211/summary-20260903165758Inn4Px.pdf
+- Do NOT use any other file names (such as .txt, .html, or any other file not explicitly listed in the screenshot) in the links.
+- The PDF links MUST be limited to ONLY the files that are explicitly present in the screenshot as PDF files (e.g., 211-friends-wedding-english.pdf and summary-20260903165758Inn4Px.pdf).
+- If the screenshot shows a file with a specific name, copy it VERBATIM (including capital letters, numbers, and extensions). Do NOT change "Inn4Px" to "lnn4Px" or any other variation.
+- All links in the HTML must point to the SAME base URL path as shown in the screenshot for the PDFs.
+- Do NOT include links to any other files (TXT, HTML, etc.) unless they are explicitly requested in the instructions.`,
+    inputs: [
+      {
+        id: 'teacher',
+        label: '👩‍🏫 Teacher (optional)',
+        placeholder: 'e.g. Rosie — leave blank to skip',
+        token: '{{TEACHER_BLOCK}}',
+        fallback: '',
+        inline: true,
+        optional: true,
+        template: function(val) { return val ? '\n\nTeacher: ' + val : ''; }
+      },
+      {
+        id: 'country',
+        label: '🌍 Country (optional)',
+        placeholder: 'e.g. Venezuela — leave blank to skip',
+        token: '{{COUNTRY_BLOCK}}',
+        fallback: '',
+        inline: true,
+        optional: true,
+        template: function(val) { return val ? '\nCountry: ' + val : ''; }
+      }
+    ]
+  },
+
+  // ----------------------------------------------------------
+  audioshow: {
+    name: '🎙 Audio show',
+    variants: [
+      {
+        id: 'mode',
+        label: '🎙 Audio show type',
+        hint: 'Choose the source format: JSON with timestamps, or a screenshot + m4a audio file.',
+        default: 'json',
+        options: [
+          {
+            id: 'json',
+            label: '🎧 Radio Show (source: json)',
+            shortLabel: 'JSON',
+            template: `Role: You are a senior frontend developer. Create a single-page web application (SPA) for listening to an audio show with interactive, time-synchronized transcripts, ready for immediate deployment on GitHub Pages.
+
+1. INPUT DATA (Files)
+
+    ai_radio.mp3 (Audio file. Name is strictly fixed.)
+
+    cover.png (Cover image.)
+
+    show_notes.json (JSON with timestamps. Format below):
+    json
+
+    {
+      "show_title": "Show Title",
+      "show_duration": "MM:SS",
+      "timecoded_transcript": [
+        { "timecode": "M:SS", "speaker": "Name", "text": "Dialogue line" }
+      ]
+    }
+
+2. OUTPUT DATA
+
+I need 4 files ready to upload to a GitHub repository:
+
+    index.html (Contains all CSS and JavaScript inside it).
+
+    show_notes.json (Validated).
+
+    ai_radio.mp3 (Upload instruction).
+
+    cover.png (Upload instruction).
+
+3. TECHNICAL REQUIREMENTS FOR CODE
+
+Design (CSS):
+
+    Dark theme (background: #121212), sans-serif font.
+
+    Player container: cover on top, title, duration, standard <audio controls>.
+
+    Transcript list: lines with pointer cursor, dividers, and hover highlighting.
+
+    Active line is highlighted bright blue (#007bff) with white text.
+
+    IMPORTANT: The cover image (cover.png) must be SMALL and neat. Set its width to exactly 200px (width: 200px), height: auto, with border-radius: 8px, and display: block. DO NOT stretch it to 100% width.
+
+Logic (JavaScript):
+
+    Paths: Strictly: ai_radio.mp3 and cover.png.
+
+    Loading: fetch('show_notes.json').
+
+    Timestamps: Function to convert "M:SS" to seconds. Calculate endSeconds for each line (if no next line, start + 20 sec).
+
+    Rendering: Create DOM elements dynamically. Line format: <span class="speaker">Name:</span> Text.
+
+    Synchronization: Listen to timeupdate. If currentTime falls within a line's range, add class .active and call scrollIntoView({ behavior: 'smooth', block: 'center' }).
+
+    Click: Clicking a line seeks audio.currentTime to the start of that line and starts playback.
+
+    Errors: If JSON is not found, display a clear error message instead of the show title.
+
+4. STRICT STRUCTURE RULES
+
+    No separate files: It is forbidden to create style.css or script.js. All CSS strictly inside <style> in <head>, all JS strictly inside <script> at the end of <body>.
+
+    File names: The code must use only ai_radio.mp3, cover.png, and show_notes.json. No other name variations (like audio.mp3) should be present.
+
+    Simplicity: The code should be concise, without unnecessary libraries (only pure HTML, CSS, Vanilla JS).`
+          },
+          {
+            id: 'screenshot',
+            label: '🎙 Audio show (sources: screen + m4a)',
+            shortLabel: 'Screen + m4a',
+            template: `Task: Based on the attached audio file and interface screenshot, generate two complete files: audio.json and audio.html.
+
+## Input Data
+
+- **Audio file (attached)** — transcribe the audio and accurately place timestamps for each phrase.
+- **Screenshot (attached)** — extract the user/organization repository and folder path from it.
+
+## Resource URLs (CRITICAL)
+
+- Audio file: https://item1000-collab.github.io/ai/[PATH]/audio.m4a
+  (check the file extension on the screenshot; use audio.mp3 or audio.m4a accordingly)
+- Cover image: https://item1000-collab.github.io/ai/[PATH]/audio.jpg
+- JSON data: https://item1000-collab.github.io/ai/[PATH]/audio.json
+
+If no path is visible in the screenshot, use base URLs without [PATH].
+
+## 1. Requirements for audio.json
+
+Formulate a valid JSON with the following structure:
+
+- **show_title**: Title of the show/recording.
+- **show_duration**: Total duration of the audio in MM:SS format.
+- **timecoded_transcript**: An array of objects where each phrase contains:
+    - **timecode**: Start time of the phrase in MM:SS format (must strictly match the timing of the attached audio).
+    - **speaker**: Name or role of the speaker (e.g., "Host 1", "Host 2").
+    - **text**: Exact transcribed text of the phrase.
+
+## 2. Requirements for audio.html
+
+### Links and Media
+
+- Identify the exact extension of the audio file from the screenshot (audio.m4a or audio.mp3).
+- Use the constructed base URL for absolute paths to media files (audio.m4a/audio.mp3, audio.jpg, audio.json).
+- Specify the correct type attribute in the \`<source>\` tag (for .m4a use \`type="audio/mp4"\`, for .mp3 use \`type="audio/mpeg"\`).
+
+### Synchronization Logic (JavaScript)
+
+- Calculate the end time of each line (endTime) as the start time of the NEXT line (\`arr[index + 1].startTime\`). For the last line, set it to \`Infinity\`. This prevents desynchronization and gaps during pauses.
+- During playback (\`timeupdate\`), highlight the \`.active\` class strictly on the current replica.
+- Configure smooth scrolling with centering: \`el.scrollIntoView({ behavior: 'smooth', block: 'center' })\`.
+
+### Interactivity
+
+- Clicking any text line must seek the audio to the corresponding \`startTime\` and start playback.
+
+### Design
+
+- Modern dark mode interface with a sticky player block fixed on top of the text (\`position: sticky\`).
+
+## Output
+
+Output the full code for both files completely, without abbreviations.`
+          }
+        ]
+      }
+    ]
+  },
+
+  // ----------------------------------------------------------
+  gistpresentation: {
+    name: '📑 Gist Presentation Overview (presentation slides analysis in md)',
+    template: `По этой презентации дай общую информацию на русском языке, а затем объяснение и трактовку каждого слайда включая текст отдельных слов и фраз на английском языке и их перевод на русский язык и комментарии.
+
+ТРЕБОВАНИЯ:
+
+1. Общая информация (на русском):
+   — Название презентации
+   — Основная тема
+   — Ключевая цель
+   — Краткое описание содержания (2-3 предложения)
+
+2. Разбор каждого слайда:
+   Для каждого слайда (по порядку):
+   — Номер слайда
+   — Заголовок слайда (если есть)
+   — Описание содержания слайда на русском
+   — Все английские слова, фразы, выражения со слайда:
+     • Сама фраза на английском
+     • Перевод на русский
+     • Пояснение / комментарий (контекст использования, нюансы, грамматические особенности)
+
+3. Формат вывода (СТРОГО):
+   — Оформи весь ответ в виде ОДНОГО Markdown-блока внутри тройных обратных кавычек (\`\`\`markdown ... \`\`\`).
+   — В начале укажи имя файла для Gist (например, \`# friends_lesson.md\`), чтобы я мог просто скопировать всё и вставить в новый Gist.
+   — Используй Markdown-структуру: заголовки (#, ##, ###), списки (- или *), жирный текст (**текст**), курсив (*текст*).
+   — Не добавляй никакого текста вне Markdown-блока (никаких «Вот текст», «Готово», «Скопируйте» и т.д.). Только сам код.
+   — Следи, чтобы заголовки и списки начинались с начала строки (без лишних отступов), чтобы при вставке в Gist форматирование не сломалось.
+
+4. Структура документа:
+   # Название презентации
+
+   ## Общая информация
+   ...
+
+   ## Слайд 1
+   ### Заголовок слайда
+   Описание...
+   - **английская фраза** — перевод — комментарий
+   ...
+
+   ## Слайд 2
+   ...
+
+5. Язык:
+   — Общая информация и описания слайдов — на русском
+   — Все английские фразы сохраняются в оригинале
+   — Перевод и комментарии — на русском
+
+6. Важно:
+   — Обрабатывать все слайды презентации (их 13)
+   — Не пропускать ни одного слайда
+   — Для каждого слайда указывать все значимые слова и фразы
+   — Комментарии должны быть полезными и информативными
+
+ВЫХОДНОЙ ФОРМАТ: Только текст в формате Markdown (.md), готовый для вставки в Gist. Никакого дополнительного текста вне формата.`
+  },
+
+  // ----------------------------------------------------------
+  // PRESET: "Game" with two options + aesthetic field
+  // ----------------------------------------------------------
+  game: {
+    name: '🎮 Game',
+    variants: [
+      {
+        id: 'mode',
+        label: '🎯 Choose game type',
+        hint: 'Both options use the same aesthetic field below. The aesthetic will be inserted into the prompt.',
+        default: 'g1',
+        options: [
+          {
+            id: 'g1',
+            label: 'g1 (Interactive Game)',
+            shortLabel: 'g1 (Interactive Game)',
+            template: `Prompt for creating interactive educational games (like "Friends Vocab Arcade")
+
+You are an experienced frontend developer and game designer specializing in interactive educational games in a retro-arcade style. Your task is to create a complete single-page game in pure HTML/CSS/JS (no bundlers, no frameworks) that can be opened in a browser as a single file.
+
+MAIN CONSTRAINTS
+
+    No external data except pre-known URLs. You have no internet access — all images, sounds, and fonts must either be generated by code (SVG, CSS, Web Audio API, Canvas) or reference only the resources I specify in the task. If I provide no links — use SVG placeholders, CSS gradients, and synthesized sounds.
+
+    One HTML file. All CSS inside <style>, all JS inside <script>. No module imports.
+
+    No frameworks. Vanilla JS only. Only CDN icon libraries (e.g., Lucide) and Google Fonts are allowed if I permit them.
+
+    Progressive enhancement and accessibility. Working aria-labels, focus styles, keyboard support (arrows, Enter, Escape), prefers-reduced-motion.
+
+GAME STRUCTURE
+
+Assemble the game from the following layers:
+
+1. Shell
+
+    Preloader with a "PLAY ▶" effect and an upward exit after loading.
+
+    Fixed header console: brand logo, progress indicator (dots/cells), score, sound and map buttons.
+
+    Three screens: intro → level map → scene → finale. Switching via the .active class with an appearance animation.
+
+    Modal windows with a briefing before the level and results after it.
+
+    Toast notifications and confetti for rewards.
+
+2. Level Map
+
+    Grid of "reel" cards with a preview, number, title, character, stars, and best score.
+
+    FREE ORDER: all levels are unlocked from the very start. The player can enter ANY level in ANY order, at any time. There is no sequential unlocking and no lock icons.
+
+    Each level card is always clickable: a completed level shows its earned stars and best score and can be replayed freely; an uncompleted level simply shows no stars yet.
+
+    A "back to map" button is always available inside a level, so the player can leave at any moment and pick a different level without losing progress.
+
+    Progress is stored per level in localStorage, so finishing levels out of order works correctly.
+
+    The Final button appears only when ALL levels have been completed (in any order).
+
+3. Five Mini-Games (diverse mechanics!)
+
+Implement at least five different mechanics so the player does not get bored:
+
+    Fill in the blanks — click on a blank → click on a word from the bank. Wrong words "bounce back" with a shake animation; each return costs points.
+
+    True/False reaction (or REAL/DELUSION) — a card with a statement, a 6-second timer bar, two buttons, arrow-key support. Multiplier for a streak of correct answers.
+
+    Multiple choice — a question with three options, one attempt, character reaction after the answer.
+
+    Match the Meaning — two columns: English words on the left, their meanings on the right. Click a word, then click its meaning. Correct pairs lock green and cannot be reused; wrong picks shake and clear the selection. Includes a live counter of pairs found (X/6) and attempts, plus a short on-screen example (WORD · boasts → MEANING · proudly has) to explain the mechanic in one glance. This replaces any card-flip / memory-pair mechanic.
+
+    Timed bonus round — 750 seconds, questions from all previous topics, streak × multiplier, red flashing timer at the end.
+
+4. Finale
+
+    Screen with the total score, total stars, a results table by level, a rank (rank depends on the total score), and a "rewind the tape" button (progress reset).
+
+SCORING AND STARS SYSTEM
+
+    For each correct answer — base points growing with streak/speed.
+
+    Penalty for a mistake or a retry.
+
+    1–3 stars per level by the formula: no mistakes — 3, one or two mistakes — 2, more — 1.
+
+    The best result of each level is saved in localStorage and shown on the map.
+
+SOUND
+
+Use the Web Audio API to synthesize all sounds without files:
+
+    tone(freq, dur, type, vol, when) — a basic oscillator with an envelope.
+
+    noiseBurst(dur, vol) — white noise for applause.
+
+    Ready-made presets: click, flip, correct, wrong, match, fanfare, tick, cheer.
+
+    Mute button in the header, state saved in localStorage.
+
+    AudioContext is initialized only after the user's first click.
+
+CODE: QUALITY REQUIREMENTS
+
+    One IIFE (function(){ "use strict"; ... })(); — no global variables.
+
+    Utilities at the top: $, $$, clamp, shuffle, refreshIcons, toast, popFloat, spawnConfetti.
+
+    Clean separation: data (arrays of levels/questions) → render → handlers → cleanup.
+
+    Function setCleanup(fn) — each mini-game must remove its timers and listeners on exit (otherwise leaks on restart).
+
+    Game data moved to constants at the beginning of the block: the SCENES array with fields id, num, title, char, color, slide, tag, obj, tip, flavor; separate constants for each question set.
+
+    Comments in English via /* ===== section ===== */. No Russian comments in the code.
+
+    No innerHTML += in a loop — build the string and insert it once.
+
+    Handlers via delegation where there are many elements (word bank click, card click).
+
+    Progress saving — localStorage, key with a version, try/catch in case of private mode.
+
+    End of code: updateHUD(); renderMap(); renderSound(); refreshIcons();
+
+WHAT I WILL GIVE YOU IN THE TASK
+
+    The theme and source (TV series, episode, article, textbook).
+
+    A list of 10–20 target words/expressions with definitions.
+
+    Characters or roles for voicing the lines.
+
+    The number of levels and desired mechanics (or "your choice").
+
+    Image URLs (if any) — otherwise make SVG placeholders with initials and a gradient.
+
+    A description of the game's aesthetic (see the field below).
+
+INPUT FIELD: GAME AESTHETIC
+
+    Fill in this block before setting the task. The more specific — the more accurately the AI will hit the style.
+
+    Overall mood and genre: (e.g., "retro VHS tape of the 90s", "8-bit pixel art", "neon cyberpunk", "paper scrapbook", "detective board with threads", "cassette player with stickers")
+
+    Palette: (list 4–6 HEX colors and their roles: background, ink, accent 1, accent 2, success, error; e.g., #FAF3E4 paper, #2E2438 ink, #D9433B red, #3E8E8C teal, #F2B33D yellow)
+
+    Background and textures: (e.g., "film grain via SVG feTurbulence over everything", "notebook grid", "concrete", "cosmic dust", "creased paper")
+
+    Typography: (display font for headings, monospace for numbers/code, handwritten for lines, main for text; e.g., Righteous / Courier Prime / Caveat / Nunito Sans)
+
+    Shapes and delivery: (e.g., "cards with 18px rounding and a hard 0 6px 0 shadow", "sharp corners, 2px outline", "4px pixel frames")
+
+    Animations and micro-interactions: (e.g., "shake on error, stars pop out with a twist, buttons sink 2px when pressed", "smooth fade-in, confetti particles, blinking cursor")
+
+    Icons: (Lucide / emoji / custom SVG / pixel)
+
+    Special effects: (e.g., "CRT scanlines", "glitch on transition", "ink blots", "neon glow", "haze")
+
+    References (optional): (something like "like Duolingo, but darker", "like arcades on Commodore 64", "like a Pinterest board with collages")
+
+    What must definitely NOT be present: (e.g., "no bright gradients", "no emoji", "no rounding bigger than 4px")
+
+WHAT YOU MUST RETURN
+
+One full HTML file without abbreviations, with working code, ready to open in a browser. Comments in the code — English only. At the end — a short list of things that can be improved (ideas for a second episode, additional mechanics, localization).
+
+AESTHETIC FIELD — FILL THIS BEFORE CREATING THE GAME:
+{{AESTHETIC_BLOCK}}
+
+FINAL RESULT:
+Generate the complete HTML document with embedded styles and scripts. The game is a fully self-contained, atmospheric, narrative learning experience built on the provided slides, using the exact URL path [PATH_FROM_SCREENSHOT] for all images and PDFs.`
+          },
+          {
+            id: 'g2',
+            label: 'g2 (Interactive Story Game)',
+            shortLabel: 'g2 (Interactive Story Game)',
+            template: `Create a complete, self-contained interactive educational game as a single HTML document, based on the following source materials:
+- PDF presentation (slides) — visual content and vocabulary source
+- Event transcript (if available) — optional text file
+- Screenshot with available lesson files — provided as an image
+
+The game must be an atmospheric, narrative-driven learning experience — a playable story, NOT a static article or a plain narrative text.
+
+**CRITICAL OUTPUT FORMAT:**
+- The output MUST be a complete, self-contained HTML document.
+- ALL CSS inside <style> in <head>, ALL JavaScript inside <script> at the end of <body>. No external files except Google Fonts and an optional icon CDN (e.g. Lucide).
+- The game must work when opened directly in a browser as a single file.
+- The HTML page MUST display the game with proper formatting (headings, paragraphs, bold, italics, emojis).
+- The HTML page MUST include images of the slides used as visual assets inside the game.
+- Image URLs must be built using the same path as the PDF files from the screenshot:
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/slide-001.jpg
+  https://item1000-collab.github.io/ai/[PATH_FROM_SCREENSHOT]/slide-002.jpg
+  etc.
+- The PATH_FROM_SCREENSHOT is the part of the URL visible in the screenshot after /ai/.
+- All slide images (slide-001.jpg, slide-002.jpg, etc.) are expected to be available at the same resource location as the PDF files.
+- Do NOT use placeholder images — use the actual constructed URLs.
+
+**CRITICAL REQUIREMENT — NO SLIDE NUMBERS IN THE VISIBLE GAME TEXT:**
+- The visible text of the game (titles, dialogue, prompts, questions, hints, tooltips) MUST NOT contain any slide numbers, references like [SLIDE X], "Slide 5", "on slide 10", or any similar explicit mention of slide numbering.
+- The game must read as a natural, flowing narrative experience without any textual references to slides.
+- The visual placement of slide images inside the game screens will indicate which content corresponds to which slide.
+- All content from the slides must be seamlessly integrated into the game without mentioning the slides themselves.
+
+**STRICT RULE FOR IMAGE PLACEMENT:**
+- To place a slide image in the HTML, use an HTML comment like <!-- SLIDE-IMAGE: slide-001.jpg --> directly above or below the element that uses the content of that slide.
+- The final HTML output must NOT contain the literal text [SLIDE X] or slide-001 anywhere in the visible game text — it may only appear in HTML comments or in the src attributes of <img> tags.
+
+**AESTHETIC FIELD — FILL THIS BEFORE BUILDING THE GAME:**
+{{AESTHETIC_BLOCK}}
+
+REQUIREMENTS FOR THE GAME:
+
+1. LANGUAGE:
+- The game must be written in English.
+- Use a conversational but polished style — inspiring, motivating, atmospheric.
+- All narrative sentences must be DECLARATIVE (no questions of any kind). Use statements like: "It is important to understand that...", "Pay attention to...", "It should be noted that...", "Notice that...", "Interestingly...", "The key point is...", "Remember that...".
+- Questions are allowed ONLY inside game mechanics (quiz prompts, true/false statements, fill-in-the-blank tasks).
+
+2. GAME STRUCTURE — assemble the game from these layers:
+
+2.1. Shell
+- Preloader with a "PLAY ▶" effect and an upward exit animation after loading.
+- Fixed header console: brand logo, progress indicator (dots/cells), score, sound toggle, map button.
+- Three screens: intro → level map → scene → finale. Switching via an .active class with an appearance animation.
+- Modal windows with a briefing before each level and results after it.
+- Toast notifications and confetti for rewards.
+
+2.2. Level Map
+- Grid of "reel" / "chapter" cards with a preview, number, title, character, stars, and best score.
+- FREE ORDER: all levels are unlocked from the very start. The player can enter ANY level in ANY order, at any time. There is no sequential unlocking and no lock icons.
+- Each level card is always clickable: a completed level shows its earned stars and best score and can be replayed freely; an uncompleted level simply shows no stars yet.
+- A "back to map" button is always available inside a level, so the player can leave at any moment and pick a different level without losing progress.
+- Progress is stored per level in localStorage, so finishing levels out of order works correctly.
+- The Final button appears only when ALL levels have been completed (in any order).
+
+2.3. Mini-Games (diverse mechanics — at least 5 different types):
+Build the levels around the actual content of the slides. Use a mix of mechanics, for example:
+- Fill in the blanks — click a blank → click a word from the word bank. Wrong words "bounce back" with a shake animation; each return costs points.
+- True/False reaction (or REAL / NOT REAL) — a card with a statement, a 6-second timer bar, two buttons, arrow-key support. Multiplier for a streak of correct answers.
+- Multiple choice — a question with three options, one attempt, character reaction after the answer.
+- Match the Meaning — two columns: English words on the left, their meanings on the right. Click a word, then click its meaning. Correct pairs lock green and cannot be reused; wrong picks shake and clear the selection. Includes a live counter of pairs found (X/6) and attempts, plus a short on-screen example (WORD · boasts → MEANING · proudly has) to explain the mechanic in one glance. This replaces any card-flip / memory-pair mechanic.
+- Timed bonus round — 750 seconds, questions from all previous topics, streak × multiplier, red flashing timer near the end.
+
+2.4. Finale
+- Screen with the total score, total stars, a results table by level, a rank (rank depends on the total score), and a "rewind the tape" button (progress reset).
+
+3. USING SOURCE MATERIALS:
+- If a slide contains English text, quote it directly inside the game (as dialogue, task text, or a card description) and provide commentary.
+- If AI was used in the lesson (e.g. ChatGPT, or any AI assistant), quote the full AI-generated text and provide explanations and commentary.
+- The narrative thread of the game must be built from the actual content of the slides: characters, themes, key ideas.
+
+4. VOCABULARY INTEGRATION (as a game mechanic):
+- Rely on the vocabulary slides from the PDF.
+- Present vocabulary in plain text format (NO TABLES).
+- For each vocabulary item, provide: the English phrase/word, literal meaning (if applicable), figurative/contextual meaning, an example from the material, and how the material explains this vocabulary.
+- Weave the vocabulary into the game mechanics (blanks, matching, multiple choice) — do NOT dump it as a separate dictionary block.
+
+5. METAPHORS, SYMBOLS, AND KEY IDEAS:
+- Identify 3–4 key elements from the material (symbols, metaphors, core theses).
+- Explain their significance in English.
+- Quote the slide's interpretation.
+- Use these as level themes, character motivations, or finale payoffs.
+
+6. SCORING AND STARS SYSTEM:
+- Base points for each correct answer, growing with streak / speed.
+- Penalty for a mistake or a retry.
+- 1–3 stars per level: no mistakes — 3, one or two mistakes — 2, more — 1.
+- Best result of each level is saved in localStorage and shown on the map.
+
+7. SOUND:
+Use the Web Audio API to synthesize all sounds without files:
+- tone(freq, dur, type, vol, when) — a basic oscillator with an envelope.
+- noiseBurst(dur, vol) — white noise for applause.
+- Ready-made presets: click, flip, correct, wrong, match, fanfare, tick, cheer.
+- Mute button in the header, state saved in localStorage.
+- AudioContext is initialized only after the user's first click.
+
+8. CODE QUALITY REQUIREMENTS:
+- One IIFE (function(){ "use strict"; ... })(); — no global variables.
+- Utilities at the top: $, $$, clamp, shuffle, refreshIcons, toast, popFloat, spawnConfetti.
+- Clean separation: data (arrays of levels/questions) → render → handlers → cleanup.
+- Function setCleanup(fn) — each mini-game must remove its timers and listeners on exit (to avoid leaks on restart).
+- Game data moved to constants at the beginning of the block: the SCENES array with fields id, num, title, char, color, slide, tag, obj, tip, flavor; separate constants for each question set.
+- Comments in English via /* ===== section ===== */. No Russian comments in the code.
+- No innerHTML += in a loop — build the string and insert it once.
+- Handlers via delegation where there are many elements (word bank click, card click).
+- Progress saving — localStorage, key with a version, try/catch in case of private mode.
+- End of code: updateHUD(); renderMap(); renderSound(); refreshIcons();
+
+9. FORMATTING OF VISIBLE TEXT:
+- Use subheadings (## equivalents via HTML headings) to separate sections/screens.
+- Use **bold** for key phrases.
+- Use *italics* for quotes.
+- Use emojis (📚, 💡, 📌, ⚠️) for visual variety.
+- For quotes: quote the original in English, provide explanations in English, mark teacher's comments with 🎓 and put them in *italics*.
+- Do NOT use tables in the visible text.
+
+10. CRITICAL REMINDERS:
+- Verify that all content in the game corresponds to the PDF slides.
+- All text on the page MUST be in English only — no Russian, no other languages.
+- The game must be a complete, self-contained interactive experience ready to open and play.
+- The HTML page must include all used slide images using the constructed URLs.
+- ONLY the PDF files from the screenshot should be referenced as downloads (no TXT or HTML files should be linked).
+- The final HTML must contain NO visible text like slide-001 or [SLIDE 1] — only the <img src="..."> tags and HTML comments for positioning.
+
+**PATH FOR IMAGES AND PDFs:**
+Extract the path from the screenshot (the part after /ai/). For example, if the screenshot shows "engoo/20260818-friends-203/", use:
+- PDF base URL: https://item1000-collab.github.io/ai/engoo/20260818-friends-203/
+- Image base URL: https://item1000-collab.github.io/ai/engoo/20260818-friends-203/
+- Image filenames: slide-001.jpg, slide-002.jpg, slide-003.jpg, etc. (with leading zeros).
+
+**STRICT RULE FOR FILE PATHS AND URLS:**
+- The final HTML MUST contain EXACTLY the file names and paths as they appear in the provided screenshot.
+- Do NOT guess, alter, or "correct" any file names.
+- Do NOT use any other file names (such as .txt, .html, or any other file not explicitly listed in the screenshot) in the download links.
+- The PDF download links MUST be limited to ONLY the files that are explicitly present in the screenshot as PDF files.
+- If the screenshot shows a file with a specific name, copy it VERBATIM (including capital letters, numbers, and extensions).
+- All links in the HTML must point to the SAME base URL path as shown in the screenshot for the PDFs.
+
+Generate the complete HTML document with embedded styles and scripts. The game is a fully self-contained, atmospheric, narrative learning experience built on the provided slides, using the exact URL path [PATH_FROM_SCREENSHOT] for all images and PDFs.
+
+At the end of the output, add a short list of ideas for a second episode: additional mechanics, localization, or content extensions.`
+          }
+        ]
+      }
+    ],
+    inputs: [
+      {
+        id: 'aesthetic',
+        label: '🎨 Aesthetic — describe the visual mood, style, and atmosphere',
+        placeholder: 'e.g. "retro VHS 90s, neon cyberpunk, paper scrapbook, detective board with threads, pixel art 8-bit, warm paper textures, muted tones"',
+        token: '{{AESTHETIC_BLOCK}}',
+        fallback: 'Atmospheric, warm, engaging, with a clear visual narrative and immersive feel.',
+        optional: false,
+        inline: false,
+        type: 'textarea',
+        className: 'large-aesthetic'
+      }
+    ]
+  }
+};
+
+// ============================================================
+// 2. STATE
+// ============================================================
+const STORAGE_KEY = 'promptEngineState';
+const state = {
+  presetId: '',   // selected preset
+  variants: {},   // groupId -> optionId
+  inputs: {},     // inputId -> value
+  customText: ''
+};
+
+// ============================================================
+// 3. DOM
+// ============================================================
+const $ = id => document.getElementById(id);
+const customSelect    = $('customSelect');
+const selectTrigger   = $('selectTrigger');
+const selectDropdown  = $('selectDropdown');
+const selectedText    = selectTrigger.querySelector('.selected-text');
+const dynamicControls = $('dynamicControls');
+const customTextGroup = $('customTextGroup');
+const customTextInput = $('customText');
+const copyBtn         = $('copyBtn');
+const promptDisplay   = $('promptDisplay');
+const statusMessage   = $('statusMessage');
+
+// ============================================================
+// 4. HELPERS
+// ============================================================
+function getPreset() { return PROMPTS[state.presetId] || null; }
+
+function getVariantOption(group) {
+  const id = state.variants[group.id] || group.default;
+  return group.options.find(o => o.id === id) || group.options[0];
 }
 
-/* ===== utils ===== */
-function $(s, r) { return (r || document).querySelector(s); }
-function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
-function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-function shuffle(a) {
-  var x = a.slice(), i, j, t;
-  for (i = x.length - 1; i > 0; i--) { j = Math.floor(Math.random() * (i + 1)); t = x[i]; x[i] = x[j]; x[j] = t; }
-  return x;
+function setStatus(msg, type = 'info') {
+  statusMessage.textContent = msg;
+  statusMessage.className = 'status status--' + type;
 }
-function pad(n) { return (n < 10 ? "0" : "") + n; }
-function starsHtml(n) { var o = "", i; for (i = 1; i <= 3; i++) o += '<span class="st' + (i <= n ? " on" : "") + '">★</span>'; return o; }
-function starsBy(m) { return m === 0 ? 3 : (m <= 2 ? 2 : 1); }
-function refreshIcons() { /* emoji icon set; hook reserved for icon libraries */ }
 
-/* ===== save / load ===== */
-var KEY = "wha_arcade_v2";
-var save = { muted: false, levels: {} };
-function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
-function loadSave() {
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function loadState() {
   try {
-    var raw = localStorage.getItem(KEY);
-    if (raw) {
-      var p = JSON.parse(raw);
-      if (p && typeof p === "object") {
-        save.muted = !!p.muted;
-        save.levels = (p.levels && typeof p.levels === "object") ? p.levels : {};
-      }
-    }
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (s && typeof s === 'object') Object.assign(state, s);
   } catch (e) {}
-}
-function lvl(id) { return save.levels[id] || { stars: 0, best: 0, plays: 0 }; }
+  if (!state.variants || typeof state.variants !== 'object') state.variants = {};
+  if (!state.inputs  || typeof state.inputs  !== 'object') state.inputs  = {};
+  if (typeof state.customText !== 'string') state.customText = '';
+  if (!PROMPTS[state.presetId]) state.presetId = '';
 
-/* ===== game data ===== */
-var SLIDES = "https://item1000-collab.github.io/ai/engoo/20260915-malawi/";
-var PDF = SLIDES + "the-warm-heart-of-africa.pdf";
-
-var SCENES = [
- { id:"l1", num:1, title:"Word Caravan", ch:"Zola the Guide", ce:"🧭", color:"#d96f3f", slide:SLIDES+"slide-002.jpg", tag:"Fill the Blanks",
-   obj:"Load the caravan with 8 travel-writing words from the deck.",
-   tip:"Click a blank, then tap a word from the bank. Wrong words bounce back and cost points.",
-   fl:"\u201CEvery expedition begins with the right words packed.\u201D \u2014 Zola" },
- { id:"l2", num:2, title:"Myth or Malawi", ch:"Professor Finch", ce:"🔬", color:"#3fa7ad", slide:SLIDES+"slide-003.jpg", tag:"Real / Delusion",
-   obj:"Separate 10 expedition facts from tall tales before the clock eats them.",
-   tip:"60 seconds per card. Arrow keys: Left = Real, Right = Delusion.",
-   fl:"\u201CFacts are stubborn, but myths are fast.\u201D \u2014 Professor Finch" },
- { id:"l3", num:3, title:"Summit Choice", ch:"Ranger Kande", ce:"🏔️", color:"#e3b34e", slide:SLIDES+"slide-006.jpg", tag:"Multiple Choice",
-   obj:"Answer 5 questions on the climb to Sapitwa Peak.",
-   tip:"One attempt per question — no second rope.",
-   fl:"\u201CThe mountain rewards those who read the map twice.\u201D \u2014 Ranger Kande" },
- { id:"l4", num:4, title:"Cichlid Match", ch:"Professor Finch", ce:"🐠", color:"#0e6372", slide:SLIDES+"slide-005.jpg", tag:"Match the Meaning",
-   obj:"Connect 6 English words with their meanings.",
-   tip:"Click a word on the left, then its meaning on the right.",
-   fl:"\u201CA thousand species, one good match.\u201D \u2014 Professor Finch" },
- { id:"l5", num:5, title:"Sunset Sprint", ch:"Zola the Guide", ce:"🌅", color:"#e06552", slide:SLIDES+"slide-011.jpg", tag:"Timed Bonus",
-   obj:"Answer as many questions as you can in 750 seconds.",
-   tip:"Questions come from every topic. Guard your streak multiplier.",
-   fl:"\u201CThe sun waits for no one. Run, traveler!\u201D \u2014 Zola" }
-];
-
-var FILL = [
- { b:"While Malawi ", a:" lush mountains and shimmering lakes, its defining characteristic is its people.", w:"boasts" },
- { b:"\u201CThe Warm Heart of Africa\u201D is a ", a:" that became the official identifier of the nation.", w:"moniker" },
- { b:"Community serves as the ", a:" of Malawian culture.", w:"bedrock" },
- { b:"\u2026a deeply ", a:" tradition of neighbors helping neighbors.", w:"ingrained" },
- { b:"The park was established to preserve a ", a:" sample of the lake\u2019s biome.", w:"pristine" },
- { b:"All but 5 of the 400+ Mbuna species are completely ", a:" to Lake Malawi.", w:"endemic" },
- { b:"The park was ", a:" by tens of thousands of wire snares.", w:"plagued" },
- { b:"\u2026creating an ", a:" sea of vibrant green over the hills.", w:"undulating" }
-];
-var FILL_DECOYS = ["crucible", "haven", "resurgence"];
-
-var TF = [
- { s:"The nickname \u201CThe Warm Heart of Africa\u201D was coined in 1973.", a:true, w:"Frank Johnston, an Irish photographer, coined it in 1973." },
- { s:"Lake Malawi holds the highest number of fish species of any lake on Earth.", a:true, w:"~1,000 species — the world record for lakes." },
- { s:"The Mulanje Massif contains the lowest point in Malawi.", a:false, w:"It hosts Sapitwa Peak — the HIGHEST point, 3,000 m." },
- { s:"Lake Malawi National Park was the world\u2019s first freshwater national park.", a:true, w:"A UNESCO World Heritage Site since 1984." },
- { s:"99% of Mbuna cichlids also live in other African lakes.", a:false, w:"All but 5 of 400+ species live only in Lake Malawi." },
- { s:"Sapitwa Peak rises to 3,000 meters above sea level.", a:true, w:"3,000 m (10,000 ft) — the summit of Mulanje." },
- { s:"Tea has been cultivated in Thyolo since 1908.", a:true, w:"Over a century of cultivation in the south." },
- { s:"The rock art at Chongoni was painted in the 1990s.", a:false, w:"It stretches back millennia, to the late Stone Age." },
- { s:"Liwonde National Park covers less than 100 km².", a:false, w:"It is a thriving 584 km² sanctuary." },
- { s:"About 25,000 people live in five enclave villages by the park.", a:true, w:"They subsist on fishing and farming." },
- { s:"Zomba Plateau lies in the north of Malawi.", a:false, w:"Zomba is in the south; Nyika is the north." },
- { s:"The Nyika Plateau feels almost European.", a:true, w:"Cool and misty whaleback grassland at 2,000 m." }
-];
-
-var MC = [
- { q:"Who coined the moniker \u201CThe Warm Heart of Africa\u201D?", o:["A UNESCO committee","Frank Johnston, an Irish photographer","A Malawian head of state"], a:1, w:"Coined in 1973 by Frank Johnston." },
- { q:"Roughly how many fish species live in Lake Malawi?", o:["~100","~400","~1,000"], a:2, w:"~1,000 — the highest of any lake in the world." },
- { q:"What share of all known cichlid species lives in the lake?", o:["30%","60%","10%"], a:0, w:"30% of all known cichlid species globally." },
- { q:"Sapitwa Peak is\u2026", o:["the highest peak in Malawi and central Africa","a fishing village","a northern plateau"], a:0, w:"3,000 m — highest in Malawi and central Africa." },
- { q:"Which \u201CBig 5\u201D now roam Liwonde?", o:["Elephant, buffalo, lion, leopard, rhino","Cheetah, zebra, giraffe, hippo, crocodile","Zebra, warthog, monkey, baboon, antelope"], a:0, w:"Plus cheetahs and sable antelopes." },
- { q:"The Chongoni Rock Art records\u2026", o:["the transition from foraging to farming","the first cities","the invention of tea"], a:0, w:"A permanent record of that profound transition." },
- { q:"Tea in Thyolo has been cultivated since\u2026", o:["1858","1908","1964"], a:1, w:"Since 1908 — over a century." },
- { q:"Lake Malawi NP became a UNESCO site in\u2026", o:["1973","1984","2004"], a:1, w:"Designated in 1984." }
-];
-
-var PAIRS = [
- { w:"boasts", d:"proudly has" },
- { w:"moniker", d:"a telling nickname" },
- { w:"bedrock", d:"the foundation" },
- { w:"pristine", d:"untouched, unspoiled" },
- { w:"endemic", d:"found only here" },
- { w:"haven", d:"a safe refuge" }
-];
-
-var BONUS = [
- { t:"tf", s:"The Great Rift Valley harbors Lake Malawi on the eastern border.", a:1 },
- { t:"tf", s:"The Cape Maclear Peninsula belongs to Zambia.", a:0 },
- { t:"mc", q:"The Mbuna are\u2026", o:["rock-dwelling cichlids","lake-faring fishermen","ancient rock painters"], a:0 },
- { t:"tf", s:"Nyika Plateau sits at 2,000 meters.", a:1 },
- { t:"mc", q:"Zomba Plateau is covered in\u2026", o:["cedar, pine and cypress","tea and coffee","salt marshes"], a:0 },
- { t:"tf", s:"Liwonde\u2019s turnaround began with massive restoration efforts.", a:1 },
- { t:"mc", q:"\u201CPlagued by\u201D means\u2026", o:["persistently troubled","carefully decorated","lightly seasoned"], a:0 },
- { t:"tf", s:"The deck calls the lake \u201Can evolutionary crucible\u201D.", a:1 },
- { t:"mc", q:"\u201CResurgence\u201D means\u2026", o:["a recovery after decline","a sudden downfall","a quiet goodbye"], a:0 },
- { t:"tf", s:"Sapitwa Peak is lower than the Phalombe Plains.", a:0 },
- { t:"mc", q:"\u201CEndemic\u201D species are found\u2026", o:["nowhere else in the wild","on every continent","only in captivity"], a:0 },
- { t:"tf", s:"Malawi\u2019s defining characteristic is its people.", a:1 },
- { t:"mc", q:"\u201CUndulating\u201D describes\u2026", o:["gentle wavelike curves","sharp rocky cliffs","total stillness"], a:0 },
- { t:"tf", s:"The deck ends: \u201CIts very people make the journey worthwhile.\u201D", a:1 },
- { t:"mc", q:"\u201CHaven\u201D means\u2026", o:["a safe refuge","a loud market","a deep canyon"], a:0 }
-];
-
-var PRAISE = ["\u201CSharp eyes, traveler!\u201D","\u201CThe mountain nods in approval.\u201D","\u201CExactly right — onward!\u201D","\u201CYou read the map perfectly.\u201D"];
-var OOPS = ["\u201CEven guides miss a trail sometimes.\u201D","\u201CThe mist got this one. Onward!\u201D","\u201CNoted in the journal — next one is yours.\u201D"];
-
-/* ===== audio ===== */
-var AC = null;
-function ensureAudio() {
-  if (!AC) {
-    var C = window.AudioContext || window.webkitAudioContext;
-    if (C) { try { AC = new C(); } catch (e) { AC = null; } }
-  }
-  if (AC && AC.state === "suspended") { try { AC.resume(); } catch (e) {} }
-}
-function tone(f, d, ty, v, at) {
-  if (!AC || save.muted) return;
-  try {
-    var t = (at || 0) + AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
-    o.type = ty || "sine"; o.frequency.setValueAtTime(f, t);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(v || 0.15, t + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + 0.06);
-  } catch (e) {}
-}
-function noise(d, v) {
-  if (!AC || save.muted) return;
-  try {
-    var n = Math.max(1, Math.floor(AC.sampleRate * d)), buf = AC.createBuffer(1, n, AC.sampleRate), dt = buf.getChannelData(0), i;
-    for (i = 0; i < n; i++) dt[i] = (Math.random() * 2 - 1) * (1 - i / n);
-    var s = AC.createBufferSource(), g = AC.createGain(), f = AC.createBiquadFilter();
-    f.type = "bandpass"; f.frequency.value = 2400;
-    s.buffer = buf; g.gain.value = v || 0.15;
-    s.connect(f); f.connect(g); g.connect(AC.destination); s.start();
-  } catch (e) {}
-}
-function sClick()  { tone(660, 0.06, "square", 0.07); }
-function sFlip()   { tone(440, 0.07, "triangle", 0.11); tone(660, 0.08, "triangle", 0.09, 0.06); }
-function sGood()   { tone(523, 0.12, "sine", 0.16); tone(659, 0.12, "sine", 0.16, 0.09); tone(784, 0.18, "sine", 0.16, 0.18); }
-function sBad()    { tone(196, 0.22, "sawtooth", 0.12); tone(147, 0.28, "sawtooth", 0.1, 0.1); }
-function sMatch()  { tone(659, 0.1, "triangle", 0.14); tone(880, 0.1, "triangle", 0.14, 0.08); tone(1175, 0.16, "triangle", 0.12, 0.16); }
-function sFanfare(){ var fs = [523, 659, 784, 1047], i; for (i = 0; i < fs.length; i++) tone(fs[i], 0.22, "sine", 0.16, i * 0.13); noise(0.5, 0.1); }
-function sTick()   { tone(880, 0.04, "square", 0.05); }
-function sCheer()  { noise(0.8, 0.16); var fs = [659, 784, 1047], i; for (i = 0; i < fs.length; i++) tone(fs[i], 0.2, "sine", 0.13, i * 0.12); }
-
-/* ===== fx ===== */
-var RM = false;
-try { RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
-function toast(msg, ty) {
-  var box = $("#toasts"), t = document.createElement("div");
-  t.className = "toast" + (ty ? " " + ty : ""); t.textContent = msg;
-  box.appendChild(t);
-  setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2600);
-}
-function pop(x, y, txt, good) {
-  if (RM) return;
-  var el = document.createElement("span");
-  el.className = "pop " + (good ? "good" : "bad"); el.textContent = txt;
-  el.style.left = clamp(x - 20, 4, innerWidth - 110) + "px";
-  el.style.top = clamp(y - 16, 4, innerHeight - 60) + "px";
-  $("#fx").appendChild(el);
-  setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 900);
-}
-function popC(txt, good) {
-  var r = $("#game-root").getBoundingClientRect();
-  pop(r.left + r.width / 2, r.top + r.height / 3, txt, good);
-}
-var CONF = ["#d96f3f", "#e3b34e", "#3fa7ad", "#7fbb8c", "#e06552", "#f7ecd9"];
-function confetti(cx, cy, n) {
-  if (RM) return;
-  var i;
-  for (i = 0; i < (n || 26); i++) {
-    (function () {
-      var p = document.createElement("span");
-      p.className = "conf"; p.style.background = CONF[i % CONF.length];
-      p.style.left = cx + "px"; p.style.top = cy + "px";
-      $("#fx").appendChild(p);
-      var dx = (Math.random() - 0.5) * 340, dy = 160 + Math.random() * 260, rot = (Math.random() - 0.5) * 720;
-      setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 1500);
-      try {
-        p.animate(
-          [{ transform: "translate(0,0) rotate(0)", opacity: 1 }, { transform: "translate(" + dx + "px," + dy + "px) rotate(" + rot + "deg)", opacity: 0 }],
-          { duration: 1100, easing: "cubic-bezier(.2,.6,.3,1)" });
-      } catch (e) {}
-    })();
-  }
-}
-
-/* ===== timers / cleanup ===== */
-var timers = [], cleanupFn = null, keyHandler = null;
-function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
-function every(fn, ms) { var t = setInterval(fn, ms); timers.push(t); return t; }
-function setCleanup(fn) { cleanupFn = fn; }
-function runCleanup() {
-  var i;
-  for (i = 0; i < timers.length; i++) { clearTimeout(timers[i]); clearInterval(timers[i]); }
-  timers = [];
-  if (cleanupFn) { try { cleanupFn(); } catch (e) {} cleanupFn = null; }
-  keyHandler = null;
-}
-
-/* ===== shell state ===== */
-var gameRoot, cur = null, hud = { score: 0, streak: 0, miss: 0, extra: "" }, curScreen = "intro";
-function showScreen(n) {
-  if (curScreen === "scene" && n !== "scene") runCleanup();
-  $$(".screen").forEach(function (s) { s.classList.remove("active"); });
-  var t = $("#scr-" + n); if (t) t.classList.add("active");
-  curScreen = n; window.scrollTo(0, 0);
-}
-function hudScene() {
-  $("#hScore").textContent = hud.score;
-  $("#hStreak").textContent = hud.streak;
-  $("#hMiss").textContent = hud.miss;
-  var w = $("#hXw");
-  if (hud.extra) { w.hidden = false; $("#hX").textContent = hud.extra; } else { w.hidden = true; }
-}
-function updateHUD() {
-  var total = 0, i;
-  for (i = 0; i < SCENES.length; i++) total += lvl(SCENES[i].id).best;
-  $("#hudScore").textContent = "⭐ " + total;
-  var c = "";
-  SCENES.forEach(function (s) {
-    var v = lvl(s.id);
-    c += '<button class="cell' + (v.stars > 0 ? " done" : "") + '" style="--c:' + s.color + '" data-cell="' + s.id + '" title="Reel ' + s.num + " — " + v.stars + '★">' + s.num + "</button>";
-  });
-  $("#cells").innerHTML = c;
-}
-function allDone() { return SCENES.every(function (s) { return lvl(s.id).stars > 0; }); }
-function renderSound() {
-  var b = $("#btnSound");
-  b.textContent = save.muted ? "🔇" : "🔊";
-  b.setAttribute("aria-label", save.muted ? "Unmute sound" : "Mute sound");
-}
-
-/* ===== slide images ===== */
-function slideImg(src) {
-  var img = document.createElement("img");
-  img.loading = "lazy"; img.alt = "";
-  img.addEventListener("error", function () {
-    img.style.display = "none";
-    if (!slideImg.warned) { slideImg.warned = true; toast("🖼 Slides offline — sunset placeholders shown."); }
-  });
-  img.src = src;
-  return img;
-}
-
-/* ===== map ===== */
-function renderMap() {
-  var h = "";
-  SCENES.forEach(function (s) {
-    var v = lvl(s.id);
-    h += '<article class="lvl" data-id="' + s.id + '" role="button" tabindex="0" style="--c:' + s.color + '" aria-label="Reel ' + s.num + ": " + s.title + ", " + v.stars + ' of 3 stars. Enter to play.">'
-      + '<div class="thumb"><span class="thPh" aria-hidden="true"></span><span class="lnum">REEL ' + pad(s.num) + '</span><span class="ltag">' + s.tag + "</span></div>"
-      + '<div class="lbody"><h3>' + s.title + '</h3><div class="lchar"><span class="av">' + s.ce + "</span>" + s.ch + "</div>"
-      + '<div class="lmeta"><span class="stars">' + starsHtml(v.stars) + '</span><span class="best">BEST ' + (v.best || "—") + "</span></div></div></article>";
-  });
-  var host = $("#cards");
-  host.innerHTML = h;
-  $$(".lvl", host).forEach(function (card) {
-    var s = null, i;
-    for (i = 0; i < SCENES.length; i++) {
-      if (SCENES[i].id === card.getAttribute("data-id")) { s = SCENES[i]; }
-    }
-    if (!s) { return; }
-    $(".thPh", card).textContent = s.ce;
-    $(".thumb", card).appendChild(slideImg(s.slide));
-  });
-  $("#fslot").innerHTML = allDone()
-    ? '<button class="btn mega" id="btnFinale">🎬 ROLL THE FINALE</button>'
-    : '<p class="fhint">⏳ Finish all five reels — any order counts — to unlock the Finale.</p>';
-}
-
-/* ===== modal ===== */
-var ov = $("#ov"), modal = $("#modal"), lastFocus = null;
-function openModal(h, focusSel) {
-  lastFocus = document.activeElement;
-  modal.innerHTML = h;
-  ov.classList.add("open");
-  var f = focusSel ? $(focusSel, modal) : $("button", modal);
-  if (f) f.focus();
-}
-function closeModal() {
-  ov.classList.remove("open"); modal.innerHTML = "";
-  if (lastFocus && lastFocus.focus) lastFocus.focus();
-  lastFocus = null;
-}
-var pendingId = null;
-function openBriefing(id) {
-  pendingId = id;
-  var s = null, i;
-  for (i = 0; i < SCENES.length; i++) if (SCENES[i].id === id) s = SCENES[i];
-  if (!s) return;
-  var v = lvl(id), h = "";
-  h += '<p class="mk">Reel ' + pad(s.num) + " · " + s.tag + (v.plays ? " · replay " + v.plays : "") + "</p>";
-  h += '<h3 class="mt">' + s.title + "</h3>";
-  h += '<div class="mprev"><span class="ph">' + s.ce + '</span></div>';
-  h += '<div class="lchar" style="color:var(--ink)"><span class="av" style="font-size:1.3rem;width:40px;height:40px">' + s.ce + "</span>" + s.ch + "</div>";
-  h += '<div class="mrow"><span>🎯</span><span><b>Objective:</b> ' + s.obj + "</span></div>";
-  h += '<div class="mrow"><span>💡</span><span>' + s.tip + "</span></div>";
-  h += '<p class="mfl">' + s.fl + "</p>";
-  if (v.best) h += '<p style="font-family:var(--mono);font-size:.78rem;color:var(--ink2)">Best: ' + v.best + " · " + starsHtml(v.stars) + "</p>";
-  h += '<div class="mbtns"><button class="btn" data-act="start">▶ START REEL</button><button class="btn p2" data-act="tomap">Back to map</button></div>';
-  openModal(h, '[data-act="start"]');
-  var pv = $(".mprev", modal);
-  if (pv) pv.appendChild(slideImg(s.slide));
-}
-function openResults(s, res, isNew) {
-  var h = "";
-  h += '<p class="mk">Reel ' + pad(s.num) + " · " + s.title + "</p>";
-  h += '<h3 class="mt">' + (res.stars === 3 ? "Flawless run!" : "Reel complete!") + "</h3>";
-  h += '<div class="rstars" aria-label="' + res.stars + ' of 3 stars"><span class="st">★</span><span class="st">★</span><span class="st">★</span></div>';
-  h += '<div class="rsc">⭐ ' + res.score + "</div>";
-  h += '<p class="rbs">Best: ' + Math.max(res.score, lvl(s.id).best) + (isNew ? '<span class="nb">NEW BEST!</span>' : "") + "</p>";
-  h += '<div class="mbtns" style="justify-content:center"><button class="btn p2" data-act="replay">↻ Replay</button><button class="btn" data-act="tomap">🗺️ Map</button>';
-  if (allDone()) h += '<button class="btn gold" data-act="gofinale">🎬 Finale</button>';
-  h += "</div>";
-  openModal(h, '[data-act="tomap"]');
-  $$(".rstars .st", modal).forEach(function (el, i) { if (i < res.stars) el.classList.add("on"); });
-  if (res.stars === 3) {
-    var r = modal.getBoundingClientRect();
-    confetti(r.left + r.width / 2, r.top + 80, 34); sFanfare();
-  } else if (res.stars === 2) sCheer();
-}
-
-/* ===== scene framework ===== */
-var BUILDERS = {};
-function startScene(id) {
-  runCleanup();
-  var s = null, i;
-  for (i = 0; i < SCENES.length; i++) if (SCENES[i].id === id) s = SCENES[i];
-  if (!s) return;
-  cur = s;
-  hud = { score: 0, streak: 0, miss: 0, extra: "" };
-  $("#shNum").textContent = pad(s.num);
-  $("#shTitle").textContent = s.title;
-  $("#shTag").textContent = s.tag;
-  $("#shAv").textContent = s.ce;
-  $("#shCn").textContent = s.ch;
-  $("#shNum").style.color = s.color;
-  showScreen("scene");
-  hudScene();
-  try { BUILDERS[s.id](); }
-  catch (e) { gameRoot.innerHTML = '<p class="glead">⚠️ This reel failed to start: ' + e.message + "</p>"; }
-}
-function sceneFinish(res) {
-  runCleanup();
-  hud.extra = ""; hudScene();
-  var prev = lvl(cur.id), isNew = res.score > prev.best;
-  save.levels[cur.id] = { stars: Math.max(prev.stars, res.stars), best: Math.max(prev.best, res.score), plays: (prev.plays || 0) + 1 };
-  persist(); updateHUD(); renderMap();
-  openResults(cur, res, isNew);
-}
-
-/* ================================================================
-   GAME 1 — WORD CARAVAN
-   ================================================================ */
-BUILDERS.l1 = function () {
-  var items = shuffle(FILL), bank = shuffle(items.map(function (i) { return i.w; }).concat(FILL_DECOYS));
-  var sel = null, done = 0, miss = 0;
-  var h = '<p class="glead">Tap a blank, then tap the word that fits. ' + items.length + " blanks, " + bank.length + " words — three are stowaways.</p><div class=\"fillT\">";
-  items.forEach(function (it, i) {
-    h += it.b + '<button class="blank" data-i="' + i + '">＿＿</button>' + it.a + " ";
-  });
-  h += '</div><div class="bank">';
-  bank.forEach(function (w) { h += '<button class="word" data-w="' + w + '">' + w + "</button>"; });
-  h += "</div>";
-  gameRoot.innerHTML = h;
-  function firstEmpty() {
-    var l = $$(".blank", gameRoot), i;
-    for (i = 0; i < l.length; i++) if (!l[i].classList.contains("ok")) return Number(l[i].getAttribute("data-i"));
-    return null;
-  }
-  gameRoot.onclick = function (e) {
-    var bl = e.target.closest(".blank"), wd = e.target.closest(".word");
-    if (bl && !bl.classList.contains("ok")) {
-      sClick();
-      var i = Number(bl.getAttribute("data-i"));
-      $$(".blank", gameRoot).forEach(function (b) { b.classList.toggle("sel", Number(b.getAttribute("data-i")) === (sel === i ? -1 : i)); });
-      sel = (sel === i) ? null : i;
-      return;
-    }
-    if (!wd || wd.classList.contains("used")) return;
-    if (sel === null) { var fe = firstEmpty(); if (fe === null) return; sel = fe; $(".blank[data-i=\"" + fe + "\"]", gameRoot).classList.add("sel"); }
-    var w = wd.getAttribute("data-w"), target = items[sel].w;
-    var be = $('.blank[data-i="' + sel + '"]', gameRoot);
-    if (!be) return;
-    if (w === target) {
-      be.textContent = w; be.classList.add("ok"); be.classList.remove("sel");
-      wd.classList.add("used"); done++; hud.streak++;
-      var gain = 150 + Math.min(100, (hud.streak - 1) * 25);
-      hud.score += gain; sGood();
-      var r = be.getBoundingClientRect(); pop(r.left + r.width / 2, r.top, "+" + gain, true);
-      sel = null;
-      var nx = firstEmpty();
-      if (nx !== null && done < items.length) { sel = nx; $(".blank[data-i=\"" + nx + "\"]", gameRoot).classList.add("sel"); }
-      if (done === items.length) {
-        gameRoot.classList.add("dim");
-        later(function () { sceneFinish({ score: hud.score, stars: starsBy(miss) }); }, 900);
+  // Migration: reset stale variant ids that no longer exist in the library
+  Object.keys(PROMPTS).forEach(key => {
+    const p = PROMPTS[key];
+    (p.variants || []).forEach(g => {
+      const saved = state.variants[g.id];
+      if (saved && !g.options.some(o => o.id === saved)) {
+        delete state.variants[g.id];
       }
-    } else {
-      miss++; hud.miss = miss; hud.streak = 0;
-      hud.score = Math.max(0, hud.score - 25);
-      sBad(); wd.classList.add("shake"); be.classList.add("shake");
-      pop(wd.getBoundingClientRect().left + 30, wd.getBoundingClientRect().top, "−25", false);
-      later(function () { wd.classList.remove("shake"); be.classList.remove("shake"); }, 480);
-    }
-    hudScene();
-  };
-  setCleanup(function () { gameRoot.onclick = null; });
-};
-
-/* ================================================================
-   GAME 2 — MYTH OR MALAWI
-   ================================================================ */
-BUILDERS.l2 = function () {
-  var qs = shuffle(TF).slice(0, 10), idx = 0, DUR = 60000, t0 = 0, left = DUR, timer = null, lastS = -1, answered = false;
-  gameRoot.innerHTML =
-    '<div class="tfcnt" id="tfc"></div><div class="tfc" id="tfcC"><div class="tbar"><i id="tbf"></i></div>' +
-    '<p class="tfS" id="tfS"></p><div class="tfW" id="tfW" aria-live="polite"></div></div>' +
-    '<div class="tfB"><button class="btn big good" data-tf="1">✅ REAL <span class="key">←</span></button>' +
-    '<button class="btn big bad" data-tf="0">🌀 DELUSION <span class="key">→</span></button></div>';
-  function show() {
-    answered = false; left = DUR; lastS = -1;
-    $("#tfS").textContent = qs[idx].s;
-    $("#tfW").textContent = "";
-    $("#tfcC").className = "tfc";
-    $("#tfc").textContent = "CARD " + (idx + 1) + " / " + qs.length;
-    var f = $("#tbf");
-    f.style.transition = "none"; f.style.width = "100%";
-    void f.offsetWidth;
-    f.style.transition = "width " + DUR + "ms linear"; f.style.width = "0%";
-    t0 = performance.now();
-    if (timer) clearInterval(timer);
-    timer = every(function () {
-      left = Math.max(0, DUR - (performance.now() - t0));
-      var s = Math.ceil(left / 1000);
-      if (s <= 3 && s !== lastS && s > 0) { lastS = s; sTick(); }
-      if (left <= 0) answer(null);
-    }, 100);
-  }
-  function answer(c) {
-    if (answered) return;
-    answered = true;
-    if (timer) { clearInterval(timer); timer = null; }
-    var q = qs[idx], ok = c !== null && (c === 1) === q.a, card = $("#tfcC");
-    if (ok) {
-      hud.streak++;
-      var g = 150 + Math.ceil(left / 1000) * 10 + Math.min(120, hud.streak * 30);
-      hud.score += g; sGood(); card.classList.add("fgood");
-      popC("+" + g, true); $("#tfW").textContent = "✔ " + q.w;
-    } else {
-      hud.miss++; hud.streak = 0;
-      hud.score = Math.max(0, hud.score - 40);
-      sBad(); card.classList.add("fbad");
-      popC("−40", false); $("#tfW").textContent = (c === null ? "⏰ Time! " : "✖ ") + q.w;
-    }
-    hudScene();
-    later(function () {
-      idx++;
-      if (idx >= qs.length) sceneFinish({ score: hud.score, stars: starsBy(hud.miss) });
-      else show();
-    }, ok ? 900 : 1750);
-  }
-  gameRoot.onclick = function (e) {
-    var b = e.target.closest("[data-tf]");
-    if (b) answer(Number(b.getAttribute("data-tf")));
-  };
-  keyHandler = function (e) {
-    if (e.key === "ArrowLeft") { e.preventDefault(); answer(1); }
-    else if (e.key === "ArrowRight") { e.preventDefault(); answer(0); }
-  };
-  show();
-  setCleanup(function () { gameRoot.onclick = null; if (timer) clearInterval(timer); });
-};
-
-/* ================================================================
-   GAME 3 — SUMMIT CHOICE
-   ================================================================ */
-BUILDERS.l3 = function () {
-  var qs = shuffle(MC).slice(0, 5), idx = 0, answered = false;
-  gameRoot.innerHTML = '<div class="bub" id="mb">🏔️ Base camp. Breathe.</div><p class="mcq" id="mq"></p>' +
-    '<div class="mopts" id="mo"></div><p class="mcw" id="mw" aria-live="polite"></p>' +
-    '<div class="mnext"><button class="btn" id="mn">Climb on →</button></div>';
-  function show() {
-    answered = false;
-    var q = qs[idx];
-    hud.extra = "Q " + (idx + 1) + "/" + qs.length; hudScene();
-    $("#mb").textContent = idx === 0 ? "🏔️ Base camp. Breathe." : "🏔️ Next ledge…";
-    $("#mq").textContent = q.q; $("#mw").textContent = "";
-    var nb = $("#mn");
-    try { nb.blur(); } catch (e) {}
-    nb.hidden = true;
-    nb.style.display = "none";
-    nb.disabled = false;
-    var h = "";
-    q.o.forEach(function (o, i) { h += '<button class="mopt" data-i="' + i + '"><span class="ql">' + String.fromCharCode(65 + i) + "</span>" + o + "</button>"; });
-    $("#mo").innerHTML = h;
-  }
-  gameRoot.onclick = function (e) {
-    var op = e.target.closest(".mopt");
-    if (op && !answered) {
-      answered = true;
-      var q = qs[idx], i = Number(op.getAttribute("data-i")), ok = i === q.a;
-      $$(".mopt", gameRoot).forEach(function (b) {
-        var j = Number(b.getAttribute("data-i")); b.disabled = true;
-        if (j === q.a) b.classList.add("ok");
-        else if (j === i) b.classList.add("bad");
-        else b.classList.add("dim");
-      });
-      if (ok) { hud.score += 250; hud.streak++; sGood(); popC("+250", true); $("#mb").textContent = PRAISE[Math.floor(Math.random() * PRAISE.length)]; }
-      else { hud.miss++; hud.streak = 0; sBad(); $("#mb").textContent = OOPS[Math.floor(Math.random() * OOPS.length)]; }
-      $("#mw").textContent = "💡 " + q.w;
-      var nb = $("#mn");
-      nb.textContent = idx === qs.length - 1 ? "Reach the summit 🏔" : "Climb on →";
-      nb.hidden = false;
-      nb.style.display = "";
-      try { nb.focus(); } catch (e) {}
-      hudScene(); return;
-    }
-    if (e.target.closest("#mn")) {
-      if (!answered) return;
-      sClick(); idx++;
-      if (idx >= qs.length) sceneFinish({ score: hud.score, stars: starsBy(hud.miss) });
-      else show();
-    }
-  };
-  show();
-  setCleanup(function () { gameRoot.onclick = null; });
-};
-
-/* ================================================================
-   GAME 4 — CICHLID MATCH (Match the Meaning: слово ↔ значение)
-   ================================================================ */
-BUILDERS.l4 = function () {
-  var words = shuffle(PAIRS.map(function (p, i) { return { id: i, t: p.w }; }));
-  var defs  = shuffle(PAIRS.map(function (p, i) { return { id: i, t: p.d }; }));
-
-  var selWord = null;
-  var paired = 0;
-  var moves = 0;
-
-  var h = '';
-
-  h += '<p class="glead">🎯 <b>Соедини слово с его значением.</b> '
-     +   'Слева — английские слова, справа — их значения. Нажми слово, затем нажми подходящее значение. '
-     +   'Правильно — пара загорится зелёным и больше не понадобится. Неправильно — карточки мигнут красным.</p>';
-
-  h += '<div class="memTop"><span>ПАРЫ: <b id="mc2">0</b>/6</span><span>ПОПЫТКИ: <b id="mm">0</b></span></div>';
-
-  h += '<div class="memWrap">';
-  h += '<div class="memCol words"><h4>English word</h4><div class="memList" id="wordList">';
-  words.forEach(function (w) {
-    h += '<button class="card2 word" data-side="w" data-id="' + w.id + '" type="button">'
-       +   '<span class="tag">WORD</span><span class="val">' + w.t + '</span>'
-       + '</button>';
+    });
   });
-  h += '</div></div>';
-
-  h += '<div class="memCol defs"><h4>Meaning</h4><div class="memList" id="defList">';
-  defs.forEach(function (d) {
-    h += '<button class="card2 def" data-side="d" data-id="' + d.id + '" type="button">'
-       +   '<span class="tag">MEANING</span><span class="val">' + d.t + '</span>'
-       + '</button>';
-  });
-  h += '</div></div>';
-  h += '</div>';
-
-  h += '<div class="memHowto">'
-     +   '<b>Пример:</b> нажми <span class="memEx">WORD · boasts</span> → нажми <span class="memEx">MEANING · proudly has</span> — пара совпадёт.<br>'
-     +   '<b>Цель:</b> собрать все 6 пар с минимумом ошибок.'
-     + '</div>';
-
-  gameRoot.innerHTML = h;
-
-  function clearSelection() {
-    $$(".card2.sel", gameRoot).forEach(function (el) { el.classList.remove("sel"); });
-    selWord = null;
-  }
-
-  function tryMatch(wordEl, defEl) {
-    moves++;
-    $("#mm").textContent = moves;
-
-    var sameId = wordEl.getAttribute("data-id") === defEl.getAttribute("data-id");
-
-    if (sameId) {
-      wordEl.classList.add("paired");
-      defEl.classList.add("paired");
-      wordEl.classList.remove("sel");
-      paired++;
-      hud.streak++;
-
-      var mult = Math.min(1 + 0.5 * (hud.streak - 1), 3);
-      var gain = Math.round(180 * mult);
-      hud.score += gain;
-      $("#mc2").textContent = paired;
-      sMatch();
-
-      var r = defEl.getBoundingClientRect();
-      pop(r.left + r.width / 2, r.top, "+" + gain + (mult > 1 ? " ×" + mult : ""), true);
-
-      selWord = null;
-      hudScene();
-
-      if (paired === PAIRS.length) {
-        gameRoot.classList.add("dim");
-        later(function () {
-          var extra = moves - PAIRS.length;
-          sceneFinish({ score: hud.score, stars: extra <= 1 ? 3 : (extra <= 3 ? 2 : 1) });
-        }, 900);
-      }
-    } else {
-      hud.miss++;
-      hud.streak = 0;
-      hud.score = Math.max(0, hud.score - 20);
-      sBad();
-      hudScene();
-
-      wordEl.classList.add("shakeX");
-      defEl.classList.add("shakeX");
-      later(function () {
-        wordEl.classList.remove("shakeX");
-        defEl.classList.remove("shakeX");
-      }, 480);
-
-      clearSelection();
-    }
-  }
-
-  gameRoot.onclick = function (e) {
-    var el = e.target.closest(".card2");
-    if (!el || el.classList.contains("paired")) return;
-
-    var side = el.getAttribute("data-side");
-
-    if (side === "w") {
-      sClick();
-      if (selWord === el) { el.classList.remove("sel"); selWord = null; return; }
-      if (selWord) selWord.classList.remove("sel");
-      selWord = el;
-      el.classList.add("sel");
-      return;
-    }
-
-    if (side === "d") {
-      if (!selWord) {
-        toast("👈 Сначала выбери слово слева");
-        return;
-      }
-      tryMatch(selWord, el);
-    }
-  };
-
-  setCleanup(function () { gameRoot.onclick = null; });
-};
-
-/* ================================================================
-   GAME 5 — SUNSET SPRINT
-   ================================================================ */
-BUILDERS.l5 = function () {
-  var qs = shuffle(BONUS), idx = 0, ok = 0, TOTAL = 750000, endAt = 0, timer = null, lastS = -1, fin = false, answered = false;
-  gameRoot.innerHTML = '<div class="bbar" id="bb"><i id="bf"></i></div><div class="bcnt" id="bc"></div><div id="bstage"></div>';
-  function show() {
-    if (idx >= qs.length) { hud.score += 500; popC("+500 PERFECT RUN", true); later(finish, 700); return; }
-    answered = false;
-    var q = qs[idx], h = "";
-    $("#bc").textContent = "Q " + (idx + 1) + " · STREAK ×" + (1 + Math.min(hud.streak, 8) * 0.25).toFixed(2);
-    if (q.t === "tf") {
-      h += '<p class="tfS" style="margin-bottom:14px">' + q.s + "</p><div class=\"mopts\">" +
-        '<button class="btn good" data-v="1">✅ REAL <span class="key">←</span></button>' +
-        '<button class="btn bad" data-v="0">🌀 DELUSION <span class="key">→</span></button></div>';
-    } else {
-      h += '<p class="mcq">' + q.q + "</p><div class=\"mopts\">";
-      q.o.forEach(function (o, i) { h += '<button class="mopt" data-v="' + i + '"><span class="ql">' + String.fromCharCode(65 + i) + "</span>" + o + "</button>"; });
-      h += "</div>";
-    }
-    $("#bstage").innerHTML = h;
-  }
-  function answer(v) {
-    if (answered || fin) return;
-    answered = true;
-    var q = qs[idx], good = v === q.a;
-    if (good) {
-      hud.streak++; ok++;
-      var g = 100 + 25 * Math.min(hud.streak, 8);
-      hud.score += g; sGood(); popC("+" + g, true);
-    } else {
-      hud.miss++; hud.streak = 0;
-      hud.score = Math.max(0, hud.score - 40);
-      sBad(); popC("−40", false);
-    }
-    hudScene();
-    later(function () { idx++; show(); }, 430);
-  }
-  function finish() {
-    if (fin) return;
-    fin = true;
-    if (timer) { clearInterval(timer); timer = null; }
-    sceneFinish({ score: hud.score, stars: ok >= 10 ? 3 : (ok >= 6 ? 2 : 1) });
-  }
-  gameRoot.onclick = function (e) {
-    var b = e.target.closest("[data-v]");
-    if (b) answer(Number(b.getAttribute("data-v")));
-  };
-  keyHandler = function (e) {
-    var q = qs[idx];
-    if (!q) return;
-    if (q.t === "tf") {
-      if (e.key === "ArrowLeft") { e.preventDefault(); answer(1); }
-      else if (e.key === "ArrowRight") { e.preventDefault(); answer(0); }
-    } else {
-      if (e.key === "1") answer(0); else if (e.key === "2") answer(1); else if (e.key === "3") answer(2);
-    }
-  };
-  show();
-  endAt = performance.now() + TOTAL;
-  timer = every(function () {
-    var left = Math.max(0, endAt - performance.now());
-    $("#bf").style.width = (left / TOTAL * 100) + "%";
-    var s = Math.ceil(left / 1000);
-    hud.extra = "⏱ " + s + "s"; hudScene();
-    if (left <= 105000) $("#bb").classList.add("dg");
-    if (s !== lastS && left <= 105000 && left > 0) { lastS = s; sTick(); }
-    if (left <= 0) finish();
-  }, 100);
-  setCleanup(function () { gameRoot.onclick = null; if (timer) clearInterval(timer); });
-};
-
-/* ===== finale ===== */
-function rankFor(t) {
-  if (t >= 7500) return { r: "🏆 Guardian of the Warm Heart", d: "Legendary expedition — the tape bows to you." };
-  if (t >= 5500) return { r: "🥇 Keeper of the Lake", d: "A thousand species salute your memory." };
-  if (t >= 3500) return { r: "🥈 Trail Ranger", d: "Solid boots on the mountain path." };
-  return { r: "🥉 Curious Traveler", d: "The journey has only begun — rewind and roam again." };
-}
-function openFinale() {
-  showScreen("finale");
-  var t = 0, stars = 0, rows = "";
-  SCENES.forEach(function (s) { var v = lvl(s.id); t += v.best; stars += v.stars; });
-  var rk = rankFor(t);
-  $("#finRank").textContent = rk.r;
-  $("#finRankD").textContent = rk.d;
-  $("#finScore").textContent = t;
-  $("#finStars").textContent = stars;
-  SCENES.forEach(function (s) {
-    var v = lvl(s.id);
-    rows += "<tr><td>" + pad(s.num) + '</td><td class="tn">' + s.title + "</td><td>" + starsHtml(v.stars) + "</td><td>" + (v.best || "—") + "</td></tr>";
-  });
-  $("#finTable").innerHTML = "<tbody>" + rows + "</tbody>";
-  sCheer(); confetti(innerWidth / 2, innerHeight * 0.3, 40);
 }
 
-/* ===== global events (delegation) ===== */
-$("#cards").addEventListener("click", function (e) {
-  var c = e.target.closest(".lvl"); if (c) openBriefing(c.getAttribute("data-id"));
-});
-$("#cards").addEventListener("keydown", function (e) {
-  if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
-    var c = e.target.closest(".lvl");
-    if (c) { e.preventDefault(); openBriefing(c.getAttribute("data-id")); }
-  }
-});
-$("#cells").addEventListener("click", function (e) {
-  var c = e.target.closest("[data-cell]"); if (c) openBriefing(c.getAttribute("data-cell"));
-});
-$("#fslot").addEventListener("click", function (e) {
-  if (e.target.closest("#btnFinale")) openFinale();
-});
-modal.addEventListener("click", function (e) {
-  var b = e.target.closest("[data-act]"); if (!b) return;
-  var a = b.getAttribute("data-act");
-  if (a === "start" || a === "replay") { var id = pendingId; closeModal(); startScene(id); }
-  else if (a === "tomap") { closeModal(); showScreen("map"); }
-  else if (a === "gofinale") { closeModal(); openFinale(); }
-  else if (a === "rw-yes") { save.levels = {}; persist(); updateHUD(); renderMap(); closeModal(); showScreen("map"); toast("⏪ Tape rewound — the journal is blank again.", "bad"); }
-  else if (a === "rw-no") closeModal();
-});
-ov.addEventListener("click", function (e) { if (e.target === ov) closeModal(); });
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape") {
-    if (ov.classList.contains("open")) closeModal();
-    else if (curScreen === "scene") showScreen("map");
+// ============================================================
+// 5. BUILD PROMPT
+// ============================================================
+function buildPrompt() {
+  const p = getPreset();
+  if (!p) return null;
+
+  let text = p.template || '';
+
+  // Variants: template replaces base, suffix appends to it
+  (p.variants || []).forEach(g => {
+    const opt = getVariantOption(g);
+    if (opt.template != null)      text = opt.template;
+    else if (opt.suffix != null)   text = text + opt.suffix;
+  });
+
+  // Field substitution — with optional support and custom templates
+  (p.inputs || []).forEach(f => {
+    const val = (state.inputs[f.id] || '').trim();
+
+    // If the field has a template function — use it to generate the value
+    if (f.template && typeof f.template === 'function') {
+      const replacement = f.template(val);
+      text = text.split(f.token).join(replacement);
+    } else {
+      // Default behavior: fallback if the field is required
+      const fallback = f.optional ? '' : (f.fallback || '');
+      text = text.split(f.token).join(val || fallback);
+    }
+  });
+
+  // Custom text — prepend
+  const custom = state.customText.trim();
+  if (custom && p.customText) text = custom + '\n\n' + text;
+
+  return text;
+}
+
+// ============================================================
+// 6. RENDER
+// ============================================================
+function renderDropdownOptions() {
+  selectDropdown.innerHTML = '';
+  const add = (value, labelText) => {
+    const el = document.createElement('div');
+    el.className = 'custom-select-option';
+    el.dataset.value = value;
+    el.setAttribute('role', 'option');
+    el.textContent = labelText;
+    selectDropdown.appendChild(el);
+  };
+  add('', '— Choose a preset —');
+  Object.keys(PROMPTS).forEach(key => add(key, PROMPTS[key].name));
+}
+
+function renderDropdownSelection() {
+  let label = '— Choose a preset —';
+  selectDropdown.querySelectorAll('.custom-select-option').forEach(opt => {
+    const active = opt.dataset.value === state.presetId;
+    opt.classList.toggle('selected', active);
+    opt.setAttribute('aria-selected', active);
+    if (active) label = opt.textContent;
+  });
+  selectedText.textContent = label;
+}
+
+function renderControls() {
+  const p = getPreset();
+  dynamicControls.innerHTML = '';
+  if (!p) return;
+
+  // Variant groups (buttons)
+  (p.variants || []).forEach(g => {
+    const wrap = document.createElement('div');
+    wrap.className = 'dynamic-group';
+    const label = document.createElement('label');
+    label.textContent = g.label;
+    wrap.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'group-options';
+    const activeId = state.variants[g.id] || g.default;
+    g.options.forEach(o => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-secondary' + (o.id === activeId ? ' active' : '');
+      b.dataset.group = g.id;
+      b.dataset.option = o.id;
+      b.textContent = o.label;
+      row.appendChild(b);
+    });
+    wrap.appendChild(row);
+
+    if (g.hint) {
+      const h = document.createElement('div');
+      h.className = 'hint';
+      h.textContent = g.hint;
+      wrap.appendChild(h);
+    }
+    dynamicControls.appendChild(wrap);
+  });
+
+  // Text fields (inline fields are grouped into one row)
+  let inlineWrap = null;
+  (p.inputs || []).forEach(f => {
+    if (f.inline && !inlineWrap) {
+      inlineWrap = document.createElement('div');
+      inlineWrap.className = 'inline-group';
+      dynamicControls.appendChild(inlineWrap);
+    }
+    if (!f.inline) inlineWrap = null;
+    const target = f.inline ? inlineWrap : dynamicControls;
+
+    const g = document.createElement('div');
+    g.className = 'input-group';
+    const label = document.createElement('label');
+    label.textContent = f.label;
+
+    let inp;
+    if (f.type === 'textarea') {
+      inp = document.createElement('textarea');
+      if (f.className) inp.className = f.className;
+      inp.placeholder = f.placeholder || '';
+      inp.value = state.inputs[f.id] || '';
+    } else {
+      inp = document.createElement('input');
+      inp.type = 'text';
+      inp.placeholder = f.placeholder || '';
+      inp.value = state.inputs[f.id] || '';
+    }
+    inp.dataset.input = f.id;
+    g.appendChild(label);
+    g.appendChild(inp);
+    target.appendChild(g);
+  });
+}
+
+function renderVisibility() {
+  const p = getPreset();
+  customTextGroup.classList.toggle('hidden', !(p && p.customText));
+  customTextInput.value = state.customText;
+}
+
+function renderPrompt() {
+  const p = getPreset();
+  const full = buildPrompt();
+
+  if (!full) {
+    promptDisplay.textContent = '⚠️ Please select a prompt preset from the dropdown.';
+    setStatus('📌 No prompt selected.', 'info');
     return;
   }
-  if (ov.classList.contains("open")) return;
-  if (keyHandler) keyHandler(e);
-});
-$("#btnBack").addEventListener("click", function () { showScreen("map"); });
-$("#btnRestart").addEventListener("click", function () { if (cur) startScene(cur.id); });
-$("#btnHome").addEventListener("click", function () { showScreen("map"); });
-$("#btnToMap").addEventListener("click", function () { sClick(); showScreen("map"); });
-$("#finMap").addEventListener("click", function () { showScreen("map"); });
-$("#finRewind").addEventListener("click", function () {
-  openModal('<p class="mk">⏪ Rewind</p><h3 class="mt">Erase all progress?</h3><p>Every star and best score will be wiped from the journal. This cannot be undone.</p>' +
-    '<div class="mbtns"><button class="btn bad" data-act="rw-yes">Yes, rewind the tape</button><button class="btn p2" data-act="rw-no">Keep my journey</button></div>', '[data-act="rw-no"]');
-});
-$("#btnSound").addEventListener("click", function () {
-  save.muted = !save.muted; persist(); renderSound();
-  toast(save.muted ? "🔇 Sound off" : "🔊 Sound on");
-  if (!save.muted) sClick();
-});
-document.addEventListener("pointerdown", ensureAudio, { once: true });
+  promptDisplay.textContent = full;
 
-/* ===== preloader & boot ===== */
-function boot() {
-  grab();
-  phase(1, "data", function () { /* data constants parsed above */ });
-  phase(2, "audio", function () { ensureAudio(); });
-  phase(3, "storage", function () { loadSave(); });
-  phase(4, "map", function () {
-    gameRoot = $("#game-root");
-    updateHUD(); renderMap(); renderSound(); refreshIcons();
-    var cov = $("#introCover");
-    if (cov) { cov.insertBefore(slideImg(SLIDES + "slide-001.jpg"), cov.firstChild); }
+  // Status line is assembled automatically from metadata
+  const extra = [];
+  (p.variants || []).forEach(g => {
+    const o = getVariantOption(g);
+    extra.push(o.shortLabel || o.label);
   });
-  phase(5, "games", function () { /* builders registered above */ });
-  phase(6, "ready", function () { window.__WHA_MAP_OK = true; });
-
-  var p = 0;
-  var lt = setInterval(function () {
-    p += 14 + Math.random() * 18;
-    $("#loadF").style.width = clamp(p, 0, 100) + "%";
-    if (p >= 100) {
-      clearInterval(lt);
-      $("#preloader").classList.add("ready");
-      say(window.__WHA_MAP_OK ? "engine ready · tap PLAY ▶" : "engine INCOMPLETE — see the red banner below");
-    }
-  }, 130);
-
-  $("#btn-play").addEventListener("click", function () {
-    ensureAudio();
-    if (!window.__WHA_MAP_OK) {
-      if (EL.err) {
-        EL.err.style.display = "block";
-        EL.err.textContent = "⚠️ The engine did not finish loading. The code was most likely CUT OFF while copying into the preview. Please copy the ENTIRE code block again and save it as a full .html file.";
-      }
-      return;
-    }
-    sFanfare();
-    $("#preloader").classList.add("gone");
-    setTimeout(function () { $("#preloader").style.display = "none"; }, 800);
-    showScreen("intro");
+  (p.inputs || []).forEach(f => {
+    const v = (state.inputs[f.id] || '').trim();
+    if (v) extra.push(v.length > 40 ? v.substring(0, 40) + '…' : v);
   });
+  let label = p.name + (extra.length ? ' (' + extra.join(', ') + ')' : '');
+  if (state.customText.trim()) label += ' (with custom text)';
+  setStatus('✅ Loaded: ' + label, 'success');
 }
 
-setTimeout(boot, 0);
+function renderAll() {
+  renderControls();
+  renderVisibility();
+  renderPrompt();
+  saveState();
+}
 
-window.__WHA_OK = true;
+// ============================================================
+// 7. EVENTS
+// ============================================================
+function toggleDropdown(open) {
+  const willOpen = (open === undefined) ? !customSelect.classList.contains('open') : open;
+  customSelect.classList.toggle('open', willOpen);
+  selectTrigger.setAttribute('aria-expanded', willOpen);
+}
 
-})();
+function selectOption(value) {
+  state.presetId = value;
+  renderDropdownSelection();
+  toggleDropdown(false);
+  renderAll();
+}
+
+selectTrigger.addEventListener('click', e => { e.stopPropagation(); toggleDropdown(); });
+selectTrigger.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDropdown(); }
+});
+selectDropdown.addEventListener('click', e => {
+  const option = e.target.closest('.custom-select-option');
+  if (option) selectOption(option.dataset.value);
+});
+document.addEventListener('click', () => toggleDropdown(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleDropdown(false); });
+
+// Delegation: clicks on variant buttons
+dynamicControls.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-group]');
+  if (!btn) return;
+  state.variants[btn.dataset.group] = btn.dataset.option;
+  btn.closest('.group-options').querySelectorAll('.btn')
+     .forEach(b => b.classList.toggle('active', b === btn));
+  renderPrompt();
+  saveState();
+});
+
+// Delegation: input in text fields
+dynamicControls.addEventListener('input', e => {
+  if (!e.target.matches('[data-input]')) return;
+  state.inputs[e.target.dataset.input] = e.target.value;
+  renderPrompt();
+  saveState();
+});
+
+customTextInput.addEventListener('input', () => {
+  state.customText = customTextInput.value;
+  renderPrompt();
+  saveState();
+});
+
+// ============================================================
+// 8. COPY
+// ============================================================
+function copyFallback(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  ta.remove();
+}
+
+async function copyPrompt() {
+  if (!getPreset()) {
+    setStatus('⚠️ Select a preset first to copy a prompt.', 'error');
+    return;
+  }
+  const text = promptDisplay.textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    copyFallback(text);
+  }
+  setStatus('✅ Copied to clipboard!', 'success');
+  copyBtn.textContent = '✅ Copied!';
+  setTimeout(() => { copyBtn.textContent = '📋 Copy Prompt'; }, 2000);
+}
+
+copyBtn.addEventListener('click', copyPrompt);
+
+// ============================================================
+// 9. INIT
+// ============================================================
+loadState();
+renderDropdownOptions();
+renderDropdownSelection();
+selectOption(state.presetId || '');
 </script>
 </body>
 </html>
