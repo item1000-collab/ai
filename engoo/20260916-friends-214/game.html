@@ -1,1 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friends Vocab Arcade — The Prom Video Tape (S02E14)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Lora:ital,wght@0,400;0,600;1,400&family=Caveat:wght@600;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+  /* ===== design tokens ===== */
+  :root{
+    --paper:#f6eede; --card:#fffdf6; --ink:#2e2438; --muted:#7a6a5d; --line:#e6d8bf;
+    --terra:#c96f4a; --lav:#8e6bb5; --teal:#2b7f8c; --gold:#c9a227; --gold-d:#a5841a; --blue:#2f5d8a;
+    --ok:#3f9d5f; --bad:#d64545;
+    --shadow:0 6px 0 rgba(46,36,56,.9);
+    --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);font-family:'Lora',Georgia,serif;font-size:17px;line-height:1.65;
+    background:linear-gradient(180deg,#efe0f2 0%,#f7d9c4 40%,var(--paper) 78%);
+    background-attachment:fixed; min-height:100vh; overflow-x:clip;
+  }
+  /* grain + scanlines + vignette overlays */
+  body::before{content:'';position:fixed;inset:0;z-index:60;pointer-events:none;background-image:var(--noise);}
+  body::after{content:'';position:fixed;inset:0;z-index:61;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.02) 0 1px,transparent 1px 3px),
+    radial-gradient(ellipse at center,transparent 58%,rgba(46,36,56,.12) 100%);}
+  ::selection{background:#e7d6f5;}
+  button{font-family:inherit;}
+  :focus-visible{outline:3px solid var(--teal);outline-offset:2px;border-radius:6px;}
 
+  /* ===== preloader ===== */
+  #preloader{
+    position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;text-align:center;padding:24px;
+    background:radial-gradient(120% 90% at 80% 0%,#f6d9b8 0%,transparent 55%),linear-gradient(180deg,#e9d7f3 0%,#f5cdb0 100%);
+    transition:transform .65s cubic-bezier(.6,.05,.3,1);
+  }
+  #preloader.open{transform:translateY(-101%);pointer-events:none;}
+  #preloader .pl-logo{font-family:'Fraunces',serif;font-weight:800;font-size:clamp(2rem,6vw,3.4rem);line-height:1.05;
+    text-shadow:2px 0 rgba(255,60,90,.25),-2px 0 rgba(60,200,255,.25);}
+  #preloader .pl-sub{font-family:'VT323',monospace;font-size:1.15rem;letter-spacing:3px;color:#5a4634;}
+  .pl-dots::after{content:'···';font-family:'VT323',monospace;font-size:1.4rem;letter-spacing:6px;animation:dots 1.2s steps(4) infinite;}
+  @keyframes dots{0%{content:'·';}25%{content:'··';}50%{content:'···';}75%{content:'··';}100%{content:'·';}}
+  #plPlay{
+    font-family:'VT323',monospace;font-size:1.7rem;letter-spacing:4px;padding:12px 44px;cursor:pointer;
+    background:var(--ink);color:#fff6e6;border:none;border-radius:999px;box-shadow:var(--shadow);
+  }
+  #plPlay:hover{background:#443654;}
+  #plPlay:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(46,36,56,.9);}
+  #plPlay.hidden{display:none;}
+
+  /* ===== header console ===== */
+  #topbar{
+    position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;gap:10px;
+    padding:8px 14px;background:rgba(255,253,246,.92);backdrop-filter:blur(8px);
+    border-bottom:2px solid var(--ink);
+  }
+  .brand{font-family:'Fraunces',serif;font-weight:800;font-size:1rem;white-space:nowrap;}
+  .brand small{font-family:'VT323',monospace;font-weight:400;letter-spacing:2px;color:var(--muted);margin-left:6px;}
+  #hudCells{display:flex;gap:5px;margin-left:8px;}
+  #hudCells .cell{
+    min-width:30px;height:24px;display:flex;align-items:center;justify-content:center;
+    font-family:'VT323',monospace;font-size:.95rem;border:2px solid var(--ink);border-radius:6px;
+    background:transparent;color:var(--muted);
+  }
+  #hudCells .cell.done{background:var(--gold);color:#241b14;border-color:var(--gold-d);}
+  .hud-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+  #hudScore{font-family:'VT323',monospace;font-size:1.25rem;letter-spacing:2px;background:var(--ink);color:#ffe9b8;
+    padding:2px 12px;border-radius:8px;white-space:nowrap;}
+  .icon-btn{
+    width:40px;height:40px;border-radius:10px;border:2px solid var(--ink);background:var(--card);
+    font-size:1.05rem;cursor:pointer;box-shadow:0 3px 0 rgba(46,36,56,.9);display:flex;align-items:center;justify-content:center;
+  }
+  .icon-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(46,36,56,.9);}
+  @media (max-width:640px){ #hudCells{display:none;} .brand small{display:none;} }
+
+  /* ===== screens ===== */
+  main{padding:76px 16px 60px;max-width:1020px;margin:0 auto;}
+  .screen{display:none;}
+  .screen.active{display:block;animation:screenIn .45s ease both;}
+  @keyframes screenIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ===== intro ===== */
+  .intro-poster{
+    border-radius:18px;overflow:hidden;border:3px solid var(--ink);box-shadow:var(--shadow);
+    max-width:720px;margin:0 auto 22px;background:#241b14;
+  }
+  .intro-poster img{display:block;width:100%;height:auto;}
+  .intro-head{text-align:center;max-width:720px;margin:0 auto;}
+  .intro-head h1{font-family:'Fraunces',serif;font-weight:800;font-size:clamp(1.8rem,5vw,2.7rem);margin:0 0 8px;}
+  .intro-head p{color:#4a3a52;}
+  .chip-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:14px 0;}
+  .chip{font-family:'VT323',monospace;font-size:1rem;letter-spacing:2px;background:var(--ink);color:#fff6e6;
+    padding:3px 14px;border-radius:999px;}
+  .chip.alt{background:var(--terra);}
+  .howto{
+    max-width:640px;margin:18px auto 0;padding:14px 18px;background:rgba(255,253,246,.85);
+    border:2px dashed var(--ink);border-radius:14px;font-size:.95rem;
+  }
+  .howto b{font-family:'VT323',monospace;letter-spacing:1px;}
+  .btn{
+    font-family:'Fraunces',serif;font-weight:600;font-size:1rem;cursor:pointer;border-radius:999px;
+    padding:12px 26px;border:2px solid var(--ink);background:var(--card);color:var(--ink);
+    box-shadow:0 4px 0 rgba(46,36,56,.9);
+  }
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(46,36,56,.9);}
+  .btn.primary{background:var(--terra);color:#fff6ec;}
+  .btn.gold{background:var(--gold);color:#241b14;border-color:var(--gold-d);box-shadow:0 4px 0 var(--gold-d);}
+  .btn.ghost{background:transparent;}
+  .btn:disabled{opacity:.45;cursor:default;transform:none;box-shadow:0 4px 0 rgba(46,36,56,.9);}
+  .intro-cta{text-align:center;margin-top:20px;}
+
+  /* ===== level map ===== */
+  .map-head{text-align:center;margin:6px 0 18px;}
+  .map-head h2{font-family:'Fraunces',serif;font-weight:800;font-size:clamp(1.4rem,4vw,2rem);margin:0 0 4px;}
+  .map-head p{margin:0;color:var(--muted);font-family:'VT323',monospace;letter-spacing:2px;font-size:1.05rem;}
+  .reel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  @media (max-width:900px){.reel-grid{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:580px){.reel-grid{grid-template-columns:1fr;}}
+  .reel{
+    position:relative;text-align:left;padding:0;cursor:pointer;border:2px solid var(--ink);
+    border-radius:16px;background:var(--card);box-shadow:var(--shadow);overflow:hidden;
+    transition:transform .25s ease,box-shadow .25s ease;
+  }
+  .reel:hover{transform:translateY(-4px);box-shadow:0 10px 0 rgba(46,36,56,.9);}
+  .reel:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(46,36,56,.9);}
+  .reel-top{
+    display:flex;justify-content:space-between;align-items:center;padding:7px 12px;
+    background:var(--rc,#c96f4a);color:#fff6ec;
+  }
+  .reel-no{font-family:'VT323',monospace;font-size:1.05rem;letter-spacing:3px;}
+  .reel-tag{font-family:'VT323',monospace;font-size:.9rem;letter-spacing:1px;background:rgba(36,27,20,.35);padding:1px 9px;border-radius:999px;}
+  .reel img{display:block;width:100%;height:130px;object-fit:cover;border-bottom:2px solid var(--ink);}
+  .reel-body{display:flex;flex-direction:column;gap:6px;padding:12px 14px 14px;}
+  .reel-title{font-family:'Fraunces',serif;font-weight:800;font-size:1.1rem;line-height:1.2;}
+  .reel-char{display:flex;align-items:center;gap:8px;font-size:.92rem;color:#4a3a52;}
+  .ava{
+    width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+    background:var(--rc,#c96f4a);color:#fff;font-family:'Fraunces',serif;font-weight:800;font-size:.9rem;
+    box-shadow:inset 0 -6px 10px rgba(0,0,0,.18);
+  }
+  .reel-meta{display:flex;justify-content:space-between;align-items:center;margin-top:2px;}
+  .stars{font-size:1rem;color:var(--gold-d);letter-spacing:2px;}
+  .stars .off{color:#d9cbb2;}
+  .best{font-family:'VT323',monospace;font-size:1rem;letter-spacing:1px;color:var(--muted);}
+  .final-zone{text-align:center;margin-top:26px;}
+  .final-hint{font-family:'VT323',monospace;letter-spacing:2px;color:var(--muted);font-size:1.05rem;}
+
+  /* ===== scene ===== */
+  .scene-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .scene-title{font-family:'Fraunces',serif;font-weight:800;font-size:clamp(1.3rem,3.6vw,1.8rem);margin:0;}
+  .scene-tag{font-family:'VT323',monospace;letter-spacing:2px;background:var(--sc,#c96f4a);color:#fff6ec;
+    padding:2px 12px;border-radius:999px;font-size:1rem;}
+  .scene-score{margin-left:auto;font-family:'VT323',monospace;font-size:1.2rem;letter-spacing:2px;
+    background:var(--ink);color:#ffe9b8;padding:3px 14px;border-radius:8px;}
+  .scene-banner{border:2px solid var(--ink);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px;}
+  .scene-banner img{display:block;width:100%;height:170px;object-fit:cover;object-position:center 30%;}
+  .char-line{
+    display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;
+    background:#fff7e4;border:2px solid var(--ink);border-radius:14px;padding:10px 14px;
+  }
+  .char-line .ava{width:34px;height:34px;font-size:1rem;flex:none;}
+  .char-line p{margin:0;font-family:'Caveat',cursive;font-size:1.35rem;line-height:1.3;}
+  .obj-tip{font-size:.92rem;color:#4a3a52;margin:0 0 14px;}
+  .obj-tip b{font-family:'VT323',monospace;letter-spacing:1px;}
+
+  /* game: fill blanks */
+  .sentence{background:var(--card);border:2px solid var(--ink);border-radius:12px;padding:10px 14px;margin:0 0 10px;box-shadow:0 3px 0 rgba(46,36,56,.35);}
+  .blank{
+    font-family:'VT323',monospace;font-size:1.1rem;letter-spacing:1px;min-width:110px;padding:2px 10px;
+    border:2px dashed var(--muted);border-radius:8px;background:#fff;cursor:pointer;color:var(--ink);
+  }
+  .blank.sel{border-color:var(--teal);background:#e4f2f1;}
+  .blank.locked{border-style:solid;border-color:var(--ok);background:#e2f3e8;color:#1e5c37;cursor:default;}
+  .bank{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px;}
+  .bank-word{
+    font-family:'VT323',monospace;font-size:1.1rem;letter-spacing:1px;padding:6px 16px;cursor:pointer;
+    border:2px solid var(--ink);border-radius:999px;background:#fff;box-shadow:0 3px 0 rgba(46,36,56,.8);
+  }
+  .bank-word:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(46,36,56,.8);}
+  .bank-word.used{opacity:.35;cursor:default;text-decoration:line-through;box-shadow:none;transform:none;}
+
+  /* game: match */
+  .match-example{
+    font-family:'VT323',monospace;font-size:1.05rem;letter-spacing:1px;background:#fff7e4;border:2px dashed var(--gold-d);
+    border-radius:10px;padding:6px 12px;margin:0 0 12px;color:#5c4a1e;
+  }
+  .match-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:600px){.match-wrap{grid-template-columns:1fr;}}
+  .match-col{display:flex;flex-direction:column;gap:9px;}
+  .match-col h4{margin:0 0 2px;font-family:'VT323',monospace;letter-spacing:3px;font-weight:400;color:var(--muted);}
+  .pair-item{
+    text-align:left;font-size:.95rem;line-height:1.4;padding:10px 12px;cursor:pointer;
+    border:2px solid var(--ink);border-radius:10px;background:#fff;box-shadow:0 3px 0 rgba(46,36,56,.6);
+  }
+  .pair-item b{font-family:'VT323',monospace;font-size:1.05rem;letter-spacing:1px;}
+  .pair-item.sel{background:#e4f2f1;border-color:var(--teal);}
+  .pair-item.locked{background:#e2f3e8;border-color:var(--ok);color:#1e5c37;cursor:default;box-shadow:none;}
+  .match-stats{font-family:'VT323',monospace;font-size:1.15rem;letter-spacing:2px;margin-bottom:10px;color:#4a3a52;}
+
+  /* game: true/false */
+  .tf-card{background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:16px;box-shadow:var(--shadow);}
+  .tf-q{font-size:1.12rem;font-weight:600;margin:0 0 12px;}
+  .tf-streak{font-family:'VT323',monospace;font-size:1.05rem;letter-spacing:2px;color:var(--gold-d);margin:0 0 10px;}
+  .bar{height:14px;border:2px solid var(--ink);border-radius:999px;overflow:hidden;background:#fff;}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));width:100%;}
+  .tf-btns{display:flex;gap:12px;margin-top:14px;}
+  .tf-btn{flex:1;font-family:'Fraunces',serif;font-weight:800;font-size:1.05rem;padding:14px 10px;cursor:pointer;
+    border:2px solid var(--ink);border-radius:12px;box-shadow:0 4px 0 rgba(46,36,56,.9);color:#fff6ec;}
+  .tf-btn.real{background:var(--teal);}
+  .tf-btn.delu{background:#b34747;}
+  .tf-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(46,36,56,.9);}
+  .tf-btn kbd{font-family:'VT323',monospace;font-weight:400;font-size:.85rem;opacity:.85;}
+  .tf-why{display:none;margin-top:12px;font-size:.9rem;background:#eef4f0;border-left:4px solid var(--teal);border-radius:0 8px 8px 0;padding:8px 12px;}
+  .tf-why.show{display:block;}
+
+  /* game: choice + bonus */
+  .q-card{background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:16px;box-shadow:var(--shadow);}
+  .q-text{font-size:1.12rem;font-weight:600;margin:0 0 12px;}
+  .opt{
+    display:block;width:100%;text-align:left;font-size:.98rem;line-height:1.5;padding:11px 14px;margin-top:9px;
+    cursor:pointer;border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);
+  }
+  .opt:hover:not(:disabled){border-color:var(--teal);background:#f0f7f6;}
+  .opt:disabled{cursor:default;}
+  .opt.correct{border-color:var(--ok);background:#e2f3e8;font-weight:600;}
+  .opt.wrong{border-color:var(--bad);background:#fbe9e9;}
+  .opt.dim{opacity:.45;}
+  .reaction{font-family:'Caveat',cursive;font-size:1.3rem;margin:12px 0 0;color:#4a3a52;}
+  .bonus-top{display:flex;gap:12px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+  .bonus-timer{font-family:'VT323',monospace;font-size:1.5rem;letter-spacing:3px;background:var(--ink);color:#ffe9b8;padding:2px 14px;border-radius:8px;}
+  .bonus-timer.low{color:#ffd7d7;background:var(--bad);animation:blink .5s steps(2) infinite;}
+  @keyframes blink{50%{opacity:.45;}}
+  .bonus-prog{font-family:'VT323',monospace;font-size:1.1rem;letter-spacing:2px;color:#4a3a52;margin-left:auto;}
+  .bar.bonus i{background:linear-gradient(90deg,var(--gold),var(--terra));}
+  .bar.low i{background:var(--bad);}
+
+  /* ===== modal ===== */
+  .modal-backdrop{
+    position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;padding:18px;
+    background:rgba(36,27,20,.55);backdrop-filter:blur(3px);
+  }
+  .modal-backdrop.open{display:flex;animation:screenIn .3s ease both;}
+  .modal{
+    width:100%;max-width:560px;max-height:86vh;overflow-y:auto;background:var(--card);
+    border:3px solid var(--ink);border-radius:18px;box-shadow:0 10px 0 rgba(46,36,56,.9);padding:20px 22px;
+  }
+  .modal h3{font-family:'Fraunces',serif;font-weight:800;font-size:1.35rem;margin:0 0 6px;}
+  .modal .m-sub{font-family:'VT323',monospace;letter-spacing:2px;color:var(--muted);margin:0 0 12px;font-size:1.05rem;}
+  .modal .m-body{font-size:.97rem;}
+  .modal .m-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+  .big-stars{font-size:2.6rem;letter-spacing:8px;text-align:center;margin:6px 0;}
+  .big-stars .pop{display:inline-block;animation:starPop .5s cubic-bezier(.3,1.6,.5,1) both;}
+  @keyframes starPop{from{transform:scale(0) rotate(-90deg);}to{transform:scale(1) rotate(0);}}
+  .m-score{font-family:'VT323',monospace;font-size:2.2rem;text-align:center;letter-spacing:4px;color:var(--ink);}
+
+  /* finale */
+  .finale-card{max-width:640px;margin:0 auto;background:var(--card);border:3px solid var(--ink);border-radius:18px;
+    box-shadow:var(--shadow);padding:22px;text-align:center;}
+  .finale-card h2{font-family:'Fraunces',serif;font-weight:800;margin:0 0 4px;}
+  .finale-total{font-family:'VT323',monospace;font-size:3.2rem;letter-spacing:6px;line-height:1;}
+  .finale-rank{font-family:'Caveat',cursive;font-size:1.7rem;color:var(--gold-d);margin:4px 0 14px;}
+  .finale-table{width:100%;border-collapse:collapse;font-size:.95rem;margin:8px 0 16px;text-align:left;}
+  .finale-table th{font-family:'VT323',monospace;letter-spacing:2px;font-weight:400;color:var(--muted);border-bottom:2px solid var(--ink);padding:6px 8px;}
+  .finale-table td{padding:7px 8px;border-bottom:1px dashed var(--line);}
+  .finale-table td:nth-child(n+2){text-align:center;font-family:'VT323',monospace;letter-spacing:1px;}
+
+  /* toast / popfloat / confetti */
+  #toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:180;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+  .toast{
+    background:var(--ink);color:#fff6e6;font-family:'VT323',monospace;font-size:1.05rem;letter-spacing:1px;
+    padding:8px 20px;border-radius:999px;box-shadow:0 6px 16px rgba(0,0,0,.3);animation:toastIn 2.6s ease both;
+  }
+  @keyframes toastIn{0%{opacity:0;transform:translateY(16px);}10%,80%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-10px);}}
+  .pop-float{
+    position:fixed;z-index:170;font-family:'VT323',monospace;font-size:1.3rem;letter-spacing:2px;pointer-events:none;
+    animation:rise .9s ease forwards;text-shadow:0 2px 0 rgba(0,0,0,.15);
+  }
+  @keyframes rise{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-46px);}}
+  .confetti{position:fixed;z-index:165;width:10px;height:14px;pointer-events:none;animation:fall .9s ease-in forwards;}
+  @keyframes fall{from{opacity:1;transform:translate(0,0) rotate(0);}to{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot));}}
+
+  .shake{animation:shake .4s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
+
+  footer{max-width:1020px;margin:0 auto;padding:0 16px 40px;text-align:center;font-size:.9rem;color:var(--muted);}
+  footer a{color:var(--teal);}
+
+  /* ===== reduced motion ===== */
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+    #preloader{transition:none;}
+    .confetti,.pop-float{display:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== preloader shell ===== -->
+<div id="preloader" role="dialog" aria-label="Game loading screen">
+  <div class="pl-logo">📼 FRIENDS VOCAB ARCADE</div>
+  <div class="pl-sub">THE PROM VIDEO TAPE · S02E14</div>
+  <div class="pl-dots" id="plDots" aria-hidden="true"></div>
+  <button id="plPlay" class="hidden" type="button">PLAY ▶</button>
+</div>
+
+<!-- ===== fixed header console ===== -->
+<header id="topbar">
+  <span class="brand">📼 FRIENDS ARCADE<small>THE PROM VIDEO TAPE</small></span>
+  <div id="hudCells" aria-label="Level progress"></div>
+  <div class="hud-right">
+    <span id="hudScore" aria-live="polite">SCORE 0000</span>
+    <button class="icon-btn" id="btnSound" type="button" aria-label="Toggle sound" aria-pressed="false">🔊</button>
+    <button class="icon-btn" id="btnMap" type="button" aria-label="Back to level map">🗺️</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===== SCREEN: INTRO ===== -->
+  <section class="screen active" id="screen-intro" aria-label="Intro">
+    <div class="intro-poster">
+      <img src="https://item1000-collab.github.io/ai/engoo/20260916-friends-214/slide-001.jpg" alt="A coffee mug and a VHS tape labeled Prom '88 on a wooden table.">
+    </div>
+    <div class="intro-head">
+      <h1>FRIENDS VOCAB ARCADE</h1>
+      <p>One dusty VHS tape. Five reels of vocabulary, idioms and 90s culture from <strong>“The One with the Prom Video”</strong> — the episode 1.6 million fans voted the best of the series. Play the reels in any order, earn stars, and unlock the Final Screening.</p>
+      <div class="chip-row">
+        <span class="chip">5 REELS</span><span class="chip">5 GAME MODES</span><span class="chip alt">FREE ORDER</span><span class="chip">STARS ×15</span>
+      </div>
+      <div class="howto">
+        <b>HOW TO PLAY:</b> pick any reel on the map — everything is unlocked from the start.
+        Fill blanks, match meanings, judge facts against a 6-second timer, pick quiz answers,
+        then survive the 750-second Bonus Rewind. Best scores and stars are saved automatically.
+        <br><b>KEYS:</b> ← / → answer REAL or DELUSION · ESC leaves a reel or closes a window.
+      </div>
+      <div class="intro-cta">
+        <button class="btn primary" id="btnStart" type="button">INSERT TAPE ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN: LEVEL MAP ===== -->
+  <section class="screen" id="screen-map" aria-label="Level map">
+    <div class="map-head">
+      <h2>SELECT YOUR REEL</h2>
+      <p>ALL REELS UNLOCKED · PLAY IN ANY ORDER</p>
+    </div>
+    <div class="reel-grid" id="reelGrid"></div>
+    <div class="final-zone" id="finalZone"></div>
+  </section>
+
+  <!-- ===== SCREEN: SCENE (game host) ===== -->
+  <section class="screen" id="screen-scene" aria-label="Game scene">
+    <div class="scene-top">
+      <button class="btn ghost" id="btnBackMap" type="button">⬅ MAP</button>
+      <span class="scene-tag" id="sceneTag"></span>
+      <h2 class="scene-title" id="sceneTitle"></h2>
+      <span class="scene-score" id="sceneScore">REEL 0000</span>
+    </div>
+    <div class="scene-banner"><img id="sceneImg" src="" alt=""></div>
+    <div class="char-line"><span class="ava" id="sceneAva"></span><p id="sceneFlavor"></p></div>
+    <p class="obj-tip" id="sceneObjTip"></p>
+    <div id="gameHost"></div>
+  </section>
+
+  <!-- ===== SCREEN: FINALE ===== -->
+  <section class="screen" id="screen-finale" aria-label="Finale">
+    <div class="finale-card" id="finaleCard"></div>
+  </section>
+
+</main>
+
+<!-- ===== modal ===== -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h3 id="modalTitle"></h3>
+    <p class="m-sub" id="modalSub"></p>
+    <div class="m-body" id="modalBody"></div>
+    <div class="m-btns" id="modalBtns"></div>
+  </div>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+
+<footer>
+  📎 Lesson source:
+  <a href="https://item1000-collab.github.io/ai/engoo/20260916-friends-214/214-english-with-the-prom-video.pdf" target="_blank" rel="noopener noreferrer">214-english-with-the-prom-video.pdf</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ===== utilities ===== */
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function pad(n) { return String(n).padStart(4, "0"); }
+  function refreshIcons() { /* placeholder: emoji + inline SVG only, no icon library */ }
+  var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function toast(msg) {
+    var t = document.createElement("div");
+    t.className = "toast";
+    t.textContent = msg;
+    $("#toasts").appendChild(t);
+    setTimeout(function () { t.remove(); }, 2700);
+  }
+  function popFloat(x, y, text, color) {
+    if (REDUCED) { return; }
+    var el = document.createElement("div");
+    el.className = "pop-float";
+    el.textContent = text;
+    el.style.color = color || "#3f9d5f";
+    el.style.left = clamp(x - 20, 6, window.innerWidth - 80) + "px";
+    el.style.top = clamp(y - 30, 60, window.innerHeight - 60) + "px";
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, 950);
+  }
+  var CONF_COLORS = ["#c96f4a", "#8e6bb5", "#2b7f8c", "#c9a227", "#3f9d5f", "#d64545"];
+  function spawnConfetti(x, y) {
+    if (REDUCED) { return; }
+    for (var i = 0; i < 60; i++) {
+      (function (k) {
+        var c = document.createElement("span");
+        c.className = "confetti";
+        c.style.background = CONF_COLORS[k % CONF_COLORS.length];
+        c.style.left = x + "px";
+        c.style.top = y + "px";
+        c.style.setProperty("--dx", (Math.random() * 260 - 130) + "px");
+        c.style.setProperty("--dy", (Math.random() * 180 + 60) + "px");
+        c.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
+        document.body.appendChild(c);
+        setTimeout(function () { c.remove(); }, 1000);
+      })(i);
+    }
+  }
+
+  /* ===== sound engine (Web Audio, synthesized) ===== */
+  var AC = null;
+  function initAudio() {
+    if (!AC) {
+      try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; }
+    }
+    if (AC && AC.state === "suspended") { AC.resume(); }
+  }
+  function tone(freq, dur, type, vol, when) {
+    if (store.muted || !AC) { return; }
+    var t0 = AC.currentTime + (when || 0);
+    var o = AC.createOscillator();
+    var g = AC.createGain();
+    o.type = type || "sine";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.2, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function noiseBurst(dur, vol, when) {
+    if (store.muted || !AC) { return; }
+    var t0 = AC.currentTime + (when || 0);
+    var len = Math.max(1, Math.floor(AC.sampleRate * dur));
+    var buf = AC.createBuffer(1, len, AC.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i / len); }
+    var src = AC.createBufferSource();
+    src.buffer = buf;
+    var g = AC.createGain();
+    g.gain.value = vol || 0.2;
+    src.connect(g); g.connect(AC.destination);
+    src.start(t0);
+  }
+  var sfx = {
+    click:   function () { tone(660, 0.05, "square", 0.10); },
+    flip:    function () { tone(330, 0.07, "triangle", 0.14); tone(494, 0.06, "triangle", 0.12, 0.06); },
+    correct: function () { tone(523, 0.09, "triangle", 0.18); tone(659, 0.09, "triangle", 0.18, 0.08); tone(784, 0.14, "triangle", 0.18, 0.16); },
+    wrong:   function () { tone(196, 0.20, "sawtooth", 0.15); tone(147, 0.22, "sawtooth", 0.11, 0.08); noiseBurst(0.08, 0.05, 0.02); },
+    match:   function () { tone(700, 0.06, "sine", 0.16); tone(940, 0.09, "sine", 0.16, 0.06); },
+    fanfare: function () { [523, 659, 784, 1046].forEach(function (f, i) { tone(f, 0.16, "triangle", 0.20, i * 0.12); }); tone(1318, 0.30, "triangle", 0.16, 0.50); },
+    tick:    function () { tone(1100, 0.03, "square", 0.07); },
+    cheer:   function () { noiseBurst(0.5, 0.16); [660, 784, 988].forEach(function (f, i) { tone(f, 0.12, "triangle", 0.16, 0.05 + i * 0.09); }); }
+  };
+
+  /* ===== persistent storage (versioned, safe in private mode) ===== */
+  var STORE_KEY = "friends-vocab-arcade-v1";
+  function loadStore() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        var d = JSON.parse(raw);
+        if (d && d.v === 1) { return d; }
+      }
+    } catch (e) { /* private mode or blocked storage */ }
+    return { v: 1, muted: false, levels: {} };
+  }
+  function saveStore() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { /* ignore */ }
+  }
+  var store = loadStore();
+
+  /* ===== game data ===== */
+  var BASE = "https://item1000-collab.github.io/ai/engoo/20260916-friends-214/";
+
+  var SCENES = [
+    {
+      id: "gift", num: 1, title: "The Unwanted Gift", char: "Chandler", emoji: "🃏", color: "#c96f4a",
+      slide: BASE + "slide-004.jpg", tag: "FILL THE BLANKS",
+      obj: "Complete 4 quotes from the bracelet storyline. Tap a blank, then tap a word from the bank.",
+      tip: "Decoy words bounce back and cost −15 points. Locked words turn green and stay.",
+      flavor: "“Could this bracelet BE any louder? Fill in the blanks — and keep the sarcasm to a minimum.”"
+    },
+    {
+      id: "career", num: 2, title: "Career Setbacks", char: "Monica", emoji: "🥗", color: "#2b7f8c",
+      slide: BASE + "slide-005.jpg", tag: "MATCH THE MEANING",
+      obj: "Match 6 words with their meanings. Tap a word on the left, then tap its meaning on the right.",
+      tip: "Wrong pairs shake and clear the selection, costing −20 points. Locked pairs turn green.",
+      flavor: "“I got FIRED, okay?! Matching these perfectly is the only thing I can control right now.”"
+    },
+    {
+      id: "prom", num: 3, title: "The Night He Waited", char: "Rachel", emoji: "👗", color: "#8e6bb5",
+      slide: BASE + "slide-008.jpg", tag: "REAL OR DELUSION",
+      obj: "8 statements about the episode. Judge each one before the 6-second tape runs out.",
+      tip: "← = REAL, → = DELUSION. A streak of correct answers builds a ×2…×4 multiplier.",
+      flavor: "“Chip made me wait the whole night in a prom dress. You can survive six seconds per card.”"
+    },
+    {
+      id: "lobster", num: 4, title: "The Lobster Theory", char: "Phoebe", emoji: "🦞", color: "#2f5d8a",
+      slide: BASE + "slide-006.jpg", tag: "QUIZ PICKS",
+      obj: "5 multiple-choice questions, one attempt each. Choose wisely.",
+      tip: "No retries — trust your inner lobster. A wrong pick costs −25 points.",
+      flavor: "“It’s a known fact that lobsters fall in love and mate for life. Now prove you were listening!”"
+    },
+    {
+      id: "rewind", num: 5, title: "Bonus Rewind", char: "Ross", emoji: "📼", color: "#c9a227",
+      slide: BASE + "slide-011.jpg", tag: "TIMED RUSH",
+      obj: "A 750-second tape of mixed questions from every reel. Answer as many as you can.",
+      tip: "Streaks multiply points up to ×4. Empty the pool early to earn a TIME BONUS.",
+      flavor: "“WE WERE ON A BREAK — from studying! Unacceptable. Twelve and a half minutes on the clock. Go.”"
+    }
+  ];
+
+  /* --- reel 1: fill the blanks --- */
+  var GIFT_BLANKS = [
+    { pre: "Joey buys Chandler a ", post: " gold bracelet to say thank you.", ans: "gaudy" },
+    { pre: "Chandler paid for Joey’s acting ", post: " to help his friend’s career.", ans: "head shots" },
+    { pre: "A bracelet that shows poor taste or style is simply ", post: ".", ans: "tacky" },
+    { pre: "After losing the gift, Chandler buys a second one to ", post: ".", ans: "make amends" }
+  ];
+  var GIFT_DECOYS = ["lobster", "humiliation", "clobbered", "savings account", "stand up", "fired"];
+
+  /* --- reel 2: match the meaning --- */
+  var CAREER_PAIRS = [
+    ["to get fired", "to lose your job because the boss forces you to leave"],
+    ["a savings account", "a bank account where you keep money for the future"],
+    ["humiliation", "a strong feeling of embarrassment and loss of pride"],
+    ["to make amends", "to do something good to show you are sorry for hurting someone"],
+    ["head shots", "professional photographs actors use to get auditions"],
+    ["to stand someone up", "to fail to show up for a planned date without telling them"]
+  ];
+
+  /* --- reel 3: real or delusion --- */
+  var PROM_TF = [
+    { s: "Rachel spent prom night waiting for her date, Chip Matthews.", real: true, why: "The deck: “Rachel is waiting for her date, Chip Matthews.”" },
+    { s: "The prom video was filmed in 1996.", real: false, why: "It was filmed in 1988 — the episode aired on February 1, 1996." },
+    { s: "“Chip stood Rachel up” is a grammatically correct sentence.", real: true, why: "The phrasal verb is separable: both “stood Rachel up” and “stood up Rachel” are fine." },
+    { s: "To stand someone up means to arrive early with flowers.", real: false, why: "It means to fail to show up for a planned romantic date without telling them." },
+    { s: "In sitcom slang, getting “clobbered” means being emotionally defeated in love.", real: true, why: "Sitcom meaning: “emotionally defeated, rejected, or badly hurt in a relationship.”" },
+    { s: "Monica’s date had watched Star Wars 27 times.", real: true, why: "The 90s context note: “Saw Star Wars 27 Times.”" },
+    { s: "Ross used to have an afro and a moustache in high school.", real: true, why: "Grammar slide: “Ross used to have an afro and a moustache (looking like Gabe Kaplan).”" },
+    { s: "Jack and Judy recorded over the end of the prom video on purpose.", real: false, why: "They “accidentally recorded over the end of the prom video with their own private tape.”" }
+  ];
+
+  /* --- reel 4: quiz picks --- */
+  var LOBSTER_QUIZ = [
+    { q: "In English pop culture, “to be someone’s lobster” means…", o: ["to be their worst enemy", "to be their soulmate, destined for them forever", "to be their roommate"], a: 1 },
+    { q: "According to Phoebe, old lobster couples walk around their tank…", o: ["holding claws", "singing love songs", "arguing about food"], a: 0 },
+    { q: "Where did Ross get the tuxedo for the prom?", o: ["He rented it at the coffee house", "It was his father’s", "Phoebe sewed it"], a: 1 },
+    { q: "What does Rachel do after watching the video?", o: ["She laughs and walks away", "She calls Chip Matthews", "She passionately kisses Ross"], a: 2 },
+    { q: "Who turned out to be right about Ross and Rachel?", o: ["Phoebe", "Gunther", "The doorman"], a: 0 }
+  ];
+  var CHAR_LINES = {
+    lobster: {
+      happy: ["Phoebe: “See? Crustaceans never lie!”", "Phoebe: “They’re lobsters. Case closed!”"],
+      sad: ["Phoebe: “Oh no, honey. Even the lobsters are cringing.”", "Phoebe: “Regroup! Grab a muffin and try the next one.”"]
+    }
+  };
+
+  /* --- reel 5: timed bonus pool --- */
+  var BONUS_POOL = [
+    { q: "Pick the word: “extremely bright and showy, but tasteless.”", o: ["gaudy", "tacky", "clobbered"] },
+    { q: "“A strong feeling of embarrassment and loss of pride.”", o: ["humiliation", "savings", "amends"] },
+    { q: "“To fail to show up for a planned date without telling them.”", o: ["to stand someone up", "to make amends", "to get fired"] },
+    { q: "“Professional photographs actors use to get auditions.”", o: ["head shots", "laserdiscs", "prom nights"] },
+    { q: "“To be someone’s lobster” means to be their…", o: ["soulmate", "landlord", "boss"] },
+    { q: "The prom video was recorded in…", o: ["1988", "1996", "2004"] },
+    { q: "Ross’s prom tuxedo belonged to…", o: ["his father", "Chandler", "Gunther"] },
+    { q: "“Monica ___ be heavier.” Fill the gap:", o: ["used to", "is used to", "uses to"] },
+    { q: "Who pays for a second bracelet to make amends?", o: ["Chandler", "Joey", "Ross"] },
+    { q: "Monica’s dad points her to money from her…", o: ["savings account", "head shots", "lobster fund"] },
+    { q: "At the very end of the tape the group discovers…", o: ["Jack and Judy’s private recording", "a second prom", "a music video"] },
+    { q: "“Clobbered” literally means…", o: ["to be hit very hard", "to be promoted", "to be ignored"] },
+    { q: "The episode first aired on…", o: ["February 1, 1996", "May 6, 1994", "December 25, 1997"] },
+    { q: "The deck’s verdict on the big kiss:", o: ["“Phoebe was right: He is her lobster.”", "“Chandler was right all along.”", "“Gunther knew first.”"] }
+  ];
+
+  /* ===== runtime state ===== */
+  var state = {
+    screen: "intro",
+    current: null,     /* { sc, runScore, mistakes } */
+    finished: false
+  };
+  var cleanups = [];
+  function setCleanup(fn) { cleanups.push(fn); }
+  function runCleanups() {
+    cleanups.forEach(function (fn) { try { fn(); } catch (e) { /* noop */ } });
+    cleanups = [];
+  }
+
+  function sceneProgress(id) {
+    if (!store.levels[id]) { store.levels[id] = { best: 0, stars: 0, done: false }; }
+    return store.levels[id];
+  }
+  function totalBest() {
+    return SCENES.reduce(function (sum, sc) { return sum + (store.levels[sc.id] ? store.levels[sc.id].best : 0); }, 0);
+  }
+  function allDone() {
+    return SCENES.every(function (sc) { return store.levels[sc.id] && store.levels[sc.id].done; });
+  }
+  function totalStars() {
+    return SCENES.reduce(function (sum, sc) { return sum + (store.levels[sc.id] ? store.levels[sc.id].stars : 0); }, 0);
+  }
+
+  /* ===== shell: screens, HUD ===== */
+  function go(name) {
+    if (state.screen === "scene" && name !== "scene") { runCleanups(); }
+    state.screen = name;
+    $$(".screen").forEach(function (s) { s.classList.remove("active"); });
+    $("#screen-" + name).classList.add("active");
+    window.scrollTo(0, 0);
+    updateHUD();
+  }
+
+  function updateHUD() {
+    var live = (state.screen === "scene" && state.current) ? state.current.runScore : 0;
+    $("#hudScore").textContent = "SCORE " + pad(totalBest() + live);
+    var cells = SCENES.map(function (sc) {
+      var p = store.levels[sc.id];
+      var done = p && p.done;
+      return '<span class="cell' + (done ? " done" : "") + '" title="' + sc.title + '">' +
+             (done ? "★" + p.stars : "·") + "</span>";
+    }).join("");
+    $("#hudCells").innerHTML = cells;
+    if (state.screen === "scene" && state.current) {
+      $("#sceneScore").textContent = "REEL " + pad(state.current.runScore);
+    }
+  }
+
+  function renderSound() {
+    var b = $("#btnSound");
+    b.textContent = store.muted ? "🔇" : "🔊";
+    b.setAttribute("aria-pressed", store.muted ? "true" : "false");
+    b.setAttribute("aria-label", store.muted ? "Sound off — press to unmute" : "Sound on — press to mute");
+  }
+
+  /* ===== modal ===== */
+  var lastFocus = null;
+  var modalDismissable = true;
+  function showModal(opts) {
+    lastFocus = document.activeElement;
+    modalDismissable = opts.dismiss !== "none";
+    $("#modalTitle").textContent = opts.title || "";
+    $("#modalSub").textContent = opts.sub || "";
+    $("#modalBody").innerHTML = opts.html || "";
+    $("#modalBtns").innerHTML = opts.buttons.map(function (b, i) {
+      return '<button type="button" class="btn' + (b.primary ? " primary" : "") + '" data-mbtn="' + i + '">' + b.label + "</button>";
+    }).join("");
+    $("#modalBackdrop").classList.add("open");
+    var primaryBtn = $("#modalBtns").querySelector(".primary") || $("#modalBtns").querySelector("button");
+    if (primaryBtn) { primaryBtn.focus(); }
+    opts.buttons.forEach(function (b, i) {
+      var el = $("#modalBtns").querySelector('[data-mbtn="' + i + '"]');
+      if (el) {
+        el.addEventListener("click", function () {
+          if (!b.keepOpen) { closeModal(); }
+          if (b.cb) { b.cb(); }
+        });
+      }
+    });
+  }
+  function closeModal() {
+    $("#modalBackdrop").classList.remove("open");
+    if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+  }
+  $("#modalBackdrop").addEventListener("click", function (e) {
+    if (e.target === this && modalDismissable) { closeModal(); }
+  });
+
+  /* ===== level map ===== */
+  function renderMap() {
+    var html = SCENES.map(function (sc) {
+      var p = sceneProgress(sc.id);
+      var starsHtml = "";
+      for (var i = 0; i < 3; i++) {
+        starsHtml += '<span class="' + (i < p.stars ? "" : "off") + '">★</span>';
+      }
+      return (
+        '<button type="button" class="reel" data-level="' + sc.id + '" style="--rc:' + sc.color + '" ' +
+          'aria-label="Reel ' + sc.num + ": " + sc.title + " — " + sc.tag + '. Best score ' + p.best + ', stars ' + p.stars + '.">' +
+          '<span class="reel-top"><span class="reel-no">REEL 0' + sc.num + '</span><span class="reel-tag">' + sc.tag + "</span></span>" +
+          '<img src="' + sc.slide + '" alt="" loading="lazy">' +
+          '<span class="reel-body">' +
+            '<span class="reel-title">' + sc.emoji + " " + sc.title + "</span>" +
+            '<span class="reel-char"><span class="ava">' + sc.char.charAt(0) + "</span> with " + sc.char + "</span>" +
+            '<span class="reel-meta"><span class="stars">' + starsHtml + '</span><span class="best">BEST ' + pad(p.best) + "</span></span>" +
+          "</span>" +
+        "</button>"
+      );
+    }).join("");
+    $("#reelGrid").innerHTML = html;
+
+    var fz = $("#finalZone");
+    if (allDone()) {
+      fz.innerHTML = '<button type="button" class="btn gold" id="btnFinale">🎟️ FINAL SCREENING</button>';
+      $("#btnFinale").addEventListener("click", function () { openFinale(); });
+    } else {
+      var left = SCENES.filter(function (sc) { return !(store.levels[sc.id] && store.levels[sc.id].done); }).length;
+      fz.innerHTML = '<p class="final-hint">FINISH ' + left + " MORE REEL" + (left > 1 ? "S" : "") + " TO UNLOCK THE FINAL SCREENING</p>";
+    }
+  }
+
+  $("#reelGrid").addEventListener("click", function (e) {
+    var card = e.target.closest(".reel");
+    if (!card) { return; }
+    sfx.flip();
+    openLevel(card.getAttribute("data-level"));
+  });
+
+  /* ===== scene runner ===== */
+  var host = $("#gameHost");
+  function hostOn(fn) {
+    host.addEventListener("click", fn);
+    setCleanup(function () { host.removeEventListener("click", fn); });
+  }
+  function shakeEl(el) {
+    el.classList.remove("shake");
+    void el.offsetWidth;
+    el.classList.add("shake");
+  }
+
+  function openLevel(id) {
+    var sc = SCENES.find(function (s) { return s.id === id; });
+    if (!sc) { return; }
+    runCleanups();
+    state.current = { sc: sc, runScore: 0, mistakes: 0 };
+    state.finished = false;
+    updateHUD();
+    showModal({
+      title: "REEL 0" + sc.num + " · " + sc.title,
+      sub: sc.tag + " · WITH " + sc.char.toUpperCase(),
+      html:
+        "<p><strong>Objective:</strong> " + sc.obj + "</p>" +
+        "<p><strong>Tip:</strong> " + sc.tip + "</p>" +
+        '<p style="font-family:Caveat,cursive;font-size:1.3rem;">' + sc.flavor + "</p>",
+      dismiss: "cancel",
+      buttons: [
+        { label: "START ▶", primary: true, cb: function () { startLevel(sc); } },
+        { label: "Not now" }
+      ]
+    });
+  }
+
+  function startLevel(sc) {
+    runCleanups();
+    state.current = { sc: sc, runScore: 0, mistakes: 0 };
+    state.finished = false;
+    go("scene");
+    $("#sceneTag").textContent = sc.tag;
+    $("#sceneTag").style.setProperty("--sc", sc.color);
+    $("#sceneTitle").textContent = sc.title;
+    $("#sceneImg").src = sc.slide;
+    $("#sceneImg").alt = sc.title + " illustration";
+    $("#sceneAva").textContent = sc.char.charAt(0);
+    $("#sceneAva").style.setProperty("--rc", sc.color);
+    $("#sceneFlavor").textContent = sc.flavor;
+    $("#sceneObjTip").innerHTML = "<b>OBJ:</b> " + sc.obj + " &nbsp;·&nbsp; <b>TIP:</b> " + sc.tip;
+    host.innerHTML = "";
+    updateHUD();
+    if (sc.id === "gift") { gameBlank(sc); }
+    else if (sc.id === "career") { gameMatch(sc); }
+    else if (sc.id === "prom") { gameTrueFalse(sc); }
+    else if (sc.id === "lobster") { gameChoice(sc); }
+    else { gameBonus(sc); }
+  }
+
+  function addPoints(n, x, y) {
+    if (!state.current) { return; }
+    state.current.runScore = Math.max(0, state.current.runScore + n);
+    updateHUD();
+    popFloat(x || window.innerWidth / 2, y || window.innerHeight / 2, (n >= 0 ? "+" : "") + n, n >= 0 ? "#2c7a4b" : "#b23333");
+  }
+  function addMistake() {
+    if (state.current) { state.current.mistakes++; }
+  }
+  function calcMult(streak) {
+    return clamp(1 + Math.floor(streak / 2), 1, 4);
+  }
+
+  function finishLevel() {
+    if (!state.current || state.finished) { return; }
+    state.finished = true;
+    var cur = state.current;
+    runCleanups();
+    var stars = cur.mistakes === 0 ? 3 : (cur.mistakes <= 2 ? 2 : 1);
+    var prev = sceneProgress(cur.sc.id);
+    var isBest = cur.runScore > prev.best;
+    prev.best = Math.max(prev.best, cur.runScore);
+    prev.stars = Math.max(prev.stars, stars);
+    prev.done = true;
+    saveStore();
+    updateHUD();
+    renderMap();
+    if (stars === 3) {
+      sfx.cheer();
+      spawnConfetti(window.innerWidth / 2, window.innerHeight / 3);
+      toast("PERFECT REEL! 3 STARS ⭐⭐⭐");
+    } else {
+      sfx.fanfare();
+    }
+    if (isBest && cur.runScore > 0) { toast("NEW BEST SCORE: " + cur.runScore); }
+    var starsHtml = "";
+    for (var i = 0; i < 3; i++) {
+      starsHtml += '<span class="' + (i < stars ? "pop" : "") + '" style="' + (i < stars ? "color:var(--gold-d)" : "color:#d9cbb2") + '">★</span>';
+    }
+    var btns = [
+      { label: "REPLAY ↺", cb: function () { startLevel(cur.sc); } },
+      { label: "MAP 🗺️", primary: true, cb: function () { go("map"); } }
+    ];
+    if (allDone()) {
+      btns.push({ label: "FINALE 🎟️", cb: function () { openFinale(); } });
+    }
+    showModal({
+      title: "REEL COMPLETE",
+      sub: cur.sc.title.toUpperCase(),
+      html:
+        '<div class="big-stars">' + starsHtml + "</div>" +
+        '<div class="m-score">' + cur.runScore + "</div>" +
+        "<p style='text-align:center;margin:6px 0 0;'>Mistakes: <strong>" + cur.mistakes + "</strong> · Best: <strong>" + prev.best + "</strong></p>",
+      dismiss: "none",
+      buttons: btns
+    });
+    state.current = null;
+    updateHUD();
+  }
+
+  /* ===== mini-game 1: fill the blanks ===== */
+  function gameBlank(sc) {
+    var bankWords = shuffle(GIFT_BLANKS.map(function (b) { return b.ans; }).concat(GIFT_DECOYS));
+    var selected = -1;
+    var remaining = GIFT_BLANKS.length;
+
+    var html = GIFT_BLANKS.map(function (b, i) {
+      return '<p class="sentence">' + b.pre +
+        '<button type="button" class="blank" data-blank="' + i + '">_____</button>' + b.post + "</p>";
+    }).join("");
+    html += '<div class="bank" role="group" aria-label="Word bank">' +
+      bankWords.map(function (w) {
+        return '<button type="button" class="bank-word" data-word="' + w.replace(/"/g, "&quot;") + '">' + w + "</button>";
+      }).join("") + "</div>";
+    host.innerHTML = html;
+
+    hostOn(function (e) {
+      var blank = e.target.closest(".blank");
+      var word = e.target.closest(".bank-word");
+      if (blank) {
+        if (blank.classList.contains("locked")) { return; }
+        selected = parseInt(blank.getAttribute("data-blank"), 10);
+        $$(".blank", host).forEach(function (b) { b.classList.remove("sel"); });
+        blank.classList.add("sel");
+        sfx.click();
+        return;
+      }
+      if (word) {
+        if (word.classList.contains("used")) { return; }
+        if (selected < 0) { toast("PICK A BLANK FIRST"); return; }
+        var w = word.getAttribute("data-word");
+        var blankBtn = host.querySelector('.blank[data-blank="' + selected + '"]');
+        if (w === GIFT_BLANKS[selected].ans) {
+          blankBtn.textContent = w;
+          blankBtn.classList.remove("sel");
+          blankBtn.classList.add("locked");
+          word.classList.add("used");
+          addPoints(100, e.clientX, e.clientY);
+          sfx.match();
+          remaining--;
+          selected = -1;
+          if (remaining === 0) { setTimeout(finishLevel, 700); }
+        } else {
+          addMistake();
+          addPoints(-15, e.clientX, e.clientY);
+          sfx.wrong();
+          shakeEl(word);
+          blankBtn.classList.remove("sel");
+          selected = -1;
+        }
+      }
+    });
+  }
+
+  /* ===== mini-game 2: match the meaning ===== */
+  function gameMatch(sc) {
+    var meanings = shuffle(CAREER_PAIRS.map(function (p, i) { return { m: p[1], id: i }; }));
+    var selWord = -1;
+    var found = 0;
+    var attempts = 0;
+
+    host.innerHTML =
+      '<p class="match-example">HOW IT WORKS ▸ WORD · <b>boasts</b> → MEANING · <b>proudly has</b></p>' +
+      '<p class="match-stats" id="matchStats" aria-live="polite">PAIRS 0/6 · ATTEMPTS 0</p>' +
+      '<div class="match-wrap">' +
+        '<div class="match-col"><h4>WORD</h4>' +
+          CAREER_PAIRS.map(function (p, i) {
+            return '<button type="button" class="pair-item" data-word="' + i + '"><b>' + p[0] + "</b></button>";
+          }).join("") +
+        "</div>" +
+        '<div class="match-col"><h4>MEANING</h4>' +
+          meanings.map(function (m) {
+            return '<button type="button" class="pair-item" data-mean="' + m.id + '">' + m.m + "</button>";
+          }).join("") +
+        "</div>" +
+      "</div>";
+
+    function stats() {
+      $("#matchStats").textContent = "PAIRS " + found + "/6 · ATTEMPTS " + attempts;
+    }
+
+    hostOn(function (e) {
+      var wBtn = e.target.closest("[data-word]");
+      var mBtn = e.target.closest("[data-mean]");
+      if (wBtn) {
+        if (wBtn.classList.contains("locked")) { return; }
+        selWord = parseInt(wBtn.getAttribute("data-word"), 10);
+        $$("[data-word]", host).forEach(function (b) { b.classList.remove("sel"); });
+        wBtn.classList.add("sel");
+        sfx.click();
+        return;
+      }
+      if (mBtn) {
+        if (mBtn.classList.contains("locked")) { return; }
+        if (selWord < 0) { toast("TAP A WORD ON THE LEFT FIRST"); return; }
+        attempts++;
+        if (parseInt(mBtn.getAttribute("data-mean"), 10) === selWord) {
+          var wEl = host.querySelector('[data-word="' + selWord + '"]');
+          wEl.classList.remove("sel");
+          wEl.classList.add("locked");
+          mBtn.classList.add("locked");
+          found++;
+          addPoints(120, e.clientX, e.clientY);
+          sfx.match();
+          selWord = -1;
+          stats();
+          if (found === 6) { setTimeout(finishLevel, 600); }
+        } else {
+          addMistake();
+          addPoints(-20, e.clientX, e.clientY);
+          sfx.wrong();
+          shakeEl(mBtn);
+          $$("[data-word]", host).forEach(function (b) { b.classList.remove("sel"); });
+          selWord = -1;
+          stats();
+        }
+      }
+    });
+    stats();
+  }
+
+  /* ===== mini-game 3: real or delusion ===== */
+  function gameTrueFalse(sc) {
+    var TOTAL_MS = 6000;
+    var cards = shuffle(PROM_TF);
+    var idx = 0;
+    var streak = 0;
+    var timerId = null;
+    var endsAt = 0;
+    var answered = false;
+
+    function renderCard() {
+      answered = false;
+      var c = cards[idx];
+      host.innerHTML =
+        '<div class="tf-card">' +
+          '<p class="tf-streak">CARD ' + (idx + 1) + "/" + cards.length + " · STREAK " + streak + " · MULTIPLIER ×" + calcMult(streak) + "</p>" +
+          '<p class="tf-q">' + c.s + "</p>" +
+          '<div class="bar" aria-hidden="true"><i id="tfBar" style="width:100%"></i></div>' +
+          '<div class="tf-btns">' +
+            '<button type="button" class="tf-btn real" data-v="real">REAL <kbd>←</kbd></button>' +
+            '<button type="button" class="tf-btn delu" data-v="delu">DELUSION <kbd>→</kbd></button>' +
+          "</div>" +
+          '<div class="tf-why" id="tfWhy"></div>' +
+        "</div>";
+      endsAt = Date.now() + TOTAL_MS;
+      timerId = setInterval(function () {
+        var left = endsAt - Date.now();
+        var bar = $("#tfBar");
+        if (!bar) { return; }
+        bar.style.width = clamp(left / TOTAL_MS * 100, 0, 100) + "%";
+        if (left <= 0 && !answered) { judge(null, null); }
+      }, 100);
+    }
+
+    function judge(v, ev) {
+      if (answered) { return; }
+      answered = true;
+      clearInterval(timerId);
+      timerId = null;
+      var c = cards[idx];
+      var ok = (v === "real") === c.real;
+      var x = ev ? ev.clientX : window.innerWidth / 2;
+      var y = ev ? ev.clientY : window.innerHeight / 2;
+      if (ok) {
+        streak++;
+        var mult = calcMult(streak);
+        var speedBonus = Math.round(Math.max(0, endsAt - Date.now()) / 100);
+        addPoints(100 * mult + speedBonus, x, y);
+        sfx.correct();
+      } else {
+        streak = 0;
+        addMistake();
+        addPoints(-25, x, y);
+        sfx.wrong();
+        toast(c.real ? "TRUTH: THIS IS REAL" : "TRUTH: THIS IS DELUSION");
+      }
+      var why = $("#tfWhy");
+      if (why) {
+        why.textContent = c.why;
+        why.classList.add("show");
+      }
+      $$(".tf-btn", host).forEach(function (b) { b.disabled = true; });
+      setTimeout(function () {
+        idx++;
+        if (idx < cards.length) { renderCard(); } else { finishLevel(); }
+      }, ok ? 900 : 1900);
+    }
+
+    function onKey(e) {
+      if (state.screen !== "scene") { return; }
+      if (e.key === "ArrowLeft") { e.preventDefault(); judge("real", null); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); judge("delu", null); }
+    }
+    document.addEventListener("keydown", onKey);
+    setCleanup(function () { document.removeEventListener("keydown", onKey); });
+
+    hostOn(function (e) {
+      var b = e.target.closest(".tf-btn");
+      if (b) { judge(b.getAttribute("data-v"), e); }
+    });
+
+    setCleanup(function () { if (timerId) { clearInterval(timerId); } });
+    renderCard();
+  }
+
+  /* ===== mini-game 4: quiz picks ===== */
+  function gameChoice(sc) {
+    var qs = shuffle(LOBSTER_QUIZ);
+    var idx = 0;
+    var lines = CHAR_LINES[sc.id] || { happy: ["“Nice one!”"], sad: ["“Not quite…”"] };
+
+    function renderQ() {
+      var q = qs[idx];
+      var opts = shuffle(q.o.map(function (t, i) { return { t: t, correct: i === q.a }; }));
+      host.innerHTML =
+        '<div class="q-card">' +
+          '<p style="font-family:VT323,monospace;letter-spacing:2px;color:var(--muted);margin:0 0 6px;">Q' + (idx + 1) + "/" + qs.length + "</p>" +
+          '<p class="q-text">' + q.q + "</p>" +
+          opts.map(function (o, i) {
+            return '<button type="button" class="opt" data-ok="' + (o.correct ? "1" : "0") + '" data-i="' + i + '">' + o.t + "</button>";
+          }).join("") +
+          '<p class="reaction" id="qReaction"></p>' +
+        "</div>";
+    }
+
+    hostOn(function (e) {
+      var b = e.target.closest(".opt");
+      if (!b || b.disabled) { return; }
+      var ok = b.getAttribute("data-ok") === "1";
+      $$(".opt", host).forEach(function (o) {
+        o.disabled = true;
+        if (o.getAttribute("data-ok") === "1") { o.classList.add("correct"); }
+        else if (o === b) { o.classList.add("wrong"); }
+        else { o.classList.add("dim"); }
+      });
+      var rx = $("#qReaction");
+      if (ok) {
+        addPoints(120, e.clientX, e.clientY);
+        sfx.correct();
+        if (rx) { rx.textContent = lines.happy[Math.floor(Math.random() * lines.happy.length)]; }
+      } else {
+        addMistake();
+        addPoints(-25, e.clientX, e.clientY);
+        sfx.wrong();
+        if (rx) { rx.textContent = lines.sad[Math.floor(Math.random() * lines.sad.length)]; }
+      }
+      setTimeout(function () {
+        idx++;
+        if (idx < qs.length) { renderQ(); } else { finishLevel(); }
+      }, ok ? 1400 : 2200);
+    });
+
+    renderQ();
+  }
+
+  /* ===== mini-game 5: timed bonus rush ===== */
+  function gameBonus(sc) {
+    var TOTAL_MS = 750 * 1000;
+    var pool = shuffle(BONUS_POOL);
+    var idx = 0;
+    var streak = 0;
+    var endsAt = Date.now() + TOTAL_MS;
+    var timerId = null;
+    var lastTickSec = -1;
+    var locked = false;
+
+    function fmt(ms) {
+      var s = Math.max(0, Math.ceil(ms / 1000));
+      return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+    }
+
+    function renderQ() {
+      if (idx >= pool.length) { endRound(true); return; }
+      locked = false;
+      var q = pool[idx];
+      var opts = shuffle(q.o);
+      var correctText = q.o[0];
+      host.innerHTML =
+        '<div class="bonus-top">' +
+          '<span class="bonus-timer" id="bTimer">0:00</span>' +
+          '<span class="bonus-prog" id="bProg">Q ' + (idx + 1) + "/" + pool.length + "</span>" +
+        "</div>" +
+        '<div class="bar bonus" aria-hidden="true"><i id="bBar" style="width:100%"></i></div>' +
+        '<div class="q-card" style="margin-top:12px;">' +
+          '<p class="tf-streak">STREAK ' + streak + " · MULTIPLIER ×" + calcMult(streak) + "</p>" +
+          '<p class="q-text">' + q.q + "</p>" +
+          opts.map(function (t) {
+            return '<button type="button" class="opt" data-ok="' + (t === correctText ? "1" : "0") + '">' + t + "</button>";
+          }).join("") +
+        "</div>";
+    }
+
+    function tick() {
+      var left = endsAt - Date.now();
+      var tEl = $("#bTimer");
+      var bar = $("#bBar");
+      if (tEl) {
+        tEl.textContent = fmt(left);
+        if (left <= 30000) { tEl.classList.add("low"); }
+      }
+      if (bar) {
+        bar.style.width = clamp(left / TOTAL_MS * 100, 0, 100) + "%";
+        if (left <= 30000) { bar.classList.add("low"); }
+      }
+      var secLeft = Math.ceil(left / 1000);
+      if (secLeft <= 10 && secLeft !== lastTickSec) { lastTickSec = secLeft; sfx.tick(); }
+      if (left <= 0 && !locked) { endRound(false); }
+    }
+
+    function endRound(poolDone) {
+      if (locked && !poolDone) { return; }
+      locked = true;
+      if (timerId) { clearInterval(timerId); timerId = null; }
+      if (poolDone) {
+        var bonusSec = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+        var timeBonus = bonusSec * 5;
+        if (timeBonus > 0) {
+          addPoints(timeBonus);
+          toast("TIME BONUS +" + timeBonus);
+        }
+        sfx.cheer();
+        spawnConfetti(window.innerWidth / 2, window.innerHeight / 3);
+      }
+      finishLevel();
+    }
+
+    hostOn(function (e) {
+      var b = e.target.closest(".opt");
+      if (!b || b.disabled || locked) { return; }
+      var ok = b.getAttribute("data-ok") === "1";
+      $$(".opt", host).forEach(function (o) {
+        o.disabled = true;
+        if (o.getAttribute("data-ok") === "1") { o.classList.add("correct"); }
+        else if (o === b) { o.classList.add("wrong"); }
+        else { o.classList.add("dim"); }
+      });
+      if (ok) {
+        streak++;
+        addPoints(100 * calcMult(streak), e.clientX, e.clientY);
+        sfx.correct();
+        setTimeout(function () { idx++; renderQ(); }, 500);
+      } else {
+        streak = 0;
+        addMistake();
+        addPoints(-25, e.clientX, e.clientY);
+        sfx.wrong();
+        setTimeout(function () { idx++; renderQ(); }, 1300);
+      }
+      var prog = $("#bProg");
+      if (prog) { prog.textContent = "Q " + Math.min(idx + 1, pool.length) + "/" + pool.length; }
+    });
+
+    timerId = setInterval(tick, 250);
+    setCleanup(function () { if (timerId) { clearInterval(timerId); } });
+    renderQ();
+    tick();
+  }
+
+  /* ===== finale ===== */
+  function rankFor(total) {
+    if (total >= 3600) { return "SOMEONE’S LOBSTER 🦞"; }
+    if (total >= 2400) { return "SITCOM SCHOLAR 🎓"; }
+    if (total >= 1200) { return "CENTRAL PERK REGULAR ☕"; }
+    return "CASUAL VIEWER 📺";
+  }
+
+  function openFinale() {
+    runCleanups();
+    go("finale");
+    renderFinale();
+    sfx.fanfare();
+    spawnConfetti(window.innerWidth / 2, window.innerHeight / 4);
+  }
+
+  function renderFinale() {
+    var total = totalBest();
+    var stars = totalStars();
+    var rows = SCENES.map(function (sc) {
+      var p = sceneProgress(sc.id);
+      return "<tr><td>0" + sc.num + " · " + sc.title + "</td><td>" +
+        "★".repeat(p.stars) + "☆".repeat(3 - p.stars) + "</td><td>" + p.best + "</td></tr>";
+    }).join("");
+    $("#finaleCard").innerHTML =
+      "<h2>🎟️ FINAL SCREENING</h2>" +
+      '<p class="m-sub" style="text-align:center;">THE WHOLE TAPE, REWATCHED</p>' +
+      '<div class="finale-total">' + total + "</div>" +
+      '<p style="margin:2px 0 0;">TOTAL STARS: <strong>' + stars + " / 15</strong></p>" +
+      '<div class="finale-rank">RANK: ' + rankFor(total) + "</div>" +
+      '<table class="finale-table"><thead><tr><th>REEL</th><th>STARS</th><th>BEST</th></tr></thead><tbody>' + rows + "</tbody></table>" +
+      '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">' +
+        '<button type="button" class="btn" id="btnFinMap">MAP 🗺️</button>' +
+        '<button type="button" class="btn" id="btnRewind">🔄 REWIND THE TAPE</button>' +
+      "</div>";
+    $("#btnFinMap").addEventListener("click", function () { go("map"); });
+    $("#btnRewind").addEventListener("click", confirmRewind);
+  }
+
+  function confirmRewind() {
+    showModal({
+      title: "REWIND THE TAPE?",
+      sub: "THIS CLEARS ALL PROGRESS",
+      html: "<p>All stars and best scores for every reel will be erased. The tape will be as blank as the day Joey rented it.</p>",
+      dismiss: "cancel",
+      buttons: [
+        { label: "YES, REWIND 🔄", primary: true, cb: function () {
+            store.levels = {};
+            saveStore();
+            updateHUD();
+            renderMap();
+            toast("TAPE REWOUND — CLEAN START!");
+            go("map");
+          } },
+        { label: "Keep progress" }
+      ]
+    });
+  }
+
+  /* ===== global controls ===== */
+  $("#btnStart").addEventListener("click", function () { sfx.flip(); go("map"); });
+  $("#btnBackMap").addEventListener("click", function () { go("map"); });
+  $("#btnMap").addEventListener("click", function () {
+    sfx.click();
+    if (state.screen === "scene") { runCleanups(); state.current = null; }
+    go("map");
+  });
+  $("#btnSound").addEventListener("click", function () {
+    store.muted = !store.muted;
+    saveStore();
+    renderSound();
+    if (!store.muted) { sfx.click(); }
+    toast(store.muted ? "SOUND OFF" : "SOUND ON");
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if ($("#modalBackdrop").classList.contains("open")) {
+        if (modalDismissable) { closeModal(); }
+      } else if (state.screen === "scene") {
+        runCleanups();
+        state.current = null;
+        go("map");
+        toast("LEFT THE REEL");
+      } else if (state.screen === "finale") {
+        go("map");
+      }
+    }
+  });
+
+  /* initialize audio on the very first user gesture */
+  document.addEventListener("pointerdown", initAudio, { once: true, capture: true });
+
+  /* ===== preloader ===== */
+  var plPlay = $("#plPlay");
+  setTimeout(function () {
+    $("#plDots").classList.add("hidden");
+    $("#plDots").style.display = "none";
+    plPlay.classList.remove("hidden");
+    plPlay.focus();
+  }, 900);
+  plPlay.addEventListener("click", function () {
+    initAudio();
+    sfx.flip();
+    $("#preloader").classList.add("open");
+    setTimeout(function () { $("#preloader").remove(); }, 750);
+  });
+
+  /* ===== boot ===== */
+  updateHUD();
+  renderMap();
+  renderSound();
+  refreshIcons();
+})();
+</script>
+</body>
+</html>
