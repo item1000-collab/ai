@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="A vanilla-JS game hub based on a Friends S2E15 English lesson: memory, swipe-sort, wordle with custom packs, taxi quiz, timing game, 3-level survival, date builder, escape room, visual novel, VHS ordering — plus 16 achievements.">
+<meta name="description" content="A vanilla-JS game hub based on a Friends S2E15 English lesson: word scramble, swipe-sort, wordle with custom packs, taxi quiz, timing game, 3-level survival, date builder, escape room, visual novel, VHS ordering — plus 16 achievements.">
 <title>F·R·I·E·N·D·S S2E15 Game Hub — 10 Mini-Games + Trophy Wall</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -109,18 +109,27 @@ footer{text-align:center;font-size:.8rem;color:var(--muted);font-style:italic;ma
 .hearts{font-size:1.1rem;letter-spacing:2px}
 .hearts .off{opacity:.25;filter:grayscale(1)}
 
-/* ===== memory ===== */
-.mem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.mcard{perspective:900px;background:none;border:none;padding:0;cursor:pointer;height:110px;border-radius:12px}
-.mcard:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
-.mcard .in{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .4s}
-.mcard.open .in,.mcard.done .in{transform:rotateY(180deg)}
-.mcard .f,.mcard .b{position:absolute;inset:0;backface-visibility:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:8px;text-align:center}
-.mcard .f{background:linear-gradient(160deg,#E8D6B4,#D9C096);border:2px solid #C4A87C;font-size:1.5rem}
-.mcard .b{transform:rotateY(180deg);background:var(--panel);border:2px solid var(--line);font-size:.74rem;line-height:1.35;color:var(--deep)}
-.mcard.done .b{background:#E8F4E3;border-color:#4E8C3A;color:#2F5D22}
-.mcard[data-k="d"] .b{font-style:italic;color:#5B4530}
-@media(max-width:640px){.mem-grid{grid-template-columns:repeat(3,1fr)}.mcard{height:96px}.mcard .b{font-size:.66rem}}
+/* ===== scramble (replaces memory) ===== */
+.sc-wrap{display:flex;flex-direction:column;gap:18px;align-items:center}
+.sc-clue{width:min(640px,94vw);background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:var(--shadow);text-align:center}
+.sc-clue .k{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.2em;color:var(--muted)}
+.sc-clue .q{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.15rem;color:var(--deep);margin:10px 0 4px;line-height:1.4}
+.sc-clue .hint{font-size:.82rem;color:#5B4530;font-style:italic}
+.sc-slots{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0}
+.sc-slot{width:46px;height:56px;border:2px dashed #C4A87C;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.5rem;color:var(--deep);background:#FFFDF6;cursor:pointer;transition:background .15s,border-color .15s}
+.sc-slot.filled{border-style:solid;border-color:var(--teal);background:#F0F8F4}
+.sc-slot:hover:not(.filled){border-color:var(--amber)}
+.sc-slot:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.sc-slot.space{border:none;background:transparent;cursor:default;width:18px}
+.sc-bank{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:56px}
+.sc-tile{width:46px;height:56px;border:none;border-radius:10px;background:linear-gradient(160deg,#E8D6B4,#D9C096);border:2px solid #C4A87C;font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.4rem;color:var(--deep);cursor:pointer;transition:transform .12s,background .15s;box-shadow:0 3px 0 #B8935E}
+.sc-tile:hover{transform:translateY(-2px)}
+.sc-tile:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.sc-tile.used{visibility:hidden}
+.sc-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.sc-solved{background:#E8F4E3;border-color:#4E8C3A;color:#2F5D22;font-weight:700;padding:10px 16px;border-radius:12px;font-size:.9rem}
+.sc-bad{background:#FBE9E7;border-color:#C0392B;color:#7C2318;font-weight:700;padding:10px 16px;border-radius:12px;font-size:.9rem;animation:shake .4s}
+.sc-progress{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.14em;color:var(--muted)}
 
 /* ===== swipe ===== */
 .sw-stage{display:flex;flex-direction:column;align-items:center;gap:16px}
@@ -433,8 +442,8 @@ function staticFlash(){
    ===================================================================== */
 var ACHS=[
   {id:"deck",        em:"🃏", name:"Full Deck",           desc:"Play all ten games at least once."},
-  {id:"firstpair",   em:"☕", name:"Mug Matcher",         desc:"Complete a game of Matching Mugs."},
-  {id:"elephant",    em:"🧠", name:"Elephant Memory",     desc:"Match all 8 pairs in 16 moves or fewer."},
+  {id:"firstpair",   em:"🔤", name:"Word Builder",        desc:"Solve a Word Scramble round."},
+  {id:"elephant",    em:"🧠", name:"Perfect Recall",      desc:"Finish Word Scramble without using a hint."},
   {id:"matchmaker",  em:"💘", name:"True Matchmaker",     desc:"Score 200+ points in Smitten or Not?"},
   {id:"kitten",      em:"🐱", name:"Smitten Kitten",      desc:"Solve a Wordle word."},
   {id:"onfire",      em:"🔥", name:"On Fire",             desc:"Reach a Wordle daily streak of 3."},
@@ -484,15 +493,23 @@ document.getElementById("achBtn").addEventListener("click",function(){
 /* =====================================================================
    DATA
    ===================================================================== */
-var MEMORY=[
-  {term:"to cross the line",def:"move a relationship from friends to romance"},
-  {term:"smitten",def:"completely captivated, in love"},
-  {term:"age gap",def:"a big age difference in a couple"},
-  {term:"ophthalmologist",def:"an eye doctor"},
-  {term:"get up",def:"to stand; rise from a seat"},
-  {term:"stop by",def:"to visit briefly, casually"},
-  {term:"make out",def:"to kiss passionately (informal)"},
-  {term:"“It’s just that…”",def:"a soft way to start an explanation"}
+var SCRAMBLE=[
+  {w:"SMITTEN",       q:"Completely captivated or in love with someone.",           h:"Phoebe: “Look at you, you’re a ___ kitten.”"},
+  {w:"OPHTHALMOLOGIST", q:"An eye doctor — Dr. Richard Burke’s profession.",         h:"Long word. Starts with OPH…"},
+  {w:"PLANETARIUM",   q:"Where Ross finally sets the perfect date, under projected stars.", h:"Museum with a dome."},
+  {w:"RECLINER",      q:"The chair Chandler and Joey refuse to leave.",             h:"It leans back. It has cup holders, in spirit."},
+  {w:"PAGER",         q:"It flashed 911 at the worst possible moment.",             h:"1990s device. Beeps."},
+  {w:"COMMITMENT",    q:"The theme that links all three storylines of the episode.",h:"Not just a feeling — a decision."},
+  {w:"OFTALMOLOG",    q:"(decoy — do not use)",                                     h:"Decoy",decoy:true},
+  {w:"SMITTEN",       q:"Dup — will be filtered",                                   h:"Dup",dup:true},
+  {w:"CRUSH",         q:"Monica develops a sudden one on Dr. Burke.",               h:"Short-lived, intense."},
+  {w:"ATTRACTION",    q:"The eye-chart line that grows into something bigger.",     h:"Physical or emotional pull."},
+  {w:"COMPLICATED",   q:"The chart line that usually sits right next to “It’s __”.",h:"Relationship status, often."},
+  {w:"FRIENDSHIP",    q:"What Ross and Rachel risk by crossing the line.",          h:"The thing before the line."},
+  {w:"CONFIDENCE",    q:"What a rehearsed line in the mirror is supposed to give.", h:"Not arrogance — poise."},
+  {w:"MUSEUM",        q:"The planetarium sits inside one of these.",                h:"Where the pelt and stars live."},
+  {w:"BLUSH",         q:"What a nervous laugh does to a first kiss.",               h:"Red cheeks."},
+  {w:"SOFTENER",      q:"“It’s just that…” is a ___ phrase.",                        h:"Makes a hard thing gentle."}
 ];
 
 var SWIPE=[
@@ -622,68 +639,169 @@ var FLOOR_LEVELS=[
 ];
 
 /* =====================================================================
-   GAME 1 — MEMORY
+   GAME 1 — WORD SCRAMBLE  (replaces the memory card game)
    ===================================================================== */
-function MemoryGame(ctx){
-  var stage=ctx.stage, first=null, lock=false, moves=0, found=0;
-  var t0=Date.now();
-  var best=Store.get("best_memory",null);
-  var finished=false;
+function ScrambleGame(ctx){
+  var stage=ctx.stage;
+  var rounds=shuffle(SCRAMBLE.filter(function(x){return !x.decoy && !x.dup;}));
+  var idx=0, score=0, lives=3, hintsUsed=0, solvedCount=0, over=false;
+  var best=Store.get("best_scramble",null);
+  var cur={}, bank=[], slots=[], usedBank=[], filled=[];
+
   stage.innerHTML=
-    '<div class="hud"><span class="chip">MOVES <b id="mmMoves">0</b></span>'+
-    '<span class="chip">PAIRS <b id="mmFound">0/8</b></span>'+
-    '<span class="chip">TIME <b id="mmTime">0:00</b></span>'+
-    (best?'<span class="chip">🏆 BEST '+best+' MOVES</span>':'')+'</div>'+
-    '<div class="mem-grid" id="mmGrid" role="group" aria-label="Memory grid"></div>'+
-    '<div id="mmEnd"></div>';
-  var deck=[];
-  MEMORY.forEach(function(p,i){ deck.push({k:"t",txt:p.term,id:i},{k:"d",txt:p.def,id:i}); });
-  deck=shuffle(deck);
-  var grid=$("#mmGrid",stage);
-  grid.innerHTML=deck.map(function(c,i){
-    return '<button type="button" class="mcard" data-i="'+i+'" data-k="'+c.k+'" data-id="'+c.id+'" aria-pressed="false">'+
-      '<span class="in"><span class="f" aria-hidden="true">☕</span>'+
-      '<span class="b">'+c.txt+'</span></span></button>';
-  }).join("");
-  var timeIv=ctx.interval(function(){
-    if(finished) return;
-    var el=$("#mmTime",stage); if(el) el.textContent=fmtTime(Math.floor((Date.now()-t0)/1000));
-  },1000);
-  grid.addEventListener("click",function(e){
-    var card=e.target.closest(".mcard");
-    if(!card||lock||card.classList.contains("open")||card.classList.contains("done"))return;
-    Sfx.tick(); card.classList.add("open"); card.setAttribute("aria-pressed","true");
-    if(!first){first=card;return;}
-    moves++; $("#mmMoves",stage).textContent=moves;
-    if(first.dataset.id===card.dataset.id){
-      first.classList.add("done"); card.classList.add("done");
-      first.classList.remove("open"); card.classList.remove("open");
-      first=null; found++; $("#mmFound",stage).textContent=found+"/8"; Sfx.correct();
-      if(found===8){
-        finished=true;
-        if(timeIv) clearInterval(timeIv);
-        var secs=Math.floor((Date.now()-t0)/1000);
-        var isBest=(best===null||moves<best);
-        if(isBest){best=moves;Store.set("best_memory",moves);}
-        Ach.unlock("firstpair");
-        if(moves<=16) Ach.unlock("elephant");
-        Sfx.win(); ctx.toast("MUG MATCH MASTERED! ☕");
-        $("#mmEnd",stage).innerHTML=
-          '<div class="panel finalbox"><p class="big">'+moves+' MOVES · '+fmtTime(secs)+'</p>'+
-          '<p>'+(isBest?"New personal best — Phoebe names you an honorary Smitten Kitten.":"Solid memory work. The coffee is still warm.")+'</p>'+
-          '<button type="button" class="btn" id="mmAgain">↻ Deal again</button></div>';
-        $("#mmAgain",stage).addEventListener("click",function(){ MemoryGame(ctx); });
-      }
-    }else{
-      lock=true; Sfx.wrong();
-      var a=first,b=card; first=null;
-      ctx.timer(function(){
-        [a,b].forEach(function(c){c.classList.remove("open");c.setAttribute("aria-pressed","false");});
-        lock=false;
-      },720);
+    '<div class="hud"><span class="chip">ROUND <b id="scRound">1</b>/'+rounds.length+'</span>'+
+    '<span class="chip">SCORE <b id="scScore">0</b></span>'+
+    '<span class="chip hearts" id="scLives">❤❤❤</span>'+
+    '<span class="chip">HINTS <b id="scHints">0</b></span>'+
+    (best?'<span class="chip">🏆 BEST '+best+'</span>':'')+'</div>'+
+    '<div class="sc-wrap">'+
+      '<div class="sc-clue"><span class="k">CLUE</span>'+
+        '<div class="q" id="scQ"></div>'+
+        '<div class="hint" id="scHint"></div></div>'+
+      '<div class="sc-slots" id="scSlots" role="group" aria-label="Answer slots"></div>'+
+      '<div class="sc-bank" id="scBank" role="group" aria-label="Letter tiles"></div>'+
+      '<div class="sc-actions">'+
+        '<button type="button" class="btn-ghost btn" id="scShuffle">🔀 Shuffle letters</button>'+
+        '<button type="button" class="btn-ghost btn" id="scClear">🧹 Clear</button>'+
+        '<button type="button" class="btn" id="scHintBtn">💡 Hint (−25)</button>'+
+      '</div>'+
+      '<div id="scFeedback"></div>'+
+    '</div>'+
+    '<div id="scEnd"></div>';
+
+  function pickWord(){
+    if(idx>=rounds.length || lives<=0){ end(); return false; }
+    cur = rounds[idx];
+    var letters = cur.w.split("");
+    bank = shuffle(letters);
+    usedBank = new Array(bank.length).fill(false);
+    slots = [];
+    filled = [];
+    for(var i=0;i<letters.length;i++){
+      slots.push(letters[i]);
+      filled.push(null); /* null = empty; otherwise bank index */
     }
+    paintAll();
+    return true;
+  }
+  function paintAll(){
+    $("#scRound",stage).textContent=idx+1;
+    $("#scScore",stage).textContent=score;
+    $("#scLives",stage).innerHTML=["❤","❤","❤"].map(function(h,i){return '<span class="'+(i<lives?"":"off")+'">'+h+'</span>';}).join("");
+    $("#scHints",stage).textContent=hintsUsed;
+    $("#scQ",stage).textContent=cur.q;
+    $("#scHint",stage).textContent="Hint: "+cur.h;
+    paintSlots(); paintBank();
+  }
+  function paintSlots(){
+    var box=$("#scSlots",stage);
+    box.innerHTML=slots.map(function(ch,i){
+      var f=filled[i];
+      var letter = (f===null) ? "" : bank[f];
+      var cls="sc-slot"+(letter?" filled":"");
+      return '<button type="button" class="'+cls+'" data-slot="'+i+'" aria-label="Slot '+(i+1)+'">'+letter+'</button>';
+    }).join("");
+  }
+  function paintBank(){
+    var box=$("#scBank",stage);
+    box.innerHTML=bank.map(function(ch,i){
+      var used=usedBank[i];
+      return '<button type="button" class="sc-tile'+(used?" used":"")+'" data-bank="'+i+'" aria-label="Letter '+ch+'" '+(used?"disabled":"")+'>'+ch+'</button>';
+    }).join("");
+  }
+  function checkIfComplete(){
+    if(filled.indexOf(null)>=0) return false;
+    var guess=filled.map(function(f){return bank[f];}).join("");
+    var answer=cur.w;
+    if(guess===answer){
+      score += 100 + Math.max(0, 40 - hintsUsed*20);
+      solvedCount++;
+      Sfx.correct();
+      flash("sc-solved","✅ Correct! “"+answer+"”");
+      idx++;
+      ctx.timer(function(){ if(pickWord()) { /* next */ } }, 900);
+      return true;
+    } else {
+      lives--; Sfx.wrong();
+      flash("sc-bad","❌ Not quite. Try rearranging the letters.");
+      ctx.timer(function(){
+        if(lives<=0){ end(); return; }
+        /* clear slots but keep bank tiles available */
+        for(var i=0;i<filled.length;i++){ if(filled[i]!==null){ usedBank[filled[i]]=false; } filled[i]=null; }
+        paintAll();
+      }, 700);
+      return true;
+    }
+  }
+  function flash(cls, msg){
+    var f=$("#scFeedback",stage);
+    f.innerHTML='<div class="'+cls+'">'+msg+'</div>';
+    ctx.timer(function(){ if(f) f.innerHTML=""; }, 900);
+  }
+  $("#scBank",stage).addEventListener("click",function(e){
+    var b=e.target.closest("[data-bank]"); if(!b||b.disabled||over)return;
+    var bi=+b.dataset.bank;
+    if(usedBank[bi])return;
+    var empty=-1;
+    for(var i=0;i<filled.length;i++){ if(filled[i]===null){ empty=i; break; } }
+    if(empty<0)return;
+    usedBank[bi]=true; filled[empty]=bi;
+    Sfx.tick(); paintAll(); checkIfComplete();
   });
-  return {destroy:function(){ if(timeIv) clearInterval(timeIv); }};
+  $("#scSlots",stage).addEventListener("click",function(e){
+    var b=e.target.closest("[data-slot]"); if(!b||over)return;
+    var si=+b.dataset.slot;
+    if(filled[si]===null)return;
+    usedBank[filled[si]]=false; filled[si]=null;
+    Sfx.tick(); paintAll();
+  });
+  $("#scShuffle",stage).addEventListener("click",function(){
+    if(over)return;
+    /* keep the same set of available letters, reshuffle positions */
+    var remainingIdx=[], remainingLetters=[];
+    for(var i=0;i<bank.length;i++){ if(!usedBank[i]){ remainingIdx.push(i); remainingLetters.push(bank[i]); } }
+    var sh=shuffle(remainingLetters);
+    for(var k=0;k<remainingIdx.length;k++){ bank[remainingIdx[k]]=sh[k]; }
+    Sfx.click(); paintBank();
+  });
+  $("#scClear",stage).addEventListener("click",function(){
+    if(over)return;
+    for(var i=0;i<filled.length;i++){ if(filled[i]!==null){ usedBank[filled[i]]=false; filled[i]=null; } }
+    Sfx.click(); paintAll();
+  });
+  $("#scHintBtn",stage).addEventListener("click",function(){
+    if(over)return;
+    /* reveal the next correct letter in the next empty slot */
+    var empty=-1;
+    for(var i=0;i<filled.length;i++){ if(filled[i]===null){ empty=i; break; } }
+    if(empty<0){ ctx.toast("Slots are full — press Clear or fix a letter."); return; }
+    var need=cur.w[empty];
+    /* find an unused bank tile with that letter */
+    var bi=-1;
+    for(var k=0;k<bank.length;k++){ if(!usedBank[k] && bank[k]===need){ bi=k; break; } }
+    if(bi<0){ ctx.toast("No free “"+need+"” tile — remove a wrong letter first."); Sfx.wrong(); return; }
+    usedBank[bi]=true; filled[empty]=bi;
+    hintsUsed++; score=Math.max(0,score-25);
+    Sfx.tick(); paintAll(); checkIfComplete();
+  });
+  function end(){
+    if(over)return; over=true;
+    var isBest=(best===null||score>best);
+    if(isBest){best=score;Store.set("best_scramble",score);}
+    if(solvedCount>0) Ach.unlock("firstpair");
+    if(solvedCount>=5 && hintsUsed===0) Ach.unlock("elephant");
+    Sfx.win();
+    var reason = (lives<=0) ? "Out of hearts — the tiles got the better of you." : "All rounds cleared. Phoebe salutes your vocabulary.";
+    $("#scEnd",stage).innerHTML=
+      '<div class="panel finalbox"><p class="big">'+score+' PTS</p>'+
+      '<p>Rounds solved: '+solvedCount+' / '+rounds.length+'. Hints used: '+hintsUsed+'.</p>'+
+      '<p>'+reason+'</p>'+
+      (isBest?'<p><strong>New personal best!</strong></p>':'')+
+      '<button type="button" class="btn" id="scAgain">↻ New scramble</button></div>';
+    $("#scAgain",stage).addEventListener("click",function(){ ScrambleGame(ctx); });
+  }
+  if(!pickWord()) return {destroy:function(){}};
+  return {destroy:function(){}};
 }
 
 /* =====================================================================
@@ -1730,7 +1848,7 @@ function RewindGame(ctx){
    REGISTRY + ROUTER
    ===================================================================== */
 var REG=[
-  {id:"memory", em:"☕", title:"The One with the Matching Mugs", tag:"MEMORY · 8 PAIRS", desc:"Pair every lesson term with its meaning before the coffee gets cold.", color:"#159F94", make:MemoryGame},
+  {id:"memory", em:"🔤", title:"Word Scramble — Lesson Edition", tag:"WORD PUZZLE · CLICK TILES", desc:"A definition appears; click the scrambled letter tiles to build the word. 3 hearts, hints cost points.", color:"#159F94", make:ScrambleGame},
   {id:"swipe", em:"💘", title:"Smitten or Not?", tag:"SWIPE SORT · 24 CARDS", desc:"Swipe right for phrases from this lesson, left for Friends-universe decoys.", color:"#E4559B", make:SwipeGame},
   {id:"wordle", em:"🟩", title:"Smitten Kitten Daily", tag:"WORDLE · 40+ WORDS · MY PACK", desc:"A themed word of the day, three extra packs — and your own custom words with hints.", color:"#7CB342", make:WordleGame},
   {id:"taxi", em:"🚕", title:"Taxi Truth", tag:"QUIZ RACE · 8 BLOCKS", desc:"Race the cab across Manhattan. Correct answers go green; wrong ones tick the meter.", color:"#E3B23C", make:TaxiGame},
@@ -1751,7 +1869,7 @@ var HUB_TITLE="F·R·I·E·N·D·S S2E15 — GAME HUB";
 function bestLabel(id){
   var v=Store.get("best_"+id,null);
   if(v===null)return "";
-  var map={memory:v+" moves",swipe:v+" pts",taxi:v+" pts",floor:v+" pts",date:v+" pts",rewind:v+" checks"};
+  var map={memory:v+" pts",swipe:v+" pts",taxi:v+" pts",floor:v+" pts",date:v+" pts",rewind:v+" checks"};
   return map[id]||String(v);
 }
 function paintShelf(){
