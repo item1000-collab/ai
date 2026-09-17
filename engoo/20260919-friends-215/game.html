@@ -59,8 +59,6 @@ button{font-family:inherit}
 .hero p{position:relative;z-index:1;color:#EBDDC2;margin:0;font-size:.98rem;max-width:64ch}
 .shelf-head{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.25rem;color:var(--deep);margin:26px 4px 16px}
 .shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:22px;margin-bottom:30px}
-/* FIX: tape and its label must be block-level, otherwise the inline span
-   fragments its background into slivers and the text overlaps (the bug) */
 .tape{position:relative;display:block;background:linear-gradient(160deg,#3A2B1A,#241A10);border-radius:14px;padding:16px 16px 14px;cursor:pointer;border:1px solid #4A3820;box-shadow:var(--shadow);transition:transform .18s;text-align:left;color:#F4E9D6;width:100%}
 .tape:hover{transform:translateY(-4px) rotate(-.6deg)}
 .tape:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
@@ -393,10 +391,7 @@ function $all(s,r){return Array.prototype.slice.call((r||document).querySelector
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function fmtTime(sec){var m=Math.floor(sec/60),s=sec%60;return m+":"+String(s).padStart(2,"0");}
 
-/* ---- game context with auto-cleanup ----
-   FIX: loop handles are stored and stop()ed on destroy.
-   Previously only the first frame id was canceled, so old games'
-   rAF loops kept running on cleared DOM and threw errors. */
+/* ---- game context with auto-cleanup ---- */
 var activeGame=null, activeCtx=null;
 function makeCtx(stage){
   var L=[],T=[],I=[],R=[];
@@ -633,6 +628,7 @@ function MemoryGame(ctx){
   var stage=ctx.stage, first=null, lock=false, moves=0, found=0;
   var t0=Date.now();
   var best=Store.get("best_memory",null);
+  var finished=false;
   stage.innerHTML=
     '<div class="hud"><span class="chip">MOVES <b id="mmMoves">0</b></span>'+
     '<span class="chip">PAIRS <b id="mmFound">0/8</b></span>'+
@@ -649,7 +645,10 @@ function MemoryGame(ctx){
       '<span class="in"><span class="f" aria-hidden="true">☕</span>'+
       '<span class="b">'+c.txt+'</span></span></button>';
   }).join("");
-  ctx.interval(function(){ var el=$("#mmTime",stage); if(el) el.textContent=fmtTime(Math.floor((Date.now()-t0)/1000)); },1000);
+  var timeIv=ctx.interval(function(){
+    if(finished) return;
+    var el=$("#mmTime",stage); if(el) el.textContent=fmtTime(Math.floor((Date.now()-t0)/1000));
+  },1000);
   grid.addEventListener("click",function(e){
     var card=e.target.closest(".mcard");
     if(!card||lock||card.classList.contains("open")||card.classList.contains("done"))return;
@@ -661,6 +660,8 @@ function MemoryGame(ctx){
       first.classList.remove("open"); card.classList.remove("open");
       first=null; found++; $("#mmFound",stage).textContent=found+"/8"; Sfx.correct();
       if(found===8){
+        finished=true;
+        if(timeIv) clearInterval(timeIv);
         var secs=Math.floor((Date.now()-t0)/1000);
         var isBest=(best===null||moves<best);
         if(isBest){best=moves;Store.set("best_memory",moves);}
@@ -682,11 +683,11 @@ function MemoryGame(ctx){
       },720);
     }
   });
-  return {destroy:function(){}};
+  return {destroy:function(){ if(timeIv) clearInterval(timeIv); }};
 }
 
 /* =====================================================================
-   GAME 2 — SWIPE  (FIX: ended flag — arrows no longer re-trigger the ending)
+   GAME 2 — SWIPE
    ===================================================================== */
 function SwipeGame(ctx){
   var stage=ctx.stage, deck=shuffle(SWIPE), idx=0, score=0, combo=0, lives=3, ended=false;
@@ -749,7 +750,7 @@ function SwipeGame(ctx){
 }
 
 /* =====================================================================
-   GAME 3 — WORDLE with packs + custom words
+   GAME 3 — WORDLE
    ===================================================================== */
 function WordleGame(ctx){
   var stage=ctx.stage;
@@ -1122,7 +1123,7 @@ function CrossingGame(ctx){
 }
 
 /* =====================================================================
-   GAME 6 — WAS THE FLOOR HOT? (3 levels)
+   GAME 6 — WAS THE FLOOR HOT?
    ===================================================================== */
 function FloorGame(ctx){
   var stage=ctx.stage;
@@ -1264,7 +1265,7 @@ function FloorGame(ctx){
     if(spawnT<=0){ spawn(); spawnT=cfg.spawnMin+Math.random()*(cfg.spawnMax-cfg.spawnMin); }
     for(var i=items.length-1;i>=0;i--){
       var it=items[i];
-      it.y+=it.vy*dt/1000*(rm()?.7:1);
+      it.y+=it.vy*dt/1000*(rm()?0.7:1);
       it.el.style.left=it.x+"px"; it.el.style.top=it.y+"px";
       if(collide(it)){ catchIt(it); it.el.remove(); items.splice(i,1); continue; }
       if(it.y>H+40){ it.el.remove(); items.splice(i,1); }
@@ -1375,11 +1376,6 @@ function DateBuilderGame(ctx){
 
 /* =====================================================================
    GAME 8 — ESCAPE ROOM
-   FIX: one delegated click handler on #escMini + a state object.
-   Previously every re-opened station attached ANOTHER handler to the
-   persistent container, so clicks were processed multiple times.
-   Also: pager re-arm clears the previous dot interval; the keypad
-   gets an "escaped" flag so it cannot re-fire after success.
    ===================================================================== */
 function EscapeGame(ctx){
   var stage=ctx.stage, t0=Date.now(), escaped=false;
@@ -1433,7 +1429,6 @@ function EscapeGame(ctx){
     code[idx]=digit; solved[st]=true; paintDoors();
     ctx.toast("Station solved! Digit "+(idx+1)+" = "+digit+" ("+label+")"); Sfx.correct();
   }
-  /* --- renderers (no listeners attached here — all clicks are delegated) --- */
   function miniChart(){
     mini.type="chart"; mini.step=0;
     var order=shuffle(CHART.slice()), guard=0;
@@ -1467,7 +1462,6 @@ function EscapeGame(ctx){
       var dot=document.createElement("i"); box.appendChild(dot); i++;
     },220);
   }
-  /* --- ONE delegated handler for all three minis --- */
   escMini.addEventListener("click",function(e){
     if(mini.type==="chart"){
       var b=e.target.closest("[data-l]");
@@ -1544,7 +1538,7 @@ function EscapeGame(ctx){
     if(entered.length<3){entered+=k;paintKP();}
   });
   paintDoors(); miniChart();
-  return {destroy:function(){}};
+  return {destroy:function(){ if(mini.dotsIv) clearInterval(mini.dotsIv); }};
 }
 
 /* =====================================================================
@@ -1656,17 +1650,19 @@ function NovelGame(ctx){
 }
 
 /* =====================================================================
-   GAME 10 — VHS REWIND  (FIX: won flag — CHECK can't re-fire after a win)
+   GAME 10 — VHS REWIND
    ===================================================================== */
 function RewindGame(ctx){
   var stage=ctx.stage, tries=0, won=false;
+  var bestRewind=Store.get("best_rewind",null);
+  var bestLabel = (bestRewind===null) ? "—" : String(bestRewind);
   var order=shuffle(SCENES.map(function(c,i){return {img:SLIDES[i],cap:c,id:i};}));
   var guard=0;
   while(order.every(function(s,i){return s.id===i;})&&guard++<20) order=shuffle(SCENES.map(function(c,i){return {img:SLIDES[i],cap:c,id:i};}));
   stage.innerHTML=
     '<div class="hud"><span class="chip">CHECKS <b id="vrTries">0</b></span>'+
     '<span class="chip">LOCKED <b id="vrOk">0/15</b></span>'+
-    '<span class="chip">🏆 BEST '+(Store.get("best_rewind",null)??"—")+' CHECKS</span></div>'+
+    '<span class="chip">🏆 BEST '+bestLabel+' CHECKS</span></div>'+
     '<p style="font-size:.9rem;color:var(--muted);font-style:italic;margin-top:0">The tape got scrambled. Use ▲▼ to rebuild the episode’s chronology — from the title card to the sunset window — then CHECK. Correct scenes lock in place.</p>'+
     '<div class="vr-list" id="vrList"></div>'+
     '<button type="button" class="btn" id="vrCheck">✅ CHECK THE TAPE</button>'+
@@ -1755,7 +1751,8 @@ var HUB_TITLE="F·R·I·E·N·D·S S2E15 — GAME HUB";
 function bestLabel(id){
   var v=Store.get("best_"+id,null);
   if(v===null)return "";
-  return {memory:v+" moves",swipe:v+" pts",taxi:v+" pts",floor:v+" pts",date:v+" pts",rewind:v+" checks"}[id]||String(v);
+  var map={memory:v+" moves",swipe:v+" pts",taxi:v+" pts",floor:v+" pts",date:v+" pts",rewind:v+" checks"};
+  return map[id]||String(v);
 }
 function paintShelf(){
   var shelf=document.getElementById("shelf");
