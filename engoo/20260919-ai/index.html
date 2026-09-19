@@ -1,1 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Architecture of Modern Learning — Atmospheric Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+/* ============ 1. TOKENS & RESET ============ */
+:root{
+  --parchment:#F3ECDC; --parchment-2:#F7F0DF; --parchment-deep:#EFE4C9;
+  --gold:#C9A227; --gold-soft:#DCC178; --gold-bright:#E9CE8C; --gold-dim:rgba(201,162,39,.45);
+  --emerald:#1E6F50; --royal:#1E3A6E; --crimson:#8E2A3A;
+  --ink:#2A2119; --ink-soft:#4A3B28; --muted:#7A6A54;
+  --dark:#14100A; --dark-2:#1E170E;
+  --serif:'EB Garamond',Georgia,serif; --display:'Cinzel',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0E0B07}
+body{font-family:var(--serif);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;background:none;border:none;color:inherit}
+:focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px;border-radius:4px}
 
+/* ============ 2. STAGE & SLIDES CORE ============ */
+.stage{position:fixed;left:50%;top:50%;width:1280px;height:720px;transform-origin:center}
+.slide{
+  position:absolute;inset:0;padding:56px 64px;
+  background:
+    radial-gradient(1100px 600px at 20% 0%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(900px 500px at 90% 100%, rgba(201,162,39,.10), transparent 55%),
+    var(--parchment);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .75s ease, visibility .75s;
+}
+.slide.active{opacity:1;visibility:visible;pointer-events:auto}
+.slide.interlude{background:radial-gradient(120% 120% at 50% 40%, var(--dark-2), var(--dark) 75%)}
+.slide.darktitle{background:radial-gradient(120% 120% at 50% 35%, #241A0F, #120D07 78%)}
+
+/* fragments (staged builds) */
+.frag{opacity:0;visibility:hidden;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease,visibility .6s}
+.frag.shown{opacity:1;visibility:visible;transform:none}
+
+/* ============ 3. CHROME ============ */
+.progress{position:fixed;top:0;left:0;right:0;height:3px;background:rgba(201,162,39,.14);z-index:80}
+#bar{height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-bright));transition:width .6s ease}
+.grain{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.05;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='260' height='260' filter='url(%23n)' opacity='0.55'/></svg>");
+  background-size:260px}
+.vignette{position:fixed;inset:0;z-index:55;pointer-events:none;
+  background:radial-gradient(ellipse at center, transparent 52%, rgba(20,12,5,.42) 100%)}
+.controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:90;display:flex;gap:10px;
+  padding:8px;border-radius:999px;background:rgba(18,13,7,.6);border:1px solid rgba(201,162,39,.4);
+  backdrop-filter:blur(8px)}
+.controls button{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--gold-bright);
+  border:1px solid rgba(201,162,39,.35);transition:background .25s,transform .25s}
+.controls button:hover{background:rgba(201,162,39,.22);transform:translateY(-1px)}
+.controls svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hidden{display:none!important}
+.counter{position:fixed;right:22px;bottom:24px;z-index:90;font-family:var(--display);font-size:13px;
+  letter-spacing:.25em;color:var(--gold-soft);background:rgba(18,13,7,.55);padding:8px 14px;border-radius:999px;
+  border:1px solid rgba(201,162,39,.3)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ============ 4. SHARED FURNITURE ============ */
+.kicker{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.38em;color:var(--gold);
+  text-transform:uppercase;margin-bottom:10px}
+h2{font-family:var(--display);font-weight:700;font-size:38px;color:var(--ink);line-height:1.15}
+.hdr{margin-bottom:26px}
+.hdr .hr{width:84px;height:2px;background:linear-gradient(90deg,var(--gold),transparent);margin-top:14px}
+.corners svg{position:absolute;width:60px;height:60px;color:var(--gold);opacity:.55;pointer-events:none}
+.corners .tl{top:16px;left:16px}.corners .tr{top:16px;right:16px;transform:scaleX(-1)}
+.corners .bl{bottom:16px;left:16px;transform:scaleY(-1)}.corners .br{bottom:16px;right:16px;transform:scale(-1)}
+.bg-orn{position:absolute;width:520px;height:520px;color:var(--gold);opacity:.055;pointer-events:none}
+.rule{display:flex;align-items:center;gap:16px;color:var(--gold);margin:18px auto}
+.rule::before,.rule::after{content:"";flex:1;max-width:170px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim))}
+.rule::after{background:linear-gradient(90deg,var(--gold-dim),transparent)}
+.rule .flo{font-size:20px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--gold-dim);border-radius:999px;
+  padding:6px 16px;font-family:var(--display);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
+.chip.emerald{border-color:rgba(30,111,80,.5);color:var(--emerald)}
+.chip.royal{border-color:rgba(30,58,110,.5);color:var(--royal)}
+.chip.crimson{border-color:rgba(142,42,58,.5);color:var(--crimson)}
+.who{font-family:var(--display);font-size:11px;letter-spacing:.24em;text-transform:uppercase;font-weight:700}
+
+/* Maya avatar */
+.maya{position:absolute;left:60px;bottom:44px;display:none;flex-direction:column;align-items:center;gap:7px;z-index:5}
+.slide.has-maya .maya{display:flex}
+.orb{width:50px;height:50px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #E7B7D9, var(--crimson) 58%, #3E0F1B);
+  box-shadow:0 0 26px rgba(142,42,58,.55), inset 0 0 12px rgba(255,224,238,.4);
+  animation:breathe 4s ease-in-out infinite}
+.orb::after{content:"❖";position:absolute;inset:0;display:grid;place-items:center;color:#F6D9E4;font-size:15px}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.075)}}
+.maya .mlabel{font-family:var(--display);font-size:10.5px;letter-spacing:.26em;color:var(--crimson);text-transform:uppercase}
+
+/* Dust particles */
+.dustfield{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.dust{position:absolute;bottom:-14px;border-radius:50%;
+  background:radial-gradient(circle,#F4D891,rgba(244,216,145,0) 70%);opacity:0;animation:rise linear infinite}
+.slide:not(.active) .dust{animation-play-state:paused}
+@keyframes rise{0%{transform:translate(0,0);opacity:0}10%{opacity:.9}80%{opacity:.3}100%{transform:translate(var(--dx),-760px);opacity:0}}
+
+/* ============ 5. TITLE ============ */
+.s-title{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.title-arch{position:absolute;width:760px;height:600px;left:50%;top:54%;transform:translate(-50%,-50%);
+  border:1.5px solid rgba(201,162,39,.4);border-radius:380px 380px 22px 22px;pointer-events:none}
+.title-arch::after{content:"";position:absolute;inset:16px;border:1px solid rgba(201,162,39,.22);
+  border-radius:360px 360px 16px 16px}
+.ray{position:absolute;top:-160px;left:50%;width:520px;height:640px;transform-origin:top center;
+  background:linear-gradient(180deg,rgba(233,206,140,.20),transparent 70%);filter:blur(26px);
+  animation:shimmer 7s ease-in-out infinite alternate;pointer-events:none}
+.ray.r1{transform:translateX(-50%) rotate(-16deg)}
+.ray.r2{transform:translateX(-50%) rotate(14deg);animation-delay:-3.5s}
+@keyframes shimmer{from{opacity:.35}to{opacity:.85}}
+.s-title .kicker{color:var(--crimson)}
+.s-title h1{font-family:var(--display);font-weight:800;font-size:64px;line-height:1.08;color:var(--ink);max-width:900px}
+.s-title h1 em{font-style:normal;color:var(--gold);display:block;font-size:44px;font-weight:700;letter-spacing:.06em}
+.s-title .sub{font-size:22px;font-style:italic;color:var(--ink-soft);max-width:640px;margin-top:14px}
+.s-title .meta{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap;justify-content:center}
+.hint{position:absolute;bottom:26px;left:0;right:0;text-align:center;font-family:var(--display);
+  font-size:11px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase}
+
+/* ============ 6. MAP ============ */
+.mapwrap{position:relative;height:478px;margin-top:6px}
+.mapwrap svg.map{position:absolute;inset:0;width:100%;height:100%}
+.arc{fill:none;stroke:var(--gold);stroke-width:2;stroke-dasharray:6 10;animation:march 5s linear infinite;opacity:.8}
+@keyframes march{to{stroke-dashoffset:-128}}
+.node-ring{animation:pulse 3.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.2}50%{opacity:.65}}
+.maplabel{position:absolute;transform:translateX(-50%);text-align:center;width:220px}
+.maplabel .who{display:block;margin-bottom:3px}
+.maplabel p{font-size:14px;color:var(--ink-soft);font-style:italic}
+.mapcaption{position:absolute;bottom:-8px;left:0;right:0;text-align:center;font-size:16.5px;font-style:italic;color:var(--muted)}
+
+/* ============ 7. TRIAD ============ */
+.s-triad{padding:40px 64px}
+.tri-wrap{position:relative;height:472px;margin-top:4px}
+.ring{position:absolute;left:50%;top:50%;width:468px;height:468px;transform:translate(-50%,-50%);
+  border:2px solid rgba(201,162,39,.55);border-radius:50%;pointer-events:none}
+.ring::after{content:"";position:absolute;inset:14px;border:1px dashed rgba(201,162,39,.35);border-radius:50%}
+.tri{position:absolute;width:198px;height:198px;border-radius:50%;text-align:center;
+  border:2.5px solid var(--c);background:linear-gradient(160deg,#FBF5E6,#F0E4C8);
+  box-shadow:0 14px 32px rgba(58,45,32,.16), inset 0 0 0 7px rgba(255,255,255,.45);
+  display:flex;flex-direction:column;justify-content:center;padding:16px;gap:4px}
+.tri .tmark{color:var(--c);font-size:13px}
+.tri .who{color:var(--c)}
+.tri .pers{font-family:var(--display);font-weight:700;font-size:16.5px;color:var(--ink)}
+.tri .role{font-size:12.5px;font-style:italic;color:var(--ink-soft);line-height:1.35}
+.tri.emerald{--c:var(--emerald);left:96px;top:6px}
+.tri.royal{--c:var(--royal);right:96px;top:6px}
+.tri.crimson{--c:var(--crimson);left:50%;transform:translateX(-50%);top:264px}
+.tri-thesis{margin-top:16px;font-size:17px;font-style:italic;color:var(--ink-soft);text-align:center;max-width:1020px;margin-left:auto;margin-right:auto}
+.tri-thesis strong{font-style:normal;color:var(--ink)}
+
+/* ============ 8. CURVE ============ */
+.curvewrap{position:relative;height:470px}
+.curvewrap svg{position:absolute;inset:0;width:100%;height:100%}
+#curvePath{stroke-dasharray:1000;stroke-dashoffset:1000}
+.slide.active #curvePath{stroke-dashoffset:0;transition:stroke-dashoffset 1.9s cubic-bezier(.4,0,.2,1) .35s}
+.stop{position:absolute;width:300px}
+.stop .st{font-family:var(--display);font-weight:700;font-size:18px;color:var(--ink)}
+.stop p{font-size:14px;font-style:italic;color:var(--ink-soft);line-height:1.4}
+.callout{position:absolute;right:8px;top:12px;max-width:330px;background:linear-gradient(160deg,#1E6F50,#155740);
+  color:#EAF6EF;border:1px solid var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:15.5px;
+  font-style:italic;box-shadow:0 12px 26px rgba(21,87,64,.35)}
+.stop1{left:36px;bottom:6px}.stop2{left:472px;bottom:118px}.stop3{right:20px;bottom:150px;text-align:right}
+
+/* ============ 9. PILLARS ============ */
+.pillars{display:flex;gap:26px;margin-top:8px}
+.pillar{flex:1;border:1.5px solid var(--c);border-radius:150px 150px 16px 16px;background:var(--parchment-2);
+  padding:30px 24px 22px;text-align:center;box-shadow:0 12px 26px rgba(58,45,32,.10);display:flex;flex-direction:column;gap:10px}
+.pillar.emerald{--c:rgba(30,111,80,.65)}.pillar.royal{--c:rgba(30,58,110,.65)}.pillar.crimson{--c:rgba(142,42,58,.65)}
+.pillar .pmark{color:var(--c);font-size:15px}
+.pillar h3{font-family:var(--display);font-size:20px;font-weight:700;color:var(--ink)}
+.pillar .tools{font-family:var(--display);font-size:12px;letter-spacing:.14em;color:var(--c);text-transform:uppercase}
+.pillar p{font-size:14.5px;font-style:italic;color:var(--ink-soft);line-height:1.5}
+.pillarnote{margin-top:18px;text-align:center;font-style:italic;color:var(--muted);font-size:16px}
+
+/* ============ 10. TRANSITION / BUBBLE ============ */
+.pivot-setup{font-size:18px;font-style:italic;color:var(--ink-soft);margin-bottom:20px}
+.bubble{position:relative;max-width:880px;background:linear-gradient(165deg,#FBF4E4,#F2E5C8);
+  border:2px solid var(--crimson);border-radius:18px;padding:26px 32px;box-shadow:0 16px 36px rgba(58,45,32,.16)}
+.bubble::after{content:"";position:absolute;left:70px;bottom:-16px;border:16px solid transparent;border-top-color:var(--crimson);border-bottom:0}
+.bubble .who{color:var(--crimson);display:block;margin-bottom:8px}
+.bubble q{font-size:23px;font-style:italic;line-height:1.5;quotes:"“" "”";color:var(--ink)}
+.pivot-thesis{margin-top:26px;font-size:17px;color:var(--ink-soft);max-width:940px}
+.pivot-thesis strong{color:var(--ink)}
+
+/* ============ 11. DECREE ============ */
+.decree-zone{display:flex;gap:44px;align-items:flex-start;margin-top:6px}
+.scroll{flex:1.35;position:relative;background:linear-gradient(170deg,#F8F0DC,#EDDFBC);border-radius:10px;
+  padding:44px 46px;box-shadow:0 18px 40px rgba(58,45,32,.22);border:1px solid rgba(201,162,39,.4)}
+.scroll::before,.scroll::after{content:"";position:absolute;left:0;right:0;height:20px;
+  background:linear-gradient(180deg,rgba(90,66,30,.35),rgba(90,66,30,.06));border-radius:10px 10px 0 0}
+.scroll::before{top:0}.scroll::after{bottom:0;transform:rotate(180deg)}
+.scroll .who{color:var(--royal)}
+.scroll q{display:block;margin-top:10px;font-size:25px;font-style:italic;line-height:1.55;color:var(--ink);quotes:"“" "”"}
+.seal{position:absolute;right:-26px;bottom:-26px;width:96px;height:96px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%, #C4576B, var(--crimson) 55%, #5C1522);
+  box-shadow:0 10px 22px rgba(92,21,34,.5), inset 0 0 0 5px rgba(255,230,235,.22);
+  display:grid;place-items:center;color:#F6D9E0;text-align:center;transform:rotate(-8deg)}
+.seal span{font-family:var(--display);font-size:10px;letter-spacing:.2em}
+.decree-side{flex:1;display:flex;flex-direction:column;gap:14px;padding-top:8px}
+.decree-side .annot{border-left:3px solid var(--gold);padding:4px 0 4px 16px;font-size:16px;color:var(--ink-soft)}
+.decree-side .annot strong{color:var(--ink)}
+
+/* ============ 12. ANALYSIS SLIDES ============ */
+.an-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:36px;align-items:start;margin-top:4px}
+.qcard{position:relative;background:var(--parchment-2);border:1px solid rgba(201,162,39,.45);border-radius:14px;
+  padding:28px 32px;box-shadow:0 14px 30px rgba(58,45,32,.12)}
+.qcard::before{content:"❝";position:absolute;top:-18px;left:20px;font-size:44px;color:var(--gold);font-family:var(--display)}
+.qcard q{font-size:22.5px;font-style:italic;line-height:1.55;color:var(--ink);quotes:"“" "”";display:block}
+.qcard q strong{color:var(--crimson);font-style:italic}
+.qcard .qwho{display:block;margin-top:12px;text-align:right}
+.prompt-chip{display:inline-block;margin-bottom:14px;background:rgba(30,58,110,.08);border:1px solid rgba(30,58,110,.35);
+  border-radius:10px;padding:10px 16px;font-size:15px;font-style:italic;color:var(--royal)}
+.annots{display:flex;flex-direction:column;gap:16px}
+.annot-card{background:var(--parchment-deep);border:1px solid var(--gold-dim);border-radius:12px;padding:16px 20px}
+.annot-card .alabel{font-family:var(--display);font-size:11px;letter-spacing:.22em;color:var(--crimson);
+  text-transform:uppercase;font-weight:700;display:block;margin-bottom:6px}
+.annot-card p{font-size:15px;color:var(--ink-soft);line-height:1.5}
+.pushback{margin-top:16px;border-left:3px solid var(--emerald);padding:6px 0 6px 16px}
+.pushback .who{color:var(--emerald)}
+.pushback q{font-size:16.5px;font-style:italic;color:var(--ink-soft)}
+
+/* ============ 13. MATRIX ============ */
+.matrix{display:grid;grid-template-columns:1fr 60px 1fr;gap:8px;align-items:stretch;margin-top:2px}
+.model{background:var(--parchment-2);border:1px solid var(--gold-dim);border-radius:16px;padding:22px 26px;
+  display:flex;flex-direction:column;align-items:center;gap:10px}
+.model h3{font-family:var(--display);font-size:19px;font-weight:700;color:var(--ink)}
+.step{width:100%;text-align:center;background:#FFFDF4;border:1px solid var(--gold-dim);border-radius:999px;
+  padding:9px 14px;font-size:15px;color:var(--ink-soft)}
+.arrow{color:var(--gold);font-size:15px;line-height:1}
+.result{width:100%;border-radius:12px;padding:12px 18px;font-size:14.5px;font-style:italic;color:#FDF6E8;line-height:1.45}
+.result.bad{background:linear-gradient(160deg,#8E2A3A,#6B1F2C)}
+.result.good{background:linear-gradient(160deg,#1E6F50,#14523A)}
+.result strong{font-style:normal}
+.mat-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--gold);font-size:22px;gap:6px}
+.mat-mid::before,.mat-mid::after{content:"";width:1px;flex:1;background:linear-gradient(180deg,transparent,var(--gold-dim),transparent)}
+.matrix-take{margin-top:16px;text-align:center;font-style:italic;color:var(--ink-soft);font-size:16.5px}
+
+/* ============ 14. CONCERN ============ */
+.concern-grid{display:grid;grid-template-columns:340px 1fr;gap:44px;align-items:center;margin-top:4px}
+.ribbon{background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:#2A1E0C;border-radius:10px;
+  padding:22px 28px;box-shadow:0 12px 26px rgba(122,90,20,.3);font-size:21px;font-style:italic;line-height:1.5;position:relative}
+.ribbon::before,.ribbon::after{content:"";position:absolute;top:10px;bottom:10px;width:14px;background:var(--crimson);border-radius:4px}
+.ribbon::before{left:-20px}.ribbon::after{right:-20px}
+.concern-txt{margin-top:20px;font-size:17.5px;color:var(--ink-soft);line-height:1.6}
+.concern-txt strong{color:var(--ink)}
+.pillar-svg{width:100%;height:auto}
+
+/* ============ 15. DIALECTIC ============ */
+.dia{display:grid;grid-template-columns:1fr 320px 1fr;gap:24px;align-items:stretch;margin-top:2px}
+.dia-card{background:var(--parchment-2);border:1.5px solid var(--dc);border-radius:16px;padding:22px 24px}
+.dia-card.emerald{--dc:rgba(30,111,80,.6)}.dia-card.royal{--dc:rgba(30,58,110,.6)}
+.dia-card h3{font-family:var(--display);font-size:19px;color:var(--dc);font-weight:700;margin-bottom:10px}
+.dia-card p{font-size:15.5px;color:var(--ink-soft);line-height:1.55;font-style:italic}
+.dia-card p+p{margin-top:8px}
+.dia-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.dia-banner{width:100%;text-align:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));
+  color:#2A1E0C;border-radius:10px;padding:12px 14px;box-shadow:0 10px 22px rgba(122,90,20,.28)}
+.dia-banner .bl{font-family:var(--display);font-weight:700;font-size:14.5px;letter-spacing:.1em}
+.dia-banner p{font-size:13px;font-style:italic;margin-top:4px;line-height:1.4}
+
+/* ============ 16. INTERLUDES ============ */
+.interlude{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 120px}
+.interlude .flo{color:var(--gold);font-size:26px}
+.interlude blockquote{font-size:36px;font-style:italic;line-height:1.5;color:var(--gold-bright);max-width:920px;margin-top:22px}
+.interlude blockquote strong{color:#F6E4B8;font-weight:600}
+.interlude cite{display:block;margin-top:26px;font-family:var(--display);font-style:normal;font-size:13px;
+  letter-spacing:.3em;color:var(--gold-soft);text-transform:uppercase}
+
+/* ============ 17. FINAL ============ */
+.doors{display:grid;grid-template-columns:270px 1fr 270px;gap:34px;align-items:center;margin-top:10px}
+.door{position:relative;height:400px;border-radius:12px;box-shadow:0 18px 40px rgba(20,12,5,.35);overflow:hidden}
+.door.left{background:linear-gradient(170deg,#E8D9B4,#CDB684);border:2px solid rgba(122,90,20,.5)}
+.door.right{background:linear-gradient(170deg,#3A2B12,#191207);border:2px solid var(--gold)}
+.door .darch{position:absolute;inset:22px;border:1.5px solid rgba(122,90,20,.55);border-radius:110px 110px 10px 10px}
+.door.right .darch{border-color:rgba(233,206,140,.5)}
+.door .dcap{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-family:var(--display);
+  font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(74,50,15,.85)}
+.door.right .dcap{color:var(--gold-soft)}
+.door svg{position:absolute;inset:0;width:100%;height:100%}
+.final-center{text-align:center}
+.final-center .big{font-family:var(--display);font-weight:700;font-size:33px;line-height:1.3;color:var(--ink)}
+.final-center .take{margin-top:18px;font-size:18.5px;font-style:italic;color:var(--ink-soft);max-width:560px;margin-left:auto;margin-right:auto}
+.final-links{display:flex;justify-content:center;gap:14px;margin-top:24px;flex-wrap:wrap}
+.s-title .corners svg,.slide.darktitle .corners svg{opacity:.8}
+
+/* ============ 18. MOTION & PRINT ============ */
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+  .frag,.frag.shown{transform:none;transition:none}
+  #curvePath{stroke-dashoffset:0!important}
+  .arc{stroke-dasharray:none}
+  .dust{display:none}
+}
+@media print{
+  html,body{overflow:visible;background:#fff}
+  .stage{position:static;transform:none!important;width:1280px;height:auto;margin:0 auto}
+  .slide{position:relative;inset:auto;width:1280px;height:720px;opacity:1;visibility:visible;page-break-after:always;margin:0 auto}
+  .frag{opacity:1;visibility:visible;transform:none}
+  .grain,.vignette,.controls,.counter,.progress{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- shared SVG symbols -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="flourish" viewBox="0 0 100 100">
+    <path d="M6 94 C6 52 52 6 94 6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M15 94 C15 58 58 15 94 15" fill="none" stroke="currentColor" stroke-width="1" opacity=".55"/>
+    <rect x="31" y="31" width="9" height="9" transform="rotate(45 35.5 35.5)" fill="currentColor"/>
+    <circle cx="8" cy="92" r="2.6" fill="currentColor"/>
+    <circle cx="92" cy="8" r="2.6" fill="currentColor"/>
+  </symbol>
+</svg>
+
+<div class="progress" aria-hidden="true"><div id="bar"></div></div>
+
+<div class="stage" id="stage" role="region" aria-roledescription="presentation" aria-label="The Architecture of Modern Learning">
+
+  <!-- ═══ 1 · TITLE ═══ -->
+  <section class="slide darktitle" data-title="Title" aria-hidden="true">
+    <div class="ray r1"></div><div class="ray r2"></div>
+    <div class="title-arch"></div>
+    <div class="dustfield" data-dust="16"></div>
+    <div class="corners"><svg class="tl"><use href="#flourish"/></svg><svg class="tr"><use href="#flourish"/></svg><svg class="bl"><use href="#flourish"/></svg><svg class="br"><use href="#flourish"/></svg></div>
+    <p class="kicker">A real-time case study</p>
+    <h1>The Architecture of<em>Modern Learning</em></h1>
+    <div class="rule"><span class="flo">❦</span></div>
+    <p class="sub">AI companions, cross-cultural exchange, and the future of language acquisition — witnessed live, in a single thirty-minute English lesson.</p>
+    <div class="meta">
+      <span class="chip emerald">Srijita · Kolkata</span>
+      <span class="chip royal">Anatoly · Moscow</span>
+      <span class="chip crimson">Maya · ElevenLabs AI</span>
+    </div>
+    <p class="hint">→ next &nbsp;·&nbsp; ← back &nbsp;·&nbsp; F fullscreen &nbsp;·&nbsp; M ambience</p>
+  </section>
+
+  <!-- ═══ 2 · MAP ═══ -->
+  <section class="slide" data-title="One Lesson, Three Time Zones" aria-hidden="true">
+    <div class="hdr"><p class="kicker">The players &amp; the distance</p><h2>One Lesson, Three Time Zones</h2><div class="hr"></div></div>
+    <div class="mapwrap">
+      <svg class="map" viewBox="0 0 1152 478" aria-hidden="true">
+        <g transform="translate(96,96)" stroke="#C9A227" fill="none" opacity=".8">
+          <circle r="34" stroke-width="1.2"/><circle r="26" stroke-width=".8" opacity=".6"/>
+          <path d="M0,-30 L5,-5 L30,0 L5,5 L0,30 L-5,5 L-30,0 L-5,-5 Z" fill="#C9A227" stroke="none" opacity=".9"/>
+        </g>
+        <text x="96" y="46" text-anchor="middle" font-family="Cinzel" font-size="11" fill="#C9A227" letter-spacing="3">N</text>
+        <path class="arc" d="M310,150 Q340,262 492,338"/>
+        <path class="arc" d="M540,330 Q680,322 826,196"/>
+        <path class="arc" d="M330,116 Q560,18 816,150"/>
+        <g transform="translate(310,136)"><circle class="node-ring" r="17" fill="none" stroke="#1E6F50" stroke-width="1.4"/><circle r="9" fill="#1E6F50" stroke="#F3ECDC" stroke-width="2"/></g>
+        <g transform="translate(512,346)"><circle class="node-ring" r="17" fill="none" stroke="#1E3A6E" stroke-width="1.4" style="animation-delay:-1.1s"/><circle r="9" fill="#1E3A6E" stroke="#F3ECDC" stroke-width="2"/></g>
+        <g transform="translate(846,176)"><circle class="node-ring" r="24" fill="none" stroke="#8E2A3A" stroke-width="1.4" style="animation-delay:-2.2s"/>
+          <path d="M-16,6 q0,-10 10,-12 q3,-8 12,-8 q9,0 12,8 q10,2 10,12 q0,8 -10,8 h-24 q-10,0 -10,-8 z" fill="#8E2A3A" stroke="#F3ECDC" stroke-width="1.6"/></g>
+      </svg>
+      <div class="maplabel frag" style="left:310px;top:170px"><span class="who" style="color:var(--emerald)">Kolkata</span><p>The Human Teacher — structuring, observing, guiding the debate.</p></div>
+      <div class="maplabel frag" style="left:512px;top:380px"><span class="who" style="color:var(--royal)">Moscow</span><p>The Human Student — inquiring, prompting, pushing boundaries.</p></div>
+      <div class="maplabel frag" style="left:846px;top:216px"><span class="who" style="color:var(--crimson)">The Cloud</span><p>The AI Companion — immersive personas, on demand.</p></div>
+      <p class="mapcaption frag">A thirty-minute ESL lesson, stitched across two continents and one synthetic voice.</p>
+    </div>
+  </section>
+
+  <!-- ═══ 3 · TRIAD ═══ -->
+  <section class="slide s-triad" data-title="The Turing Triad" aria-hidden="true">
+    <div class="hdr"><p class="kicker">The new geometry of class</p><h2>The Turing Triad</h2></div>
+    <div class="tri-wrap">
+      <div class="ring"></div>
+      <div class="tri emerald frag"><span class="tmark">❖</span><span class="who">The Human Teacher</span><span class="pers">Srijita</span><p class="role">Structuring the lesson, observing, guiding the philosophical debate.</p></div>
+      <div class="tri royal frag"><span class="tmark">❖</span><span class="who">The Human Student</span><span class="pers">Anatoly</span><p class="role">Inquiring, providing prompts, pushing linguistic boundaries.</p></div>
+      <div class="tri crimson frag"><span class="tmark">❖</span><span class="who">The AI Companion</span><span class="pers">Maya</span><p class="role">Generating immersive, real-time personas to force spontaneous practice.</p></div>
+    </div>
+    <p class="tri-thesis frag">“The modern ESL environment is <strong>no longer a simple dyad</strong>; it is a <strong>tripartite ecosystem</strong> where AI absorbs the rote conversational burden, elevating the human teacher to a strategic facilitator.”</p>
+  </section>
+
+  <!-- ═══ 4 · IMMERSION CURVE ═══ -->
+  <section class="slide" data-title="The Immersion Curve" aria-hidden="true">
+    <div class="hdr"><p class="kicker">Lesson anatomy · 30 minutes</p><h2>The Immersion Curve</h2></div>
+    <div class="curvewrap">
+      <svg viewBox="0 0 1152 470" aria-hidden="true">
+        <line x1="70" y1="418" x2="1100" y2="418" stroke="#C9A227" stroke-width="1.4" opacity=".6"/>
+        <line x1="70" y1="418" x2="70" y2="30" stroke="#C9A227" stroke-width="1.4" opacity=".6"/>
+        <text x="585" y="452" text-anchor="middle" font-family="Cinzel" font-size="13" fill="#7A6A54" letter-spacing="3">TIME</text>
+        <text x="30" y="240" text-anchor="middle" font-family="Cinzel" font-size="13" fill="#7A6A54" letter-spacing="3" transform="rotate(-90 30 240)">LINGUISTIC COMPLEXITY</text>
+        <path id="curvePath" pathLength="1000" d="M96,392 C360,388 470,352 590,290 C720,224 860,120 1036,84" fill="none" stroke="#1E3A6E" stroke-width="5" stroke-linecap="round"/>
+        <g><circle cx="150" cy="390" r="10" fill="#C9A227" stroke="#FFFDF4" stroke-width="3"/><circle cx="565" cy="316" r="10" fill="#C9A227" stroke="#FFFDF4" stroke-width="3"/><circle cx="1000" cy="92" r="10" fill="#C9A227" stroke="#FFFDF4" stroke-width="3"/></g>
+      </svg>
+      <div class="stop stop1 frag"><span class="st">① Casual Icebreakers</span><p>Srijita’s love for <em>Modern Family</em> vs. Anatoly’s exploration of AI.</p></div>
+      <div class="stop stop2 frag"><span class="st">② Technical Discussion</span><p>Python vs. HTML — and a tour of Anatoly’s GitHub site.</p></div>
+      <div class="stop stop3 frag"><span class="st">③ Spontaneous Persona Roleplay</span><p>Interacting with the AI acting as the young Queen Elizabeth II.</p></div>
+      <div class="callout frag">Spontaneous roleplay forces high-level cognitive recall that scripted exercises cannot match.</div>
+    </div>
+  </section>
+
+  <!-- ═══ 5 · ARCHITECTURE ═══ -->
+  <section class="slide" data-title="AI Companion Architecture" aria-hidden="true">
+    <div class="hdr"><p class="kicker">The machine behind the voice</p><h2>AI Companion Architecture</h2></div>
+    <div class="pillars">
+      <div class="pillar emerald"><span class="pmark">❖</span><h3>Coding &amp; Logic</h3><span class="tools">Claude · GitHub Copilot</span><p>Assisting Python lessons for European learners — and powering Anatoly’s personal AI-resource website.</p></div>
+      <div class="pillar royal frag"><span class="pmark">❖</span><h3>Text &amp; Synthesis</h3><span class="tools">ChatGPT · Gemini · DeepSeek</span><p>General query resolution. DeepSeek is highlighted as the trending, highly popular tool in Russia.</p></div>
+      <div class="pillar crimson frag"><span class="pmark">❖</span><h3>Voice &amp; Immersion</h3><span class="tools">ElevenLabs · Maya</span><p>Real-time, low-latency audio responses adopting complex personas for language and interview prep.</p></div>
+    </div>
+    <p class="pillarnote frag">One voice, three engines — chosen per task, not per fashion.</p>
+  </section>
+
+  <!-- ═══ 6 · TRANSITION POINT ═══ -->
+  <section class="slide has-maya" data-title="The Transition Point" aria-hidden="true">
+    <div class="hdr"><p class="kicker">The pivot</p><h2>The Transition Point</h2></div>
+    <p class="pivot-setup">Mid-lesson, between Python and HTML — unprompted — Maya steers the class toward pedagogy.</p>
+    <div class="bubble frag">
+      <span class="who">Maya · ElevenLabs voice</span>
+      <q>Since you’re already on the subject of Python and AI, you should throw the Turing test into the mix. It’s the perfect way to debate whether a machine can actually think… Plus, it’s a great way to practice some high-level English vocabulary.</q>
+    </div>
+    <p class="pivot-thesis frag">This unprompted pivot demonstrates AI’s emerging capability as a <strong>co-instructor</strong> — connecting student interests (computing) to pedagogical goals (vocabulary).</p>
+    <div class="maya" aria-hidden="true"><div class="orb"></div><span class="mlabel">Maya is present</span></div>
+  </section>
+
+  <!-- ═══ 7 · ROYAL DECREE ═══ -->
+  <section class="slide" data-title="The Royal Prompt" aria-hidden="true">
+    <div class="hdr"><p class="kicker">Enter the crown</p><h2>The Royal Decree</h2></div>
+    <div class="decree-zone">
+      <div class="scroll">
+        <span class="who">Anatoly asks</span>
+        <q>Maya, please play the role of the young Queen from the first episode of <em>The Crown</em>. We are just encounters, and we would ask you some questions.</q>
+        <div class="seal"><span>AS&nbsp;SPOKEN<br>·&nbsp;LIVE&nbsp;·</span></div>
+      </div>
+      <div class="decree-side">
+        <p class="annot frag"><strong>Shared context.</strong> Anatoly leverages Srijita’s recent viewing of <em>The Crown</em> to pull the whole class into one story-world.</p>
+        <p class="annot frag"><strong>Persona as leverage.</strong> Forcing the AI into a historical character instantly elevates the stakes — from basic small talk to formal, regal English.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 8 · INTERLUDE I ═══ -->
+  <section class="slide interlude" data-title="Interlude — The Silence of the Crown" aria-hidden="true">
+    <div class="dustfield" data-dust="12"></div>
+    <span class="flo">❦</span>
+    <blockquote>“It is an honor, of course — but <strong>the silence of the crown</strong> is often far heavier than the gold.”</blockquote>
+    <cite>— The young Queen</cite>
+  </section>
+
+  <!-- ═══ 9 · ANALYSIS I ═══ -->
+  <section class="slide has-maya" data-title="Linguistic Analysis I — The Weighty Crown" aria-hidden="true">
+    <div class="hdr"><p class="kicker">Linguistic analysis · I</p><h2>The Weighty Crown</h2></div>
+    <div class="an-grid">
+      <div>
+        <div class="qcard">
+          <q>It is a <strong>weighty thing</strong>, isn’t it? One moment I was a princess and the next I am the center of a world I must now lead. It is an honor of course, but the <strong>silence of the crown</strong> is often far heavier than the gold.</q>
+          <span class="qwho who" style="color:var(--crimson)">— The young Queen, on her coronation</span>
+        </div>
+        <div class="pushback frag">
+          <span class="who">The Queen pushes back</span><br>
+          <q>You speak as if the years have already passed… but for me, the crown is still new.</q>
+        </div>
+      </div>
+      <div class="annots">
+        <div class="annot-card frag"><span class="alabel">Nuanced metaphor</span><p>“Weighty” — not “hard” or “difficult.” Metaphorical adjectives paint the burden instead of labelling it.</p></div>
+        <div class="annot-card frag"><span class="alabel">Poetic comparative</span><p>“Far heavier than the gold” — an advanced structure that challenges the student’s listening comprehension in real time.</p></div>
+      </div>
+    </div>
+    <div class="maya" aria-hidden="true"><div class="orb"></div><span class="mlabel">Maya is present</span></div>
+  </section>
+
+  <!-- ═══ 10 · ANALYSIS II ═══ -->
+  <section class="slide has-maya" data-title="Linguistic Analysis II — Jewelry vs. Office" aria-hidden="true">
+    <div class="hdr"><p class="kicker">Linguistic analysis · II</p><h2>Jewelry vs. Office</h2></div>
+    <div class="an-grid">
+      <div>
+        <p class="prompt-chip">🎓 Anatoly asks: “What do you feel about wearing crown? Is it like a new jewelry thing for you?”</p>
+        <div class="qcard">
+          <q><strong>Jewelry.</strong> A curious perspective… The crown is not an ornament. <strong>It is an office.</strong> When I place it upon my head, it is not the sparkle of the diamonds I feel, but the weight of an entire nation’s expectations. <strong>It is a gilded cage</strong>, I suppose, but one I am <strong>bound by duty</strong> to inhabit.</q>
+          <span class="qwho who" style="color:var(--crimson)">— The young Queen</span>
+        </div>
+      </div>
+      <div class="annots">
+        <div class="annot-card frag"><span class="alabel">Advanced juxtaposition</span><p>Ornament vs. office: beauty without obligation, set against obligation that merely looks like beauty.</p></div>
+        <div class="annot-card frag"><span class="alabel">Idiom in context</span><p>“Gilded cage” and “bound by duty” — advanced idioms deployed perfectly inside the persona, not recited from a dictionary.</p></div>
+      </div>
+    </div>
+    <div class="maya" aria-hidden="true"><div class="orb"></div><span class="mlabel">Maya is present</span></div>
+  </section>
+
+  <!-- ═══ 11 · ANALYSIS III ═══ -->
+  <section class="slide has-maya" data-title="Linguistic Analysis III — The Heart's Inclinations" aria-hidden="true">
+    <div class="hdr"><p class="kicker">Linguistic analysis · III</p><h2>The Heart’s Inclinations</h2></div>
+    <div class="an-grid">
+      <div>
+        <p class="prompt-chip">🎓 Anatoly asks: “You had an arguing conversation with your husband because he needed to kneel… What do you feel about it?”</p>
+        <div class="qcard">
+          <q>It was <strong>strained</strong>. To see the man I love… forced to kneel before me… The crown demands a certain order. An ancient ritual that does not care for the <strong>heart’s inclinations</strong>. It was a <strong>sobering reminder</strong>… the monarchy is a singular lonely thing.</q>
+          <span class="qwho who" style="color:var(--crimson)">— The young Queen</span>
+        </div>
+      </div>
+      <div class="annots">
+        <div class="annot-card frag"><span class="alabel">Emotional articulation</span><p>A model of advanced vocabulary for describing complex, painful feelings — tension made audible.</p></div>
+        <div class="annot-card frag"><span class="alabel">Abstract &amp; possessive</span><p>“The heart’s inclinations” — high-level abstract nouns and possessive structures, rarely met in scripted dialogues.</p></div>
+      </div>
+    </div>
+    <div class="maya" aria-hidden="true"><div class="orb"></div><span class="mlabel">Maya is present</span></div>
+  </section>
+
+  <!-- ═══ 12 · MATRIX ═══ -->
+  <section class="slide" data-title="Learning Dynamics Matrix" aria-hidden="true">
+    <div class="hdr"><p class="kicker">Two architectures of the same lesson</p><h2>Learning Dynamics Matrix</h2></div>
+    <div class="matrix">
+      <div class="model">
+        <h3>The Traditional Model</h3>
+        <div class="step">Teacher Provides Prompt</div><span class="arrow">↓</span>
+        <div class="step">Student Formulates Answer</div><span class="arrow">↓</span>
+        <div class="step">Teacher Corrects Grammar</div>
+        <div class="result bad frag"><strong>Result:</strong> safe and predictable — but lacks spontaneous cognitive pressure.</div>
+      </div>
+      <div class="mat-mid">❖</div>
+      <div class="model">
+        <h3>The AI-Augmented Model</h3>
+        <div class="step">AI Adopts Persona — Monarch, or a strict Boss for interview prep</div><span class="arrow">↓</span>
+        <div class="step">Student Interacts Spontaneously</div><span class="arrow">↓</span>
+        <div class="step">Human Teacher Facilitates &amp; Observes</div>
+        <div class="result good frag"><strong>Result:</strong> high cognitive pressure, realistic unpredictability — Anatoly’s “aggressive hiring manager” interview drill.</div>
+      </div>
+    </div>
+    <p class="matrix-take frag">The discomfort is the curriculum.</p>
+  </section>
+
+  <!-- ═══ 13 · CORE CONCERN ═══ -->
+  <section class="slide" data-title="Srijita's Core Concern" aria-hidden="true">
+    <div class="hdr"><p class="kicker">⚠ The teacher’s warning</p><h2>Srijita’s Core Concern</h2></div>
+    <div class="concern-grid">
+      <svg class="pillar-svg" viewBox="0 0 300 400" aria-hidden="true">
+        <rect x="90" y="30" width="120" height="22" rx="4" fill="#E4D5AE" stroke="#B39A5C"/>
+        <rect x="104" y="52" width="92" height="270" fill="#EFE2BE" stroke="#B39A5C"/>
+        <line x1="126" y1="56" x2="126" y2="318" stroke="#D9C791" stroke-width="2"/>
+        <line x1="150" y1="56" x2="150" y2="318" stroke="#D9C791" stroke-width="2"/>
+        <line x1="174" y1="56" x2="174" y2="318" stroke="#D9C791" stroke-width="2"/>
+        <rect x="76" y="322" width="148" height="26" rx="4" fill="#E4D5AE" stroke="#B39A5C"/>
+        <path d="M150,52 L138,120 L160,150 L136,210 L158,258 L142,318" fill="none" stroke="#4A2E1C" stroke-width="2.4" stroke-linejoin="round"/>
+        <path d="M136,210 L112,246 M158,258 L188,286 M138,120 L120,96" fill="none" stroke="#4A2E1C" stroke-width="1.6"/>
+        <circle cx="112" cy="248" r="4" fill="#4A2E1C"/><circle cx="190" cy="288" r="3.4" fill="#4A2E1C"/>
+        <circle cx="118" cy="94" r="3" fill="#4A2E1C"/><circle cx="146" cy="330" r="3.2" fill="#4A2E1C"/>
+      </svg>
+      <div>
+        <div class="ribbon">“They are very much dependent on AI tools for everything… that is really <strong>hampering their thinking skills</strong>.”</div>
+        <p class="concern-txt frag">Instant machine answers risk the <strong>erosion of foundational logical and cognitive development</strong>. Adult learners like Anatoly can regulate their use — for the young, the analog foundation must be built first.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 14 · DIALECTIC ═══ -->
+  <section class="slide" data-title="The Dialectic of AI in Education" aria-hidden="true">
+    <div class="hdr"><p class="kicker">Two views · one balance</p><h2>The Dialectic of AI in Education</h2></div>
+    <div class="dia">
+      <div class="dia-card emerald">
+        <h3>Cognitive Reliance</h3>
+        <p>Srijita’s view: foundational, un-augmented human skills come first.</p>
+        <p>Handwriting and drawing before screens for children.</p>
+      </div>
+      <div class="dia-mid">
+        <svg viewBox="0 0 240 190" width="240" aria-hidden="true">
+          <line x1="120" y1="24" x2="120" y2="168" stroke="#C9A227" stroke-width="4"/>
+          <rect x="96" y="162" width="48" height="12" rx="4" fill="#C9A227"/>
+          <line x1="30" y1="46" x2="210" y2="46" stroke="#C9A227" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="120" cy="46" r="7" fill="#C9A227"/>
+          <line x1="30" y1="46" x2="18" y2="92" stroke="#C9A227" stroke-width="1.4"/><line x1="30" y1="46" x2="42" y2="92" stroke="#C9A227" stroke-width="1.4"/>
+          <path d="M6,92 Q30,124 54,92 Z" fill="#E9CE8C" stroke="#C9A227" stroke-width="2"/>
+          <line x1="210" y1="46" x2="198" y2="92" stroke="#C9A227" stroke-width="1.4"/><line x1="210" y1="46" x2="222" y2="92" stroke="#C9A227" stroke-width="1.4"/>
+          <path d="M186,92 Q210,124 234,92 Z" fill="#E9CE8C" stroke="#C9A227" stroke-width="2"/>
+        </svg>
+        <div class="dia-banner frag">
+          <span class="bl">REGULATED AUGMENTATION</span>
+          <p>AI learned safely as a daily utility — on a foundation of analog skills.</p>
+        </div>
+      </div>
+      <div class="dia-card royal">
+        <h3>Inevitable Evolution</h3>
+        <p>Anatoly’s view: high-profile warnings acknowledged — yet AI integration is unavoidable.</p>
+        <p>Much like computers and the internet before it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 15 · INTERLUDE II ═══ -->
+  <section class="slide interlude" data-title="Interlude — A Larger Palace" aria-hidden="true">
+    <div class="dustfield" data-dust="12"></div>
+    <span class="flo">❦</span>
+    <blockquote>“AI does not replace the teacher; it builds them <strong>a larger palace to teach within</strong>.”</blockquote>
+    <cite>— The closing thesis</cite>
+  </section>
+
+  <!-- ═══ 16 · FINAL ═══ -->
+  <section class="slide" data-title="Two Doors — Closing" aria-hidden="true">
+    <div class="dustfield" data-dust="14"></div>
+    <div class="corners"><svg class="tl"><use href="#flourish"/></svg><svg class="tr"><use href="#flourish"/></svg><svg class="bl"><use href="#flourish"/></svg><svg class="br"><use href="#flourish"/></svg></div>
+    <div class="hdr" style="text-align:center"><p class="kicker">Coda</p><h2>The Modern Classroom Is Not Human Versus Machine</h2><div class="hr" style="margin:14px auto 0;background:linear-gradient(90deg,transparent,var(--gold),transparent)"></div></div>
+    <div class="doors">
+      <div class="door left">
+        <div class="darch"></div>
+        <svg viewBox="0 0 270 400" aria-hidden="true">
+          <path d="M135 320 C135 240 135 190 135 130" fill="none" stroke="#6B4E1E" stroke-width="6" stroke-linecap="round"/>
+          <path d="M135 210 C105 200 85 180 82 150 M135 185 C165 175 185 155 188 128 M135 150 C120 140 110 124 108 104" fill="none" stroke="#6B4E1E" stroke-width="3.4" stroke-linecap="round"/>
+          <circle cx="135" cy="102" r="42" fill="none" stroke="#6B4E1E" stroke-width="2.4" opacity=".8"/>
+          <circle cx="135" cy="102" r="56" fill="none" stroke="#6B4E1E" stroke-width="1.2" opacity=".5"/>
+          <path d="M92 320 Q135 300 178 320" fill="none" stroke="#6B4E1E" stroke-width="2.4"/>
+        </svg>
+        <span class="dcap">Analog wisdom</span>
+      </div>
+      <div class="final-center">
+        <p class="big">AI absorbs the mechanical burden.<br>The human educator safeguards<br>logical development and cognitive truth.</p>
+        <p class="take frag">Build the analog skills first — then let the machine enlarge your palace.</p>
+        <div class="final-links frag">
+          <span class="chip">Srijita × Anatoly × Maya</span>
+          <a class="chip crimson" href="https://item1000-collab.github.io/ai/engoo/20260919-ai/" target="_blank" rel="noopener noreferrer" style="text-decoration:none">🔗 Lesson files &amp; transcript</a>
+        </div>
+      </div>
+      <div class="door right">
+        <div class="darch"></div>
+        <svg viewBox="0 0 270 400" aria-hidden="true">
+          <g stroke="#E9CE8C" stroke-width="1.6" fill="none" opacity=".85">
+            <path d="M40 60 H120 V140 H190"/><path d="M60 340 V240 H150 V180 H230"/>
+            <path d="M230 80 V150 H180 V260 H90 V340"/>
+          </g>
+          <g fill="#E9CE8C">
+            <circle cx="120" cy="140" r="4"/><circle cx="190" cy="140" r="4"/><circle cx="150" cy="240" r="4"/>
+            <circle cx="230" cy="150" r="4"/><circle cx="90" cy="260" r="4"/><circle cx="40" cy="60" r="4"/>
+          </g>
+          <circle cx="150" cy="190" r="30" fill="none" stroke="#E9CE8C" stroke-width="1.4" opacity=".7"/>
+          <circle cx="150" cy="190" r="14" fill="#E9CE8C" opacity=".85"/>
+        </svg>
+        <span class="dcap">Digital architecture</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="controls">
+  <button id="btn-prev" type="button" aria-label="Previous">
+    <svg viewBox="0 0 24 24"><path d="M15 6 L9 12 L15 18"/></svg>
+  </button>
+  <button id="btn-next" type="button" aria-label="Next">
+    <svg viewBox="0 0 24 24"><path d="M9 6 L15 12 L9 18"/></svg>
+  </button>
+  <button id="btn-sound" type="button" aria-label="Toggle ambience" aria-pressed="false">
+    <svg id="ic-snd-off" viewBox="0 0 24 24"><path d="M4 9 H8 L13 5 V19 L8 15 H4 Z"/><line x1="17" y1="9" x2="22" y2="14"/><line x1="22" y1="9" x2="17" y2="14"/></svg>
+    <svg id="ic-snd-on" class="hidden" viewBox="0 0 24 24"><path d="M4 9 H8 L13 5 V19 L8 15 H4 Z"/><path d="M16.5 9.5 A4 4 0 0 1 16.5 14.5"/><path d="M19 7 A7.5 7.5 0 0 1 19 17"/></svg>
+  </button>
+  <button id="btn-full" type="button" aria-label="Toggle fullscreen">
+    <svg viewBox="0 0 24 24"><path d="M4 9 V4 H9"/><path d="M15 4 H20 V9"/><path d="M20 15 V20 H15"/><path d="M9 20 H4 V15"/></svg>
+  </button>
+</div>
+<div class="counter" id="counter">01 / 16</div>
+<p class="sr" aria-live="polite" id="live"></p>
+<noscript><p style="position:fixed;inset:0;display:grid;place-items:center;color:#E9CE8C;font-family:serif">Enable JavaScript to view the presentation.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var stage = document.getElementById("stage");
+  var slides = Array.prototype.slice.call(stage.querySelectorAll(".slide"));
+  var bar = document.getElementById("bar");
+  var counter = document.getElementById("counter");
+  var live = document.getElementById("live");
+  var cur = 0, started = false;
+
+  /* ---------- scaling ---------- */
+  function fit() {
+    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    stage.style.transform = "translate(-50%,-50%) scale(" + s + ")";
+  }
+  window.addEventListener("resize", fit);
+  document.addEventListener("fullscreenchange", fit);
+  fit();
+
+  /* ---------- dust particles ---------- */
+  function spawnDust() {
+    stage.querySelectorAll(".dustfield").forEach(function (field) {
+      var n = parseInt(field.dataset.dust || "12", 10);
+      for (var i = 0; i < n; i++) {
+        var d = document.createElement("span");
+        d.className = "dust";
+        var size = 3 + Math.random() * 5;
+        d.style.width = size + "px";
+        d.style.height = size + "px";
+        d.style.left = (Math.random() * 100) + "%";
+        d.style.setProperty("--dx", ((Math.random() - 0.5) * 120) + "px");
+        d.style.animationDuration = (14 + Math.random() * 14) + "s";
+        d.style.animationDelay = (-Math.random() * 20) + "s";
+        field.appendChild(d);
+      }
+    });
+  }
+  if (!reduced) spawnDust();
+
+  /* ---------- fragments ---------- */
+  function frags(slide) {
+    return Array.prototype.slice.call(slide.querySelectorAll(".frag"));
+  }
+
+  function goTo(n, dir) {
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    if (started && n === cur) return;
+    cur = n;
+    var s = slides[cur], f = frags(s);
+    if (dir < 0) {
+      f.forEach(function (el) { el.classList.add("shown"); });
+      s._fi = f.length;
+    } else {
+      f.forEach(function (el) { el.classList.remove("shown"); });
+      s._fi = 0;
+    }
+    slides.forEach(function (sl, i) {
+      sl.classList.toggle("active", i === cur);
+      sl.setAttribute("aria-hidden", i === cur ? "false" : "true");
+    });
+    bar.style.width = ((cur + 1) / slides.length * 100) + "%";
+    counter.textContent = String(cur + 1).padStart(2, "0") + " / " + String(slides.length).padStart(2, "0");
+    live.textContent = s.dataset.title || "";
+    started = true;
+  }
+
+  function next() {
+    var s = slides[cur], f = frags(s), i = s._fi || 0;
+    if (i < f.length) { f[i].classList.add("shown"); s._fi = i + 1; }
+    else goTo(cur + 1, 1);
+  }
+  function prev() {
+    var s = slides[cur], f = frags(s), i = s._fi || 0;
+    if (i > 0) { f[i - 1].classList.remove("shown"); s._fi = i - 1; }
+    else goTo(cur - 1, -1);
+  }
+
+  /* ---------- navigation wiring ---------- */
+  document.getElementById("btn-next").addEventListener("click", next);
+  document.getElementById("btn-prev").addEventListener("click", prev);
+
+  document.addEventListener("keydown", function (e) {
+    var k = e.key;
+    if (k === "ArrowRight" || k === "ArrowDown" || k === "PageDown" || k === " ") { e.preventDefault(); next(); }
+    else if (k === "ArrowLeft" || k === "ArrowUp" || k === "PageUp") { e.preventDefault(); prev(); }
+    else if (k === "Home") { e.preventDefault(); goTo(0, 1); }
+    else if (k === "End") { e.preventDefault(); goTo(slides.length - 1, -1); }
+    else if (k === "f" || k === "F") { toggleFull(); }
+    else if (k === "m" || k === "M") { toggleSound(); }
+  });
+
+  stage.addEventListener("click", function (e) {
+    if (e.target.closest("button, a")) return;
+    var r = stage.getBoundingClientRect();
+    ((e.clientX - r.left) / r.width > 0.5) ? next() : prev();
+  });
+
+  var tx = 0, ty = 0;
+  stage.addEventListener("touchstart", function (e) {
+    tx = e.changedTouches[0].clientX; ty = e.changedTouches[0].clientY;
+  }, { passive: true });
+  stage.addEventListener("touchend", function (e) {
+    var dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > 46 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); }
+  }, { passive: true });
+
+  function toggleFull() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  }
+  document.getElementById("btn-full").addEventListener("click", toggleFull);
+
+  /* ---------- generative ambience (Web Audio, no files) ---------- */
+  var actx = null, master = null, soundOn = false;
+  var btnSound = document.getElementById("btn-sound");
+  var icOn = document.getElementById("ic-snd-on");
+  var icOff = document.getElementById("ic-snd-off");
+
+  function buildDrone() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    actx = new AC();
+    master = actx.createGain();
+    master.gain.value = 0;
+    var lp = actx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 700;
+    lp.connect(master);
+    master.connect(actx.destination);
+    /* tanpura-like open-fifth drone */
+    [[98, 0.050], [146.83, 0.045], [196, 0.030], [293.66, 0.020]].forEach(function (pair) {
+      var o = actx.createOscillator();
+      o.type = "sine";
+      o.frequency.value = pair[0];
+      var g = actx.createGain();
+      g.gain.value = pair[1];
+      o.connect(g); g.connect(lp);
+      o.start();
+    });
+    /* slow breathing of the filter */
+    var lfo = actx.createOscillator();
+    lfo.frequency.value = 0.06;
+    var lg = actx.createGain();
+    lg.gain.value = 150;
+    lfo.connect(lg); lg.connect(lp.frequency);
+    lfo.start();
+  }
+
+  function toggleSound() {
+    if (!actx) buildDrone();
+    if (actx.state === "suspended") actx.resume();
+    var t = actx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    if (!soundOn) {
+      master.gain.setTargetAtTime(0.14, t, 0.8);
+      soundOn = true;
+    } else {
+      master.gain.setTargetAtTime(0.0001, t, 0.35);
+      soundOn = false;
+    }
+    icOn.classList.toggle("hidden", !soundOn);
+    icOff.classList.toggle("hidden", soundOn);
+    btnSound.setAttribute("aria-pressed", soundOn ? "true" : "false");
+  }
+  btnSound.addEventListener("click", toggleSound);
+
+  /* ---------- init ---------- */
+  goTo(0, 1);
+})();
+</script>
+</body>
+</html>
