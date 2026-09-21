@@ -1,1 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three Nights at Barich — an interactive descent into The Hungry Stones</title>
+<meta name="description" content="A text-based survival game based on Rabindranath Tagore's The Hungry Stones: endure three nights in the marble palace, manage the Hunger of the Stones and the Grip of the Mirage, and find one of five endings.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c1120;
+    --panel:#161f36;
+    --panel-2:#101828;
+    --ink:#eae6da;
+    --dim:#a9a598;
+    --gold:#d9b25f;
+    --gold-2:#ecd9a0;
+    --bad:#d05a5a;
+    --violet:#9b7fd4;
+    --ok:#3fae8c;
+    --line:rgba(217,178,95,.28);
+    --serif:'Cormorant Garamond', Georgia, serif;
+    --sans:'Source Sans 3', system-ui, sans-serif;
+    --mono:'JetBrains Mono', monospace;
+    --deco:'Cinzel', Georgia, serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; color:var(--ink);
+    font-family:var(--sans); font-size:17px; line-height:1.75;
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(1000px 520px at 50% -200px, rgba(66,88,148,.38), transparent 70%),
+      radial-gradient(760px 420px at 92% 12%, rgba(63,174,140,.07), transparent 60%);
+  }
+  ::selection{ background:var(--gold); color:#141a2c; }
+  .wrap{ max-width:760px; margin:0 auto; padding:40px 20px 70px; }
 
+  .vignette{
+    position:fixed; inset:0; pointer-events:none; z-index:40;
+    background:radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(3,6,14,.5) 100%);
+  }
+
+  /* ============ TITLE SCREEN ============ */
+  .screen-title{ text-align:center; padding-top:5vh; }
+  .kicker{
+    font-family:var(--mono); font-size:11px; letter-spacing:3px;
+    text-transform:uppercase; color:var(--gold); margin:0 0 14px;
+  }
+  h1{
+    font-family:var(--deco); font-weight:700;
+    font-size:clamp(30px, 6vw, 50px); line-height:1.18; margin:0 0 10px;
+    background:linear-gradient(180deg,#f6e7b6 0%, #d9b25f 55%, #a97f33 100%);
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent; -webkit-text-fill-color:transparent;
+  }
+  .tagline{ color:var(--dim); font-style:italic; font-size:18px; margin:0 0 26px; }
+  .title-quote{
+    font-family:var(--serif); font-size:1.35em; font-style:italic;
+    color:var(--gold-2); margin:26px auto; max-width:44ch;
+  }
+  .title-quote small{ display:block; font-family:var(--mono); font-style:normal; font-size:11px; letter-spacing:2px; color:var(--dim); margin-top:8px; }
+  .howto{
+    text-align:left; margin:26px auto 30px; max-width:520px;
+    border:1px dashed var(--line); border-radius:14px;
+    background:rgba(217,178,95,.05); padding:18px 22px; font-size:15.5px;
+  }
+  .howto p{ margin:0 0 10px; }
+  .howto p:last-child{ margin:0; }
+  .orn{ color:var(--gold); font-size:13px; margin:22px 0 0; }
+
+  /* ============ GAME SCREEN ============ */
+  .hud{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:14px; flex-wrap:wrap;
+    border:1px solid var(--line); border-radius:14px;
+    background:var(--panel-2); padding:12px 16px; margin-bottom:20px;
+  }
+  .night-label{
+    font-family:var(--deco); font-weight:700; letter-spacing:1px;
+    color:var(--gold-2); font-size:15px; white-space:nowrap;
+  }
+  .meters{ display:flex; flex-direction:column; gap:7px; flex:1; min-width:230px; }
+  .meter{ display:flex; align-items:center; gap:10px; font-size:13px; }
+  .meter-label{ font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--dim); white-space:nowrap; min-width:150px; }
+  .meter-track{
+    flex:1; height:9px; border-radius:999px; overflow:hidden;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14);
+  }
+  .meter-fill{ display:block; height:100%; width:0; border-radius:999px; transition:width .6s cubic-bezier(.25,.8,.3,1); }
+  .meter.hunger .meter-fill{ background:linear-gradient(90deg,#8a4a2f,var(--bad)); box-shadow:0 0 10px rgba(208,90,90,.5); }
+  .meter.grip .meter-fill{ background:linear-gradient(90deg,#5b4a8f,var(--violet)); box-shadow:0 0 10px rgba(155,127,212,.5); }
+  .meter-val{ font-family:var(--mono); font-size:11px; color:var(--dim); min-width:26px; text-align:right; }
+  .frags{ display:flex; gap:8px; align-items:center; }
+  .frag{
+    width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+    border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.04);
+    filter:grayscale(1); opacity:.4; transition:all .3s;
+  }
+  .frag.got{
+    filter:none; opacity:1; border-color:var(--gold);
+    box-shadow:0 0 12px rgba(217,178,95,.4);
+  }
+
+  .story{
+    border:1px solid var(--line); border-radius:14px;
+    background:var(--panel); padding:26px 26px 18px;
+    box-shadow:0 20px 44px rgba(0,0,0,.4);
+    position:relative;
+  }
+  .story::before, .story::after{
+    content:""; position:absolute; width:22px; height:22px;
+    border:1px solid var(--gold); opacity:.85; pointer-events:none;
+  }
+  .story::before{ top:-1px; left:-1px; border-right:0; border-bottom:0; border-top-left-radius:14px; }
+  .story::after{ bottom:-1px; right:-1px; border-left:0; border-top:0; border-bottom-right-radius:14px; }
+  .scene-title{
+    font-family:var(--serif); font-weight:700; color:var(--gold);
+    font-size:26px; margin:0 0 14px; line-height:1.25;
+  }
+  .scene-text p{ margin:0 0 14px; }
+  .fade{ opacity:0; transform:translateY(10px); animation:fin .7s ease forwards; }
+  @keyframes fin{ to{ opacity:1; transform:none; } }
+
+  .choices{ display:grid; gap:12px; margin-top:22px; }
+  .choice{
+    font:inherit; text-align:left; cursor:pointer;
+    color:var(--ink); background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.16); border-radius:12px;
+    padding:14px 18px; font-size:16.5px; line-height:1.5;
+    transition:border-color .15s, background .15s, transform .15s;
+  }
+  .choice::before{ content:"◈ "; color:var(--gold); }
+  .choice:hover, .choice:focus-visible{
+    border-color:var(--gold); background:rgba(217,178,95,.09);
+    outline:none; transform:translateX(3px);
+  }
+  .choice.key-choice{ border-color:rgba(217,178,95,.5); }
+  .choice.key-choice::before{ content:"✦ "; }
+
+  .chronicle{ margin-top:20px; font-size:14px; color:var(--dim); }
+  .chronicle summary{
+    cursor:pointer; font-family:var(--mono); font-size:11px;
+    letter-spacing:2px; text-transform:uppercase;
+  }
+  .chronicle ol{ margin:10px 0 0; padding-left:22px; }
+  .chronicle li{ margin-bottom:3px; }
+
+  /* ============ ENDING SCREEN ============ */
+  .ending{
+    border:1px solid var(--line); border-radius:16px;
+    background:var(--panel); padding:34px 28px;
+    box-shadow:0 20px 44px rgba(0,0,0,.4); text-align:center;
+  }
+  .ending.secret{
+    border-color:rgba(236,217,160,.6);
+    box-shadow:0 0 44px rgba(217,178,95,.22), 0 20px 44px rgba(0,0,0,.4);
+  }
+  .ending-icon{ font-size:44px; margin-bottom:6px; }
+  .ending-kicker{
+    font-family:var(--mono); font-size:11px; letter-spacing:3px;
+    text-transform:uppercase; color:var(--gold); margin:0 0 8px;
+  }
+  .ending-title{
+    font-family:var(--deco); font-weight:700;
+    font-size:clamp(26px,4.5vw,38px); line-height:1.2; margin:0 0 6px;
+    background:linear-gradient(180deg,#f6e7b6 0%, #d9b25f 60%, #a97f33 100%);
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent; -webkit-text-fill-color:transparent;
+  }
+  .ending-tag{ color:var(--dim); font-style:italic; margin:0 0 20px; }
+  .ending-body{ text-align:left; max-width:56ch; margin:0 auto 18px; }
+  .tagore{
+    text-align:left; max-width:56ch; margin:0 auto 24px;
+    padding:16px 20px; border-left:3px solid var(--gold);
+    background:rgba(217,178,95,.06); border-radius:0 12px 12px 0;
+    font-family:var(--serif); font-size:1.15em; font-style:italic;
+    color:var(--gold-2);
+  }
+  .tagore b{ font-family:var(--mono); font-style:normal; font-size:10.5px; letter-spacing:2px; text-transform:uppercase; color:var(--dim); display:block; margin-bottom:6px; }
+  .ledger{
+    display:flex; justify-content:center; gap:18px; flex-wrap:wrap;
+    font-family:var(--mono); font-size:12px; color:var(--dim);
+    margin:0 0 24px;
+  }
+  .ledger span b{ color:var(--gold-2); }
+  .vocab-recap{
+    text-align:left; max-width:56ch; margin:0 auto 26px;
+    border:1px dashed var(--line); border-radius:14px;
+    background:rgba(217,178,95,.04); padding:18px 22px; font-size:15px;
+  }
+  .vocab-recap h3{ font-family:var(--serif); color:var(--gold-2); font-size:20px; margin:0 0 10px; }
+  .vocab-recap p{ margin:0 0 8px; }
+  .vocab-recap p:last-child{ margin:0; }
+  .gallery{
+    display:flex; justify-content:center; gap:12px; margin:8px 0 22px;
+  }
+  .gallery .frag{ cursor:default; }
+  .gallery-note{ font-family:var(--mono); font-size:11px; letter-spacing:2px; color:var(--dim); margin:0 0 8px; text-transform:uppercase; }
+
+  .btn{
+    font:inherit; cursor:pointer; background:transparent;
+    border:1px solid var(--gold); color:var(--gold);
+    padding:12px 30px; border-radius:999px; letter-spacing:.5px;
+    font-size:16px; transition:background .15s, box-shadow .2s;
+  }
+  .btn:hover, .btn:focus-visible{ background:rgba(217,178,95,.14); outline:none; box-shadow:0 0 18px rgba(217,178,95,.25); }
+
+  footer{
+    margin-top:56px; text-align:center; color:var(--dim);
+    font-size:14px; font-style:italic;
+  }
+  footer a{ color:var(--gold); }
+
+  [hidden]{ display:none !important; }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .fade{ animation:none; opacity:1; transform:none; }
+    .meter-fill{ transition:none; }
+    .choice, .choice:hover{ transform:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="wrap">
+
+  <!-- ================= TITLE ================= -->
+  <section id="screen-title" class="screen-title">
+    <p class="kicker">An interactive descent · based on Rabindranath Tagore’s <em>The Hungry Stones</em></p>
+    <h1>Three Nights at Barich</h1>
+    <p class="tagline">The marble palace above the river Susta has a new tenant. The tenant has three nights.</p>
+
+    <blockquote class="title-quote">
+      “Pass the day there, if you like, but never stay the night.”
+      <small>— Karim Khan, the old clerk</small>
+    </blockquote>
+
+    <div class="howto">
+      <p>🪔 <strong>Two forces</strong> will fill as you choose: the <strong>Hunger of the Stones</strong> and the <strong>Grip of the Mirage</strong>. If either reaches one hundred, the palace keeps you.</p>
+      <p>🎀 <strong>Three fragments of her</strong> — the golden frill, the wrought bodice, the dark eyes — are hidden along the paths. Some players see all of her; some see almost nothing.</p>
+      <p>🌅 <strong>Five endings exist.</strong> The dawn train is the honest one. The rest, the palace decides.</p>
+    </div>
+
+    <div id="gallery-title">
+      <p class="gallery-note" id="gallery-note">Endings discovered: 0 / 5</p>
+      <div class="gallery" id="gallery-slots" aria-hidden="true">
+        <span class="frag" data-end="end_early" title="Undiscovered ending">🕯️</span>
+        <span class="frag" data-end="end_consumed" title="Undiscovered ending">💀</span>
+        <span class="frag" data-end="end_madness" title="Undiscovered ending">🌑</span>
+        <span class="frag" data-end="end_escape" title="Undiscovered ending">🌅</span>
+        <span class="frag" data-end="end_radiance" title="Undiscovered ending">💛</span>
+      </div>
+    </div>
+
+    <button type="button" class="btn" id="btn-start">Light the lamp 🪔</button>
+    <p class="orn" aria-hidden="true">✦ ✦ ✦</p>
+  </section>
+
+  <!-- ================= GAME ================= -->
+  <section id="screen-game" hidden>
+    <div class="hud">
+      <span class="night-label" id="night-label">NIGHT I</span>
+      <div class="meters">
+        <div class="meter hunger">
+          <span class="meter-label">🪨 HUNGER OF THE STONES</span>
+          <span class="meter-track"><span class="meter-fill" id="fill-hunger"></span></span>
+          <span class="meter-val" id="val-hunger">0</span>
+        </div>
+        <div class="meter grip">
+          <span class="meter-label">🌫️ GRIP OF THE MIRAGE</span>
+          <span class="meter-track"><span class="meter-fill" id="fill-grip"></span></span>
+          <span class="meter-val" id="val-grip">0</span>
+        </div>
+      </div>
+      <div class="frags" aria-label="Mirror fragments collected">
+        <span class="frag" id="frag-frill" title="A golden frill on a snowy brow">🎀</span>
+        <span class="frag" id="frag-bodice" title="A close-fitting bodice wrought with gold">👗</span>
+        <span class="frag" id="frag-eyes" title="Large dark eyes full of passion and pain">👁️</span>
+      </div>
+    </div>
+
+    <article class="story" aria-live="polite">
+      <h2 class="scene-title" id="scene-title"></h2>
+      <div class="scene-text" id="scene-text"></div>
+    </article>
+
+    <div class="choices" id="choices"></div>
+
+    <details class="chronicle">
+      <summary>Chronicle of your nights</summary>
+      <ol id="chronicle-list"></ol>
+    </details>
+  </section>
+
+  <!-- ================= ENDING ================= -->
+  <section id="screen-end" hidden>
+    <div class="ending" id="ending-card">
+      <div class="ending-icon" id="ending-icon" aria-hidden="true">🌅</div>
+      <p class="ending-kicker" id="ending-kicker">Ending</p>
+      <h2 class="ending-title" id="ending-title"></h2>
+      <p class="ending-tag" id="ending-tag"></p>
+      <div class="ending-body" id="ending-body"></div>
+      <blockquote class="tagore"><b>📖 In Tagore’s original</b><span id="ending-tagore"></span></blockquote>
+      <div class="ledger" id="ledger"></div>
+      <div class="vocab-recap">
+        <h3>🔢 Six words the palace left in your pockets</h3>
+        <p><strong>rapt with wonder</strong> — spellbound, carried away completely.</p>
+        <p><strong>devoid of</strong> — completely empty of something.</p>
+        <p><strong>imperceptibly</strong> — too slowly or subtly to notice.</p>
+        <p><strong>stupefying</strong> — numbing, switching thought off.</p>
+        <p><strong>contrition</strong> — deep, grinding remorse.</p>
+        <p><strong>rupture</strong> — a break in something that was whole.</p>
+      </div>
+      <p class="gallery-note" id="gallery-note-end">Endings discovered: 0 / 5</p>
+      <div class="gallery" id="gallery-slots-end" aria-hidden="true">
+        <span class="frag" data-end="end_early" title="Undiscovered ending">🕯️</span>
+        <span class="frag" data-end="end_consumed" title="Undiscovered ending">💀</span>
+        <span class="frag" data-end="end_madness" title="Undiscovered ending">🌑</span>
+        <span class="frag" data-end="end_escape" title="Undiscovered ending">🌅</span>
+        <span class="frag" data-end="end_radiance" title="Undiscovered ending">💛</span>
+      </div>
+      <button type="button" class="btn" id="btn-replay">Play again ↺</button>
+    </div>
+  </section>
+
+  <footer>
+    Based on <em>The Hungry Stones</em> by Rabindranath Tagore (1916) and the Gemini-crafted immersion deck ·
+    <a href="https://item1000-collab.github.io/ai/engoo/20260921-the-hungry-stones/the-hungry-stones.pdf" target="_blank" rel="noopener noreferrer">open the original deck</a>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* =========================================================
+     DATA — scenes
+     ========================================================= */
+
+  var SCENES = {
+    arrival: {
+      night: 1, title: "Night I — The Warning",
+      text: [
+        "The train exhales you at Barich junction, ten o’clock at night, and the dark takes the rest. The bungalow is far; the palace is near. Karim Khan, the old clerk, had only one sentence for the new collector of cotton duties: <em>“Pass the day there, if you like, but never stay the night.”</em>",
+        "The servants flee before dark. Even thieves refuse to venture near it. And yet the marble above the river glows faintly, like a page waiting to be read."
+      ],
+      choices: [
+        { label: "Laugh it off and unpack your sola hat.", fx: { hunger: 5, grip: 5 }, next: "n1_dusk" },
+        { label: "Ask the station-master for the next train out.", fx: {}, next: "end_early" }
+      ]
+    },
+    n1_dusk: {
+      night: 1, title: "Night I — The Silence",
+      text: [
+        "The palace receives you without a sound. Not a breath of wind. An oppressive scent drifts from spicy shrubs as the sun sinks behind the hills, and a dark curtain falls over the river.",
+        "Below, the Susta trips and babbles over its pebbles like a skilful dancing girl. The marble stairs — all one hundred and fifty of them — wait, polished by two and a half centuries of rain."
+      ],
+      choices: [
+        { label: "Watch the dark curtain fall from the wide window.", fx: { grip: 10 }, next: "n1_footfalls" },
+        { label: "Light the lamp, open the cotton accounts, refuse the night.", fx: { hunger: 10 }, next: "n1_sleep" }
+      ]
+    },
+    n1_footfalls: {
+      night: 1, title: "Night I — The Footfalls",
+      text: [
+        "A sudden rush of many steps comes down the 150 stone stairs — joyous, hurried, utterly invisible. A thrill of delight tinged with fear walks up your spine.",
+        "Then the laughter: gay, mirthful, like the gurgle of a spring gushing forth in a hundred cascades. The mirage of a 250-year-old world has awoken."
+      ],
+      choices: [
+        { label: "Follow the footsteps down to the river.", fx: { grip: 5 }, next: "n1_river" },
+        { label: "Stay at the window and only listen.", fx: { grip: 15 }, next: "n1_window" },
+        { label: "Stop your ears with wool and sleep.", fx: { hunger: 10, grip: -10 }, next: "n1_sleep" }
+      ]
+    },
+    n1_river: {
+      night: 1, title: "Night I — The Splash", grants: ["frill"],
+      text: [
+        "At the river the shallow waters stir. The splash of arms jingling with bracelets tosses tiny waves up in showers of pearl — and above the dark water, for half a breath, a golden frill turns and falls on a snowy brow.",
+        "You hold your own breath, as if the night could be startled into vanishing."
+      ],
+      choices: [
+        { label: "Wade in, asking the dark who laughs.", fx: { hunger: 20, grip: 15 }, next: "n1_deep" },
+        { label: "Withdraw quietly, before the water notices you.", fx: { hunger: 5, grip: 5 }, next: "n2_dawn" }
+      ]
+    },
+    n1_deep: {
+      night: 1, title: "Night I — The Hand",
+      text: [
+        "A wet hand, marble-smooth, rests on your shoulder — light as foam, cold as glass. The splash ends. The river keeps its secret, and something of you stays behind on the stones."
+      ],
+      choices: [
+        { label: "Stand in the cold until dawn arrives.", fx: { hunger: 5 }, next: "n2_dawn" }
+      ]
+    },
+    n1_window: {
+      night: 1, title: "Night I — The Chorus",
+      text: [
+        "You stand at the tall window and only listen. The unseen chorus wheels through the grounds, and you begin to know them: the quick one, the laughing one, the one who always lags behind to whisper.",
+        "A palace is only stone. It is the company that makes it impossible to leave."
+      ],
+      choices: [
+        { label: "Whisper back to the unseen chorus.", fx: { grip: 15 }, next: "n2_dawn" },
+        { label: "Close the shutters and count your salary: Rs. 450 per mensem.", fx: { hunger: 10 }, next: "n2_dawn" }
+      ]
+    },
+    n1_sleep: {
+      night: 1, title: "Night I — Rose-Water",
+      text: [
+        "You sleep the sleep of an honest clerk, and the night passes over you like weather.",
+        "You wake with the taste of rose-water in your mouth and do not ask how it got there."
+      ],
+      choices: [
+        { label: "Dawn comes. You survived the first night.", fx: {}, next: "n2_dawn" }
+      ]
+    },
+    n2_dawn: {
+      night: 2, title: "Dawn — The Cotton Collector",
+      text: [
+        "Dawn breaks, and the palace pretends, for a few hours, to be architecture.",
+        "You write your cotton accounts in a short English coat and a sola hat; the figures look trivial, meaningless, faintly contemptible — and all day a single thought hums under the ledger like a fly: the night will come back."
+      ],
+      choices: [
+        { label: "Let the second night arrive.", fx: {}, next: "n2_guide" }
+      ]
+    },
+    n2_guide: {
+      night: 2, title: "Night II — The Guide",
+      text: [
+        "She is waiting at the head of the stairs: a beckoning, invisible Arab girl with marble-smooth arms and a curved dagger at her hip. Her presence is a doorway standing open.",
+        "Behind her, the palace breathes out the scent of attar and unguents. The corridors are listening."
+      ],
+      choices: [
+        { label: "Follow her.", fx: { grip: 10 }, next: "n2_corridors", key: true },
+        { label: "Refuse her hand and walk the corridors alone.", fx: { hunger: 15, grip: 5 }, next: "n2_alone" },
+        { label: "Pronounce your own name aloud, like an anchor.", fx: { grip: -20, hunger: 10 }, next: "n2_anchor" }
+      ]
+    },
+    n2_corridors: {
+      night: 2, title: "Night II — The Corridors", grants: ["bodice"],
+      text: [
+        "You wend through endless dark alleys, solemn audience-chambers and close secret cells. On a thorn of old iron hangs a scrap of close-fitting bodice, wrought with gold — you pocket it like a thief of wonders.",
+        "At the foot of a deep blue screen the terrible eunuch dozes over his naked sword. His sleep is the palace’s sleep. You step past it on the balls of your feet."
+      ],
+      choices: [
+        { label: "Enter the inner chamber.", fx: { hunger: 8, grip: 8 }, next: "n2_chamber" },
+        { label: "Peer into the guard’s half-shut eyes.", fx: { hunger: 20, grip: 10 }, next: "n2_guard" }
+      ]
+    },
+    n2_alone: {
+      night: 2, title: "Night II — The Rearranged Palace", grants: ["bodice"],
+      text: [
+        "You refuse her hand and walk the corridors alone — and the corridors oblige by rearranging themselves. Every arch you pass under, you pass under twice.",
+        "The palace enjoys this game. It walks you, politely, exactly where it wants you: an orange glow ahead, and the smell of incense.",
+        "On the way, a scrap of close-fitting bodice, wrought with gold, catches on a thorn of old iron. You pocket it."
+      ],
+      choices: [
+        { label: "Enter the inner chamber.", fx: { hunger: 5, grip: 5 }, next: "n2_chamber" }
+      ]
+    },
+    n2_anchor: {
+      night: 2, title: "Night II — Your Own Name",
+      text: [
+        "Your own name, spoken in your own voice, sounds thin in the vaulted dark — but true. The girl’s smile falters; the dagger glints once, and the corridor steadies around you like a ship finding its keel.",
+        "The mirage loses its grip on one thing tonight: you."
+      ],
+      choices: [
+        { label: "Now follow her — on your own terms.", fx: { grip: 10 }, next: "n2_corridors" },
+        { label: "Return to your bed like a sensible clerk.", fx: { hunger: 5, grip: -10 }, next: "n2_bed" }
+      ]
+    },
+    n2_guard: {
+      night: 2, title: "Night II — The Waking Guard",
+      text: [
+        "His eyes open — two embers in a shadowed face — and find you mid-step. You bow, absurdly, in a dream. The eunuch studies you the way a landlord studies a tenant, then lets you pass.",
+        "The palace has noted your boldness. It keeps accounts too."
+      ],
+      choices: [
+        { label: "Enter the inner chamber, heart drumming.", fx: { hunger: 5, grip: 5 }, next: "n2_chamber" }
+      ]
+    },
+    n2_chamber: {
+      night: 2, title: "Night II — The Mirror", grants: ["eyes"],
+      text: [
+        "The inner chamber holds an orange-velvet Persian carpet, crystal trays of fruit, a gold-tinted decanter and overpoweringly intoxicating incense. Above the carpet hangs a tall mirror that reflects no room at all — only smoke.",
+        "Then the smoke turns: a swift turn of the neck, large dark eyes full of intense passion and pain, looking straight at you. A dazzling flash of pain and craving and ecstasy, a smile and a glance and a blaze of jewels and silk — and she melts away."
+      ],
+      choices: [
+        { label: "Reach through the glass toward her.", fx: { grip: 12, hunger: 5 }, next: "n2_reach", key: true, flag: "reached" },
+        { label: "Step back from the mirror.", fx: { grip: 10 }, next: "n3_dusk" }
+      ]
+    },
+    n2_reach: {
+      night: 2, title: "Night II — The Plea",
+      text: [
+        "Your fingers meet cold silver glass, and through it comes a voice worn thin by centuries: <em>“Oh, rescue me! Break through these doors of hard illusion, deathlike slumber and fruitless dreams… and take me to the warm radiance of your sunny rooms above!”</em>",
+        "The incense leans in to hear your answer."
+      ],
+      choices: [
+        { label: "Promise it. Whatever the price.", fx: { grip: 8, hunger: 5 }, next: "n3_dusk", key: true, flag: "promised" },
+        { label: "Say nothing and withdraw your hand.", fx: { grip: 5 }, next: "n3_dusk" }
+      ]
+    },
+    n2_bed: {
+      night: 2, title: "Night II — A Sensible Treaty",
+      text: [
+        "You sleep like a man who has made a sensible treaty with a dangerous country. Far off, a pale moon climbs — it looks like a weary, sleepless patient.",
+        "Somewhere beyond the walls, a man is already practising his morning cry."
+      ],
+      choices: [
+        { label: "Let the third night arrive.", fx: { hunger: 5 }, next: "n3_dusk" }
+      ]
+    },
+    n3_dusk: {
+      night: 3, title: "Night III — The Tempest",
+      text: [
+        "The sky shivers. A wild blast rushes howling through the distant pathless woods, showing its lightning-teeth like a raving maniac, and the rain pours in torrents. Driven by contrition, you are drawn back to the sullen, dark rooms at twilight.",
+        "In the dense gloom a woman lies on the carpet, tearing her dishevelled hair; blood trickles down her brow as she bursts into wringing sobs. And through the storm, from the road below, cuts the daily custom of crazy Meher Ali — the man who escaped the palace at the cost of his reason: <em>“STAND BACK! ALL IS FALSE!”</em>"
+      ],
+      choices: [
+        { label: "Heed the madman. Stand back — all is false. Run for the dawn train.", fx: {}, next: "end_escape", key: true },
+        { label: "Break through the doors of hard illusion — and keep your promise.", fx: {}, next: "end_radiance", key: true, requires: "promised" },
+        { label: "Stay. Let the grief spend the night in your chest.", fx: {}, next: "end_stay" }
+      ]
+    }
+  };
+
+  /* =========================================================
+     DATA — endings
+     ========================================================= */
+
+  var ENDINGS = {
+    end_early: {
+      icon: "🕯️", kicker: "Ending", secret: false,
+      title: "The Politeness of the Earthly", tag: "An ending for the cautious.",
+      body: [
+        "You take the next train, sign for a posting in a town with electric light and honest stairs, and live a long, sensible life. The tea, on certain evenings, tastes faintly of rose-water. You never ask why."
+      ],
+      tagore: "In the frame story, the narrator laughs at every warning and stays. The palace only eats those who stay the night — and only stories can visit those who leave."
+    },
+    end_consumed: {
+      icon: "💀", kicker: "Ending", secret: false,
+      title: "A Guest of the Stones", tag: "The stones are patient.",
+      body: [
+        "No one survives three consecutive nights. The house does not roar or chase; it digests — slowly and imperceptibly, by the action of some stupefying gastric juice. In the morning a new collector signs for the post, and the marble glows a little warmer."
+      ],
+      tagore: "In Tagore’s original the narrator crawls out after the third night’s storm — half-digested, but alive, and forever unable to say what was real."
+    },
+    end_madness: {
+      icon: "🌑", kicker: "Ending", secret: false,
+      title: "Like Meher Ali", tag: "You saw too clearly.",
+      body: [
+        "You will not die here; that mercy is for other guests. You will walk the junction road at evening, wild-eyed, crying your daily custom to the indifferent moon: “STAND BACK! ALL IS FALSE!” Travellers will cross the road to avoid you. They should not. You are the only one telling the truth."
+      ],
+      tagore: "Meher Ali is Tagore’s price of vision: the man who escaped the palace did so at the cost of his reason."
+    },
+    end_escape: {
+      icon: "🌅", kicker: "Ending", secret: false,
+      title: "The Stand-Back", tag: "You kept your life.",
+      body: [
+        "The madman’s cry breaks the enchantment like a lamp thrown through a window. You go down the 150 stairs two at a time, past the sleeping guard of your own dreaming, and you do not look back — mostly. On the platform the first-class carriage doors close with a cheerful, worldly clang, and the tale is severed."
+      ],
+      tagore: "In the original, an English gentleman’s “Hallo!” does what no courage could: it ends the story. The teller and his believing kinsman part in a lifelong rupture — over whether any of it happened."
+    },
+    end_radiance: {
+      icon: "💛", kicker: "Secret ending — the promise kept", secret: true,
+      title: "The Warm Radiance", tag: "You answered her.",
+      body: [
+        "You set your shoulder to the doors of hard illusion, and the doors — which have swallowed emperors’ pleasures and three centuries of heart-ache — crack like river ice in spring. Deathlike slumber rolls aside. You lead her up the stairs the palace never thought to count twice, into the warm radiance of your sunny rooms above.",
+        "__FRAGMENT_NOTE__",
+        "For one night, in a palace built on stolen lives, the stones go hungry."
+      ],
+      tagore: "Tagore’s narrator watches her melt away and dares no more. Her plea — “take me to the warm radiance of your sunny rooms above” — goes unanswered in the original. You answered it. The curse, at least in one line, has been rewritten."
+    }
+  };
+
+  var NIGHT_NAMES = { 1: "NIGHT I", 2: "NIGHT II", 3: "NIGHT III" };
+  var FRAG_LABELS = { frill: "🎀 the golden frill", bodice: "👗 the wrought bodice", eyes: "👁️ the dark eyes" };
+
+  /* =========================================================
+     STATE + ELEMENTS
+     ========================================================= */
+
+  var state = {};
+  var el = {
+    title: document.getElementById("screen-title"),
+    game: document.getElementById("screen-game"),
+    end: document.getElementById("screen-end"),
+    nightLabel: document.getElementById("night-label"),
+    fillH: document.getElementById("fill-hunger"),
+    fillG: document.getElementById("fill-grip"),
+    valH: document.getElementById("val-hunger"),
+    valG: document.getElementById("val-grip"),
+    fragFrill: document.getElementById("frag-frill"),
+    fragBodice: document.getElementById("frag-bodice"),
+    fragEyes: document.getElementById("frag-eyes"),
+    sceneTitle: document.getElementById("scene-title"),
+    sceneText: document.getElementById("scene-text"),
+    choices: document.getElementById("choices"),
+    chronicle: document.getElementById("chronicle-list"),
+    endIcon: document.getElementById("ending-icon"),
+    endKicker: document.getElementById("ending-kicker"),
+    endTitle: document.getElementById("ending-title"),
+    endTag: document.getElementById("ending-tag"),
+    endBody: document.getElementById("ending-body"),
+    endTagore: document.getElementById("ending-tagore"),
+    ledger: document.getElementById("ledger"),
+    endCard: document.getElementById("ending-card")
+  };
+
+  var gallerySlots = [
+    document.getElementById("gallery-slots"),
+    document.getElementById("gallery-slots-end")
+  ];
+  var galleryNotes = [
+    document.getElementById("gallery-note"),
+    document.getElementById("gallery-note-end")
+  ];
+
+  var store = {
+    get: function () {
+      try { return JSON.parse(window.localStorage.getItem("barich-endings") || "[]"); }
+      catch (e) { return []; }
+    },
+    add: function (id) {
+      try {
+        var a = this.get();
+        if (a.indexOf(id) < 0) { a.push(id); window.localStorage.setItem("barich-endings", JSON.stringify(a)); }
+      } catch (e) { /* private mode — endings simply won't persist */ }
+    }
+  };
+
+  function renderGallery() {
+    var found = store.get();
+    gallerySlots.forEach(function (g) {
+      if (!g) return;
+      Array.prototype.forEach.call(g.children, function (slot) {
+        var id = slot.getAttribute("data-end");
+        var has = found.indexOf(id) >= 0;
+        slot.classList.toggle("got", has);
+        slot.title = has ? ENDINGS[id].title : "Undiscovered ending";
+      });
+    });
+    galleryNotes.forEach(function (n) {
+      if (n) n.textContent = "Endings discovered: " + found.length + " / 5";
+    });
+  }
+
+  /* =========================================================
+     ENGINE
+     ========================================================= */
+
+  function clamp(v) { return Math.max(0, Math.min(100, v)); }
+
+  function resetState() {
+    state = { sceneId: "arrival", hunger: 0, grip: 0, flags: {}, frags: [], night: 1, chronicle: [] };
+  }
+
+  function updateHud() {
+    el.fillH.style.width = state.hunger + "%";
+    el.fillG.style.width = state.grip + "%";
+    el.valH.textContent = state.hunger;
+    el.valG.textContent = state.grip;
+    el.nightLabel.textContent = NIGHT_NAMES[state.night] || "NIGHT I";
+    el.fragFrill.classList.toggle("got", state.frags.indexOf("frill") >= 0);
+    el.fragBodice.classList.toggle("got", state.frags.indexOf("bodice") >= 0);
+    el.fragEyes.classList.toggle("got", state.frags.indexOf("eyes") >= 0);
+  }
+
+  function renderScene(id) {
+    var sc = SCENES[id];
+    if (!sc) return;
+    state.sceneId = id;
+    if (sc.night > state.night) state.night = sc.night;
+
+    (sc.grants || []).forEach(function (f) {
+      if (state.frags.indexOf(f) < 0) state.frags.push(f);
+    });
+
+    el.sceneTitle.textContent = sc.title;
+    var html = "";
+    for (var i = 0; i < sc.text.length; i++) {
+      html += '<p class="fade" style="animation-delay:' + (i * 0.18) + 's">' + sc.text[i] + "</p>";
+    }
+    el.sceneText.innerHTML = html;
+
+    var ch = "";
+    for (var j = 0; j < sc.choices.length; j++) {
+      var c = sc.choices[j];
+      if (c.requires && !state.flags[c.requires]) continue;
+      ch += '<button type="button" class="choice' + (c.key ? " key-choice" : "") + '" data-i="' + j + '">' + c.label + "</button>";
+    }
+    el.choices.innerHTML = ch;
+
+    state.chronicle.push(sc.title);
+    var li = "";
+    for (var k = 0; k < state.chronicle.length; k++) li += "<li>" + state.chronicle[k] + "</li>";
+    el.chronicle.innerHTML = li;
+
+    updateHud();
+    if (el.game.scrollIntoView && state.chronicle.length > 1) {
+      /* keep the story panel in view on small screens */
+    }
+  }
+
+  function applyFx(fx, flag) {
+    if (fx) {
+      state.hunger = clamp(state.hunger + (fx.hunger || 0));
+      state.grip = clamp(state.grip + (fx.grip || 0));
+    }
+    if (flag) state.flags[flag] = true;
+  }
+
+  function choose(i) {
+    var sc = SCENES[state.sceneId];
+    var visible = sc.choices.filter(function (c) { return !(c.requires && !state.flags[c.requires]); });
+    var c = visible[i];
+    if (!c) return;
+    applyFx(c.fx, c.flag);
+    updateHud();
+
+    if (state.hunger >= 100) { showEnding("end_consumed"); return; }
+    if (state.grip >= 100) { showEnding("end_madness"); return; }
+
+    if (c.next === "end_stay") {
+      showEnding(state.grip >= state.hunger ? "end_madness" : "end_consumed");
+      return;
+    }
+    renderScene(c.next);
+  }
+
+  function showEnding(id) {
+    var e = ENDINGS[id];
+    if (!e) return;
+    store.add(id);
+    renderGallery();
+
+    el.endIcon.textContent = e.icon;
+    el.endKicker.textContent = e.kicker;
+    el.endTitle.textContent = e.title;
+    el.endTag.textContent = e.tag;
+    el.endCard.classList.toggle("secret", !!e.secret);
+
+    var body = "";
+    for (var i = 0; i < e.body.length; i++) {
+      var p = e.body[i];
+      if (p === "__FRAGMENT_NOTE__") {
+        p = (state.frags.length === 3)
+          ? "You knew her completely — the golden frill, the wrought bodice, the dark eyes. That is why your hands did not shake."
+          : "You knew her only in part, and she came anyway. Love, it turns out, reads by lamplight.";
+      }
+      body += "<p>" + p + "</p>";
+    }
+    el.endBody.innerHTML = body;
+    el.endTagore.textContent = e.tagore;
+
+    var nightsWord = (state.night === 3) ? "III (the final night)" : (state.night === 2 ? "II of III" : "I of III");
+    var fragStr = "";
+    for (var f = 0; f < state.frags.length; f++) fragStr += (f ? ", " : "") + FRAG_LABELS[state.frags[f]];
+    el.ledger.innerHTML =
+      "<span>HUNGER <b>" + state.hunger + "</b></span>" +
+      "<span>GRIP <b>" + state.grip + "</b></span>" +
+      "<span>NIGHT <b>" + nightsWord + "</b></span>" +
+      "<span>FRAGMENTS <b>" + (state.frags.length ? fragStr : "none") + "</b></span>";
+
+    el.game.hidden = true;
+    el.title.hidden = true;
+    el.end.hidden = false;
+    window.scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" });
+  }
+
+  function startGame() {
+    resetState();
+    el.title.hidden = true;
+    el.end.hidden = true;
+    el.game.hidden = false;
+    renderScene("arrival");
+  }
+
+  /* =========================================================
+     EVENTS (delegation)
+     ========================================================= */
+
+  document.getElementById("btn-start").addEventListener("click", startGame);
+  document.getElementById("btn-replay").addEventListener("click", startGame);
+
+  el.choices.addEventListener("click", function (ev) {
+    var btn = ev.target.closest(".choice");
+    if (!btn) return;
+    choose(+btn.getAttribute("data-i"));
+  });
+
+  renderGallery();
+})();
+</script>
+</body>
+</html>
