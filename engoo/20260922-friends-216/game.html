@@ -1,1 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friends Vocab Arcade — S02E16 “The One Where Joey Moves Out”</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=JetBrains+Mono:wght@500;700&family=Nunito+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ===== tokens & reset ===== */
+  :root{
+    --bg:#f4ecdd; --panel:#fffdf7; --ink:#2e2115; --muted:#7c6b56;
+    --teal:#0e7268; --teal-deep:#0a4f49; --mustard:#e0a82e; --mustard-deep:#9c7210;
+    --rust:#c25b32; --rust-deep:#8a3d1d; --red:#b8433a; --green:#2e7d32;
+    --gold:#e0a82e; --line:#e7d8b8; --shadow:#d8c6a2;
+    --paper-sh:0 6px 0 var(--shadow), 0 14px 26px rgba(46,33,21,.13);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; color:var(--ink);
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(1100px 560px at 90% -10%, rgba(224,168,46,.14), transparent 60%),
+      radial-gradient(900px 520px at -10% 30%, rgba(14,114,104,.10), transparent 55%);
+    font-family:'Nunito Sans',-apple-system,'Segoe UI',sans-serif;
+    font-size:16.5px; line-height:1.65;
+  }
+  body.locked{overflow:hidden;}
+  ::selection{background:rgba(224,168,46,.45);}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .dim{opacity:.55;}
+  :focus-visible{outline:3px solid var(--rust); outline-offset:2px; border-radius:8px;}
 
+  /* ===== film grain + vignette ===== */
+  #grain{
+    position:fixed; inset:-50px; z-index:4000; pointer-events:none; opacity:.055;
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(%23n)"/></svg>');
+  }
+  #vignette{
+    position:fixed; inset:0; z-index:3900; pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 40%, transparent 62%, rgba(46,33,21,.16));
+  }
+
+  /* ===== preloader ===== */
+  #loader{
+    position:fixed; inset:0; z-index:3000; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:16px; text-align:center; padding:24px;
+    background:radial-gradient(130% 110% at 50% -20%, #17695f 0%, #0a4f49 46%, #241811 100%);
+    color:#f6ead2; transition:transform .7s cubic-bezier(.6,0,.3,1);
+  }
+  #loader.exit{transform:translateY(-102%);}
+  .ld-tv{width:120px;height:96px;color:#f0c96a;}
+  .ld-tv svg{width:100%;height:100%;}
+  .ld-brand{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.16em;color:#cdb488;margin:6px 0 0;}
+  .ld-line{font-size:.8rem;letter-spacing:.22em;color:#e9dcc2;}
+  .ld-line .dots::after{content:"...";animation:dots 1.2s steps(4) infinite;}
+  @keyframes dots{0%{content:"";}25%{content:".";}50%{content:"..";}75%{content:"...";}}
+  .ld-bar{width:230px;height:10px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;}
+  .ld-bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--teal),var(--mustard));animation:load 1.5s ease forwards;}
+  @keyframes load{to{width:100%;}}
+  .ld-play{display:flex;flex-direction:column;align-items:center;gap:10px;animation:popIn .4s ease;}
+  .ld-hint{font-size:.78rem;color:#cdb488;margin:0;}
+  #playBtn{font-size:1.2rem;padding:15px 40px;letter-spacing:.06em;}
+
+  /* ===== HUD console ===== */
+  #hud{
+    position:fixed; top:0; left:0; right:0; z-index:900;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding:8px 16px; min-height:58px;
+    background:rgba(255,253,247,.92); backdrop-filter:blur(6px);
+    border-bottom:2px solid var(--line); box-shadow:0 4px 14px rgba(46,33,21,.10);
+  }
+  .hud-brand{display:flex;align-items:center;gap:10px;}
+  .hud-brand .mark{color:var(--teal);display:grid;place-items:center;}
+  .hud-brand .mark svg{width:28px;height:28px;}
+  .hud-brand b{font-family:'Fraunces',serif;font-weight:900;font-size:1.02rem;display:block;line-height:1.1;}
+  .hud-brand span{font-size:.6rem;letter-spacing:.14em;color:var(--muted);}
+  .hud-cells{display:flex;gap:6px;margin:0 auto;}
+  .cell{width:15px;height:15px;border-radius:5px;background:#e4d7c0;border:2px solid transparent;box-shadow:inset 0 1px 2px rgba(46,33,21,.2);}
+  .cell.done{background:var(--rc,var(--teal));}
+  .cell.gold{border-color:var(--gold);}
+  .hud-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
+  .hud-score{font-size:.78rem;letter-spacing:.06em;color:var(--muted);background:var(--ink);color:#ffe9b8;padding:7px 13px;border-radius:999px;}
+  .hud-score b{color:#ffd97a;}
+  .hud-btn{
+    width:40px;height:40px;border-radius:12px;border:2px solid #d9c9a8;background:var(--panel);
+    cursor:pointer;display:grid;place-items:center;color:var(--ink);transition:transform .12s;
+  }
+  .hud-btn:hover{transform:translateY(-2px);}
+  .hud-btn svg{width:20px;height:20px;}
+  main{max-width:1020px;margin:0 auto;padding:86px 18px 70px;}
+
+  /* ===== screens ===== */
+  .screen{display:none;}
+  .screen.active{display:block;animation:screenIn .45s ease;}
+  @keyframes screenIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+  @keyframes popIn{from{opacity:0;transform:scale(.86);}to{opacity:1;transform:scale(1);}}
+  @keyframes cardIn{from{opacity:0;transform:translateY(10px) scale(.985);}to{opacity:1;transform:none;}}
+  .in{animation:cardIn .35s ease;}
+
+  /* ===== buttons ===== */
+  .btn{
+    font:700 1rem 'Nunito Sans',sans-serif; border:0; border-radius:14px; padding:12px 22px;
+    cursor:pointer; color:#fff; box-shadow:0 5px 0 var(--sh,rgba(0,0,0,.35));
+    transition:transform .12s, box-shadow .12s; display:inline-flex; align-items:center; gap:9px;
+  }
+  .btn:active{transform:translateY(3px); box-shadow:0 2px 0 var(--sh,rgba(0,0,0,.35));}
+  .btn:disabled{opacity:.55;cursor:default;transform:none;}
+  .btn.primary{background:var(--teal);--sh:var(--teal-deep);}
+  .btn.play{background:var(--mustard);--sh:var(--mustard-deep);color:var(--ink);}
+  .btn.danger{background:var(--red);--sh:#7e2b24;}
+  .btn.ghost{background:var(--panel);color:var(--ink);border:2px solid #d9c9a8;box-shadow:0 4px 0 #d9c9a8;}
+  .btn.real{background:var(--teal);--sh:var(--teal-deep);}
+  .btn.delus{background:var(--rust);--sh:var(--rust-deep);}
+  .btn.big{font-size:1.15rem;padding:15px 30px;}
+  .icn svg{width:1.05em;height:1.05em;display:inline-block;vertical-align:-.18em;}
+  .kbd{font:600 .68rem 'JetBrains Mono',monospace;background:rgba(255,255,255,.22);padding:2px 7px;border-radius:6px;margin-left:4px;}
+
+  /* ===== intro ===== */
+  .hero{
+    position:relative; overflow:hidden; text-align:center; color:#f6ead2;
+    padding:52px 22px 56px; border-radius:22px;
+    background:radial-gradient(130% 110% at 50% -25%, #17695f 0%, #0a4f49 48%, #241811 100%);
+    box-shadow:0 18px 40px rgba(36,24,17,.3);
+  }
+  .hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:12px;
+    background:repeating-linear-gradient(90deg,var(--mustard) 0 26px,var(--teal) 26px 52px);opacity:.9;}
+  .kicker{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:#f0c96a;margin:0 0 12px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:900;font-size:clamp(2rem,6vw,3.2rem);line-height:1.08;margin:0 0 14px;text-shadow:0 3px 16px rgba(0,0,0,.35);}
+  .hero h1 span{color:#f0c96a;}
+  .hero-sub{max-width:56ch;margin:0 auto 24px;color:#e9dcc2;}
+  .tv-frame{
+    position:relative;max-width:520px;margin:0 auto 26px;border-radius:18px;padding:12px;
+    background:#17100b;border:6px solid #3a2a1a;box-shadow:0 0 0 3px #0c0805,0 16px 34px rgba(0,0,0,.4);
+  }
+  .tv-frame img{display:block;width:100%;border-radius:8px;}
+  .tv-frame::after{content:"";position:absolute;inset:12px;border-radius:8px;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 2px,transparent 2px 5px);}
+  .idiom-strip{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 24px;padding:0;list-style:none;}
+  .idiom-strip li{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;
+    background:rgba(255,255,255,.08);border:1px solid rgba(246,234,210,.28);padding:6px 12px;border-radius:999px;}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;max-width:820px;margin:0 auto 28px;text-align:left;}
+  .step{background:rgba(255,255,255,.07);border:1px solid rgba(246,234,210,.22);border-radius:14px;padding:14px 16px;}
+  .step b:first-child{font-family:'Fraunces',serif;font-size:1.6rem;color:#f0c96a;display:block;line-height:1;}
+  .step p{margin:.4em 0 0;font-size:.88rem;color:#e9dcc2;}
+  .hand{font-family:'Caveat',cursive;font-size:1.3rem;color:#cdb488;margin:18px 0 0;}
+  .src-link{color:#f0c96a;font-size:.8rem;}
+  .src-link:hover{color:#ffe9b8;}
+
+  /* ===== level map ===== */
+  .map-head{text-align:center;margin:14px 0 26px;}
+  .map-head h2{font-family:'Fraunces',serif;font-weight:900;font-size:clamp(1.5rem,3.4vw,2rem);margin:0 0 6px;}
+  .map-note{color:var(--muted);margin:0 auto;max-width:60ch;}
+  .map-stars{font-size:.85rem;color:var(--rust);margin:10px 0 0;letter-spacing:.08em;}
+  .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:22px;}
+  .reel{
+    position:relative;text-align:left;padding:0;border:0;border-radius:16px;overflow:hidden;cursor:pointer;
+    background:var(--panel);color:var(--ink);font:inherit;
+    box-shadow:0 6px 0 var(--shadow), 0 14px 26px rgba(46,33,21,.14);
+    transition:transform .18s, box-shadow .18s; display:block; width:100%;
+  }
+  .reel:hover{transform:translateY(-4px);box-shadow:0 8px 0 var(--shadow),0 20px 32px rgba(46,33,21,.18);}
+  .reel:active{transform:translateY(1px);}
+  .reel-img{display:block;position:relative;height:132px;background:linear-gradient(135deg,var(--rc,var(--teal)),#2e2115);}
+  .reel-img img{width:100%;height:100%;object-fit:cover;display:block;}
+  .reel-img::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 2px,transparent 2px 5px);}
+  .reel-body{display:block;padding:12px 14px 14px;}
+  .reel-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .reel-num{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.12em;color:var(--rust);}
+  .reel-stars{color:#c9bPOPq;}
+  .reel-stars{color:#cdbfa2;letter-spacing:2px;font-size:.85rem;}
+  .reel-stars .lit{color:var(--gold);}
+  .reel-title{display:block;font-family:'Fraunces',serif;font-weight:900;font-size:1.18rem;line-height:1.2;margin:6px 0 2px;}
+  .reel-char{display:block;font-size:.8rem;color:var(--muted);}
+  .reel-best{display:block;margin-top:10px;padding-top:8px;border-top:1px dashed #ddd0b2;
+    font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.1em;color:var(--teal-deep);}
+  .reel.final{outline:3px solid var(--mustard);animation:popIn .5s ease;}
+  .reel.final .reel-best{color:var(--rust);}
+
+  /* ===== scene / level ===== */
+  .scene-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 12px;}
+  .scene-num{display:block;font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.14em;color:var(--rust);}
+  .scene-title h2{margin:0;font-family:'Fraunces',serif;font-weight:900;font-size:1.4rem;line-height:1.15;}
+  .scene-tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+    color:#fff;background:var(--rc,var(--teal));padding:4px 11px;border-radius:999px;}
+  .scene-live{margin-left:auto;font-size:.74rem;letter-spacing:.08em;color:var(--muted);background:var(--panel);
+    border:2px solid var(--line);padding:7px 13px;border-radius:999px;}
+  .scene-live b{color:var(--rust);font-size:.95rem;}
+  .host-line{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid #eadfc6;
+    border-left:6px solid var(--rc,var(--teal));border-radius:14px;padding:12px 16px;box-shadow:0 4px 0 #e6d7b6;margin:0 0 20px;}
+  .host-avatar{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:#fff;flex:none;
+    font:900 1.25rem 'Fraunces',serif;background:var(--rc,var(--teal));box-shadow:0 3px 0 rgba(46,33,21,.25);}
+  .host-line p{margin:0;font-family:'Caveat',cursive;font-size:1.35rem;line-height:1.3;color:#5c4a34;}
+
+  /* ===== fill the gaps ===== */
+  .fill-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.72rem;letter-spacing:.08em;color:var(--muted);margin:0 0 12px;}
+  .fill-row{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:0 0 10px;box-shadow:0 3px 0 #e6d7b6;}
+  .fill-text{margin:0;font-size:.98rem;}
+  .fill-note{margin:8px 0 0;font-size:.84rem;color:var(--teal-deep);background:#eef5ee;border-left:3px solid var(--green);padding:6px 10px;border-radius:0 8px 8px 0;}
+  .gap{
+    font:700 .95rem 'JetBrains Mono',monospace;color:var(--rust);background:#fdf6e4;
+    border:2px dashed #cfa14a;border-radius:9px;padding:2px 12px;min-width:96px;cursor:pointer;transition:background .15s;
+  }
+  .gap:hover{background:#fbeecb;}
+  .gap.sel{background:var(--mustard);color:var(--ink);border-style:solid;}
+  .gap.filled{background:var(--teal);border:2px solid var(--teal-deep);color:#fff;cursor:default;min-width:0;}
+  .bank{display:flex;flex-wrap:wrap;gap:9px;background:#f1e6cd;border:2px dashed #cbb994;border-radius:14px;padding:13px;margin-top:14px;}
+  .chip{
+    font:700 .88rem 'Nunito Sans',sans-serif;background:var(--panel);color:var(--ink);
+    border:2px solid #d9c9a8;border-radius:999px;padding:8px 15px;cursor:pointer;
+    box-shadow:0 3px 0 #d9c9a8;transition:transform .12s;
+  }
+  .chip:hover{transform:translateY(-2px);}
+  .chip.sel{background:var(--mustard);border-color:var(--mustard-deep);box-shadow:0 3px 0 var(--mustard-deep);}
+  .chip.used{opacity:.32;text-decoration:line-through;cursor:default;transform:none;box-shadow:none;}
+  .chip.bad{border-color:var(--red);background:#fbe9e7;}
+
+  /* ===== match ===== */
+  .match-hint{font-size:.7rem;letter-spacing:.06em;color:var(--rust);background:#fdf6e4;border:1px dashed #cfa14a;
+    border-radius:10px;padding:8px 12px;margin:0 0 12px;text-align:center;}
+  .match-top{display:flex;justify-content:space-between;font-size:.74rem;letter-spacing:.08em;color:var(--muted);margin:0 0 12px;}
+  .match-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:640px){.match-cols{grid-template-columns:1fr;}}
+  .mcol{display:flex;flex-direction:column;gap:9px;}
+  .mword,.mmean{
+    font:700 .9rem 'Nunito Sans',sans-serif;text-align:left;background:var(--panel);color:var(--ink);
+    border:2px solid #d9c9a8;border-radius:12px;padding:11px 14px;cursor:pointer;box-shadow:0 4px 0 #e0d0ac;transition:transform .12s;
+  }
+  .mword b{font-family:'JetBrains Mono',monospace;font-size:.86rem;}
+  .mword:hover,.mmean:hover{transform:translateX(3px);}
+  .mword.sel,.mmean.sel{background:var(--mustard);border-color:var(--mustard-deep);box-shadow:0 4px 0 var(--mustard-deep);}
+  .mword.locked,.mmean.locked{background:#e6f4e6;border-color:var(--green);color:#1d5c22;cursor:default;transform:none;box-shadow:none;}
+  .mword.bad,.mmean.bad{border-color:var(--red);background:#fbe9e7;}
+  .match-ex{margin-top:16px;background:#eef5ee;border-left:4px solid var(--green);border-radius:0 10px 10px 0;padding:10px 14px;font-size:.88rem;}
+
+  /* ===== true / false ===== */
+  .tf-top{display:flex;justify-content:space-between;align-items:center;font-size:.74rem;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;}
+  .mult{border:2px solid #d9c9a8;background:var(--panel);border-radius:999px;padding:4px 12px;color:var(--ink);}
+  .mult.hot{background:var(--mustard);border-color:var(--mustard-deep);color:var(--ink);}
+  .tf-card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--paper-sh);}
+  .tf-bar{height:10px;background:#e7d8b8;border-radius:99px;overflow:hidden;margin-bottom:18px;}
+  .tf-bar i{display:block;height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),var(--mustard));transition:width .1s linear;}
+  .tf-q{font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem;line-height:1.35;margin:0 0 20px;min-height:3.2em;}
+  .tf-btns{display:flex;gap:12px;flex-wrap:wrap;}
+  .tf-btns .btn{flex:1;justify-content:center;font-size:1.02rem;}
+  .tf-note{margin:16px 0 0;font-size:.9rem;background:#f6eeda;border-left:4px solid var(--mustard);padding:10px 14px;border-radius:0 10px 10px 0;}
+  .tf-stamp{
+    position:absolute;top:38%;left:50%;transform:translate(-50%,-50%) rotate(-9deg);
+    font:700 1.7rem 'JetBrains Mono',monospace;letter-spacing:.1em;padding:8px 22px;border-radius:12px;
+    border:4px solid currentColor;background:rgba(255,253,247,.92);animation:stampIn .25s ease;
+  }
+  .tf-stamp.good{color:var(--green);} .tf-stamp.bad{color:var(--red);}
+  @keyframes stampIn{from{opacity:0;transform:translate(-50%,-50%) rotate(-9deg) scale(1.7);}to{opacity:1;transform:translate(-50%,-50%) rotate(-9deg) scale(1);}}
+
+  /* ===== multiple choice / bonus questions ===== */
+  .q-card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--paper-sh);}
+  .q-progress{font-size:.72rem;letter-spacing:.1em;color:var(--muted);margin:0 0 8px;}
+  .q-text{font-family:'Fraunces',serif;font-weight:700;font-size:1.2rem;line-height:1.35;margin:0 0 16px;}
+  .q-opts{display:grid;gap:9px;}
+  .q-opt{
+    font:700 .94rem 'Nunito Sans',sans-serif;text-align:left;background:#fffdf6;color:var(--ink);
+    border:2px solid #ddcdb0;border-radius:12px;padding:12px 16px;cursor:pointer;transition:border-color .15s,transform .12s;
+  }
+  .q-opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(4px);}
+  .q-opt:disabled{cursor:default;}
+  .q-opt.ok{background:#e6f4e6;border-color:var(--green);color:#1d5c22;}
+  .q-opt.bad{background:#fbe9e7;border-color:var(--red);color:#7e2b24;}
+  .q-note{margin:16px 0 0;font-size:.9rem;background:#f6eeda;border-left:4px solid var(--mustard);padding:10px 14px;border-radius:0 10px 10px 0;}
+  .q-next{margin-top:16px;}
+  .react-good{color:var(--green);} .react-bad{color:var(--red);}
+
+  /* ===== bonus round ===== */
+  .bn-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 16px;}
+  .bn-clock{font-size:1.5rem;font-weight:700;color:var(--teal-deep);background:var(--panel);border:2px solid var(--line);
+    padding:6px 16px;border-radius:12px;box-shadow:0 3px 0 #e0d0ac;}
+  .bn-clock.danger{color:var(--red);border-color:var(--red);animation:blink 1s steps(2) infinite;}
+  @keyframes blink{50%{opacity:.45;}}
+  .bn-bar{flex:1;min-width:120px;height:12px;background:#e7d8b8;border-radius:99px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(46,33,21,.2);}
+  .bn-bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--teal),var(--mustard));}
+  .bn-bar.dangerI i{background:var(--red);}
+
+  /* ===== modal ===== */
+  .mback{position:fixed;inset:0;z-index:1000;background:rgba(36,24,17,.58);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;padding:18px;animation:screenIn .25s ease;}
+  .modal{background:var(--panel);border-radius:20px;max-width:560px;width:100%;max-height:88vh;overflow:auto;
+    padding:26px 26px 22px;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:popIn .3s ease;text-align:center;}
+  .bm-tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;
+    color:#fff;background:var(--rc,var(--teal));padding:5px 13px;border-radius:999px;margin-bottom:10px;}
+  .bm-title{font-family:'Fraunces',serif;font-weight:900;font-size:1.5rem;margin:0 0 14px;}
+  .bm-img{border-radius:14px;overflow:hidden;border:1px solid var(--line);margin:0 0 16px;background:linear-gradient(135deg,#d8c6a2,#2e2115);}
+  .bm-img img{display:block;width:100%;}
+  .bm-obj,.bm-tip{font-size:.92rem;text-align:left;margin:.5em 0;}
+  .bm-flav{font-family:'Caveat',cursive;font-size:1.25rem;color:#5c4a34;background:#fdf6e4;border:1px dashed #cfa14a;border-radius:12px;padding:10px 14px;margin:14px 0;}
+  .bm-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px;}
+  .bm-btns.center{justify-content:center;}
+  .rm-kicker{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.16em;color:var(--rust);margin:0;}
+  .rm-title{font-family:'Fraunces',serif;font-weight:900;font-size:1.4rem;margin:4px 0 12px;}
+  .rm-stars{display:flex;justify-content:center;gap:10px;margin:6px 0 10px;}
+  .rm-star{color:#ddd0b2;display:inline-flex;}
+  .rm-star svg{width:46px;height:46px;}
+  .rm-star.on{color:var(--gold);animation:starPop .45s ease;}
+  @keyframes starPop{0%{transform:scale(.2) rotate(-40deg);}60%{transform:scale(1.25) rotate(8deg);}100%{transform:scale(1) rotate(0);}}
+  .rm-score{font-size:2rem;font-weight:700;color:var(--teal-deep);margin:.1em 0;}
+  .rm-meta{font-size:.85rem;color:var(--muted);margin:.2em 0 0;}
+  .rm-meta .rec{color:var(--rust);}
+
+  /* ===== finale ===== */
+  .finale{text-align:center;}
+  .fin-title{font-family:'Fraunces',serif;font-weight:900;font-size:clamp(1.8rem,5vw,2.6rem);margin:4px 0 22px;}
+  .fin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:0 0 24px;}
+  .fin-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 14px;box-shadow:var(--paper-sh);}
+  .fin-card.rank{border-top:6px solid var(--gold);}
+  .fin-label{font-size:.64rem;letter-spacing:.14em;color:var(--muted);margin:0 0 6px;}
+  .fin-big{font-family:'JetBrains Mono',monospace;font-size:2.1rem;font-weight:700;color:var(--teal-deep);margin:0;}
+  .fin-rank{font-family:'Fraunces',serif;font-weight:900;font-size:1.15rem;margin:0;color:var(--rust);}
+  .fin-table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:14px;overflow:hidden;
+    box-shadow:var(--paper-sh);margin:0 0 22px;font-size:.9rem;}
+  .fin-table th{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;
+    color:#fff;background:var(--teal-deep);padding:9px 12px;text-align:left;}
+  .fin-table td{padding:9px 12px;border-top:1px solid var(--line);text-align:left;}
+  .fin-table .stars-cell{color:var(--gold);letter-spacing:2px;}
+  .fin-hand{font-size:1.45rem;color:#5c4a34;}
+
+  /* ===== toast / popfloat / confetti ===== */
+  #toastRoot{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:1600;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+  .toast{background:var(--ink);color:#f6ead2;font-size:.86rem;font-weight:700;padding:10px 18px;border-radius:999px;
+    box-shadow:0 10px 24px rgba(0,0,0,.3);animation:popIn .25s ease;max-width:90vw;text-align:center;}
+  .toast.good{border-left:5px solid var(--green);}
+  .toast.bad{border-left:5px solid var(--red);}
+  .toast.out{opacity:0;transition:opacity .35s;}
+  .popfloat{position:fixed;z-index:1500;transform:translate(-50%,-100%);pointer-events:none;
+    font:700 .95rem 'JetBrains Mono',monospace;text-shadow:0 2px 5px rgba(46,33,21,.3);animation:floatUp .9s ease-out forwards;}
+  .popfloat.good{color:#1d7a33;} .popfloat.bad{color:var(--red);}
+  @keyframes floatUp{from{opacity:0;margin-top:8px;}20%{opacity:1;}to{opacity:0;margin-top:-36px;}}
+  #confettiRoot{position:fixed;inset:0;z-index:1400;pointer-events:none;overflow:hidden;}
+  #confettiRoot i{position:absolute;top:-18px;width:9px;height:14px;border-radius:2px;animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(640deg);opacity:.85;}}
+
+  /* ===== shake ===== */
+  .shake{animation:shake .4s ease;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-7px);}
+    40%{transform:translateX(6px);}
+    60%{transform:translateX(-4px);}
+    80%{transform:translateX(3px);}
+  }
+
+  @media (max-width:640px){
+    .hud-brand span{display:none;}
+    .hud-cells{order:3;width:100%;justify-content:center;margin:2px 0 0;}
+    main{padding-top:104px;}
+    .tf-q{min-height:0;}
+  }
+
+  /* ===== reduced motion ===== */
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    *,*::before,*::after{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.001s !important;}
+    #loader{transition:none;}
+    #loader .dots::after{content:"...";}
+    .popfloat,#confettiRoot i{display:none !important;}
+  }
+</style>
+</head>
+<body class="locked">
+
+<div id="grain" aria-hidden="true"></div>
+<div id="vignette" aria-hidden="true"></div>
+<div id="confettiRoot" aria-hidden="true"></div>
+<div id="toastRoot" aria-live="polite"></div>
+
+<!-- ===== preloader ===== -->
+<div id="loader" role="dialog" aria-label="Loading screen — press play to start">
+  <div class="ld-tv" aria-hidden="true" data-icon="tv"></div>
+  <p class="ld-line mono">TRACKING<span class="dots"></span>&nbsp;adjusting the rabbit ears</p>
+  <div class="ld-bar"><i></i></div>
+  <div class="ld-play" id="ldPlay" hidden>
+    <button class="btn play big" id="playBtn" data-autofocus>▶ PLAY</button>
+    <p class="ld-hint">sound on recommended · keyboard friendly · progress is saved on this tape</p>
+  </div>
+  <p class="ld-brand">FRIENDS · S02E16 · “THE ONE WHERE JOEY MOVES OUT”</p>
+</div>
+
+<!-- ===== HUD console ===== -->
+<header id="hud">
+  <div class="hud-brand">
+    <span class="mark" data-icon="tv" aria-hidden="true"></span>
+    <div><b>VOCAB ARCADE</b><span class="mono">FRIENDS · S02E16</span></div>
+  </div>
+  <div class="hud-cells" id="hudCells" aria-label="Level progress"></div>
+  <div class="hud-right">
+    <div class="hud-score mono" aria-live="polite">SCORE <b id="hudScore">0</b></div>
+    <button class="hud-btn" id="sndBtn" aria-label="Toggle sound"></button>
+    <button class="hud-btn" id="mapBtn" data-icon="map" aria-label="Open level map"></button>
+  </div>
+</header>
+
+<main>
+  <!-- ===== screen: intro ===== -->
+  <section id="screen-intro" class="screen active" aria-label="Introduction">
+    <div class="hero">
+      <p class="kicker mono">📺 The Sitcom Study Guide presents · Level B1–B2</p>
+      <h1>FRIENDS <span>VOCAB</span> ARCADE</h1>
+      <p class="hero-sub">One moved-out Joey. Six idioms. Two apartments full of feelings nobody says out loud.
+        Master the language of “The One Where Joey Moves Out” by playing it — six reels, five mechanics, one very long coffee shift.</p>
+      <div class="tv-frame"><img src="https://item1000-collab.github.io/ai/engoo/20260922-friends-216/slide-001.jpg" alt="Cover of The Sitcom Study Guide: Learning English through 90s Pop Culture" onerror="this.style.display='none'"></div>
+      <ul class="idiom-strip" aria-label="Idioms featured in this game">
+        <li>bent out of shape</li><li>high and dry</li><li>chicken out</li>
+        <li>a wuss</li><li>a load of crap</li><li>retail therapy</li>
+      </ul>
+      <div class="steps">
+        <div class="step"><b>1</b><p><b>Pick any reel.</b> All six are unlocked from the very start — play in any order, replay whenever you like.</p></div>
+        <div class="step"><b>2</b><p><b>Beat the mechanic.</b> Gap-filling, meaning-matching, REAL-or-DELUSION reflexes, a detective quiz and one bonus shift on the clock.</p></div>
+        <div class="step"><b>3</b><p><b>Collect stars.</b> Flawless runs earn ★★★. Best scores are stored on the tape; finish all six reels to unlock the Final Reel.</p></div>
+      </div>
+      <button class="btn play big" id="startBtn">INSERT COIN — START ▶</button>
+      <p class="hand">best enjoyed with coffee ☕ and zero adults in the room</p>
+      <p style="margin:14px 0 0;"><a class="src-link" href="https://item1000-collab.github.io/ai/engoo/20260922-friends-216/216-90s-sitcom-english-guide.pdf" target="_blank" rel="noopener noreferrer">📖 Source guide: 216-90s-sitcom-english-guide.pdf (opens in a new tab)</a></p>
+    </div>
+  </section>
+
+  <!-- ===== screen: level map ===== -->
+  <section id="screen-map" class="screen" aria-label="Level map">
+    <div class="map-head">
+      <h2>📼 Pick a reel</h2>
+      <p class="map-note">All reels are unlocked — play in any order, replay whenever. Finish all six to unlock <b>THE FINAL REEL</b>.</p>
+      <p class="map-stars mono" id="mapStars"></p>
+    </div>
+    <div class="map-grid" id="mapGrid"></div>
+  </section>
+
+  <!-- ===== screen: scene (level) ===== -->
+  <section id="screen-scene" class="screen" aria-label="Level">
+    <div id="sceneHost"></div>
+  </section>
+
+  <!-- ===== screen: finale ===== -->
+  <section id="screen-finale" class="screen" aria-label="Finale">
+    <div class="finale" id="finaleHost"></div>
+  </section>
+</main>
+
+<div id="modalRoot"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===== dom utils ===== */
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const shuffle = (arr) => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const IMG_BASE = 'https://item1000-collab.github.io/ai/engoo/20260922-friends-216/';
+
+/* ===== inline svg icons ===== */
+const S = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+const ICONS = {
+  play:   '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+  tv:     '<svg viewBox="0 0 24 24" ' + S + ' aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="m8 3 4 4 4-4"/></svg>',
+  vol:    '<svg viewBox="0 0 24 24" ' + S + ' aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+  volx:   '<svg viewBox="0 0 24 24" ' + S + ' aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><line x1="17" y1="9" x2="23" y2="15"/><line x1="23" y1="9" x2="17" y2="15"/></svg>',
+  map:    '<svg viewBox="0 0 24 24" ' + S + ' aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg>',
+  rewind: '<svg viewBox="0 0 24 24" ' + S + ' aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4"/><path d="M3 4v5h5"/></svg>',
+  check:  '<svg viewBox="0 0 24 24" ' + S + ' aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+  x:      '<svg viewBox="0 0 24 24" ' + S + ' aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+  star:   '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.5 5.82 21 7 14.14l-5-4.87 6.91-1.01z"/></svg>'
+};
+function icon(name){ return '<span class="icn" aria-hidden="true">' + (ICONS[name] || '') + '</span>'; }
+function refreshIcons(){
+  $$('[data-icon]').forEach(el => { el.innerHTML = ICONS[el.getAttribute('data-icon')] || ''; });
+}
+
+/* ===== audio: web audio synth ===== */
+let AC = null;
+let muted = false;
+function initAudio(){
+  if (!AC) {
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; }
+  }
+  if (AC && AC.state === 'suspended') { AC.resume(); }
+}
+function tone(freq, dur, type, vol, when){
+  if (!AC || muted) { return; }
+  type = type || 'sine'; vol = (vol === undefined) ? 0.2 : vol; when = when || 0;
+  const t0 = AC.currentTime + when;
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(AC.destination);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function noiseBurst(dur, vol){
+  if (!AC || muted) { return; }
+  dur = dur || 0.4; vol = (vol === undefined) ? 0.22 : vol;
+  const len = Math.max(1, Math.floor(AC.sampleRate * dur));
+  const buf = AC.createBuffer(1, len, AC.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i / len); }
+  const src = AC.createBufferSource(); src.buffer = buf;
+  const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 900;
+  const g = AC.createGain(); g.gain.value = vol;
+  src.connect(f); f.connect(g); g.connect(AC.destination);
+  src.start();
+}
+const SFX = {
+  click(){ tone(620, .06, 'square', .10); },
+  flip(){ tone(340, .05, 'triangle', .15); tone(520, .06, 'triangle', .12, .05); },
+  correct(){ tone(660, .09, 'triangle', .18); tone(880, .14, 'triangle', .16, .09); },
+  wrong(){ tone(160, .22, 'sawtooth', .15); tone(120, .2, 'sawtooth', .09, .05); },
+  match(){ tone(523, .08, 'sine', .16); tone(659, .08, 'sine', .15, .07); tone(784, .16, 'sine', .14, .14); },
+  fanfare(){ [523, 659, 784, 1047].forEach((f, i) => tone(f, .14, 'triangle', .17, i * .11)); noiseBurst(.5, .10); },
+  tick(){ tone(1000, .03, 'square', .07); },
+  cheer(){ noiseBurst(.8, .2); tone(880, .1, 'triangle', .13, .05); tone(1175, .16, 'triangle', .13, .18); }
+};
+
+/* ===== save: localStorage (versioned, safe) ===== */
+const SAVE_KEY = 'friends-vocab-arcade-v1';
+let save = { muted: false, levels: {} };
+function loadSave(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      if (p && typeof p === 'object') {
+        save.muted = !!p.muted;
+        save.levels = (p.levels && typeof p.levels === 'object') ? p.levels : {};
+      }
+    }
+  } catch (e) { /* private mode: play without persistence */ }
+  muted = save.muted;
+}
+function persist(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ }
+}
+
+/* ===== game data: scenes ===== */
+/* fields per spec: id, num, title, char, color, slide, tag, obj, tip, flavor (+ game mechanic) */
+const SCENES = [
+  {
+    id: 'rift', num: 'REEL 01', title: 'The Roommate Rift', char: 'Chandler', color: '#0e7268',
+    slide: 'slide-003.jpg', tag: 'Fill the Gaps', game: 'fill',
+    obj: 'Six sentences from the fight have lost their words. Click a gap, then click the right chip from the word bank. Wrong chips bounce back and cost 5 points.',
+    tip: 'The bank holds decoys. If a word refuses to fit anywhere, it probably belongs to nobody.',
+    flavor: 'So we have established that the toothbrush thing was gross. What we have NOT established is why it is easier to fight about spoons than to say “I will miss you.” Fill the gaps. Be the adult I could not be.'
+  },
+  {
+    id: 'diner', num: 'REEL 02', title: 'The Vocab Diner', char: 'Joey', color: '#e0a82e',
+    slide: 'slide-004.jpg', tag: 'Match the Meaning', game: 'match',
+    obj: 'Six idioms, six meanings, one diner counter. Click a word, then its meaning. Correct pairs lock green and cannot be reused; wrong picks shake and cost 5 points.',
+    tip: 'Do the certain pairs first — every locked word shrinks the board.',
+    flavor: 'Welcome to the Vocab Diner! Match the word to its meaning and nobody leaves hungry. Could I BE any more excited about idioms?'
+  },
+  {
+    id: 'reality', num: 'REEL 03', title: 'Reality Check', char: 'Phoebe', color: '#c25b32',
+    slide: 'slide-006.jpg', tag: 'REAL or DELUSION', game: 'tf',
+    obj: 'Ten claims about the episode. You get 6 seconds per claim: REAL or DELUSION. Arrows work — left for REAL, right for DELUSION. Streaks multiply your points.',
+    tip: 'Extreme wording (“carefully planned”, “knew exactly”) usually smells like DELUSION.',
+    flavor: 'Truth is like a tattoo: it stings for a second, then it is part of you. I will read a claim — you tell me if it is REAL or pure DELUSION. Trust me, I am an expert on Earth-dot-related matters.'
+  },
+  {
+    id: 'tour', num: 'REEL 04', title: 'The Apartment Tour', char: 'Rachel', color: '#7a4fa3',
+    slide: 'slide-010.jpg', tag: 'Detective Quiz', game: 'choice',
+    obj: 'Eight questions on symbols and psychology. One attempt each — choose carefully, then read the guide’s explanation. Wrong answers cost 5 points.',
+    tip: 'The guide compares materials: warm wood versus cold ceramic. Temperature is a clue.',
+    flavor: 'Walk through the two apartments with me and tell me what the furniture is really saying. One attempt per answer — just like real shopping, no refunds.'
+  },
+  {
+    id: 'ink', num: 'REEL 05', title: 'Ink & Nerve', char: 'Phoebe', color: '#b8433a',
+    slide: 'slide-007.jpg', tag: 'Fill the Gaps II', game: 'fill2',
+    obj: 'The tattoo-parlor scene, gap-filled. Same rules: click a gap, then a chip. Mistakes cost points — and Phoebe’s pride.',
+    tip: '“Chickens out” needs the little word OUT. Phrasal verbs are shy like that.',
+    flavor: 'Round two, needle edition. Fill the gaps before I chicken out again. (I did NOT chicken out. The dot is Earth.)'
+  },
+  {
+    id: 'shift', num: 'REEL 06', title: 'The Late Shift', char: 'Gunther', color: '#0a4f49',
+    slide: 'slide-011.jpg', tag: 'Bonus · 750s', game: 'bonus',
+    obj: 'The late shift: 12 rapid questions from every reel, one 750-second clock. Streak ×2 at three in a row, ×3 at six. Finish before the coffee runs out.',
+    tip: 'Streaks beat speed here: three correct answers in a row double everything.',
+    flavor: 'You know everything now. Prove it before the coffee gets cold. Streaks multiply your points — and yes, I am watching.'
+  }
+];
+
+/* ===== game data: fill the gaps (reel 01) ===== */
+const FILL_RIFT = {
+  sentences: [
+    { text: 'Joey lands a ___ acting job and decides he wants to live alone.', answer: 'high-paying', note: 'A high-paying job pays very well — straight from the corkboard.' },
+    { text: 'Chandler feels ___, leading to passive-aggressive fights about spoons.', answer: 'abandoned', note: 'Abandoned = left behind. The theme of the whole reel.' },
+    { text: '“Well don’t you see how ___ that is? I mean that’s like you using my toothbrush.”', answer: 'gross', note: 'Chandler, on the toothbrush incident.' },
+    { text: 'Instead of talking about their feelings, they fight over ___.', answer: 'hygiene', note: 'Hygiene = cleanliness habits. The surface-level topic.' },
+    { text: '“Hey, are you cool with this? I mean, I don’t want to leave you ___.”', answer: 'high and dry', note: 'Abandoned in a difficult situation without help or support.' },
+    { text: 'Joey spends ___ money on flashy decor to fill the empty space and feel less alone.', answer: 'exorbitant', note: 'Exorbitant = unreasonably high. Classic retail therapy.' }
+  ],
+  bank: ['high-paying', 'abandoned', 'gross', 'hygiene', 'high and dry', 'exorbitant', 'gossip', 'sparkling', 'tattoo']
+};
+
+/* ===== game data: fill the gaps (reel 05) ===== */
+const FILL_INK = {
+  sentences: [
+    { text: '“Rachel and Phoebe try to prove they are the ___ of themselves by getting tattoos.”', answer: 'boss', note: 'Boss of themselves = self-determination, in wonderfully informal English.' },
+    { text: 'Phoebe ___ when she sees the needle.', answer: 'chickens out', note: 'To decide not to do something out of fear — a phrasal verb.' },
+    { text: 'Rachel jokes that Phoebe’s mother is in heaven calling her a ___.', answer: 'wuss', note: 'Slang for a coward; a weak person. Handle with care.' },
+    { text: 'Phoebe claims the tiny dot is actually a picture of Earth. Rachel calls the claim “a load of ___.”', answer: 'crap', note: 'A load of crap = nonsense; a lie.' },
+    { text: 'White signifies ___ and new beginnings, the guide says of the ceramic dog.', answer: 'purity', note: 'From the object symbolism page.' },
+    { text: 'The girls decide to get tattoos to prove their ___.', answer: 'independence', note: 'From the corkboard: “to prove their independence.”' }
+  ],
+  bank: ['boss', 'chickens out', 'wuss', 'crap', 'purity', 'independence', 'needle', 'laser', 'foosball']
+};
+
+/* ===== game data: match the meaning (reel 02) ===== */
+const MATCH_PAIRS = [
+  { w: 'bent out of shape', m: 'unnecessarily angry over something small', ex: '“Don’t get so bent out of shape — I only ate one slice of your pizza!”' },
+  { w: 'leave someone high and dry', m: 'abandon someone without help or support', ex: '“My friend drove away and left me high and dry.”' },
+  { w: 'chicken out', m: 'decide not to do something out of fear', ex: '“Phoebe chickens out when she sees the needle.”' },
+  { w: 'a wuss', m: 'a coward; a weak person (slang)', ex: 'Even Phoebe’s mom is calling her a wuss — from heaven.' },
+  { w: 'a load of crap', m: 'nonsense; a lie', ex: 'A picture of Earth? That claim is a load of crap.' },
+  { w: 'retail therapy', m: 'shopping to feel better when sad or stressed', ex: 'Joey’s flashy new decor is pure retail therapy.' }
+];
+
+/* ===== game data: true/false (reel 03) — a: 0 = REAL, 1 = DELUSION ===== */
+const TF_STATEMENTS = [
+  { s: 'Joey moves out because he landed a high-paying acting job.', a: 0, note: 'REAL — the corkboard says exactly this.' },
+  { s: 'Chandler was secretly planning to move into that new apartment himself.', a: 1, note: 'DELUSION — Chandler stayed behind and felt abandoned.' },
+  { s: 'The plastic spoons were a peace offering built on inside jokes.', a: 0, note: 'REAL — a highly personal gift, the guide says.' },
+  { s: 'Joey carefully planned his interior design months in advance.', a: 1, note: 'DELUSION — retail therapy: spending to feel less alone.' },
+  { s: 'In 1990s slang, a “twinkie” meant a wise, intelligent older woman.', a: 1, note: 'DELUSION — a young, attractive woman perceived as naive.' },
+  { s: 'Joey grew up with seven sisters and has never lived alone before.', a: 0, note: 'REAL — straight from the retail-therapy context page.' },
+  { s: 'The wooden foosball table symbolizes isolated freedom.', a: 1, note: 'DELUSION — that is the ceramic dog; the table means shared connection.' },
+  { s: 'Monica’s mother knew exactly who Richard’s new girlfriend was.', a: 1, note: 'DELUSION — she gossiped about the “twinkie” not knowing it was Monica.' },
+  { s: 'Monica brings Richard to her father’s birthday party, and they hide the romance.', a: 0, note: 'REAL — the main A-Story of the episode.' },
+  { s: 'Phoebe leaves the parlor with a tiny dot she insists is a picture of Earth.', a: 0, note: 'REAL — and Rachel calls that claim a load of crap.' }
+];
+
+/* ===== game data: multiple choice (reel 04) ===== */
+const CHOICE_QUESTIONS = [
+  { q: 'What does the wooden foosball table symbolize?', a: 0,
+    opts: ['Shared connection, friendship, and a commitment to living together', 'Isolated freedom and new beginnings', 'A costly mid-life crisis'],
+    note: 'Material: wood — warm and lived-in. Function: a game played by two people.' },
+  { q: 'Why does the white ceramic dog show Joey is “not ready for real commitment yet”?', a: 0,
+    opts: ['It is an object, not a real pet', 'It does not match the sofa', 'Chandler is allergic to it'],
+    note: 'A giant, lifeless object that takes up space — isolated freedom.' },
+  { q: 'What is the deeper meaning of the spoon fight?', a: 0,
+    opts: ['They are avoiding the pain of separation', 'Joey genuinely hates dirty spoons', 'Chandler wants new silverware'],
+    note: 'Surface: hygiene. Deeper: shallow arguments instead of discussing the separation.' },
+  { q: 'Why does Chandler’s plastic-spoon gift work so well?', a: 0,
+    opts: ['It references their specific inside jokes', 'It is the most expensive option', 'It is dishwasher safe'],
+    note: 'A highly personal peace offering — he pays attention.' },
+  { q: 'What is “retail therapy”?', a: 0,
+    opts: ['Shopping to make yourself feel happier when sad or stressed', 'Physiotherapy for shop assistants', 'A store’s refund policy'],
+    note: 'Joey spends exorbitant money on flashy decor to feel less alone.' },
+  { q: 'What is an “inside joke”?', a: 0,
+    opts: ['A joke only a small group understands', 'A joke told indoors', 'A secret about the workplace'],
+    note: 'Chandler’s gift proves he remembers theirs.' },
+  { q: 'What does white signify on the ceramic dog?', a: 0,
+    opts: ['Purity and new beginnings', 'Wealth and power', 'Good luck'],
+    note: 'From the symbolism page — right next to “isolated freedom”.' },
+  { q: 'What is a “peace offering”?', a: 0,
+    opts: ['A gift meant to end a quarrel', 'A truce declared in a game', 'A calm speech about peace'],
+    note: 'Plastic spoons: apology plus attention in one drawer.' }
+];
+
+/* ===== game data: bonus round (reel 06) ===== */
+const BONUS_QUESTIONS = [
+  { q: 'Joey moves out because…', a: 0, opts: ['he landed a high-paying acting job', 'he lost a bet to Ross', 'Monica banned snacks in his old apartment'] },
+  { q: '“Bent out of shape” means…', a: 0, opts: ['unnecessarily angry about something', 'physically stretched in the gym', 'obsessed with cleaning'] },
+  { q: 'REAL or DELUSION: Phoebe’s tattoo is a tiny dot she calls a picture of Earth.', a: 0, opts: ['REAL', 'DELUSION'] },
+  { q: 'The ceramic dog is described as…', a: 0, opts: ['cold, cheap and flashy', 'warm, durable and lived-in', 'priceless and antique'] },
+  { q: '“To chicken out” means…', a: 0, opts: ['to quit out of fear', 'to cook dinner', 'to win a bet'] },
+  { q: 'REAL or DELUSION: the spoon fight was really about hygiene.', a: 1, opts: ['REAL', 'DELUSION'] },
+  { q: 'Monica’s mother gossips that Richard is dating…', a: 0, opts: ['a “20-year-old twinkie in the city”', 'a famous actress', 'his ex-wife'] },
+  { q: 'Someone “high and dry” has been…', a: 0, opts: ['abandoned without help or support', 'promoted at work', 'invited to a party'] },
+  { q: 'REAL or DELUSION: the foosball table is a game played by two people.', a: 0, opts: ['REAL', 'DELUSION'] },
+  { q: '“A wuss” is slang for…', a: 0, opts: ['a coward', 'a hairstyle', 'a coffee order'] },
+  { q: 'Chandler’s plastic spoons work as a gift because they reference…', a: 0, opts: ['their inside jokes', 'a famous movie', 'Joey’s new kitchen'] },
+  { q: 'REAL or DELUSION: Joey has lived alone many times before.', a: 1, opts: ['REAL', 'DELUSION'] }
+];
+
+/* ===== character reactions ===== */
+const REACT_GOOD = [
+  'Exactly. The guide would frame this one.',
+  'Nailed it. Rachel approves.',
+  'Correct — and you did not even flinch like Phoebe.',
+  'Sharp. Almost suspiciously sharp.'
+];
+const REACT_BAD = [
+  'Close, but the receipt says otherwise.',
+  'Nope — and yes, that one stings more than the needle.',
+  'Not quite. The explanation below repairs everything.',
+  'That answer just got bent out of shape. Read the note.'
+];
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+/* ===== core state ===== */
+let currentScreen = 'intro';
+let session = null;      /* { sceneId, score, mistakes, done, key, escape } */
+let cleanupFn = null;
+
+function setCleanup(fn){ cleanupFn = (typeof fn === 'function') ? fn : null; }
+function runCleanup(){ if (cleanupFn) { try { cleanupFn(); } catch (e) { /* ignore */ } } cleanupFn = null; }
+
+function show(name){
+  runCleanup();
+  if (name !== 'scene') { session = null; }
+  currentScreen = name;
+  $$('.screen').forEach(x => x.classList.remove('active'));
+  const el = $('#screen-' + name);
+  if (el) { el.classList.add('active'); }
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  updateHUD();
+}
+
+/* ===== hud ===== */
+function sumBest(){ return SCENES.reduce((t, s) => t + ((save.levels[s.id] || {}).score || 0), 0); }
+function totalStars(){ return SCENES.reduce((t, s) => t + ((save.levels[s.id] || {}).stars || 0), 0); }
+
+function updateHUD(){
+  const live = (session && !session.done) ? session.score : 0;
+  const el = $('#hudScore');
+  if (el) { el.textContent = sumBest() + live; }
+  $('#hudCells').innerHTML = SCENES.map(s => {
+    const p = save.levels[s.id];
+    const cls = 'cell' + (p ? ' done' : '') + (p && p.stars === 3 ? ' gold' : '');
+    return '<span class="' + cls + '" style="--rc:' + s.color + '" title="' + s.num + ': ' + (p ? p.stars + '★' : 'not played') + '"></span>';
+  }).join('');
+}
+
+function renderSound(){
+  const b = $('#sndBtn');
+  b.setAttribute('data-icon', muted ? 'volx' : 'vol');
+  refreshIcons();
+  b.setAttribute('aria-pressed', String(muted));
+  b.setAttribute('aria-label', muted ? 'Sound off — click to unmute' : 'Sound on — click to mute');
+}
+
+/* ===== toast / popfloat / confetti ===== */
+function toast(msg, kind, ms){
+  const el = document.createElement('div');
+  el.className = 'toast ' + (kind || 'info');
+  el.textContent = msg;
+  $('#toastRoot').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 380); }, ms || 2600);
+}
+function popFloat(text, anchor, kind){
+  if (reduceMotion || !anchor) { return; }
+  const r = anchor.getBoundingClientRect();
+  const el = document.createElement('span');
+  el.className = 'popfloat ' + (kind || 'good');
+  el.textContent = text;
+  el.style.left = (r.left + r.width / 2) + 'px';
+  el.style.top = r.top + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 950);
+}
+function spawnConfetti(n){
+  if (reduceMotion) { return; }
+  const root = $('#confettiRoot');
+  const colors = ['#0e7268', '#e0a82e', '#c25b32', '#b8433a', '#7a4fa3'];
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('i');
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.background = colors[i % colors.length];
+    s.style.animationDelay = (Math.random() * 0.7) + 's';
+    s.style.animationDuration = (2.3 + Math.random() * 1.6) + 's';
+    s.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+    root.appendChild(s);
+    setTimeout(() => s.remove(), 4600);
+  }
+}
+
+/* ===== modal ===== */
+let modalDismiss = null;
+function openModal(html, opts){
+  opts = opts || {};
+  const root = $('#modalRoot');
+  root.innerHTML = '<div class="mback"><div class="modal" role="dialog" aria-modal="true">' + html + '</div></div>';
+  modalDismiss = opts.dismiss || null;
+  const f = root.querySelector('[data-autofocus]') || root.querySelector('button');
+  if (f) { try { f.focus(); } catch (e) { /* ignore */ } }
+}
+function closeModal(){ $('#modalRoot').innerHTML = ''; modalDismiss = null; }
+ $('#modalRoot').addEventListener('click', (e) => {
+  if (e.target.classList.contains('mback') && modalDismiss) { modalDismiss(); return; }
+  const b = e.target.closest('[data-close]');
+  if (b) { SFX.click(); if (modalDismiss) { modalDismiss(); } else { closeModal(); } }
+});
+
+/* ===== scoring ===== */
+function addScore(pts, anchor){
+  if (!session) { return; }
+  session.score = Math.max(0, session.score + pts);
+  const el = $('#lvScore');
+  if (el) { el.textContent = session.score; }
+  updateHUD();
+  if (anchor) { popFloat((pts >= 0 ? '+' : '−') + Math.abs(pts), anchor, pts >= 0 ? 'good' : 'bad'); }
+}
+function hostSay(text){
+  const p = $('#hostLine');
+  if (p) { p.textContent = text; }
+}
+
+/* ===== level map ===== */
+function renderMap(){
+  let html = '';
+  SCENES.forEach(s => {
+    const p = save.levels[s.id];
+    let stars;
+    if (p) {
+      stars = '<span class="lit">' + '★'.repeat(p.stars) + '</span>' + '<span>' + '★'.repeat(3 - p.stars) + '</span>';
+    } else {
+      stars = '<span>☆☆☆</span>';
+    }
+    html += '<button class="reel" data-level="' + s.id + '" style="--rc:' + s.color + '"' +
+      ' aria-label="' + s.num + ': ' + s.title + '. ' + (p ? 'Best score ' + p.score + ', ' + p.stars + ' of 3 stars.' : 'Not played yet.') + '">' +
+      '<span class="reel-img"><img src="' + IMG_BASE + s.slide + '" alt="" loading="lazy" onerror="this.style.display=\'none\'"></span>' +
+      '<span class="reel-body">' +
+        '<span class="reel-top"><span class="reel-num">' + s.num + '</span><span class="reel-stars" aria-hidden="true">' + stars + '</span></span>' +
+        '<span class="reel-title">' + s.title + '</span>' +
+        '<span class="reel-char">' + s.char + ' · ' + s.tag + '</span>' +
+        '<span class="reel-best">' + (p ? 'BEST ' + p.score : 'TAP TO PLAY') + '</span>' +
+      '</span></button>';
+  });
+  const allDone = SCENES.every(s => save.levels[s.id]);
+  if (allDone) {
+    html += '<button class="reel final" data-level="__final" style="--rc:#e0a82e" aria-label="Open the finale — all reels complete">' +
+      '<span class="reel-img"><img src="' + IMG_BASE + 'slide-012.jpg" alt="" loading="lazy" onerror="this.style.display=\'none\'"></span>' +
+      '<span class="reel-body">' +
+        '<span class="reel-top"><span class="reel-num">REEL 07</span><span class="reel-stars lit" aria-hidden="true">★★★</span></span>' +
+        '<span class="reel-title">THE FINAL REEL</span>' +
+        '<span class="reel-char">Totals · Rank · Rewind</span>' +
+        '<span class="reel-best">TOTAL STARS ' + totalStars() + '/18</span>' +
+      '</span></button>';
+  }
+  $('#mapGrid').innerHTML = html;
+  $('#mapStars').textContent = 'TOTAL STARS ' + totalStars() + '/18 · CAREER ' + sumBest() + ' PTS';
+}
+ $('#mapGrid').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-level]');
+  if (!b) { return; }
+  SFX.click();
+  const id = b.getAttribute('data-level');
+  if (id === '__final') { showFinale(); } else { openLevel(id); }
+});
+
+/* ===== level runner ===== */
+function openLevel(id, opts){
+  const scene = SCENES.find(s => s.id === id);
+  if (!scene) { return; }
+  runCleanup();
+  closeModal();
+  if (opts && opts.skipBrief) {
+    show('scene');
+    renderLevel(scene);
+  } else {
+    openBriefing(scene);
+  }
+}
+function openBriefing(scene){
+  openModal(
+    '<span class="bm-tag" style="--rc:' + scene.color + '">' + scene.num + ' · ' + scene.tag + '</span>' +
+    '<h3 class="bm-title">' + scene.title + '</h3>' +
+    '<div class="bm-img"><img src="' + IMG_BASE + scene.slide + '" alt="" onerror="this.style.display=\'none\'"></div>' +
+    '<p class="bm-obj"><b>🎯 Objective:</b> ' + scene.obj + '</p>' +
+    '<p class="bm-tip"><b>💡 Tip:</b> ' + scene.tip + '</p>' +
+    '<p class="bm-flav">“' + scene.flavor + '” — ' + scene.char + '</p>' +
+    '<div class="bm-btns">' +
+      '<button class="btn primary" id="bmStart" data-autofocus>' + icon('play') + ' Start reel</button>' +
+      '<button class="btn ghost" data-close>Back to map</button>' +
+    '</div>',
+    { dismiss: closeModal }
+  );
+  $('#bmStart').addEventListener('click', () => {
+    SFX.click();
+    closeModal();
+    show('scene');
+    renderLevel(scene);
+  });
+}
+function renderLevel(scene){
+  const host = $('#sceneHost');
+  session = { sceneId: scene.id, score: 0, mistakes: 0, done: false, key: null, escape: null };
+  host.style.setProperty('--rc', scene.color);
+  host.innerHTML =
+    '<div class="scene-head">' +
+      '<button class="btn ghost" id="backToMap">' + icon('map') + ' Map</button>' +
+      '<div class="scene-title"><span class="scene-num">' + scene.num + '</span><h2>' + scene.title + '</h2></div>' +
+      '<span class="scene-tag">' + scene.tag + '</span>' +
+      '<div class="scene-live mono">REEL SCORE <b id="lvScore">0</b></div>' +
+    '</div>' +
+    '<div class="host-line"><span class="host-avatar" aria-hidden="true">' + scene.char.charAt(0) + '</span><p id="hostLine">' + scene.flavor + '</p></div>' +
+    '<div id="gameArea"></div>';
+  $('#backToMap').addEventListener('click', () => { SFX.click(); goMap(); });
+  GAME_BUILDERS[scene.game](scene);
+  updateHUD();
+}
+function goMap(){
+  closeModal();
+  show('map');
+  renderMap();
+}
+
+/* ===== finish level + results ===== */
+function finishLevel(){
+  if (!session || session.done) { return; }
+  session.done = true;
+  runCleanup();
+  const stars = (session.mistakes === 0) ? 3 : (session.mistakes <= 2 ? 2 : 1);
+  const prev = save.levels[session.sceneId] || { score: 0, stars: 0 };
+  const record = session.score > prev.score;
+  const wasAllDone = SCENES.every(s => save.levels[s.id]);
+  save.levels[session.sceneId] = { score: Math.max(prev.score, session.score), stars: Math.max(prev.stars, stars) };
+  persist();
+  updateHUD();
+  showResultsModal(SCENES.find(s => s.id === session.sceneId), stars, record, wasAllDone);
+}
+function showResultsModal(scene, stars, record, wasAllDone){
+  openModal(
+    '<p class="rm-kicker">' + scene.num + ' COMPLETE</p>' +
+    '<h3 class="rm-title">' + scene.title + '</h3>' +
+    '<div class="rm-stars" aria-label="' + stars + ' of 3 stars">' +
+      [0, 1, 2].map(i => '<span class="rm-star" data-i="' + i + '">' + icon('star') + '</span>').join('') +
+    '</div>' +
+    '<p class="rm-score mono">+' + session.score + ' pts</p>' +
+    '<p class="rm-meta">mistakes: ' + session.mistakes + ' · best: ' + save.levels[scene.id].score +
+      (record ? ' · <b class="rec">NEW RECORD</b>' : '') + '</p>' +
+    '<div class="bm-btns">' +
+      '<button class="btn primary" id="rmReplay" data-autofocus>' + icon('rewind') + ' Replay reel</button>' +
+      '<button class="btn ghost" id="rmMap">Back to map</button>' +
+    '</div>',
+    { dismiss: () => { closeModal(); goMap(); } }
+  );
+  $$('#modalRoot .rm-star').forEach((el, i) => {
+    if (i < stars) {
+      setTimeout(() => { el.classList.add('on'); SFX.flip(); }, reduceMotion ? 0 : 260 + i * 280);
+    }
+  });
+  setTimeout(() => {
+    if (stars === 3) { SFX.cheer(); } else { SFX.fanfare(); }
+    if (record || stars === 3) { spawnConfetti(80); }
+  }, reduceMotion ? 0 : 260 + stars * 280);
+  $('#rmReplay').addEventListener('click', () => { SFX.click(); closeModal(); show('scene'); renderLevel(scene); });
+  $('#rmMap').addEventListener('click', () => { SFX.click(); closeModal(); goMap(); });
+  if (!wasAllDone && SCENES.every(s => save.levels[s.id])) {
+    toast('🎞 FINAL REEL UNLOCKED — it is waiting on the map!', 'good', 3800);
+    spawnConfetti(60);
+  }
+}
+
+/* ================= mini-game: fill the gaps ================= */
+function buildFill(scene, DATA){
+  const area = $('#gameArea');
+  const items = DATA.sentences;
+  let selGap = -1, selChip = null, filledN = 0, finT = null;
+  const wrongTries = new Array(items.length).fill(0);
+
+  const gaps = items.map((s, i) => {
+    const btn = '<button class="gap" data-gap="' + i + '" aria-label="Gap ' + (i + 1) + ' of ' + items.length + '">_____</button>';
+    return '<div class="fill-row"><p class="fill-text">' + s.text.replace('___', btn) + '</p>' +
+      '<p class="fill-note" id="fnote-' + i + '" hidden>💡 ' + s.note + '</p></div>';
+  }).join('');
+  const chips = shuffle(DATA.bank).map(w => '<button class="chip" data-word="' + w + '">' + w + '</button>').join('');
+  area.innerHTML =
+    '<div class="fill-head mono"><span id="fillProg">GAPS 0/' + items.length + '</span>' +
+    '<span class="dim">click a gap · then a chip — or the other way round</span></div>' +
+    '<div class="fill-list">' + gaps + '</div>' +
+    '<div class="bank" id="fillBank" aria-label="Word bank">' + chips + '</div>';
+
+  function syncSel(){
+    $$('.gap', area).forEach(g => g.classList.toggle('sel', +g.getAttribute('data-gap') === selGap));
+    $$('.chip', area).forEach(c => c.classList.toggle('sel', c === selChip));
+  }
+  function attempt(){
+    if (selGap < 0 || !selChip) { return; }
+    const gapEl = area.querySelector('.gap[data-gap="' + selGap + '"]');
+    const word = selChip.getAttribute('data-word');
+    const ans = items[selGap].answer;
+    if (word === ans) {
+      gapEl.textContent = word;
+      gapEl.classList.add('filled');
+      gapEl.disabled = true;
+      selChip.classList.add('used');
+      selChip.disabled = true;
+      const note = $('#fnote-' + selGap);
+      if (note) { note.hidden = false; }
+      addScore(10, gapEl);
+      SFX.correct();
+      selGap = -1; selChip = null; syncSel();
+      filledN++;
+      $('#fillProg').textContent = 'GAPS ' + filledN + '/' + items.length;
+      if (filledN === items.length) {
+        hostSay('Every gap filled. Chandler would say: “Could this BE any more complete?”');
+        finT = setTimeout(finishLevel, 750);
+      }
+    } else {
+      session.mistakes++;
+      addScore(-5, selChip);
+      SFX.wrong();
+      selChip.classList.add('shake', 'bad');
+      setTimeout(() => selChip.classList.remove('shake', 'bad'), 460);
+      wrongTries[selGap]++;
+      if (wrongTries[selGap] >= 2) { $('#fnote-' + selGap).hidden = false; }
+      selGap = -1; selChip = null; syncSel();
+    }
+  }
+  area.addEventListener('click', (e) => {
+    const gap = e.target.closest('.gap');
+    if (gap && !gap.classList.contains('filled')) {
+      SFX.click();
+      selGap = (selGap === +gap.getAttribute('data-gap')) ? -1 : +gap.getAttribute('data-gap');
+      syncSel();
+      attempt();
+      return;
+    }
+    const chip = e.target.closest('.chip');
+    if (chip && !chip.classList.contains('used')) {
+      SFX.click();
+      selChip = (selChip === chip) ? null : chip;
+      syncSel();
+      attempt();
+      return;
+    }
+  });
+  session.escape = () => { selGap = -1; selChip = null; syncSel(); };
+  setCleanup(() => clearTimeout(finT));
+}
+
+/* ================= mini-game: match the meaning ================= */
+function buildMatch(scene){
+  const area = $('#gameArea');
+  const P = MATCH_PAIRS;
+  const wOrder = shuffle(P.map((_, i) => i));
+  const mOrder = shuffle(P.map((_, i) => i));
+  let selW = -1, selM = -1, found = 0, attempts = 0, finT = null;
+
+  area.innerHTML =
+    '<p class="match-hint mono">HOW TO PLAY: WORD · boasts → MEANING · proudly has</p>' +
+    '<div class="match-top mono"><span id="mFound">PAIRS 0/' + P.length + '</span><span id="mTries">ATTEMPTS 0</span></div>' +
+    '<div class="match-cols">' +
+      '<div class="mcol" aria-label="Words">' + wOrder.map(i => '<button class="mword" data-idx="' + i + '"><b>' + P[i].w + '</b></button>').join('') + '</div>' +
+      '<div class="mcol" aria-label="Meanings">' + mOrder.map(i => '<button class="mmean" data-idx="' + i + '">' + P[i].m + '</button>').join('') + '</div>' +
+    '</div>' +
+    '<div class="match-ex" id="mEx" hidden></div>';
+
+  function sync(){
+    $$('.mword', area).forEach(b => b.classList.toggle('sel', +b.getAttribute('data-idx') === selW));
+    $$('.mmean', area).forEach(b => b.classList.toggle('sel', +b.getAttribute('data-idx') === selM));
+  }
+  function attempt(){
+    attempts++;
+    $('#mTries').textContent = 'ATTEMPTS ' + attempts;
+    const wb = area.querySelector('.mword[data-idx="' + selW + '"]');
+    const mb = area.querySelector('.mmean[data-idx="' + selM + '"]');
+    if (selW === selM) {
+      wb.classList.add('locked'); mb.classList.add('locked');
+      wb.disabled = true; mb.disabled = true;
+      found++;
+      $('#mFound').textContent = 'PAIRS ' + found + '/' + P.length;
+      addScore(10, mb);
+      SFX.match();
+      const ex = $('#mEx');
+      ex.hidden = false;
+      ex.innerHTML = '<b>WORD · ' + P[selW].w + '</b> → <b>MEANING · ' + P[selW].m + '</b><br><span class="dim">' + P[selW].ex + '</span>';
+      selW = -1; selM = -1; sync();
+      if (found === P.length) {
+        hostSay('All six pairs locked. Could this diner BE any prouder?');
+        finT = setTimeout(finishLevel, 800);
+      }
+    } else {
+      session.mistakes++;
+      addScore(-5, mb);
+      SFX.wrong();
+      wb.classList.add('shake', 'bad'); mb.classList.add('shake', 'bad');
+      setTimeout(() => { wb.classList.remove('shake', 'bad'); mb.classList.remove('shake', 'bad'); }, 460);
+      selW = -1; selM = -1;
+      setTimeout(sync, 300);
+    }
+  }
+  area.addEventListener('click', (e) => {
+    const w = e.target.closest('.mword');
+    const m = e.target.closest('.mmean');
+    if (w && !w.classList.contains('locked')) {
+      SFX.click();
+      selW = (selW === +w.getAttribute('data-idx')) ? -1 : +w.getAttribute('data-idx');
+      sync();
+      if (selW >= 0 && selM >= 0) { attempt(); }
+      return;
+    }
+    if (m && !m.classList.contains('locked')) {
+      SFX.click();
+      selM = (selM === +m.getAttribute('data-idx')) ? -1 : +m.getAttribute('data-idx');
+      sync();
+      if (selW >= 0 && selM >= 0) { attempt(); }
+      return;
+    }
+  });
+  session.escape = () => { selW = -1; selM = -1; sync(); };
+  setCleanup(() => clearTimeout(finT));
+}
+
+/* ================= mini-game: true / false ================= */
+function buildTF(scene){
+  const area = $('#gameArea');
+  const Q = shuffle(TF_STATEMENTS);
+  let qi = 0, streak = 0, phase = 'ask', remaining = 6, tInt = null, fbT = null, lastTick = 7;
+
+  area.innerHTML =
+    '<div class="tf-top mono"><span id="tfProg"></span><span class="mult" id="tfMult">STREAK ×1</span></div>' +
+    '<div class="tf-card in" id="tfCard">' +
+      '<div class="tf-bar"><i id="tfBarI"></i></div>' +
+      '<p class="tf-q" id="tfQ"></p>' +
+      '<div class="tf-btns">' +
+        '<button class="btn real" id="tfReal">' + icon('check') + ' REAL<span class="kbd">←</span></button>' +
+        '<button class="btn delus" id="tfDelus">' + icon('x') + ' DELUSION<span class="kbd">→</span></button>' +
+      '</div>' +
+      '<div class="tf-note" id="tfNote" hidden></div>' +
+      '<div class="tf-stamp" id="tfStamp" hidden></div>' +
+    '</div>';
+
+  function setBtns(on){ $('#tfReal').disabled = !on; $('#tfDelus').disabled = !on; }
+  function ask(){
+    phase = 'ask'; remaining = 6; lastTick = 7;
+    $('#tfProg').textContent = (qi + 1) + ' / ' + Q.length;
+    $('#tfNote').hidden = true;
+    const stamp = $('#tfStamp'); stamp.hidden = true; stamp.className = 'tf-stamp';
+    const card = $('#tfCard');
+    card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
+    $('#tfQ').textContent = Q[qi].s;
+    $('#tfBarI').style.width = '100%';
+    setBtns(true);
+    clearInterval(tInt);
+    tInt = setInterval(() => {
+      remaining -= 0.1;
+      $('#tfBarI').style.width = (clamp(remaining / 6, 0, 1) * 100) + '%';
+      const whole = Math.ceil(remaining);
+      if (whole < lastTick) { lastTick = whole; if (whole <= 3 && whole > 0) { SFX.tick(); } }
+      if (remaining <= 0) { answer(-1); }
+    }, 100);
+  }
+  function answer(choice){
+    if (phase !== 'ask') { return; }
+    phase = 'fb';
+    clearInterval(tInt);
+    const q = Q[qi];
+    const ok = choice === q.a;
+    const stamp = $('#tfStamp');
+    stamp.hidden = false;
+    if (ok) {
+      streak++;
+      const mult = streak >= 6 ? 3 : (streak >= 3 ? 2 : 1);
+      const speed = Math.round(clamp(remaining, 0, 6) * 0.66);
+      addScore((10 + speed) * mult, $('#tfCard'));
+      stamp.textContent = (q.a === 0 ? 'REAL ✓' : 'DELUSION ✓') + (mult > 1 ? ' ×' + mult : '');
+      stamp.classList.add('good');
+      SFX.correct();
+      $('#tfMult').textContent = 'STREAK ×' + mult;
+      $('#tfMult').classList.toggle('hot', mult > 1);
+    } else {
+      streak = 0;
+      session.mistakes++;
+      addScore(-5, $('#tfCard'));
+      stamp.textContent = choice === -1 ? 'TIME! ✗' : '✗';
+      stamp.classList.add('bad');
+      SFX.wrong();
+      $('#tfMult').textContent = 'STREAK ×1';
+      $('#tfMult').classList.remove('hot');
+    }
+    const note = $('#tfNote');
+    note.hidden = false;
+    note.innerHTML = '<b>' + (q.a === 0 ? 'REAL:' : 'DELUSION:') + '</b> ' + q.note;
+    setBtns(false);
+    fbT = setTimeout(() => {
+      qi++;
+      if (qi < Q.length) { ask(); } else { finishLevel(); }
+    }, 2100);
+  }
+  $('#tfReal').addEventListener('click', () => answer(0));
+  $('#tfDelus').addEventListener('click', () => answer(1));
+  session.key = (e) => {
+    if (phase !== 'ask') { return; }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); answer(0); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); answer(1); }
+  };
+  setCleanup(() => { clearInterval(tInt); clearTimeout(fbT); });
+  ask();
+}
+
+/* ================= mini-game: multiple choice ================= */
+function buildChoice(scene){
+  const area = $('#gameArea');
+  const Q = shuffle(CHOICE_QUESTIONS);
+  let qi = 0;
+
+  function render(){
+    const q = Q[qi];
+    const opts = shuffle(q.opts.map((t, i) => ({ t: t, ok: i === q.a })));
+    area.innerHTML =
+      '<div class="q-card in">' +
+        '<p class="q-progress mono">QUESTION ' + (qi + 1) + ' / ' + Q.length + ' · ONE ATTEMPT</p>' +
+        '<h3 class="q-text">' + q.q + '</h3>' +
+        '<div class="q-opts">' + opts.map(o => '<button class="q-opt" data-ok="' + (o.ok ? 1 : 0) + '">' + o.t + '</button>').join('') + '</div>' +
+        '<div class="q-note" hidden>💡 ' + q.note + '</div>' +
+        '<button class="btn primary q-next" hidden>' + (qi + 1 < Q.length ? 'Next question →' : 'Finish reel ✓') + '</button>' +
+      '</div>';
+  }
+  area.addEventListener('click', (e) => {
+    const opt = e.target.closest('.q-opt');
+    if (opt) {
+      const card = opt.closest('.q-card');
+      if (card.getAttribute('data-locked')) { return; }
+      card.setAttribute('data-locked', '1');
+      const ok = opt.getAttribute('data-ok') === '1';
+      $$('.q-opt', card).forEach(b => { b.disabled = true; if (b.getAttribute('data-ok') === '1') { b.classList.add('ok'); } });
+      if (ok) {
+        addScore(10, opt);
+        SFX.correct();
+        hostSay(pick(REACT_GOOD));
+      } else {
+        opt.classList.add('bad', 'shake');
+        session.mistakes++;
+        addScore(-5, opt);
+        SFX.wrong();
+        hostSay(pick(REACT_BAD));
+      }
+      card.querySelector('.q-note').hidden = false;
+      card.querySelector('.q-next').hidden = false;
+      return;
+    }
+    const next = e.target.closest('.q-next');
+    if (next) {
+      SFX.click();
+      qi++;
+      if (qi < Q.length) { SFX.flip(); render(); } else { finishLevel(); }
+    }
+  });
+  setCleanup(() => {});
+  render();
+}
+
+/* ================= mini-game: timed bonus round ================= */
+function buildBonus(scene){
+  const area = $('#gameArea');
+  const Q = shuffle(BONUS_QUESTIONS);
+  const TOTAL = 750; /* seconds on the shift clock */
+  let qi = 0, streak = 0, left = TOTAL, tInt = null, fbT = null, over = false;
+
+  area.innerHTML =
+    '<div class="bn-top">' +
+      '<span class="bn-clock mono" id="bnClock">--:--</span>' +
+      '<div class="bn-bar" id="bnBar"><i id="bnBarI"></i></div>' +
+      '<span class="mult" id="bnMult">STREAK ×1</span>' +
+    '</div>' +
+    '<div class="q-card in" id="bnCard">' +
+      '<p class="q-progress mono" id="bnProg"></p>' +
+      '<h3 class="q-text" id="bnQ"></h3>' +
+      '<div class="q-opts" id="bnOpts"></div>' +
+    '</div>';
+
+  function clock(){
+    const m = Math.floor(left / 60), s = left % 60;
+    $('#bnClock').textContent = m + ':' + String(s).padStart(2, '0');
+    $('#bnBarI').style.width = (left / TOTAL * 100) + '%';
+    const danger = left <= 60;
+    $('#bnClock').classList.toggle('danger', danger);
+    $('#bnBar').classList.toggle('dangerI', danger);
+  }
+  function setMult(){
+    const mult = streak >= 6 ? 3 : (streak >= 3 ? 2 : 1);
+    $('#bnMult').textContent = 'STREAK ×' + mult;
+    $('#bnMult').classList.toggle('hot', mult > 1);
+    return mult;
+  }
+  function ask(){
+    const q = Q[qi];
+    $('#bnProg').textContent = 'ORDER ' + (qi + 1) + ' / ' + Q.length;
+    $('#bnQ').textContent = q.q;
+    const opts = shuffle(q.opts.map((t, i) => ({ t: t, ok: i === q.a })));
+    $('#bnOpts').innerHTML = opts.map(o => '<button class="q-opt" data-ok="' + (o.ok ? 1 : 0) + '">' + o.t + '</button>').join('');
+  }
+  function endRound(finished){
+    if (over) { return; }
+    over = true;
+    clearInterval(tInt); clearTimeout(fbT);
+    if (finished && left > 0) {
+      const bonus = Math.min(30, Math.floor(left / 20));
+      if (bonus > 0) { session.score += bonus; toast('Coffee-break bonus +' + bonus + ' pts', 'good'); }
+    }
+    finishLevel();
+  }
+  tInt = setInterval(() => {
+    if (over) { return; }
+    left--;
+    clock();
+    if (left <= 10 && left > 0) { SFX.tick(); }
+    if (left <= 0) { endRound(false); }
+  }, 1000);
+  area.addEventListener('click', (e) => {
+    const opt = e.target.closest('.q-opt');
+    if (!opt || over) { return; }
+    const card = $('#bnCard');
+    if (card.getAttribute('data-locked')) { return; }
+    card.setAttribute('data-locked', '1');
+    const ok = opt.getAttribute('data-ok') === '1';
+    $$('.q-opt', card).forEach(b => { b.disabled = true; if (b.getAttribute('data-ok') === '1') { b.classList.add('ok'); } });
+    if (ok) {
+      streak++;
+      addScore(10 * setMult(), opt);
+      SFX.correct();
+    } else {
+      opt.classList.add('bad');
+      streak = 0;
+      setMult();
+      session.mistakes++;
+      addScore(-5, opt);
+      SFX.wrong();
+    }
+    fbT = setTimeout(() => {
+      card.removeAttribute('data-locked');
+      qi++;
+      if (qi < Q.length) { SFX.flip(); ask(); } else { endRound(true); }
+    }, ok ? 550 : 850);
+  });
+  setCleanup(() => { clearInterval(tInt); clearTimeout(fbT); });
+  clock();
+  ask();
+}
+
+/* ===== builders registry ===== */
+const GAME_BUILDERS = {
+  fill:  (s) => buildFill(s, FILL_RIFT),
+  fill2: (s) => buildFill(s, FILL_INK),
+  match: buildMatch,
+  tf:    buildTF,
+  choice: buildChoice,
+  bonus: buildBonus
+};
+
+/* ===== finale ===== */
+const RANKS = [
+  [800, 'Boss of Themselves', '👑', 'No needle, no fear. You are officially the boss of this vocabulary.'],
+  [650, 'Rift Diplomat', '🕊️', 'You could have taught those two to just TALK about their feelings.'],
+  [450, 'Idiom Whisperer', '💬', 'Idioms bend to your will — and rarely out of shape.'],
+  [250, 'Spoon Keeper', '🥄', 'You handle delicate things well. The spoons would be proud.'],
+  [0,   'Coffee Apprentice', '☕', 'The coffee is brewing and the reels are waiting. Chandler believes in you, sarcastically.']
+];
+function getRank(score){
+  for (let i = 0; i < RANKS.length; i++) {
+    if (score >= RANKS[i][0]) { return { n: RANKS[i][1], e: RANKS[i][2], q: RANKS[i][3] }; }
+  }
+  return { n: RANKS[RANKS.length - 1][1], e: RANKS[RANKS.length - 1][2], q: RANKS[RANKS.length - 1][3] };
+}
+function showFinale(){
+  if (!SCENES.every(s => save.levels[s.id])) {
+    toast('Finish all six reels first — any order counts!', 'bad');
+    return;
+  }
+  runCleanup();
+  const tsc = sumBest(), ts = totalStars(), rk = getRank(tsc);
+  const rows = SCENES.map(s => {
+    const p = save.levels[s.id] || { score: 0, stars: 0 };
+    return '<tr><td class="mono">' + s.num + '</td><td>' + s.title + '</td><td class="mono">' + p.score +
+      '</td><td class="stars-cell">' + '★'.repeat(p.stars) + '<span class="dim">' + '★'.repeat(3 - p.stars) + '</span></td></tr>';
+  }).join('');
+  $('#finaleHost').innerHTML =
+    '<p class="kicker mono">🎬 THAT IS A WRAP ON ALL SIX REELS</p>' +
+    '<h2 class="fin-title">THE FINAL REEL</h2>' +
+    '<div class="fin-grid">' +
+      '<div class="fin-card"><p class="fin-label mono">TOTAL SCORE</p><p class="fin-big">' + tsc + '</p></div>' +
+      '<div class="fin-card"><p class="fin-label mono">TOTAL STARS</p><p class="fin-big">' + ts + '<span class="dim">/18</span></p></div>' +
+      '<div class="fin-card rank"><p class="fin-label mono">RANK</p><p class="fin-rank">' + rk.e + ' ' + rk.n + '</p></div>' +
+    '</div>' +
+    '<table class="fin-table"><thead><tr><th>Reel</th><th>Title</th><th>Best</th><th>Stars</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div class="bm-btns center">' +
+      '<button class="btn ghost" id="finMap">Back to the map</button>' +
+      '<button class="btn danger" id="finRewind">' + icon('rewind') + ' Rewind the tape</button>' +
+    '</div>' +
+    '<p class="hand fin-hand">' + rk.q + '</p>';
+  show('finale');
+  spawnConfetti(150);
+  SFX.fanfare();
+  $('#finMap').addEventListener('click', () => { SFX.click(); goMap(); });
+  $('#finRewind').addEventListener('click', confirmRewind);
+}
+function confirmRewind(){
+  openModal(
+    '<h3 class="bm-title">Rewind the tape?</h3>' +
+    '<p>This erases all best scores and stars. The episode itself, tragically, stays watched.</p>' +
+    '<div class="bm-btns">' +
+      '<button class="btn danger" id="rwYes" data-autofocus>Yes, rewind it</button>' +
+      '<button class="btn ghost" data-close>Keep my progress</button>' +
+    '</div>',
+    { dismiss: closeModal }
+  );
+  $('#rwYes').addEventListener('click', () => {
+    save.levels = {};
+    persist();
+    updateHUD();
+    renderMap();
+    closeModal();
+    show('map');
+    toast('Tape rewound. Clean slate!', 'info');
+  });
+}
+
+/* ===== global keyboard ===== */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if ($('#modalRoot .mback')) {
+      if (modalDismiss) { modalDismiss(); }
+      return;
+    }
+    if (currentScreen === 'scene') { goMap(); }
+    return;
+  }
+  if (session && !session.done && typeof session.key === 'function') { session.key(e); }
+});
+
+/* ===== header wiring ===== */
+ $('#mapBtn').addEventListener('click', () => { SFX.click(); goMap(); });
+ $('#sndBtn').addEventListener('click', () => {
+  muted = !muted;
+  save.muted = muted;
+  persist();
+  renderSound();
+  if (!muted) { initAudio(); SFX.click(); }
+  toast(muted ? 'Sound off' : 'Sound on', 'info', 1200);
+});
+ $('#startBtn').addEventListener('click', () => { SFX.click(); show('map'); renderMap(); });
+
+/* ===== preloader ===== */
+loadSave();
+setTimeout(() => { $('#ldPlay').hidden = false; }, reduceMotion ? 100 : 1600);
+ $('#playBtn').addEventListener('click', () => {
+  initAudio();
+  SFX.flip();
+  const loader = $('#loader');
+  document.body.classList.remove('locked');
+  loader.classList.add('exit');
+  setTimeout(() => loader.remove(), reduceMotion ? 50 : 800);
+});
+
+/* ===== boot ===== */
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+</script>
+</body>
+</html>
