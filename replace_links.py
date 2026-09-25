@@ -3,7 +3,7 @@ from pathlib import Path
 
 # ==== НАСТРОЙКИ ====
 # Домен + базовый путь до корня сайта на GitHub Pages:
-BASE_URL = "https://item1000-collab.github.io/ai/engoo"
+BASE_URL = "https://item1000-collab.github.io/ai"
 # ===================
 
 ROOT = Path(".").resolve()
