@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transcript Audio Synchronizer · Player</title>
+    <title>Independent Audio & Transcript</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -117,17 +117,18 @@
             box-shadow: 0 0 6px var(--accent-color);
         }
 
-        /* ---------- AUTO-SCROLL TOGGLE ---------- */
-        .scroll-toggle-bar {
+        /* ---------- TOGGLE BAR ---------- */
+        .toggles-bar {
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 10px;
+            gap: 22px;
             margin-bottom: 20px;
             padding: 0 4px;
+            flex-wrap: wrap;
         }
 
-        .scroll-toggle-label {
+        .toggle-label {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -137,9 +138,9 @@
             user-select: none;
             transition: color 0.2s;
         }
-        .scroll-toggle-label:hover { color: var(--text-color); }
+        .toggle-label:hover { color: var(--text-color); }
 
-        .scroll-toggle-label input[type="checkbox"] {
+        .toggle-label input[type="checkbox"] {
             appearance: none;
             -webkit-appearance: none;
             width: 44px;
@@ -153,7 +154,7 @@
             outline: none;
             flex-shrink: 0;
         }
-        .scroll-toggle-label input[type="checkbox"]::after {
+        .toggle-label input[type="checkbox"]::after {
             content: '';
             position: absolute;
             top: 2px; left: 2px;
@@ -162,11 +163,11 @@
             border-radius: 50%;
             transition: all 0.2s ease;
         }
-        .scroll-toggle-label input[type="checkbox"]:checked {
+        .toggle-label input[type="checkbox"]:checked {
             background: var(--accent-color);
             border-color: var(--accent-color);
         }
-        .scroll-toggle-label input[type="checkbox"]:checked::after {
+        .toggle-label input[type="checkbox"]:checked::after {
             left: 22px;
             background: #0f172a;
         }
@@ -252,9 +253,14 @@
         </div>
     </div>
 
-    <!-- AUTO-SCROLL TOGGLE (по умолчанию выключен) -->
-    <div class="scroll-toggle-bar">
-        <label class="scroll-toggle-label" for="autoScrollToggle">
+    <!-- TOGGLES (по умолчанию ОБА выключены) -->
+    <div class="toggles-bar">
+        <label class="toggle-label" for="highlightToggle">
+            <span class="toggle-icon">🎯</span>
+            <span>Highlight active</span>
+            <input type="checkbox" id="highlightToggle">
+        </label>
+        <label class="toggle-label" for="autoScrollToggle">
             <span class="toggle-icon">📜</span>
             <span>Auto-scroll</span>
             <input type="checkbox" id="autoScrollToggle">
@@ -269,13 +275,15 @@
 
     <header>
         <h1>Interactive Transcript</h1>
-        <p class="subtitle">Click on any paragraph to jump to that moment in the audio.</p>
+        <p class="subtitle">Аудио и текст независимы. Включите подсветку или автоскролл, если нужно следовать за аудио. Клик по параграфу перематывает.</p>
     </header>
 
     <div class="transcript-container" id="transcript"></div>
 
     <script>
-        // ---------- TRANSCRIPT DATA ----------
+        // ============================================================
+        // TRANSCRIPT DATA
+        // ============================================================
         const transcriptData = [
             { start: 0.0, end: 1.5, speaker: "Maya", text: "Now, that's a bold transition." },
             { start: 1.5, end: 3.2, speaker: "Maya", text: "Wait, bold as hell." },
@@ -359,7 +367,9 @@
             { start: 658.2, end: 660.0, speaker: "Maya", text: "Wait, I'm listening." }
         ];
 
-        // ---------- DOM refs ----------
+        // ============================================================
+        // DOM refs
+        // ============================================================
         const audioPlayer = document.getElementById('audio-player');
         const transcriptContainer = document.getElementById('transcript');
         const playPauseBtn = document.getElementById('playPauseBtn');
@@ -368,19 +378,30 @@
         const progressContainer = document.getElementById('progressContainer');
         const progressFill = document.getElementById('progressFill');
         const volumeSlider = document.getElementById('volumeSlider');
+        const highlightToggle = document.getElementById('highlightToggle');
         const autoScrollToggle = document.getElementById('autoScrollToggle');
 
-        // ---------- AUTO-SCROLL STATE (по умолчанию выключено) ----------
-        // Читаем значение сразу после получения элемента — по умолчанию false
-        let autoScrollEnabled = autoScrollToggle.checked;
+        // ============================================================
+        // НЕЗАВИСИМЫЕ СОСТОЯНИЯ (оба выключены по умолчанию)
+        // ============================================================
+        let highlightEnabled = false;   // подсветка активного сегмента
+        let autoScrollEnabled = false;  // автопрокрутка к активному сегменту
 
-        // Обработчик изменения галочки — теперь точно срабатывает
-        autoScrollToggle.addEventListener('change', function() {
-            autoScrollEnabled = this.checked;
-            console.log('Auto-scroll:', autoScrollEnabled); // для отладки
+        highlightToggle.addEventListener('change', function () {
+            highlightEnabled = this.checked;
+            // при выключении — снимаем подсветку со всех сегментов
+            if (!highlightEnabled) {
+                document.querySelectorAll('.segment.active').forEach(s => s.classList.remove('active'));
+            }
         });
 
-        // ---------- render transcript segments ----------
+        autoScrollToggle.addEventListener('change', function () {
+            autoScrollEnabled = this.checked;
+        });
+
+        // ============================================================
+        // render transcript segments
+        // ============================================================
         transcriptData.forEach((item, index) => {
             const segmentEl = document.createElement('div');
             segmentEl.classList.add('segment');
@@ -399,6 +420,7 @@
                 <div class="text">${item.text}</div>
             `;
 
+            // Клик по параграфу — перемотка аудио (работает всегда)
             segmentEl.addEventListener('click', () => {
                 audioPlayer.currentTime = item.start;
                 audioPlayer.play();
@@ -408,139 +430,9 @@
             transcriptContainer.appendChild(segmentEl);
         });
 
-        // ---------- helper: format seconds ----------
+        // ============================================================
+        // helpers
+        // ============================================================
         function formatTime(seconds) {
             if (isNaN(seconds) || seconds === Infinity) return '0:00';
             const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-        }
-
-        // ---------- update time display & progress bar ----------
-        function updatePlayerUI() {
-            const current = audioPlayer.currentTime || 0;
-            const duration = audioPlayer.duration || 0;
-
-            currentTimeDisplay.textContent = formatTime(current);
-            durationDisplay.textContent = formatTime(duration);
-
-            if (duration > 0) {
-                const percent = (current / duration) * 100;
-                progressFill.style.width = percent + '%';
-            } else {
-                progressFill.style.width = '0%';
-            }
-        }
-
-        // ---------- highlight active segment & scroll (только если autoScrollEnabled) ----------
-        function syncTranscriptHighlight() {
-            const currentTime = audioPlayer.currentTime;
-            const segments = document.querySelectorAll('.segment');
-            let activeSegment = null;
-
-            segments.forEach((segment) => {
-                const start = parseFloat(segment.dataset.start);
-                const end = parseFloat(segment.dataset.end);
-
-                if (currentTime >= start && currentTime <= end) {
-                    segment.classList.add('active');
-                    activeSegment = segment;
-                } else {
-                    segment.classList.remove('active');
-                }
-            });
-
-            // --- СКРОЛЛ ТОЛЬКО ЕСЛИ ВКЛЮЧЁН АВТОСКРОЛЛ ---
-            // Если autoScrollEnabled === false (по умолчанию) — ничего не делаем
-            if (autoScrollEnabled && activeSegment) {
-                const rect = activeSegment.getBoundingClientRect();
-                const isVisible = (rect.top >= 100 && rect.bottom <= window.innerHeight);
-                if (!isVisible) {
-                    activeSegment.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                }
-            }
-        }
-
-        // ---------- AUDIO EVENT LISTENERS ----------
-        audioPlayer.addEventListener('timeupdate', () => {
-            updatePlayerUI();
-            syncTranscriptHighlight();
-        });
-
-        audioPlayer.addEventListener('loadedmetadata', () => {
-            updatePlayerUI();
-            audioPlayer.volume = volumeSlider.value;
-        });
-
-        audioPlayer.addEventListener('durationchange', updatePlayerUI);
-
-        audioPlayer.addEventListener('play', () => {
-            playPauseBtn.textContent = '⏸';
-        });
-
-        audioPlayer.addEventListener('pause', () => {
-            playPauseBtn.textContent = '▶';
-        });
-
-        audioPlayer.addEventListener('ended', () => {
-            playPauseBtn.textContent = '▶';
-        });
-
-        // ---------- PLAY/PAUSE BUTTON ----------
-        playPauseBtn.addEventListener('click', () => {
-            if (audioPlayer.paused) {
-                audioPlayer.play().catch(e => console.log('play error:', e));
-                playPauseBtn.textContent = '⏸';
-            } else {
-                audioPlayer.pause();
-                playPauseBtn.textContent = '▶';
-            }
-        });
-
-        // ---------- PROGRESS BAR SEEKING ----------
-        progressContainer.addEventListener('click', (e) => {
-            const rect = progressContainer.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const percent = Math.max(0, Math.min(1, clickX / rect.width));
-            if (audioPlayer.duration) {
-                audioPlayer.currentTime = percent * audioPlayer.duration;
-                updatePlayerUI();
-                syncTranscriptHighlight();
-            }
-        });
-
-        // ---------- VOLUME CONTROL ----------
-        volumeSlider.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
-            audioPlayer.volume = val;
-        });
-
-        audioPlayer.volume = volumeSlider.value;
-
-        // ---------- seeked event for immediate UI update ----------
-        audioPlayer.addEventListener('seeked', () => {
-            updatePlayerUI();
-            syncTranscriptHighlight();
-        });
-
-        // ---------- On page load, ensure UI reflects duration ----------
-        window.addEventListener('load', () => {
-            if (audioPlayer.readyState >= 1) {
-                updatePlayerUI();
-            } else {
-                audioPlayer.addEventListener('loadedmetadata', function onMeta() {
-                    updatePlayerUI();
-                    audioPlayer.removeEventListener('loadedmetadata', onMeta);
-                });
-            }
-            playPauseBtn.textContent = audioPlayer.paused ? '▶' : '⏸';
-        });
-
-        // Handle any pending play promise errors silently
-        audioPlayer.play().catch(() => { /* autoplay blocked - fine */ });
-    </script>
-</body>
-</html>
