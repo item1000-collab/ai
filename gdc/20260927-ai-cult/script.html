@@ -275,7 +275,7 @@
 
     <header>
         <h1>Interactive Transcript</h1>
-        <p class="subtitle">Аудио и текст независимы. Включите подсветку или автоскролл, если нужно следовать за аудио. Клик по параграфу перематывает.</p>
+        <p class="subtitle">Аудио и текст независимы. Включите «Highlight active» или «Auto-scroll», если нужно следовать за аудио. Клик по параграфу перематывает.</p>
     </header>
 
     <div class="transcript-container" id="transcript"></div>
@@ -384,12 +384,11 @@
         // ============================================================
         // НЕЗАВИСИМЫЕ СОСТОЯНИЯ (оба выключены по умолчанию)
         // ============================================================
-        let highlightEnabled = false;   // подсветка активного сегмента
-        let autoScrollEnabled = false;  // автопрокрутка к активному сегменту
+        let highlightEnabled = false;
+        let autoScrollEnabled = false;
 
         highlightToggle.addEventListener('change', function () {
             highlightEnabled = this.checked;
-            // при выключении — снимаем подсветку со всех сегментов
             if (!highlightEnabled) {
                 document.querySelectorAll('.segment.active').forEach(s => s.classList.remove('active'));
             }
@@ -400,7 +399,7 @@
         });
 
         // ============================================================
-        // render transcript segments
+        // RENDER TRANSCRIPT
         // ============================================================
         transcriptData.forEach((item, index) => {
             const segmentEl = document.createElement('div');
@@ -420,7 +419,6 @@
                 <div class="text">${item.text}</div>
             `;
 
-            // Клик по параграфу — перемотка аудио (работает всегда)
             segmentEl.addEventListener('click', () => {
                 audioPlayer.currentTime = item.start;
                 audioPlayer.play();
@@ -431,8 +429,145 @@
         });
 
         // ============================================================
-        // helpers
+        // HELPERS
         // ============================================================
         function formatTime(seconds) {
             if (isNaN(seconds) || seconds === Infinity) return '0:00';
             const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function updatePlayerUI() {
+            const current = audioPlayer.currentTime || 0;
+            const duration = audioPlayer.duration || 0;
+
+            currentTimeDisplay.textContent = formatTime(current);
+            durationDisplay.textContent = formatTime(duration);
+
+            if (duration > 0) {
+                const percent = (current / duration) * 100;
+                progressFill.style.width = percent + '%';
+            } else {
+                progressFill.style.width = '0%';
+            }
+        }
+
+        // ============================================================
+        // HIGHLIGHT + OPTIONAL SCROLL
+        // ============================================================
+        function syncTranscriptHighlight() {
+            const currentTime = audioPlayer.currentTime;
+            const segments = document.querySelectorAll('.segment');
+            let activeSegment = null;
+
+            // Если подсветка выключена — снимаем active со всех и выходим
+            if (!highlightEnabled) {
+                segments.forEach(s => s.classList.remove('active'));
+                return;
+            }
+
+            segments.forEach((segment) => {
+                const start = parseFloat(segment.dataset.start);
+                const end = parseFloat(segment.dataset.end);
+
+                if (currentTime >= start && currentTime <= end) {
+                    segment.classList.add('active');
+                    activeSegment = segment;
+                } else {
+                    segment.classList.remove('active');
+                }
+            });
+
+            // Скролл только если ВКЛЮЧЁН автоскролл
+            if (autoScrollEnabled && activeSegment) {
+                const rect = activeSegment.getBoundingClientRect();
+                const isVisible = (rect.top >= 100 && rect.bottom <= window.innerHeight);
+                if (!isVisible) {
+                    activeSegment.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            }
+        }
+
+        // ============================================================
+        // AUDIO EVENTS
+        // ============================================================
+        audioPlayer.addEventListener('timeupdate', () => {
+            updatePlayerUI();
+            syncTranscriptHighlight();
+        });
+
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            updatePlayerUI();
+            audioPlayer.volume = volumeSlider.value;
+        });
+
+        audioPlayer.addEventListener('durationchange', updatePlayerUI);
+
+        audioPlayer.addEventListener('play', () => {
+            playPauseBtn.textContent = '⏸';
+        });
+
+        audioPlayer.addEventListener('pause', () => {
+            playPauseBtn.textContent = '▶';
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            playPauseBtn.textContent = '▶';
+        });
+
+        // ============================================================
+        // CONTROLS
+        // ============================================================
+        playPauseBtn.addEventListener('click', () => {
+            if (audioPlayer.paused) {
+                audioPlayer.play().catch(e => console.log('play error:', e));
+                playPauseBtn.textContent = '⏸';
+            } else {
+                audioPlayer.pause();
+                playPauseBtn.textContent = '▶';
+            }
+        });
+
+        progressContainer.addEventListener('click', (e) => {
+            const rect = progressContainer.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const percent = Math.max(0, Math.min(1, clickX / rect.width));
+            if (audioPlayer.duration) {
+                audioPlayer.currentTime = percent * audioPlayer.duration;
+                updatePlayerUI();
+                syncTranscriptHighlight();
+            }
+        });
+
+        volumeSlider.addEventListener('input', (e) => {
+            audioPlayer.volume = parseFloat(e.target.value);
+        });
+
+        audioPlayer.addEventListener('seeked', () => {
+            updatePlayerUI();
+            syncTranscriptHighlight();
+        });
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        window.addEventListener('load', () => {
+            if (audioPlayer.readyState >= 1) {
+                updatePlayerUI();
+            } else {
+                audioPlayer.addEventListener('loadedmetadata', function onMeta() {
+                    updatePlayerUI();
+                    audioPlayer.removeEventListener('loadedmetadata', onMeta);
+                });
+            }
+            playPauseBtn.textContent = audioPlayer.paused ? '▶' : '⏸';
+        });
+
+        audioPlayer.play().catch(() => {});
+    </script>
+</body>
+</html>
