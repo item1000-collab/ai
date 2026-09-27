@@ -39,7 +39,7 @@
             background: #0b1120;
             border-radius: 60px;
             padding: 12px 20px;
-            margin-bottom: 28px;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 18px;
@@ -144,6 +144,73 @@
             box-shadow: 0 0 6px var(--accent-color);
         }
 
+        /* ---------- AUTO-SCROLL TOGGLE ---------- */
+        .scroll-toggle-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 0 4px;
+        }
+
+        .scroll-toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        .scroll-toggle-label:hover {
+            color: var(--text-color);
+        }
+
+        .scroll-toggle-label input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 44px;
+            height: 24px;
+            background: #1e2a3a;
+            border-radius: 24px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border: 1px solid var(--border-color);
+            outline: none;
+            flex-shrink: 0;
+        }
+
+        .scroll-toggle-label input[type="checkbox"]::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .scroll-toggle-label input[type="checkbox"]:checked {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .scroll-toggle-label input[type="checkbox"]:checked::after {
+            left: 22px;
+            background: #0f172a;
+        }
+
+        .toggle-icon {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
         /* ---------- HEADER & TRANSCRIPT ---------- */
         header {
             text-align: center;
@@ -237,7 +304,7 @@
 </head>
 <body>
 
-    <!-- TOP PLAYER BAR (with real audio) -->
+    <!-- TOP PLAYER BAR -->
     <div class="player-bar">
         <button class="play-pause-btn" id="playPauseBtn" aria-label="Play or pause">▶</button>
         <div class="time-display">
@@ -254,7 +321,16 @@
         </div>
     </div>
 
-    <!-- Hidden native audio element (used for playback) -->
+    <!-- AUTO-SCROLL TOGGLE -->
+    <div class="scroll-toggle-bar">
+        <label class="scroll-toggle-label" for="autoScrollToggle">
+            <span class="toggle-icon">📜</span>
+            <span>Auto-scroll</span>
+            <input type="checkbox" id="autoScrollToggle">
+        </label>
+    </div>
+
+    <!-- Hidden native audio element -->
     <audio id="audio-player" preload="metadata">
         <source src="https://item1000-collab.github.io/ai/gdc/20260927-ai-cult/ai-script.mp3" type="audio/mpeg">
         Your browser does not support the audio element.
@@ -268,7 +344,7 @@
     <div class="transcript-container" id="transcript"></div>
 
     <script>
-        // ---------- TRANSCRIPT DATA (exact from original) ----------
+        // ---------- TRANSCRIPT DATA ----------
         const transcriptData = [
             { start: 0.0, end: 1.5, speaker: "Maya", text: "Now, that's a bold transition." },
             { start: 1.5, end: 3.2, speaker: "Maya", text: "Wait, bold as hell." },
@@ -361,6 +437,15 @@
         const progressContainer = document.getElementById('progressContainer');
         const progressFill = document.getElementById('progressFill');
         const volumeSlider = document.getElementById('volumeSlider');
+        const autoScrollToggle = document.getElementById('autoScrollToggle');
+
+        // ---------- AUTO-SCROLL STATE (default: OFF) ----------
+        // Unchecked by default = false
+        let autoScrollEnabled = autoScrollToggle.checked; // false by default
+
+        autoScrollToggle.addEventListener('change', (e) => {
+            autoScrollEnabled = e.target.checked;
+        });
 
         // ---------- render transcript segments ----------
         transcriptData.forEach((item, index) => {
@@ -384,7 +469,6 @@
             segmentEl.addEventListener('click', () => {
                 audioPlayer.currentTime = item.start;
                 audioPlayer.play();
-                // update play/pause icon
                 playPauseBtn.textContent = '⏸';
             });
 
@@ -415,7 +499,7 @@
             }
         }
 
-        // ---------- highlight active segment & scroll ----------
+        // ---------- highlight active segment & scroll (only if autoScrollEnabled) ----------
         function syncTranscriptHighlight() {
             const currentTime = audioPlayer.currentTime;
             const segments = document.querySelectorAll('.segment');
@@ -433,7 +517,8 @@
                 }
             });
 
-            if (activeSegment) {
+            // --- SCROLL ONLY IF AUTO-SCROLL IS ENABLED ---
+            if (autoScrollEnabled && activeSegment) {
                 const rect = activeSegment.getBoundingClientRect();
                 const isVisible = (rect.top >= 100 && rect.bottom <= window.innerHeight);
                 if (!isVisible) {
@@ -453,7 +538,6 @@
 
         audioPlayer.addEventListener('loadedmetadata', () => {
             updatePlayerUI();
-            // Set initial volume from slider
             audioPlayer.volume = volumeSlider.value;
         });
 
@@ -469,7 +553,6 @@
 
         audioPlayer.addEventListener('ended', () => {
             playPauseBtn.textContent = '▶';
-            // Optionally reset to beginning, but we keep as is
         });
 
         // ---------- PLAY/PAUSE BUTTON ----------
@@ -501,13 +584,9 @@
             audioPlayer.volume = val;
         });
 
-        // Set initial volume (after metadata)
         audioPlayer.volume = volumeSlider.value;
 
-        // ---------- Extra: when seeking via transcript, also update UI immediately ----------
-        // (already handled by timeupdate, but sometimes timeupdate may lag; we can force update)
-        // But we also want to update progress bar when clicking a transcript.
-        // We'll listen to 'seeked' to update UI.
+        // ---------- seeked event for immediate UI update ----------
         audioPlayer.addEventListener('seeked', () => {
             updatePlayerUI();
             syncTranscriptHighlight();
@@ -515,8 +594,7 @@
 
         // ---------- On page load, ensure UI reflects duration ----------
         window.addEventListener('load', () => {
-            // If audio already loaded (cached), update duration
-            if (audioPlayer.readyState >= 1) { // HAVE_METADATA
+            if (audioPlayer.readyState >= 1) {
                 updatePlayerUI();
             } else {
                 audioPlayer.addEventListener('loadedmetadata', function onMeta() {
@@ -524,7 +602,6 @@
                     audioPlayer.removeEventListener('loadedmetadata', onMeta);
                 });
             }
-            // Set play/pause icon correctly
             playPauseBtn.textContent = audioPlayer.paused ? '▶' : '⏸';
         });
 
