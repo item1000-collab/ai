@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Talk Radio · interactive transcript</title>
+  <style>
+    /* ----- global reset / dark theme ----- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #121212;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #e0e0e0;
+      line-height: 1.5;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    /* main card – player + transcript */
+    .app-container {
+      max-width: 780px;
+      width: 100%;
+      background: #1c1c1c;
+      border-radius: 24px;
+      padding: 2rem 2rem 2rem 2rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    /* ----- player section ----- */
+    .player-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2.5rem;
+    }
+
+    /* strictly 200px width, block, radius, auto height */
+    .cover-image {
+      display: block;
+      width: 200px;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+      margin-bottom: 1.25rem;
+      background: #2a2a2a;
+      object-fit: cover;
+      transition: opacity 0.2s;
+    }
+
+    .show-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      text-align: center;
+      color: #ffffff;
+      margin-bottom: 0.35rem;
+      word-break: break-word;
+    }
+
+    .show-duration {
+      font-size: 0.9rem;
+      color: #a0a0a0;
+      letter-spacing: 0.3px;
+      margin-bottom: 1.25rem;
+      background: #2a2a2a;
+      padding: 0.2rem 1rem;
+      border-radius: 20px;
+      display: inline-block;
+    }
+
+    audio {
+      width: 100%;
+      border-radius: 40px;
+      outline: none;
+      margin-top: 0.25rem;
+      filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.4));
+    }
+
+    /* subtle custom audio style (webkit) */
+    audio::-webkit-media-controls-panel {
+      background: #2c2c2c;
+      border-radius: 40px;
+    }
+
+    /* ----- transcript list ----- */
+    .transcript-heading {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #7a7a7a;
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+      border-left: 3px solid #007bff;
+      padding-left: 0.75rem;
+    }
+
+    .transcript-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: #181818;
+      border-radius: 16px;
+      padding: 0.5rem 0;
+      max-height: 480px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #3a3a3a #1a1a1a;
+      border: 1px solid #2a2a2a;
+    }
+
+    .transcript-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .transcript-list::-webkit-scrollbar-track {
+      background: #1a1a1a;
+      border-radius: 8px;
+    }
+
+    .transcript-list::-webkit-scrollbar-thumb {
+      background: #3a3a3a;
+      border-radius: 8px;
+    }
+
+    .transcript-line {
+      padding: 0.9rem 1.2rem;
+      border-bottom: 1px solid #262626;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+      font-size: 0.98rem;
+      color: #d0d0d0;
+      border-left: 3px solid transparent;
+      word-break: break-word;
+      line-height: 1.55;
+    }
+
+    .transcript-line:last-child {
+      border-bottom: none;
+    }
+
+    /* hover highlighting */
+    .transcript-line:hover {
+      background: #252525;
+      border-left-color: #3a6ea5;
+      color: #f0f0f0;
+    }
+
+    /* active line — bright blue, white text */
+    .transcript-line.active {
+      background: #007bff;
+      color: #ffffff;
+      border-left-color: #ffffff;
+      font-weight: 500;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    .transcript-line.active .speaker {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    /* speaker label */
+    .speaker {
+      font-weight: 600;
+      color: #b0b0b0;
+      margin-right: 0.4rem;
+      transition: color 0.12s;
+    }
+
+    .transcript-line.active .speaker {
+      color: #ffffff;
+    }
+
+    /* error message */
+    .error-message {
+      background: #2a1a1a;
+      border-left: 6px solid #ff4d4d;
+      padding: 1.2rem 1.5rem;
+      border-radius: 12px;
+      color: #ffb3b3;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-size: 0.98rem;
+    }
+
+    /* fallback / empty state */
+    .placeholder-text {
+      color: #7a7a7a;
+      text-align: center;
+      padding: 2rem;
+      font-style: italic;
+    }
+
+    /* small screens */
+    @media (max-width: 500px) {
+      .app-container {
+        padding: 1.5rem 1rem;
+      }
+      .show-title {
+        font-size: 1.4rem;
+      }
+      .transcript-line {
+        padding: 0.75rem 1rem;
+        font-size: 0.92rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container" id="appContainer">
+    <!-- dynamic content will be rendered by JS -->
+    <div id="playerArea" class="player-section"></div>
+    <div id="transcriptArea"></div>
+  </div>
+
+  <script>
+    (function() {
+      // ---------- DOM references ----------
+      const appContainer = document.getElementById('appContainer');
+      const playerArea = document.getElementById('playerArea');
+      const transcriptArea = document.getElementById('transcriptArea');
+
+      // ---------- state ----------
+      let audio = null;               // will hold audio element
+      let transcriptLines = [];       // array of { element, start, end }
+      let activeLineIndex = -1;
+      let showData = null;            // parsed json
+
+      // ---------- helper: "M:SS" or "MM:SS" -> seconds ----------
+      function timecodeToSeconds(timecode) {
+        if (!timecode || typeof timecode !== 'string') return 0;
+        const parts = timecode.trim().split(':');
+        if (parts.length === 2) {
+          const minutes = parseInt(parts[0], 10) || 0;
+          const seconds = parseInt(parts[1], 10) || 0;
+          return minutes * 60 + seconds;
+        }
+        // fallback: if just seconds as string? treat as minutes:seconds? but not expected.
+        return 0;
+      }
+
+      // ---------- render error message (replace title area) ----------
+      function renderError(message) {
+        // clear player & transcript
+        playerArea.innerHTML = '';
+        transcriptArea.innerHTML = '';
+
+        // show error in player area
+        const errDiv = document.createElement('div');
+        errDiv.className = 'error-message';
+        errDiv.textContent = message;
+        playerArea.appendChild(errDiv);
+
+        // also show a note under transcript? optional.
+        const transcriptHint = document.createElement('div');
+        transcriptHint.className = 'placeholder-text';
+        transcriptHint.textContent = 'Transcript not available.';
+        transcriptArea.appendChild(transcriptHint);
+      }
+
+      // ---------- build player UI (cover, title, duration, audio) ----------
+      function buildPlayerUI(showTitle, showDuration) {
+        playerArea.innerHTML = '';
+
+        // cover image (strict 200px)
+        const cover = document.createElement('img');
+        cover.className = 'cover-image';
+        cover.src = 'cover.png';
+        cover.alt = 'Show cover';
+        cover.width = 200;        // double enforce
+        cover.height = 'auto';
+        cover.loading = 'eager';
+        // if cover missing, show subtle placeholder
+        cover.onerror = () => {
+          cover.style.background = '#2a2a2a';
+          cover.style.border = '1px dashed #444';
+          cover.alt = 'cover.png not found';
+        };
+
+        // title
+        const titleEl = document.createElement('h1');
+        titleEl.className = 'show-title';
+        titleEl.textContent = showTitle || 'Untitled show';
+
+        // duration
+        const durationEl = document.createElement('div');
+        durationEl.className = 'show-duration';
+        durationEl.textContent = showDuration ? `⏱ ${showDuration}` : '';
+
+        // audio element (strictly ai_radio.mp3)
+        audio = document.createElement('audio');
+        audio.controls = true;
+        audio.preload = 'auto';
+        audio.src = 'ai_radio.mp3';
+        audio.type = 'audio/mpeg';
+
+        // handle audio load error
+        audio.addEventListener('error', (e) => {
+          // if audio fails, we don't crash; but can show a hint
+          console.warn('Audio error:', e);
+        });
+
+        playerArea.appendChild(cover);
+        playerArea.appendChild(titleEl);
+        playerArea.appendChild(durationEl);
+        playerArea.appendChild(audio);
+
+        return { audio };
+      }
+
+      // ---------- render transcript lines from data ----------
+      function buildTranscript(transcriptArray, audioElement) {
+        transcriptArea.innerHTML = ''; // clear
+
+        if (!transcriptArray || !Array.isArray(transcriptArray) || transcriptArray.length === 0) {
+          const emptyMsg = document.createElement('div');
+          emptyMsg.className = 'placeholder-text';
+          emptyMsg.textContent = 'No transcript lines available.';
+          transcriptArea.appendChild(emptyMsg);
+          return [];
+        }
+
+        // heading
+        const heading = document.createElement('div');
+        heading.className = 'transcript-heading';
+        heading.textContent = '📄 Transcript · click to jump';
+        transcriptArea.appendChild(heading);
+
+        // list container
+        const listContainer = document.createElement('div');
+        listContainer.className = 'transcript-list';
+
+        const linesMeta = []; // { element, start, end }
+
+        // compute start seconds for each line, and end seconds = next start or start+20
+        const starts = transcriptArray.map(item => timecodeToSeconds(item.timecode));
+
+        transcriptArray.forEach((item, idx) => {
+          const startSec = starts[idx];
+          let endSec;
+          if (idx < starts.length - 1) {
+            endSec = starts[idx + 1];
+          } else {
+            // no next line: start + 20 sec
+            endSec = startSec + 20;
+          }
+
+          // create line element
+          const lineDiv = document.createElement('div');
+          lineDiv.className = 'transcript-line';
+          // store metadata on element (for later use)
+          lineDiv.dataset.start = startSec;
+          lineDiv.dataset.end = endSec;
+          lineDiv.dataset.index = idx;
+
+          // speaker span
+          const speakerSpan = document.createElement('span');
+          speakerSpan.className = 'speaker';
+          speakerSpan.textContent = (item.speaker || 'Unknown') + ':';
+
+          // text node
+          const textNode = document.createTextNode(' ' + (item.text || ''));
+
+          lineDiv.appendChild(speakerSpan);
+          lineDiv.appendChild(textNode);
+
+          // click handler (seek + play)
+          lineDiv.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!audioElement) return;
+            // seek to start seconds
+            audioElement.currentTime = startSec;
+            // start playback
+            audioElement.play().catch(err => {
+              // browsers may block autoplay if not user gesture? but it's a click, fine
+              console.warn('Playback failed:', err);
+            });
+          });
+
+          listContainer.appendChild(lineDiv);
+          linesMeta.push({
+            element: lineDiv,
+            start: startSec,
+            end: endSec
+          });
+        });
+
+        transcriptArea.appendChild(listContainer);
+        return linesMeta;
+      }
+
+      // ---------- synchronize active line on timeupdate ----------
+      function syncActiveLine() {
+        if (!audio || !transcriptLines.length) return;
+
+        const currentTime = audio.currentTime;
+
+        // find line index where currentTime >= start && currentTime < end
+        let newActiveIndex = -1;
+        for (let i = 0; i < transcriptLines.length; i++) {
+          const line = transcriptLines[i];
+          if (currentTime >= line.start && currentTime < line.end) {
+            newActiveIndex = i;
+            break;
+          }
+        }
+
+        // if no line found (e.g., gap or after last line), we can try last line if currentTime >= last start
+        if (newActiveIndex === -1 && transcriptLines.length > 0) {
+          const last = transcriptLines[transcriptLines.length - 1];
+          if (currentTime >= last.start) {
+            newActiveIndex = transcriptLines.length - 1;
+          }
+        }
+
+        // if active index changed, update UI
+        if (newActiveIndex !== activeLineIndex) {
+          // remove active from previous
+          if (activeLineIndex >= 0 && transcriptLines[activeLineIndex]) {
+            transcriptLines[activeLineIndex].element.classList.remove('active');
+          }
+
+          activeLineIndex = newActiveIndex;
+
+          if (activeLineIndex >= 0 && transcriptLines[activeLineIndex]) {
+            const activeEl = transcriptLines[activeLineIndex].element;
+            activeEl.classList.add('active');
+
+            // smooth scroll into view (centered)
+            activeEl.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+              inline: 'nearest'
+            });
+          }
+        }
+      }
+
+      // ---------- attach timeupdate listener ----------
+      function attachSyncListener(audioElement) {
+        if (!audioElement) return;
+        // remove previous listener if any (avoid duplicates)
+        audioElement.removeEventListener('timeupdate', syncActiveLine);
+        audioElement.addEventListener('timeupdate', syncActiveLine);
+        // also sync when seeked
+        audioElement.addEventListener('seeked', syncActiveLine);
+      }
+
+      // ---------- main: fetch data and render everything ----------
+      async function init() {
+        try {
+          const response = await fetch('show_notes.json');
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} — show_notes.json not found`);
+          }
+          const data = await response.json();
+
+          // basic validation
+          if (!data || typeof data !== 'object') {
+            throw new Error('Invalid JSON structure');
+          }
+
+          showData = data;
+          const showTitle = data.show_title || 'AI Talk Radio';
+          const showDuration = data.show_duration || '';
+          const transcriptData = data.timecoded_transcript;
+
+          // build player UI (creates audio element)
+          const { audio: audioEl } = buildPlayerUI(showTitle, showDuration);
+
+          // build transcript lines using audioEl
+          transcriptLines = buildTranscript(transcriptData, audioEl);
+
+          // attach timeupdate synchronization
+          attachSyncListener(audioEl);
+
+          // if audio metadata loads, we could sync once, but timeupdate will handle it.
+          // Also sync on loadedmetadata to set initial active line if currentTime > 0 (unlikely)
+          audioEl.addEventListener('loadedmetadata', () => {
+            // small delay to ensure everything rendered
+            setTimeout(syncActiveLine, 50);
+          });
+
+          // initial sync (in case audio already has time)
+          syncActiveLine();
+
+        } catch (error) {
+          console.error('Initialization error:', error);
+          // show clear error message instead of show title
+          renderError(`⚠️ Could not load show_notes.json: ${error.message}`);
+          // try to still show a minimal player? we show error only, but we can also show audio without transcript?
+          // to be safe, we replace entire content with error, but we can show audio if needed? per spec: 
+          // "If JSON is not found, display a clear error message instead of the show title."
+          // so we already replaced player area. We could also add an audio player? but spec says show error instead of title.
+          // we'll keep it minimal.
+        }
+      }
+
+      // start everything when DOM ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+
+    })();
+  </script>
+</body>
+</html>
