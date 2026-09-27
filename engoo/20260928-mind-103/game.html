@@ -491,7 +491,7 @@
     { id: "delusion", num: 2, title: "Real or Delusion?", char: "Ranjeet", initials: "RJ", color: "#c4602f",
       slide: BASE + "slide-008.jpg", tag: "REFLEX ROUND",
       obj: "Ten minutes per card. Decide whether the statement about words and idioms is REAL… or pure Ranjeet.",
-      tip: "Arrow keys work: ← for REAL, → for DELUSION. Fast answers earn a speed bonus; streaks multiply your points.",
+      tip: "Arrow keys work: ← for REAL, → for DELUSION. Fast answers earn a speed bonus; streaks multiply your points. After each answer, press NEXT to read the explanation before moving on.",
       flavor: "“I am up the creek without a puddle!”" },
     { id: "homework", num: 3, title: "Homework Scam Bureau", char: "Giovanni", initials: "GV", color: "#b0442f",
       slide: BASE + "slide-007.jpg", tag: "FILL THE BLANKS",
@@ -1065,11 +1065,11 @@
     renderQ();
   }
 
-  /* ===== Mini-game 2: REAL or DELUSION (timed reflex) ===== */
+  /* ===== Mini-game 2: REAL or DELUSION (timed reflex with NEXT button) ===== */
   function buildTF(area) {
     var L = state.level;
     var order = shuffle(TF_STATEMENTS.map(function (_, i) { return i; }));
-    L.extra = { order: order, idx: 0, locked: false, timerId: null, totalMs: TF_SECONDS * 1000, qStart: 0 };
+    L.extra = { order: order, idx: 0, locked: false, timerId: null, totalMs: TF_SECONDS * 1000, qStart: 0, answered: false };
     area.innerHTML =
       '<div class="tf-head"><span class="gprogress" id="tfProg"></span><span class="tf-sec mono" id="tfSec">' + TF_SECONDS + 's</span></div>' +
       '<div class="tbar"><i id="tfFill" style="width:100%"></i></div>' +
@@ -1078,7 +1078,8 @@
         '<button type="button" class="btn btn-ok big" id="btnReal" data-v="1"><i data-lucide="check"></i>REAL</button>' +
         '<button type="button" class="btn btn-err big" id="btnFake" data-v="0"><i data-lucide="x"></i>DELUSION</button>' +
       "</div>" +
-      '<p class="hintline">KEYBOARD: ← REAL · → DELUSION · SPEED PAYS A BONUS</p>';
+      '<p class="hintline">KEYBOARD: ← REAL · → DELUSION · SPEED PAYS A BONUS</p>' +
+      '<div id="tfNextWrap" style="margin-top:14px"></div>';
     function renderCard() {
       var st = TF_STATEMENTS[order[L.extra.idx]];
       $("#tfProg").textContent = "STATEMENT " + (L.extra.idx + 1) + " / " + order.length;
@@ -1087,12 +1088,16 @@
       $("#btnFake").classList.remove("good");
       $("#tfFill").style.width = "100%";
       $("#tfSec").textContent = TF_SECONDS + "s";
+      $("#tfNextWrap").innerHTML = "";
+      L.extra.locked = false;
+      L.extra.answered = false;
     }
     function startTimer() {
       L.extra.qStart = performance.now();
       var end = performance.now() + L.extra.totalMs;
       var last = TF_SECONDS;
       L.extra.timerId = lInterval(function () {
+        if (L.extra.answered) { return; }
         var remain = Math.max(0, end - performance.now());
         var f = $("#tfFill");
         if (f) { f.style.width = (remain / L.extra.totalMs * 100) + "%"; }
@@ -1104,8 +1109,9 @@
       }, 100);
     }
     function answerTF(val, btn) {
-      if (L.extra.locked) { return; }
+      if (L.extra.locked || L.extra.answered) { return; }
       L.extra.locked = true;
+      L.extra.answered = true;
       clearInterval(L.extra.timerId);
       var st = TF_STATEMENTS[order[L.extra.idx]];
       var ok = val === st.real;
@@ -1132,18 +1138,35 @@
       note.hidden = false;
       note.innerHTML = "<strong>" + (ok ? "REAL DEAL." : "DELUSION.") + "</strong> " + st.note;
       $("#tfFill").style.width = "0%";
-      lTimeout(function () {
+      /* Show NEXT button instead of auto-advancing */
+      var isLast = (L.extra.idx >= order.length - 1);
+      var wrap = $("#tfNextWrap");
+      wrap.innerHTML = '<button type="button" class="btn btn-primary big" id="tfNextBtn">' +
+        (isLast ? 'SEE RESULTS <i data-lucide="award"></i>' : 'NEXT <i data-lucide="chevron-right"></i>') + '</button>';
+      var nb = $("#tfNextBtn");
+      refreshIcons();
+      nb.focus();
+      nb.addEventListener("click", function () {
+        SFX.click();
         L.extra.idx++;
         if (L.extra.idx >= order.length) { finishLevel(); }
-        else { L.extra.locked = false; renderCard(); startTimer(); }
-      }, ok ? 1500 : 2700);
+        else { renderCard(); startTimer(); }
+      });
     }
     area.addEventListener("click", function (e) {
       var b = e.target.closest(".tf-btns .btn");
       if (b && !L.extra.locked) { answerTF(b.dataset.v === "1", b); }
     });
     function key(e) {
-      if (!state.level || state.level !== L || L.extra.locked) { return; }
+      if (!state.level || state.level !== L) { return; }
+      /* Enter advances after answering */
+      if (L.extra.answered && e.key === "Enter") {
+        e.preventDefault();
+        var nb = $("#tfNextBtn");
+        if (nb) { nb.click(); }
+        return;
+      }
+      if (L.extra.locked) { return; }
       if (e.key === "ArrowLeft") { e.preventDefault(); answerTF(true, $("#btnReal")); }
       if (e.key === "ArrowRight") { e.preventDefault(); answerTF(false, $("#btnFake")); }
     }
