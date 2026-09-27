@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Renamer · PowerShell rename & replace</title>
+    <title>File Renamer · PowerShell</title>
     <style>
         * {
             margin: 0;
@@ -130,15 +130,6 @@
             margin: 6px 0 12px;
             flex: 1;
         }
-        .command-text.border-orange {
-            border-left-color: #f97316;
-        }
-        .command-text.border-purple {
-            border-left-color: #a855f7;
-        }
-        .command-text.border-teal {
-            border-left-color: #14b8a6;
-        }
         .copy-btn {
             background: #2563eb;
             border: none;
@@ -168,15 +159,6 @@
             color: #78350f;
             margin-top: 10px;
         }
-        .info-note {
-            background: #eef2ff;
-            border-left: 4px solid #3b82f6;
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            color: #1e3a8a;
-            margin-top: 10px;
-        }
         .footer {
             background: #f1f5f9;
             padding: 12px 24px;
@@ -185,15 +167,29 @@
             text-align: center;
             border-top: 1px solid #e2e8f0;
         }
+        .ps-note {
+            background: #eef2ff;
+            border-left: 4px solid #3b82f6;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            color: #1e3a8a;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
 <div class="card">
     <div class="header">
-        <h1>📂 File Renamer</h1>
+        <h1>📂 File Renamer · PowerShell</h1>
     </div>
 
     <div class="main-col">
+        <div class="ps-note">
+            ⚡ Все команды ниже предназначены для <strong>PowerShell</strong> (Windows 10/11, PowerShell 5.1+).
+        </div>
+
         <div class="folder-input">
             <label>📂 Target folder path</label>
             <input type="text" id="folderPath" value="C:\Users\User\Documents\Cuba">
@@ -215,30 +211,6 @@
                 <button class="copy-btn" onclick="copyRename()">📋 Copy</button>
                 <div class="warning-note">⚠️ Renames ALL files to 001.ext, 002.ext …</div>
             </div>
-
-            <!-- 3. Replace underscore with dash -->
-            <div class="command-box">
-                <div class="command-label"><span>🔄 3. REPLACE _ → -</span><span class="badge">underscore to dash</span></div>
-                <div class="command-text border-orange" id="replaceCommand"></div>
-                <button class="copy-btn" onclick="copyReplace()">📋 Copy</button>
-                <div class="info-note">💡 Replaces <code>_</code> with <code>-</code>. Skips files without <code>_</code>.</div>
-            </div>
-
-            <!-- 4. Lowercase only -->
-            <div class="command-box">
-                <div class="command-label"><span>🔡 4. LOWERCASE</span><span class="badge">to lower case</span></div>
-                <div class="command-text border-purple" id="lowercaseCommand"></div>
-                <button class="copy-btn" onclick="copyLowercase()">📋 Copy</button>
-                <div class="info-note">💡 Converts all letters in filenames to lowercase.</div>
-            </div>
-
-            <!-- 5. Replace space with dash -->
-            <div class="command-box">
-                <div class="command-label"><span>🔄 5. REPLACE SPACE → -</span><span class="badge">space to dash</span></div>
-                <div class="command-text border-teal" id="spaceCommand"></div>
-                <button class="copy-btn" onclick="copySpace()">📋 Copy</button>
-                <div class="info-note">💡 Replaces spaces <code> </code> with <code>-</code>. Skips files without spaces.</div>
-            </div>
         </div>
     </div>
 
@@ -252,34 +224,6 @@
 
     const RENAME_NUMBERING = '$i=1; Get-ChildItem -File | ForEach-Object { $newName = "{0:D3}" -f $i + $_.Extension; Rename-Item -LiteralPath $_.Name -NewName $newName; $i++ }';
 
-    const REPLACE_UNDERSCORE = `Get-ChildItem -File | ForEach-Object {
-        $newName = $_.Name -replace '_', '-'
-        if ($_.Name -ne $newName) {
-            Rename-Item -Path $_.FullName -NewName $newName
-            Write-Host "✅ $($_.Name) → $newName" -ForegroundColor Green
-        } else {
-            Write-Host "⏭️ Skipped: $($_.Name) (no underscore)" -ForegroundColor Yellow
-        }
-    }`;
-
-    const LOWERCASE_ONLY = `Get-ChildItem -File | ForEach-Object {
-        $newName = $_.Name.ToLower()
-        if ($_.Name -ne $newName) {
-            Rename-Item -Path $_.FullName -NewName $newName
-            Write-Host "✅ $($_.Name) → $newName" -ForegroundColor Green
-        }
-    }`;
-
-    const REPLACE_SPACE = `Get-ChildItem -File | ForEach-Object {
-        $newName = $_.Name -replace ' ', '-'
-        if ($_.Name -ne $newName) {
-            Rename-Item -Path $_.FullName -NewName $newName
-            Write-Host "✅ $($_.Name) → $newName" -ForegroundColor Green
-        } else {
-            Write-Host "⏭️ Skipped: $($_.Name) (no spaces)" -ForegroundColor Yellow
-        }
-    }`;
-
     function quotedPath() {
         let raw = folderInput.value.trim();
         raw = raw.replace(/^["']|["']$/g, '');
@@ -290,9 +234,6 @@
         const nav = `cd ${quotedPath()}`;
         document.getElementById('navigateCommand').textContent = nav;
         document.getElementById('renameCommand').textContent = `${nav}; ${RENAME_NUMBERING}`;
-        document.getElementById('replaceCommand').textContent = `${nav}; ${REPLACE_UNDERSCORE}`;
-        document.getElementById('lowercaseCommand').textContent = `${nav}; ${LOWERCASE_ONLY}`;
-        document.getElementById('spaceCommand').textContent = `${nav}; ${REPLACE_SPACE}`;
     }
 
     async function copyText(text, btn) {
@@ -315,9 +256,6 @@
 
     function copyNavigate() { const btn = event.target; copyText(document.getElementById('navigateCommand').textContent, btn); }
     function copyRename() { const btn = event.target; copyText(document.getElementById('renameCommand').textContent, btn); }
-    function copyReplace() { const btn = event.target; copyText(document.getElementById('replaceCommand').textContent, btn); }
-    function copyLowercase() { const btn = event.target; copyText(document.getElementById('lowercaseCommand').textContent, btn); }
-    function copySpace() { const btn = event.target; copyText(document.getElementById('spaceCommand').textContent, btn); }
 
     folderInput.addEventListener('input', updateCommands);
     updateCommands();
