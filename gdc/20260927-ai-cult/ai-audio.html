@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ethereal Conduit — Audio Show</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px 16px 64px;
+    background: #121212;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .player {
+    max-width: 720px;
+    margin: 0 auto 32px;
+    background: #1a1a1a;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .cover {
+    width: 200px;
+    height: auto;
+    display: block;
+    margin: 0 auto 20px;
+    border-radius: 8px;
+  }
+
+  #show-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0 0 6px;
+    color: #ffffff;
+  }
+
+  #show-duration {
+    font-size: 0.85rem;
+    color: #8a8a8a;
+    margin: 0 0 18px;
+  }
+
+  audio {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .transcript {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #1a1a1a;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .transcript-header {
+    padding: 16px 20px;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a8a8a;
+    border-bottom: 1px solid #262626;
+  }
+
+  .line {
+    padding: 12px 20px;
+    border-bottom: 1px solid #242424;
+    cursor: pointer;
+    line-height: 1.55;
+    font-size: 0.95rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .line:last-child { border-bottom: none; }
+
+  .line:hover { background: #232323; }
+
+  .line .speaker {
+    font-weight: 700;
+    color: #b0b0b0;
+    margin-right: 6px;
+  }
+
+  .line.active {
+    background: #007bff;
+    color: #ffffff;
+  }
+
+  .line.active .speaker { color: #ffffff; }
+
+  .error {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #2a1414;
+    border: 1px solid #5a2020;
+    border-radius: 12px;
+    color: #ff9b9b;
+    font-size: 0.95rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+  <div class="player">
+    <img class="cover" src="cover.png" alt="Show cover">
+    <h1 id="show-title">Loading…</h1>
+    <p id="show-duration"></p>
+    <audio id="audio" controls preload="metadata" src="ai_radio.mp3"></audio>
+  </div>
+
+  <div class="transcript" id="transcript">
+    <div class="transcript-header">Transcript</div>
+    <div id="lines"></div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  const audio = document.getElementById("audio");
+  const titleEl = document.getElementById("show-title");
+  const durationEl = document.getElementById("show-duration");
+  const linesEl = document.getElementById("lines");
+  const transcriptEl = document.getElementById("transcript");
+
+  let segments = [];
+  let activeIndex = -1;
+
+  /* ---------- Timestamp parsing: "M:SS" or "MM:SS" -> seconds ---------- */
+  function timeToSeconds(tc) {
+    if (typeof tc !== "string") return 0;
+    const parts = tc.trim().split(":");
+    if (parts.length === 2) {
+      const m = parseInt(parts[0], 10) || 0;
+      const s = parseInt(parts[1], 10) || 0;
+      return m * 60 + s;
+    }
+    if (parts.length === 3) {
+      const h = parseInt(parts[0], 10) || 0;
+      const m = parseInt(parts[1], 10) || 0;
+      const s = parseInt(parts[2], 10) || 0;
+      return h * 3600 + m * 60 + s;
+    }
+    const n = parseFloat(tc);
+    return isNaN(n) ? 0 : n;
+  }
+
+  /* ---------- Error display ---------- */
+  function showError(message) {
+    titleEl.textContent = "";
+    durationEl.textContent = "";
+    linesEl.innerHTML = "";
+    transcriptEl.innerHTML =
+      '<div class="error">' + message + "</div>";
+  }
+
+  /* ---------- Build segment ranges ---------- */
+  function buildSegments(list) {
+    const out = list.map(function (item) {
+      return {
+        start: timeToSeconds(item.timecode),
+        end: 0,
+        speaker: item.speaker || "",
+        text: item.text || "",
+        el: null
+      };
+    });
+
+    out.sort(function (a, b) { return a.start - b.start; });
+
+    for (let i = 0; i < out.length; i++) {
+      out[i].end = (i < out.length - 1)
+        ? out[i + 1].start
+        : out[i].start + 20; // last line: start + 20s
+    }
+    return out;
+  }
+
+  /* ---------- Render transcript DOM ---------- */
+  function renderSegments() {
+    const frag = document.createDocumentFragment();
+
+    segments.forEach(function (seg, i) {
+      const div = document.createElement("div");
+      div.className = "line";
+      div.dataset.index = String(i);
+
+      const sp = document.createElement("span");
+      sp.className = "speaker";
+      sp.textContent = seg.speaker + ":";
+
+      div.appendChild(sp);
+      div.appendChild(document.createTextNode(" " + seg.text));
+
+      div.addEventListener("click", function () {
+        audio.currentTime = seg.start;
+        audio.play();
+      });
+
+      seg.el = div;
+      frag.appendChild(div);
+    });
+
+    linesEl.appendChild(frag);
+  }
+
+  /* ---------- Synchronization ---------- */
+  function setActive(index) {
+    if (index === activeIndex) return;
+
+    if (activeIndex >= 0 && segments[activeIndex] && segments[activeIndex].el) {
+      segments[activeIndex].el.classList.remove("active");
+    }
+
+    activeIndex = index;
+
+    if (index >= 0 && segments[index] && segments[index].el) {
+      segments[index].el.classList.add("active");
+      segments[index].el.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    }
+  }
+
+  function onTimeUpdate() {
+    const t = audio.currentTime;
+
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      if (t >= seg.start && t < seg.end) {
+        setActive(i);
+        return;
+      }
+    }
+
+    // Past the last segment: keep last highlighted
+    if (segments.length && t >= segments[segments.length - 1].start) {
+      setActive(segments.length - 1);
+    }
+  }
+
+  /* ---------- Load data ---------- */
+  fetch("show_notes.json")
+    .then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      titleEl.textContent = data.show_title || "Untitled Show";
+      durationEl.textContent = data.show_duration
+        ? "Duration: " + data.show_duration
+        : "";
+
+      const list = data.timecoded_transcript || [];
+      if (!list.length) {
+        showError("Transcript data is empty or malformed.");
+        return;
+      }
+
+      segments = buildSegments(list);
+      renderSegments();
+
+      audio.addEventListener("timeupdate", onTimeUpdate);
+    })
+    .catch(function (err) {
+      console.error("Failed to load show_notes.json:", err);
+      showError(
+        "Could not load show_notes.json. Please make sure the file exists " +
+        "in the same folder as index.html and is valid JSON."
+      );
+    });
+})();
+</script>
+</body>
+</html>
