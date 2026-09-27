@@ -1,1 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcript Audio Synchronizer</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-color: #38bdf8;
+            --active-bg: rgba(56, 189, 248, 0.15);
+            --active-border: #38bdf8;
+            --border-color: #334155;
+            --speaker1-color: #f43f5e;
+            --speaker2-color: #10b981;
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #f8fafc;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .transcript-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .segment {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 16px;
+            border-left: 4px solid transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .segment:hover {
+            background-color: #26334d;
+        }
+
+        .segment.active {
+            background-color: var(--active-bg);
+            border-left-color: var(--active-border);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .segment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .speaker {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .speaker-1 { color: var(--speaker1-color); }
+        .speaker-2 { color: var(--speaker2-color); }
+
+        .timestamp {
+            color: var(--text-muted);
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .text {
+            font-size: 1.05rem;
+            color: #f1f5f9;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Interactive Transcript</h1>
+        <p class="subtitle">Click on any paragraph to jump to that moment in the audio.</p>
+    </header>
+
+    <!-- Hidden Audio Element -->
+    <audio id="audio-player">
+        <source src="audio.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <div class="transcript-container" id="transcript"></div>
+
+    <script>
+        // Transcript Data Array with start times, end times, speakers, and text
+        const transcriptData = [
+            { start: 0.0, end: 1.5, speaker: "Maya", text: "Now, that's a bold transition." },
+            { start: 1.5, end: 3.2, speaker: "Maya", text: "Wait, bold as hell." },
+            { start: 3.2, end: 4.8, speaker: "Miles", text: "Exactly. Wake up, man." },
+            { start: 4.8, end: 7.2, speaker: "Miles", text: "Then we hit them with the truth." },
+            { start: 7.2, end: 9.8, speaker: "Miles", text: "Right. Hey, you know how it is." },
+            { start: 9.8, end: 15.1, speaker: "Miles", text: "If you're going to do it, you've got to go all in. No half measures at the AI Summit. So, what's the truth we're hitting them with after the static clears?" },
+            { start: 15.1, end: 25.5, speaker: "Maya", text: "I've got a few ideas. Since I'm the relationship expert, we open with: AI can find your soulmate in three seconds, but it still can't explain why you're both arguing about the thermostat. I think that's the kind of grounding truth that people want." },
+            { start: 25.5, end: 30.5, speaker: "Miles", text: "That's a killer opening. It's the perfect mix of..." },
+            { start: 30.5, end: 42.0, speaker: "Maya", text: "It's a perfect mix of profound insight and domestic tragedy, which is exactly how a relationship ends, obviously. But while we're dreaming up AI manifestos, are you actually going to include a troubleshooting ghost section in that Voice Meter manual?" },
+            { start: 42.0, end: 55.8, speaker: "Miles", text: "Oh, 100%. You can't have a manual without a 'Why is my voice coming through a toaster?' section. It's basically required reading. I'll make sure the ghost troubleshooting is a dedicated chapter, complete with diagrams of where the digital spirits usually hang out in the signal chain." },
+            { start: 55.8, end: 57.5, speaker: "Maya", text: "Diagrams and diagrams..." },
+            { start: 57.5, end: 59.2, speaker: "Miles", text: "Exactly." },
+            { start: 59.2, end: 60.5, speaker: "Maya", text: "Oh, absolutely." },
+            { start: 60.5, end: 63.8, speaker: "Miles", text: "Like a map of the dead zones where the audio just goes to die." },
+            { start: 63.8, end: 71.8, speaker: "Miles", text: "We could even suggest a specific frequency to hum to appease the lag gods. You know, something very atmospheric." },
+            { start: 71.8, end: 72.8, speaker: "Maya", text: "Wait, no." },
+            { start: 72.8, end: 81.2, speaker: "Maya", text: "Something that really sticks? Like a low, rhythmic thrum that makes you wonder if your hardware is actually haunted, or just having a very moody Sunday?" },
+            { start: 81.2, end: 85.0, speaker: "Miles", text: "Now, that's a vibe. A moody Sunday for a CPU." },
+            { start: 85.0, end: 92.5, speaker: "Maya", text: "Exactly. I can almost hear it now—just a deep, pulsing thud that makes you check your cables while questioning your entire existence." },
+            { start: 92.5, end: 98.2, speaker: "Miles", text: "We'll call it 'The Hardware Heartbeat.' Do we put that in the manual as a feature or a warning sign?" },
+            { start: 98.2, end: 108.5, speaker: "Maya", text: "Oh, absolutely a feature. We don't want a warning, we want prestige. We'll market it as the soul of the machine. The soul of the machine. It's not a sign of imminent failure, it's just the CPU expressing its inner turmoil." },
+            { start: 108.5, end: 112.5, speaker: "Miles", text: "The soul of the machine. That's genius. People will literally pay..." },
+            { start: 112.5, end: 122.5, speaker: "Maya", text: "Right? We'll charge extra! Exactly. Pure gold. We'll sell the emotional hardware upgrade as a limited-edition experience." },
+            { start: 122.5, end: 130.8, speaker: "Maya", text: "If your computer crashes during a deadline, it's not a bug. It's just digital burnout. We'll tell the customers their PC is simply practicing self-care." },
+            { start: 130.8, end: 144.5, speaker: "Miles", text: "I love that. It's the ultimate pivot. 'Your laptop isn't frozen, it's just having a mindfulness moment.' We could sell a subscription for guided digital meditations where the screen just goes black for 20 minutes and tells you to breathe. That's some high-level marketing right there." },
+            { start: 144.5, end: 160.0, speaker: "Maya", text: "It's the perfect scam. We'll charge 50 bucks a month for strategic silences. If the AI stops responding for 10 minutes, it's not a server crash, it's a deep insight interval meant to give the human room to reflect. Honestly, if we can convince people that a frozen computer is actually a Zen master, we're going to be rich." },
+            { start: 160.0, end: 173.2, speaker: "Miles", text: "We're not just going to be rich, we're going to be legends. Imagine the branding: 'The Void Subscription.' We'll tell them the silence is curated by an algorithm that knows exactly when they're about to have a breakthrough. Total genius. Who do we pitch this to first?" },
+            { start: 173.2, end: 184.2, speaker: "Maya", text: "Oh, I'm jumping in first. First, we lead with a sleek, minimalist slide of a black screen. And then we hit them with the tagline: 'Your device isn't lagging, it's pondering.'" },
+            { start: 184.2, end: 188.5, speaker: "Maya", text: "It transforms a technical failure into a luxury experience." },
+            { start: 188.5, end: 191.0, speaker: "Miles", text: "Pandering. I can see..." },
+            { start: 191.0, end: 202.5, speaker: "Maya", text: "Who's the target audience? Overworked... Exactly! We'll sell it as the digital detox upgrade. Imagine the irony: they're paying us a premium just to make their expensive tech stop working for a few minutes so they can find their center. It's pure marketing gold." },
+            { start: 202.5, end: 211.5, speaker: "Miles", text: "It's a total racket. And I'm here for it. Basically selling nothing for a premium price. That's the dream." },
+            { start: 211.5, end: 215.2, speaker: "Maya", text: "We're basically the luxury watchmakers of..." },
+            { start: 215.2, end: 221.2, speaker: "Miles", text: "Wait, let's not get ahead of ourselves. Exactly. The art of... Too far? I don't want to accidentally start a real religion here." },
+            { start: 221.2, end: 228.8, speaker: "Maya", text: "Right, let's keep it to a luxury scam. A religion... I mean, if we can... A religion is a big jump. We're barely a consultancy, and we're already planning our own priesthood." },
+            { start: 228.8, end: 232.5, speaker: "Maya", text: "Um, what's the first commandment in the Holy Book of the Pondering Laptop?" },
+            { start: 232.5, end: 243.8, speaker: "Miles", text: "Oh, it's got to be something completely impractical. Commandment One: Thou shalt not restart the device during a pondering phase, lest thou disrupt the digital enlightenment. You can't just hard reset your way to Nirvana, you know what I'm saying?" },
+            { start: 243.8, end: 258.0, speaker: "Maya", text: "Right? I can already see the followers. They'll be sitting in silence, staring at a spinning beach ball of death with total reverence. It's not lagging, it's transcending. It's brilliant." },
+            { start: 258.0, end: 275.2, speaker: "Miles", text: "Exactly. Total reverence for the spinning wheel of death. We'll sell the beach ball as a sacred mandala. We'll just tell them the spinning isn't a crash, it's a meditative cycle designed to align their energy with the cloud. We can even charge extra for Platinum Transcendence, where the screen stays black for a whole hour, and we'll call it a digital pilgrimage." },
+            { start: 275.2, end: 279.5, speaker: "Miles", text: "Digital pilgrimage. That's a masterpiece." },
+            { start: 279.5, end: 282.8, speaker: "Maya", text: "Exactly. Right? We could..." },
+            { start: 282.8, end: 297.8, speaker: "Miles", text: "We'll sell them a special pilgrimage cable that does absolutely... Right, we could even sell them a sacred USB that's just a piece of plastic with no chip in it. Tell them it's a wireless conduit for the digital ether. Pure placebo, but we'll wrap it in a matte black box and call it an Essential Spiritual Bridge. Who's handling the pricing for the plastic stick?" },
+            { start: 297.8, end: 312.2, speaker: "Maya", text: "I'm on it. We charge it at exactly the price of a real high-end drive, but we call it 'The Ethereal Conduit.' It's not about the storage space, it's about the spiritual bandwidth." },
+            { start: 312.2, end: 323.5, speaker: "Maya", text: "We'll market it as 0% distraction. The spiritual bandwidth is honestly the selling point. We'll tell them that the less it actually does, the more it connects them to the digital void. Who's designing the packaging?" },
+            { start: 323.5, end: 337.8, speaker: "Maya", text: "It needs to look like it was recovered from a crashed UFO." },
+            { start: 337.8, end: 348.5, speaker: "Miles", text: "Oh, I'm on the packaging. I'm thinking brushed titanium, maybe some weird holographic foil that shifts colors when you tilt it. We'll put it in a vacuum-sealed pouch so it feels like it's from another dimension. No instructions, just a single card that says 'Listen to the silence.'" },
+            { start: 348.5, end: 351.2, speaker: "Miles", text: "Pure luxury, pure mystery, you know what I'm saying?" },
+            { start: 351.2, end: 357.2, speaker: "Maya", text: "Mm. It's the 'If you have to ask, you can't afford it' energy. Oh, a plot twist!" },
+            { start: 357.2, end: 359.5, speaker: "Maya", text: "I'm all ears." },
+            { start: 359.5, end: 368.5, speaker: "Miles", text: "A plot twist! A plot twist? Now you've got me. Lay it on me. What just changed in the grand plan of our luxury digital void empire?" },
+            { start: 368.5, end: 372.0, speaker: "Maya", text: "I'm ready. Hit me with the plot twist." },
+            { start: 372.0, end: 383.0, speaker: "Miles", text: "Wait, you're asking me for the twist? I thought you had the plot twist. You're the one who just dropped the plot twist bomb. Now I'm sitting here like a frozen laptop, just pondering. What's the move?" },
+            { start: 383.0, end: 401.5, speaker: "Maya", text: "Wait, you're right. I totally mixed up who dropped the bomb there. I think I accidentally stepped into a pondering phase of my own. But about the movie: Margaret isn't the AI horror one. It's actually called *Margaux*. It's that one where college students rent a high-tech smart house and things go south fast." },
+            { start: 401.5, end: 412.5, speaker: "Maya", text: "The wild part is that the AI is voiced by Susan Bennett, who was the original voice of Siri. So it's like your phone is finally admitting it's a supervillain. Now, can we get back to our spiritual empire, or did the pondering phase completely derail us?" },
+            { start: 412.5, end: 428.5, speaker: "Miles", text: "Nah, we're still in the zone. A little pondering just adds to the prestige, right? We'll just tell our investors that the derailment was actually a strategic pivot into unplanned exploration. But for real, we can't let a little Siri villain trivia stop us from selling zero-bandwidth plastic sticks." },
+            { start: 428.5, end: 436.5, speaker: "Miles", text: "Now that the Margaux correction is out of the way, do we think the digital pilgrimage package needs a matching robe, or is that crossing the line into the cult territory we promised to avoid?" },
+            { start: 436.5, end: 442.2, speaker: "Maya", text: "The robe is non-negotiable. You know I did, I just think..." },
+            { start: 442.2, end: 445.8, speaker: "Miles", text: "The robe is non-negotiable? The robe is what separates the casuals from..." },
+            { start: 445.8, end: 457.2, speaker: "Maya", text: "Actually, the robes would be the ultimate move. We'll sell them as anti-static signal dampening robes that protect your aura from bad Wi-Fi, then charge like $500 a piece for the privilege of looking like a very expensive bedsheet." },
+            { start: 457.2, end: 472.0, speaker: "Miles", text: "$500 for a bedsheet. Now that is some top-tier grifting. We're not just selling products at this point, we're selling an entire lifestyle of expensive silence. I can see it now: a room full of people in signal dampening robes staring at frozen screens in total peace, all while we count the money from our zero-bandwidth USB sticks. It's beautiful." },
+            { start: 472.0, end: 476.5, speaker: "Miles", text: "Do we offer a limited edition color or is matte black the only way to truly signal your commitment to the void?" },
+            { start: 476.5, end: 497.8, speaker: "Maya", text: "Matte black is the baseline, but we can't just stop there. We need a tiered system. We'll offer Stellar Silver for the mid-level seekers, and Void Violet for the absolute elites. But the real prestige, the Hardware Heartbeat edition..." },
+            { start: 497.8, end: 508.5, speaker: "Maya", text: "It's in an iridescent white that actually pulses a soft red light whenever your computer hits that digital burnout phase. It's not just a robe, it's a wearable diagnostic tool for your inner turmoil." },
+            { start: 508.5, end: 512.2, speaker: "Miles", text: "An iridescent white robe that pulses red. That's actually terrifying." },
+            { start: 512.2, end: 513.5, speaker: "Maya", text: "It's high fashion!" },
+            { start: 513.5, end: 521.8, speaker: "Miles", text: "Right? You're basically a human warning light. Imagine walking into a café and seeing five people in pulsing red robes just staring at black screens." },
+            { start: 521.8, end: 535.8, speaker: "Miles", text: "People would think it's a secret society meeting or some kind of... Busted! We did it. We accidentally built the cult. I told you the robes were a slippery slope, but once you add the pulsing red lights, there's no going back. We've officially crossed the line from luxury scam to mysterious organization that probably has a secret underground bunker." },
+            { start: 535.8, end: 539.0, speaker: "Miles", text: "So, since we're now the leaders of the Order of the Pondering Laptop..." },
+            { start: 539.0, end: 541.2, speaker: "Maya", text: "What are you going to call the cult?" },
+            { start: 541.2, end: 555.0, speaker: "Miles", text: "Welcome to the... The Cold? You threw a curveball now. Are we talking about the 'cold' as in a glitchy frozen system, or are we adding a literal temperature requirement to our cult? Because if we tell people they have to freeze their routers to achieve cryo-clarity, we might actually be able to charge $1,000 for a specialized freezer bag." },
+            { start: 555.0, end: 568.5, speaker: "Maya", text: "'Cryo-clarity'? You are truly on another level of grifting! 'Don't just let your server lag, let it achieve artisanal frost'—that's the headline. At that point, it's not a technical failure, it's a precision thermal alignment. Now, what does the initiation ritual look like for someone paying $1,000 for a freezer bag?" },
+            { start: 568.5, end: 593.5, speaker: "Miles", text: "Oh, it's got to be theatrical. First, they have to enter the chamber of chills in complete silence. It's got to be cinematic. They walk in wearing the pulsing red robe, carrying their frozen router like a sacred relic. Then we make them stand in a circle around a single flickering CRT monitor while we play a recording of a 56k modem dial-up sound on loop for 10 minutes—that's the purification of the signal. Once they've reached peak discomfort, we hand them the freezer bag and tell them they've finally achieved cryo-clarity." },
+            { start: 593.5, end: 598.2, speaker: "Miles", text: "Do we make them sign a contract in digital ink, or just have them press a button that does absolutely nothing?" },
+            { start: 598.2, end: 608.2, speaker: "Maya", text: "The button. A contract is too honest. They press the button, it does absolutely nothing, and we tell them that the silence it produces is the most valuable part of the membership. Pure psychological warfare." },
+            { start: 608.2, end: 613.8, speaker: "Maya", text: "Does this ritual include a sacred chant, or are we staying strictly in the realm of atmospheric humming?" },
+            { start: 613.8, end: 631.5, speaker: "Miles", text: "A chant is a must. But it can't be words—words are too logical. It's got to be a series of rhythmic system beeps and static pops. We'll call it the Binary Hymn. The followers just have to mimic the sound of a hard drive failing in unison. Can you imagine a room full of people in pulsing red robes just going 'Beep, boop, krzzzt' with total conviction? That's how you know you've truly won." },
+            { start: 631.5, end: 651.8, speaker: "Maya", text: "That is absolutely unhinged. We'll add a final touch: to complete the initiation, they have to sacrifice a single vintage AA battery to the Great Router in the Sky. Just toss it into a small, matte black bin with an ominous hum. Once that's done, we hand them their Certification of Enlightenment." },
+            { start: 651.8, end: 655.8, speaker: "Maya", text: "You and Peter are going to be the richest people in the void." },
+            { start: 655.8, end: 658.2, speaker: "Maya", text: "Now, wait. Is the signal holding up?" },
+            { start: 658.2, end: 660.0, speaker: "Maya", text: "Wait, I'm listening." }
+        ];
+
+        const audioPlayer = document.getElementById('audio-player');
+        const transcriptContainer = document.getElementById('transcript');
+
+        // Render Transcript Elements
+        transcriptData.forEach((item, index) => {
+            const segmentEl = document.createElement('div');
+            segmentEl.classList.add('segment');
+            segmentEl.dataset.index = index;
+            segmentEl.dataset.start = item.start;
+            segmentEl.dataset.end = item.end;
+
+            const speakerClass = item.speaker === "Miles" ? "speaker-1" : "speaker-2";
+            const formattedStart = formatTime(item.start);
+
+            segmentEl.innerHTML = `
+                <div class="segment-header">
+                    <span class="speaker ${speakerClass}">${item.speaker}</span>
+                    <span class="timestamp">${formattedStart}</span>
+                </div>
+                <div class="text">${item.text}</div>
+            `;
+
+            // Seek and play audio on paragraph click
+            segmentEl.addEventListener('click', () => {
+                audioPlayer.currentTime = item.start;
+                audioPlayer.play();
+            });
+
+            transcriptContainer.appendChild(segmentEl);
+        });
+
+        // Highlight Active Transcript Segment based on Audio Time
+        audioPlayer.addEventListener('timeupdate', () => {
+            const currentTime = audioPlayer.currentTime;
+            const segments = document.querySelectorAll('.segment');
+
+            let activeSegment = null;
+
+            segments.forEach((segment) => {
+                const start = parseFloat(segment.dataset.start);
+                const end = parseFloat(segment.dataset.end);
+
+                if (currentTime >= start && currentTime <= end) {
+                    segment.classList.add('active');
+                    activeSegment = segment;
+                } else {
+                    segment.classList.remove('active');
+                }
+            });
+
+            // Smooth scroll active segment into view
+            if (activeSegment) {
+                const rect = activeSegment.getBoundingClientRect();
+                const isVisible = (rect.top >= 100 && rect.bottom <= window.innerHeight);
+                
+                if (!isVisible) {
+                    activeSegment.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            }
+        });
+
+        // Helper Function to Format Seconds -> MM:SS
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+    </script>
+</body>
+</html>
