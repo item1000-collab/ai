@@ -182,7 +182,7 @@ var SCENES = [
     flavor:"\u201CGet out, you dufus!\u201D" },
   { id:"bonus", num:"REEL 05", title:"Smelly Cat Bonus", char:"Phoebe",
     img:"slide-008.jpg", tag:"TIMED BONUS",
-    obj:"750 seconds on the tape. Questions from every reel. Streaks give \u00D72 and \u00D73.",
+    obj:"750 seconds on the tape. Questions from every reel. Streaks give \u00D72 and \u00D73. Pick your answer, then press NEXT to continue.",
     tip:"Watch the clock \u2014 it flashes red near the end.",
     flavor:"\u201CSmelly Cat, Smelly Cat\u2026\u201D" }
 ];
@@ -709,7 +709,7 @@ function gameMatch(host){
 }
 
 // ============================================================
-// GAME 5: BONUS
+// GAME 5: BONUS (NEXT button required to continue)
 // ============================================================
 function gameBonus(host){
   var pool = shuffle(BONUS_QS);
@@ -729,50 +729,74 @@ function gameBonus(host){
     for(var i = 0; i < it.o.length; i++) tagged.push({ t: it.o[i], ok: i === 0 });
     tagged = shuffle(tagged);
     var html = '<div class="card">' +
-      '<p style="display:flex;justify-content:space-between"><span>\u23F1 <b id="bnTime">' + fmt(750) + '</b></span><span>Streak \u00D7' + mult() + '</span></p>' +
+      '<p style="display:flex;justify-content:space-between"><span>\u23F1 <b id="bnTime">' + fmt(Math.max(0, Math.round((endTs - Date.now())/1000))) + '</b></span><span>Streak \u00D7' + mult() + '</span></p>' +
       '<p style="text-align:center;color:#6B5B78">Bonus ' + (answered+1) + ' of ' + pool.length + '</p>' +
       '<p style="font-size:18px;font-weight:bold;text-align:center">' + it.q + '</p>';
     for(var j = 0; j < tagged.length; j++){
       html += '<button class="opt" data-ok="' + tagged[j].ok + '">' + tagged[j].t + '</button>';
     }
-    html += '</div>';
+    html += '<div class="verdict" id="bnVerdict"></div>' +
+      '<div style="text-align:center"><button class="btn btn-purple" id="bnNext" style="display:none">NEXT \u25B6</button></div>' +
+    '</div>';
     host.innerHTML = html;
   }
 
   if(tickId) clearInterval(tickId);
   tickId = setInterval(function(){
     if(finished) return;
-    var rem = Math.round((endTs - Date.now()) / 1000);
+    var rem = Math.max(0, Math.round((endTs - Date.now()) / 1000));
     var t = $("bnTime");
-    if(t) t.textContent = fmt(Math.max(0, rem));
+    if(t) t.textContent = fmt(rem);
     if(rem <= 0) finish();
   }, 500);
 
   function finish(){
     if(finished) return;
     finished = true;
-    if(tickId) clearInterval(tickId);
+    if(tickId){ clearInterval(tickId); tickId = null; }
     setTimeout(finishLevel, 500);
   }
 
   host.onclick = function(e){
     if(finished) return;
+
+    var next = e.target.closest("#bnNext");
+    if(next){
+      answered++;
+      if(answered >= pool.length) finish();
+      else render();
+      return;
+    }
+
     var opt = e.target.closest(".opt");
     if(!opt || opt.disabled) return;
     var ok = opt.getAttribute("data-ok") === "true";
+    var it = pool[answered];
     var allOpts = host.querySelectorAll(".opt");
     for(var i = 0; i < allOpts.length; i++){
       allOpts[i].disabled = true;
       if(allOpts[i].getAttribute("data-ok") === "true") allOpts[i].classList.add("correct");
     }
-    if(ok){ streak++; addScore(100 * mult()); }
-    else{ opt.classList.add("wrong"); streak = 0; lvlMistakes++; addScore(-30); }
-    answered++;
-    setTimeout(function(){
-      if(answered >= pool.length) finish();
-      else render();
-    }, 500);
+    if(ok){
+      streak++;
+      addScore(100 * mult());
+    }else{
+      opt.classList.add("wrong");
+      streak = 0;
+      lvlMistakes++;
+      addScore(-30);
+    }
+    var verdict = $("bnVerdict");
+    if(verdict){
+      verdict.className = "verdict show " + (ok ? "ok" : "no");
+      verdict.textContent = ok
+        ? "\u2714 Correct! +" + (100 * mult())
+        : "\u2718 Wrong. \u221230. Correct answer: " + it.o[0];
+    }
+    var nb = $("bnNext");
+    if(nb){ nb.style.display = "inline-block"; nb.focus(); }
   };
+
   render();
 }
 
