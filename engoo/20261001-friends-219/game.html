@@ -1,1 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="FRIENDS VOCAB ARCADE — a retro-tape learning game built on the lesson pack for the Friends episode 'The One Where Eddie Won't Go'. Five reels, seven expressions, one terrifying new guy.">
+<title>FRIENDS VOCAB ARCADE — The One Where Eddie Won't Go</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Courier+Prime:wght@400;700&family=Caveat:wght@600;700&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+/* ===== base & palette ===== */
+:root{
+  --bg:#221912; --bg2:#2c2116; --panel-dark:#1a120b;
+  --paper:#f8f3e7; --paper2:#efe6d2; --ink:#33291c; --muted:#a08a67; --muted-d:#7d6c52;
+  --brick:#b04a2f; --brick-d:#8f3a24; --gold:#c9962c; --gold-d:#8f6a1c; --gold-l:#e8b04b;
+  --teal:#3e7c79; --plum:#8b4a68; --olive:#77834e;
+  --ok:#3f7d46; --ok-bg:#e4f2e2; --err:#b03434; --err-bg:#f8e4e0;
+  --line:#e6dac2; --hard:0 6px 0 rgba(20,13,6,.38);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+/* FIX #1: the [hidden] attribute must always win over display:flex/rules below */
+[hidden]{display:none !important;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; min-height:100vh; color:var(--paper);
+  font-family:'Nunito Sans',Verdana,sans-serif; font-size:16px; line-height:1.6;
+  background:radial-gradient(1200px 700px at 70% -10%, #3a2b1c 0%, transparent 60%),
+             radial-gradient(900px 600px at 0% 100%, #2c2116 0%, transparent 55%),
+             var(--bg);
+  overflow-x:hidden;
+}
+/* film grain */
+body::before{content:''; position:fixed; inset:0; z-index:60; pointer-events:none; opacity:.07; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+/* soft scanlines */
+body::after{content:''; position:fixed; inset:0; z-index:59; pointer-events:none; opacity:.5;
+  background:repeating-linear-gradient(to bottom, rgba(0,0,0,.09) 0 1px, transparent 1px 4px);}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;clip:rect(0 0 0 0);overflow:hidden;white-space:nowrap;}
+:focus-visible{outline:3px solid var(--gold-l); outline-offset:3px; border-radius:6px;}
+#fx{position:fixed; inset:0; z-index:70; pointer-events:none;}
+#toasts{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:80; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none;}
+.toast{background:#2f2418; color:#f6efdf; border:2px solid var(--gold); border-radius:12px; padding:10px 18px;
+  font-family:'Courier Prime',monospace; font-size:.88rem; box-shadow:0 6px 18px rgba(0,0,0,.45); animation:toastIn .3s ease;}
+.toast.out{opacity:0; transform:translateY(8px); transition:.3s;}
+@keyframes toastIn{from{opacity:0; transform:translateY(10px);}to{opacity:1; transform:none;}}
+.pop{position:fixed; z-index:85; font-family:'Righteous',sans-serif; font-size:1.25rem; color:var(--gold-l);
+  text-shadow:0 2px 0 rgba(0,0,0,.5); pointer-events:none; animation:popUp .85s ease forwards; transform:translate(-50%,-50%);}
+.pop.neg{color:#ff8a7a;}
+@keyframes popUp{0%{opacity:0; transform:translate(-50%,-30%) scale(.7);}20%{opacity:1; transform:translate(-50%,-60%) scale(1.15);}100%{opacity:0; transform:translate(-50%,-160%) scale(1);}}
 
+/* ===== preloader ===== */
+#preloader{position:fixed; inset:0; z-index:100; background:linear-gradient(180deg,#241a10,#1a120b);
+  display:flex; align-items:center; justify-content:center; transition:transform .7s cubic-bezier(.6,.05,.3,1); cursor:pointer;}
+#preloader.exit{transform:translateY(-102%);}
+.pl-inner{text-align:center; padding:20px;}
+.pl-cassette{font-size:3.4rem; animation:bob 1.6s ease-in-out infinite;}
+.pl-title{font-family:'Righteous',sans-serif; font-size:1.7rem; letter-spacing:.06em; color:var(--paper); margin:10px 0 18px;}
+.pl-title b{color:var(--gold-l);}
+.pl-bar{width:260px; height:12px; margin:0 auto; background:#3a2c1c; border-radius:8px; border:2px solid #4d3a24; overflow:hidden;}
+.pl-bar span{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--gold),var(--gold-l)); transition:width .12s linear;}
+.pl-status{font-family:'Courier Prime',monospace; font-size:.8rem; color:var(--muted); margin-top:12px; letter-spacing:.12em;}
+.pl-play{margin-top:18px; font-family:'Righteous',sans-serif; font-size:1.6rem; color:var(--gold-l); letter-spacing:.1em; animation:blink 1s steps(2) infinite;}
+@keyframes blink{50%{opacity:.15;}}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-8px) rotate(3deg);}}
+
+/* ===== HUD console ===== */
+#hud{position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center; gap:14px;
+  padding:8px 16px; background:rgba(20,13,6,.92); border-bottom:3px solid var(--gold-d); backdrop-filter:blur(6px);}
+.hud-brand{display:flex; align-items:center; gap:8px; min-width:0;}
+.hud-logo{font-size:1.3rem;}
+.hud-title{font-family:'Righteous',sans-serif; letter-spacing:.05em; white-space:nowrap; font-size:.95rem;}
+.hud-title b{color:var(--gold-l);}
+.hud-progress{display:flex; gap:6px; margin-left:4px;}
+.hud-progress .cell{width:32px; height:26px; border-radius:7px; border:2px solid #5a4527; background:#241a10;
+  font-family:'Courier Prime',monospace; font-weight:700; font-size:.72rem; color:var(--muted); cursor:pointer; padding:0;}
+.hud-progress .cell.done{background:var(--lc,#5a4527); border-color:var(--lc,#5a4527); color:#fdf6e9; box-shadow:0 3px 0 rgba(0,0,0,.4);}
+.hud-right{margin-left:auto; display:flex; align-items:center; gap:10px;}
+.hud-score{font-family:'Courier Prime',monospace; font-weight:700; font-size:.9rem; color:var(--gold-l); letter-spacing:.05em; white-space:nowrap;}
+.icon-btn{background:#241a10; color:var(--paper); border:2px solid #5a4527; border-radius:10px; width:40px; height:36px;
+  cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:1rem; box-shadow:0 4px 0 rgba(0,0,0,.4);}
+.icon-btn:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.4);}
+.icon-btn svg{width:18px; height:18px;}
+@media (max-width:640px){ .hud-title{display:none;} .hud-progress .cell{width:26px;} }
+
+/* ===== screens ===== */
+#app{padding-top:64px;}
+.screen{display:none; min-height:calc(100vh - 64px);}
+.screen.active{display:block; animation:fadeUp .45s ease;}
+#app.glitching .screen.active{animation:fadeUp .45s ease, glitch .35s steps(2);}
+@keyframes fadeUp{from{opacity:0; transform:translateY(16px);}to{opacity:1; transform:none;}}
+@keyframes glitch{0%{transform:translate(0);}25%{transform:translate(-6px,2px) skewX(2deg);}50%{transform:translate(5px,-2px);}75%{transform:translate(-3px,1px) skewX(-1deg);}100%{transform:translate(0);}}
+.wrap{max-width:1060px; margin:0 auto; padding:26px 18px 60px;}
+
+/* ===== buttons ===== */
+.btn{font-family:'Righteous',sans-serif; letter-spacing:.05em; font-size:.95rem; color:var(--ink);
+  background:var(--paper); border:2px solid #d8c9a8; border-radius:12px; padding:11px 20px; cursor:pointer; box-shadow:0 5px 0 rgba(20,13,6,.4);}
+.btn:hover{transform:translateY(-2px); box-shadow:0 7px 0 rgba(20,13,6,.4);}
+.btn:active{transform:translateY(3px); box-shadow:0 2px 0 rgba(20,13,6,.4);}
+.btn-acc{background:var(--gold); border-color:var(--gold-d); color:#241a10;}
+.btn-brick{background:var(--brick); border-color:var(--brick-d); color:#fdf6e9;}
+.ghost{background:transparent; color:var(--paper); border:2px dashed #6b5433; box-shadow:none;}
+.ghost:hover{background:rgba(255,255,255,.05); transform:none; box-shadow:none;}
+.big-play{font-family:'Righteous',sans-serif; font-size:1.5rem; letter-spacing:.12em; color:#241a10;
+  background:linear-gradient(180deg,var(--gold-l),var(--gold)); border:3px solid var(--gold-d); border-radius:18px;
+  padding:18px 52px; cursor:pointer; box-shadow:0 8px 0 var(--gold-d), 0 14px 30px rgba(0,0,0,.45); animation:pulseGlow 2s ease-in-out infinite;}
+.big-play:active{transform:translateY(5px); box-shadow:0 3px 0 var(--gold-d);}
+@keyframes pulseGlow{0%,100%{filter:brightness(1);}50%{filter:brightness(1.14);}}
+
+/* ===== intro ===== */
+#screen-intro{position:relative; overflow:hidden;}
+.intro-bg{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.2; filter:sepia(.35) saturate(.85);}
+.intro-shade{position:absolute; inset:0; background:linear-gradient(180deg, rgba(24,16,9,.55), rgba(24,16,9,.88) 70%, var(--bg));}
+.intro-wrap{position:relative; z-index:2; max-width:760px; margin:0 auto; padding:60px 20px 70px; text-align:center;}
+.intro-kicker{font-family:'Courier Prime',monospace; font-size:.78rem; letter-spacing:.22em; color:var(--gold-l); margin:0 0 14px;}
+.intro-title{font-family:'Righteous',sans-serif; font-size:clamp(2.4rem,7vw,4.4rem); line-height:1.02; margin:0 0 6px;
+  color:var(--paper); text-shadow:0 4px 0 rgba(0,0,0,.55), 0 0 34px rgba(201,150,44,.25);}
+.intro-title b{color:var(--gold-l); display:block; font-size:.62em; letter-spacing:.16em;}
+.intro-sub{color:#e9dcc2; max-width:560px; margin:14px auto 22px;}
+.chip-row{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:0 0 30px; padding:0; list-style:none;}
+.chip-row li{font-family:'Courier Prime',monospace; font-size:.74rem; letter-spacing:.05em; color:#f2e4c4;
+  border:1.5px dashed #7a6236; border-radius:999px; padding:5px 12px; background:rgba(0,0,0,.25);}
+.intro-foot{font-family:'Caveat',cursive; font-size:1.25rem; color:var(--gold-l); margin-top:26px;}
+
+/* ===== map ===== */
+.map-head{display:flex; flex-wrap:wrap; align-items:end; gap:12px; margin-bottom:8px;}
+.map-head h2{font-family:'Righteous',sans-serif; letter-spacing:.05em; margin:0; font-size:1.6rem;}
+.map-head h2 b{color:var(--gold-l);}
+.free-note{font-family:'Courier Prime',monospace; font-size:.78rem; color:var(--muted); border:1.5px dashed #6b5433; padding:6px 12px; border-radius:999px;}
+.reel-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; margin-top:20px;}
+.reel{position:relative; text-align:left; padding:0; border:none; cursor:pointer; background:var(--paper);
+  border-radius:16px; overflow:hidden; box-shadow:var(--hard); transition:transform .18s ease, box-shadow .18s ease; color:var(--ink); font:inherit;}
+.reel:hover{transform:translateY(-5px); box-shadow:0 12px 0 rgba(20,13,6,.38);}
+.reel:active{transform:translateY(2px); box-shadow:0 3px 0 rgba(20,13,6,.38);}
+.reel-preview{position:relative; display:block; aspect-ratio:16/9; background:var(--brick-d); overflow:hidden;}
+.reel-preview img{width:100%; height:100%; object-fit:cover; display:block; filter:saturate(.92);}
+.reel-num{position:absolute; top:10px; left:10px; background:#241a10; color:var(--gold-l); font-family:'Courier Prime',monospace;
+  font-weight:700; font-size:.72rem; letter-spacing:.12em; padding:4px 9px; border-radius:7px; border:1px solid var(--gold-d);}
+.reel-play{position:absolute; right:10px; bottom:10px; background:rgba(20,13,6,.85); color:#fdf6e9; border-radius:50%;
+  width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:1rem; border:2px solid var(--gold);}
+.reel-body{display:block; padding:13px 15px 15px; border-top:6px solid var(--lc,var(--brick));}
+.reel-tag{display:inline-block; font-family:'Courier Prime',monospace; font-size:.66rem; letter-spacing:.12em;
+  background:var(--lc,var(--brick)); color:#fdf6e9; border-radius:6px; padding:2px 8px; margin-bottom:7px;}
+.reel-title{display:block; font-family:'Righteous',sans-serif; font-size:1.08rem; line-height:1.25; margin-bottom:4px;}
+.reel-char{display:block; font-family:'Caveat',cursive; font-size:1.12rem; color:var(--muted-d);}
+.reel-meta{display:flex; justify-content:space-between; align-items:center; margin-top:10px;}
+.stars{font-size:1rem; color:#c9b998; letter-spacing:2px;}
+.stars .lit{color:var(--gold); text-shadow:0 0 8px rgba(201,150,44,.55);}
+.reel-best{font-family:'Courier Prime',monospace; font-size:.76rem; font-weight:700; color:var(--muted-d);}
+.finale-slot{display:flex; justify-content:center; margin-top:28px;}
+.final-btn{font-family:'Righteous',sans-serif; font-size:1.2rem; letter-spacing:.08em; color:#241a10;
+  background:linear-gradient(180deg,var(--gold-l),var(--gold)); border:3px solid var(--gold-d); border-radius:16px;
+  padding:16px 36px; cursor:pointer; box-shadow:0 7px 0 var(--gold-d); animation:pulseGlow 2s infinite;}
+.final-btn:active{transform:translateY(4px); box-shadow:0 3px 0 var(--gold-d);}
+
+/* ===== scene ===== */
+.scene-head{display:flex; flex-wrap:wrap; align-items:center; gap:14px; background:rgba(20,13,6,.75);
+  border:2px solid #4d3a24; border-radius:16px; padding:12px 16px; margin-bottom:18px;}
+.scene-thumb{width:74px; height:52px; object-fit:cover; border-radius:8px; border:2px solid var(--gold-d);}
+.scene-title h2{font-family:'Righteous',sans-serif; font-size:1.25rem; margin:0; letter-spacing:.04em;}
+.scene-tagline{font-family:'Courier Prime',monospace; font-size:.7rem; letter-spacing:.14em; color:var(--gold-l);}
+.scene-char{font-family:'Caveat',cursive; font-size:1.3rem; color:#e9dcc2; margin-left:auto;}
+.scene-stats{display:flex; gap:8px;}
+.stat{font-family:'Courier Prime',monospace; font-weight:700; font-size:.82rem; background:#241a10; border:2px solid #5a4527;
+  border-radius:9px; padding:5px 10px; color:#f2e4c4;}
+.stat.score{color:var(--gold-l);}
+.stat.mist{color:#ff9d8d;}
+.panel{background:var(--paper); color:var(--ink); border-radius:16px; border:1px solid var(--line); box-shadow:var(--hard); padding:20px;}
+.timer{margin:0 0 16px;}
+.timer .track{height:14px; background:#3a2c1c; border:2px solid #4d3a24; border-radius:8px; overflow:hidden;}
+.timer .fill{display:block; height:100%; width:100%; background:linear-gradient(90deg,var(--olive),var(--gold)); transition:width .25s linear;}
+.timer.danger .fill{background:linear-gradient(90deg,#d1452e,#ff6a4a); animation:flash .5s steps(2) infinite;}
+@keyframes flash{50%{opacity:.45;}}
+.timer-label{display:flex; justify-content:space-between; font-family:'Courier Prime',monospace; font-size:.72rem; color:var(--muted-d); margin-bottom:4px;}
+.streak-badge{display:inline-block; font-family:'Courier Prime',monospace; font-weight:700; font-size:.8rem;
+  background:#241a10; color:var(--gold-l); border-radius:999px; padding:4px 12px; margin-bottom:12px;}
+.q-text{font-family:'Nunito Sans',sans-serif; font-weight:800; font-size:1.2rem; line-height:1.45; margin:6px 0 16px;}
+.next-btn{margin-top:14px; width:100%; font-size:1.05rem;}
+.explain{margin-top:14px; background:var(--paper2); border-left:5px solid var(--gold); border-radius:0 12px 12px 0; padding:12px 14px; font-size:.96rem;}
+.explain.good{border-left-color:var(--ok);}
+.explain.bad{border-left-color:var(--err);}
+.verdict{font-family:'Righteous',sans-serif; letter-spacing:.04em; display:block; margin-bottom:4px;}
+.verdict.good{color:var(--ok);} .verdict.bad{color:var(--err);}
+
+/* true / false */
+.tf-btns{display:flex; gap:14px; flex-wrap:wrap;}
+.tf-btn{flex:1 1 160px; font-family:'Righteous',sans-serif; font-size:1.15rem; letter-spacing:.06em; padding:18px 10px;
+  border-radius:14px; cursor:pointer; border:3px solid; box-shadow:0 5px 0 rgba(20,13,6,.35); transition:transform .12s ease;}
+.tf-btn.real{background:var(--ok-bg); border-color:var(--ok); color:var(--ok);}
+.tf-btn.delu{background:var(--err-bg); border-color:var(--err); color:var(--err);}
+.tf-btn:not(:disabled):hover{transform:translateY(-3px);}
+.tf-btn.sel{transform:translateY(-3px); box-shadow:0 0 0 4px var(--gold-l), 0 5px 0 rgba(20,13,6,.35);}
+.tf-btn:disabled{cursor:default; opacity:.55;}
+.tf-btn.good{background:var(--ok); color:#fdf6e9; opacity:1;}
+.tf-btn.badd{background:var(--err); color:#fdf6e9; opacity:1;}
+
+/* multiple choice */
+.mc-opts{display:grid; gap:10px;}
+.mc-opt{text-align:left; font:inherit; font-weight:600; font-size:1rem; color:var(--ink); background:#fbf7ec;
+  border:2px solid #d8c9a8; border-radius:12px; padding:12px 16px; cursor:pointer; box-shadow:0 4px 0 rgba(20,13,6,.22);}
+.mc-opt:not(:disabled):hover{border-color:var(--brick); transform:translateY(-2px);}
+.mc-opt .ol{font-family:'Courier Prime',monospace; font-weight:700; color:var(--brick-d); margin-right:8px;}
+.mc-opt:disabled{cursor:default; opacity:.55;}
+.mc-opt.good{background:var(--ok-bg); border-color:var(--ok); opacity:1;}
+.mc-opt.badd{background:var(--err-bg); border-color:var(--err); opacity:1;}
+.mc-opt.dim{opacity:.4;}
+.char-line{margin-top:14px; font-family:'Caveat',cursive; font-size:1.4rem; color:var(--brick-d);}
+
+/* fill blanks */
+.fb-sent{font-size:1.05rem; line-height:2; padding:14px 16px; border-radius:12px; background:#fbf7ec; border:1.5px solid var(--line); margin-bottom:10px;}
+.fb-blank{font:inherit; font-weight:800; font-family:'Courier Prime',monospace; color:var(--brick-d);
+  background:#f1e6cc; border:2px dashed var(--brick); border-radius:8px; padding:2px 12px; margin:0 3px; cursor:pointer; min-width:120px;}
+.fb-blank.sel{background:var(--gold-l); border-style:solid; box-shadow:0 0 0 3px rgba(201,150,44,.4);}
+.fb-blank.locked{background:var(--ok-bg); border:2px solid var(--ok); color:var(--ok); cursor:default;}
+.fb-bank{display:flex; flex-wrap:wrap; gap:9px; margin-top:16px;}
+.fb-chip{font-family:'Courier Prime',monospace; font-weight:700; font-size:.88rem; color:#241a10; background:linear-gradient(180deg,#f5e9c8,#e8d6a4);
+  border:2px solid var(--gold-d); border-radius:999px; padding:8px 16px; cursor:pointer; box-shadow:0 4px 0 rgba(20,13,6,.3);}
+.fb-chip:hover{transform:translateY(-2px);}
+.fb-chip.sel{background:var(--gold-l); box-shadow:0 0 0 3px rgba(201,150,44,.45), 0 4px 0 rgba(20,13,6,.3);}
+.fb-chip.gone{opacity:.25; pointer-events:none; text-decoration:line-through;}
+.fb-count{font-family:'Courier Prime',monospace; font-size:.8rem; color:var(--muted-d); margin-top:12px;}
+
+/* match */
+.mt-example{font-family:'Courier Prime',monospace; font-size:.82rem; background:#241a10; color:#f2e4c4;
+  border-radius:10px; padding:10px 14px; margin-bottom:14px; border:1.5px dashed var(--gold-d);}
+.mt-example b{color:var(--gold-l);}
+.mt-cols{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media (max-width:640px){ .mt-cols{grid-template-columns:1fr;} }
+.mt-col h4{font-family:'Courier Prime',monospace; font-size:.72rem; letter-spacing:.16em; color:var(--muted-d); margin:0 0 8px;}
+.mt-item{display:block; width:100%; text-align:left; font:inherit; font-weight:700; font-size:.95rem; color:var(--ink);
+  background:#fbf7ec; border:2px solid #d8c9a8; border-radius:12px; padding:11px 14px; margin-bottom:9px; cursor:pointer; box-shadow:0 3px 0 rgba(20,13,6,.2);}
+.mt-item:not(.locked):hover{border-color:var(--plum);}
+.mt-item.sel{border-color:var(--gold); background:#fdf3d7; box-shadow:0 0 0 3px rgba(201,150,44,.4);}
+.mt-item.locked{background:var(--ok-bg); border-color:var(--ok); color:var(--ok); cursor:default; opacity:.85;}
+.mt-item.err{animation:shake .4s ease;}
+.mt-count{font-family:'Courier Prime',monospace; font-weight:700; color:var(--brick-d); margin-top:6px;}
+
+/* shake & pulse */
+.shake{animation:shake .45s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
+.pulse{animation:pulse .5s ease;}
+@keyframes pulse{0%{transform:scale(1);}45%{transform:scale(1.05);}100%{transform:scale(1);}}
+
+/* ===== finale ===== */
+.fin-hero{text-align:center; margin-bottom:22px;}
+.rank-badge{display:inline-block; font-family:'Righteous',sans-serif; font-size:1.5rem; letter-spacing:.08em; color:#241a10;
+  background:linear-gradient(180deg,var(--gold-l),var(--gold)); border:3px solid var(--gold-d); border-radius:16px; padding:14px 30px; box-shadow:0 7px 0 var(--gold-d);}
+/* FIX #4: readable ink colors on the light paper panel */
+.fin-total{font-family:'Righteous',sans-serif; font-size:clamp(2.4rem,7vw,3.6rem); color:var(--brick-d);
+  text-shadow:0 2px 0 rgba(201,150,44,.3); margin:14px 0 2px;}
+.fin-stars{font-size:1.6rem; letter-spacing:6px; color:var(--gold-d);}
+.fin-table{width:100%; border-collapse:collapse; margin:8px 0 20px; font-size:.95rem;}
+.fin-table th{font-family:'Courier Prime',monospace; font-size:.72rem; letter-spacing:.14em; text-align:left; color:var(--muted-d); padding:8px 10px; border-bottom:2px solid #d8c9a8;}
+.fin-table td{padding:10px; border-bottom:1px dashed #d8c9a8; color:#4a3b28;}
+.fin-table td.st{color:var(--gold-d); letter-spacing:2px;}
+.fin-table td.num{font-family:'Courier Prime',monospace; font-weight:700; color:var(--brick-d);}
+.fin-actions{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:8px;}
+.fin-note{font-family:'Caveat',cursive; font-size:1.3rem; color:var(--gold-d); text-align:center; margin-top:18px;}
+.fin-note a{color:var(--brick-d);}
+
+/* ===== modals ===== */
+.modal-back{position:fixed; inset:0; z-index:90; background:rgba(12,8,4,.72); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center; padding:18px;}
+.modal{background:var(--paper); color:var(--ink); border-radius:18px; box-shadow:0 14px 0 rgba(10,6,2,.4);
+  max-width:560px; width:100%; max-height:88vh; overflow:auto; padding:22px; animation:mIn .35s cubic-bezier(.2,.9,.3,1.2);}
+@keyframes mIn{from{opacity:0; transform:translateY(40px) scale(.94);}to{opacity:1; transform:none;}}
+.m-img{width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:12px; border:2px solid var(--line); margin-bottom:14px;}
+.m-tag{display:inline-block; font-family:'Courier Prime',monospace; font-size:.68rem; letter-spacing:.14em;
+  background:var(--brick); color:#fdf6e9; border-radius:6px; padding:3px 9px; margin-bottom:8px;}
+.modal h3{font-family:'Righteous',sans-serif; font-size:1.45rem; margin:0 0 10px; letter-spacing:.03em;}
+.m-obj,.m-tip{margin:8px 0; font-size:.98rem;}
+.m-flavor{font-family:'Caveat',cursive; font-size:1.35rem; color:var(--brick-d); margin:14px 0 4px;}
+.m-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px;}
+.stars-big{display:flex; gap:10px; justify-content:center; font-size:2.6rem; margin:8px 0 4px;}
+.stars-big .st{color:#cfc2a4; transform:scale(.6); opacity:.6; transition:transform .3s cubic-bezier(.2,1.4,.4,1), color .3s;}
+.stars-big .st.lit{color:var(--gold); text-shadow:0 0 16px rgba(201,150,44,.6); transform:scale(1) rotate(-8deg); opacity:1;}
+.res-line{font-family:'Courier Prime',monospace; font-weight:700; text-align:center; font-size:1rem; color:var(--muted-d);}
+.res-score{font-family:'Righteous',sans-serif; font-size:2.6rem; text-align:center; color:var(--brick-d); line-height:1.1;}
+.newbest{text-align:center; font-family:'Caveat',cursive; font-size:1.4rem; color:var(--ok);}
+
+/* ===== reduced motion ===== */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important; transition:none !important;}
+  html{scroll-behavior:auto;}
+  #fx{display:none;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+<div id="toasts"></div>
+<div id="sr" class="vh" aria-live="polite"></div>
+
+<!-- ===== preloader shell ===== -->
+<div id="preloader" role="status" aria-label="Loading the tape">
+  <div class="pl-inner">
+    <div class="pl-cassette" aria-hidden="true">📼</div>
+    <div class="pl-title">FRIENDS <b>VOCAB ARCADE</b></div>
+    <div class="pl-bar"><span id="pl-fill"></span></div>
+    <div class="pl-status" id="pl-status">REWINDING THE TAPE…</div>
+    <div class="pl-play" id="pl-play" hidden>PLAY ▶</div>
+  </div>
+</div>
+
+<!-- ===== fixed header console ===== -->
+<header id="hud">
+  <div class="hud-brand">
+    <span class="hud-logo" aria-hidden="true">📼</span>
+    <span class="hud-title">FRIENDS <b>VOCAB ARCADE</b></span>
+  </div>
+  <div class="hud-progress" id="hud-progress" aria-label="Reel progress"></div>
+  <div class="hud-right">
+    <span class="hud-score" id="hud-score">0 PTS</span>
+    <button class="icon-btn" id="btn-sound" aria-label="Toggle sound" aria-pressed="false"><i data-lucide="volume-2">🔊</i></button>
+    <button class="icon-btn" id="btn-map" aria-label="Back to the level map"><i data-lucide="map">🗺️</i></button>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- ===== SCREEN: intro ===== -->
+  <section id="screen-intro" class="screen active" aria-label="Intro">
+    <img class="intro-bg" src="https://item1000-collab.github.io/ai/engoo/20261001-friends-219/slide-001.jpg" alt="">
+    <div class="intro-shade" aria-hidden="true"></div>
+    <div class="intro-wrap">
+      <p class="intro-kicker">A 1996 SITCOM · AN AI-BUILT LESSON PACK · ONE ARCADE TAPE</p>
+      <h1 class="intro-title">FRIENDS<b>VOCAB ARCADE</b></h1>
+      <p class="intro-sub">Welcome to 1996. Three roommates, a terrifying new guy, a porcelain dog, and a feminist self-help book. Five reels of mini-games will drill seven native expressions until they stick.</p>
+      <ul class="chip-row" aria-label="Target expressions">
+        <li>out of the blue</li><li>smack-dab</li><li>dehydrate</li><li>square one</li>
+        <li>suck it up</li><li>condescending</li><li>steal my wind</li>
+      </ul>
+      <button class="big-play" id="btn-play">PLAY ▶</button>
+      <p class="intro-foot">Based on “The One Where Eddie Won’t Go” · Level: Intermediate / Advanced</p>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN: level map ===== -->
+  <section id="screen-map" class="screen" aria-label="Level map">
+    <div class="wrap">
+      <div class="map-head">
+        <h2>🎞️ THE <b>REEL SHELF</b></h2>
+        <span class="free-note">ALL REELS UNLOCKED · PLAY IN ANY ORDER</span>
+      </div>
+      <div class="reel-grid" id="reel-grid"></div>
+      <div class="finale-slot" id="finale-slot"></div>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN: scene ===== -->
+  <section id="screen-scene" class="screen" aria-label="Level scene">
+    <div class="wrap">
+      <div class="scene-head">
+        <button class="btn ghost" id="btn-exit">← BACK TO MAP</button>
+        <img class="scene-thumb" id="scene-thumb" src="" alt="">
+        <div class="scene-title">
+          <span class="scene-tagline" id="scene-tag"></span>
+          <h2 id="scene-name"></h2>
+        </div>
+        <span class="scene-char" id="scene-char"></span>
+        <div class="scene-stats">
+          <span class="stat score" id="scene-score">0 PTS</span>
+          <span class="stat mist" id="scene-mist">✖ 0</span>
+        </div>
+      </div>
+      <div id="game-area"></div>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN: finale ===== -->
+  <section id="screen-finale" class="screen" aria-label="Finale">
+    <div class="wrap" id="finale-wrap"></div>
+  </section>
+
+</main>
+
+<!-- ===== modal: level briefing ===== -->
+<div class="modal-back" id="modal-brief" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="brief-title">
+    <img class="m-img" id="brief-img" src="" alt="Lesson slide preview">
+    <span class="m-tag" id="brief-tag"></span>
+    <h3 id="brief-title"></h3>
+    <p class="m-obj" id="brief-obj"></p>
+    <p class="m-tip" id="brief-tip"></p>
+    <p class="m-flavor" id="brief-flavor"></p>
+    <div class="m-actions">
+      <button class="btn btn-acc" id="brief-start" data-autofocus>START ▶</button>
+      <button class="btn ghost" id="brief-cancel" style="color:var(--ink); border-color:#b9a67e;">MAP</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== modal: level results ===== -->
+<div class="modal-back" id="modal-result" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="res-title">
+    <span class="m-tag" id="res-tag"></span>
+    <h3 id="res-title">REEL COMPLETE</h3>
+    <div class="stars-big" id="res-stars" aria-label="Stars earned"></div>
+    <div class="res-score" id="res-score">0</div>
+    <p class="res-line" id="res-line"></p>
+    <p class="newbest" id="res-best" hidden>★ NEW PERSONAL BEST! ★</p>
+    <p class="m-flavor" id="res-flavor"></p>
+    <div class="m-actions" id="res-actions"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.min.js" defer></script>
+<script>
+(function(){ "use strict";
+
+/* ============================================================
+   UTILITIES
+============================================================ */
+const $  = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function refreshIcons(){ try { if (window.lucide && window.lucide.createIcons) window.lucide.createIcons(); } catch(e){} }
+
+function toast(msg){
+  const w = $('#toasts'); const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg; w.appendChild(t);
+  $('#sr').textContent = msg;
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 350); }, 2600);
+}
+
+function popFloat(x, y, text, neg){
+  if (RM) return;
+  const el = document.createElement('div');
+  el.className = 'pop' + (neg ? ' neg' : ''); el.textContent = text;
+  el.style.left = x + 'px'; el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+
+/* confetti particles on a full-screen canvas */
+let fxParts = [], fxRunning = false;
+function spawnConfetti(n){
+  if (RM || !n) return;
+  const c = $('#fx'); c.width = innerWidth; c.height = innerHeight;
+  const colors = ['#c9962c','#b04a2f','#3e7c79','#77834e','#e8b04b','#f8f3e7'];
+  for (let i = 0; i < (n || 90); i++){
+    fxParts.push({ x: Math.random()*c.width, y: -20 - Math.random()*c.height*0.4,
+      vx: (Math.random()-0.5)*3, vy: 2 + Math.random()*3.5, r: 4 + Math.random()*6,
+      rot: Math.random()*Math.PI, vr: (Math.random()-0.5)*0.25, col: colors[i % colors.length] });
+  }
+  if (!fxRunning){ fxRunning = true; requestAnimationFrame(fxLoop); }
+}
+function fxLoop(){
+  const c = $('#fx'); const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  fxParts = fxParts.filter(p => p.y < c.height + 30);
+  fxParts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.045; p.rot += p.vr;
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.col;
+    ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r*0.62); ctx.restore(); });
+  if (fxParts.length) requestAnimationFrame(fxLoop);
+  else { fxRunning = false; ctx.clearRect(0, 0, c.width, c.height); }
+}
+
+/* ============================================================
+   AUDIO — Web Audio API, no files
+============================================================ */
+let AC = null;
+function initAudio(){
+  try {
+    if (!AC){ const C = window.AudioContext || window.webkitAudioContext; if (C) AC = new C(); }
+    if (AC && AC.state === 'suspended') AC.resume();
+  } catch(e){}
+}
+document.addEventListener('pointerdown', initAudio);
+document.addEventListener('keydown', initAudio);
+
+function tone(freq, dur, type, vol, when){
+  if (state.muted || !AC) return;
+  try {
+    const a = AC, t = a.currentTime + (when || 0);
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+  } catch(e){}
+}
+function noiseBurst(dur, vol, when){
+  if (state.muted || !AC) return;
+  try {
+    const a = AC, t = a.currentTime + (when || 0);
+    const len = Math.max(1, Math.floor(a.sampleRate * dur));
+    const buf = a.createBuffer(1, len, a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = a.createBufferSource(); src.buffer = buf;
+    const g = a.createGain(), f = a.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 1400;
+    g.gain.setValueAtTime(vol || 0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(a.destination); src.start(t); src.stop(t + dur + 0.05);
+  } catch(e){}
+}
+const SFX = {
+  click(){ tone(700, 0.05, 'square', 0.09); },
+  flip(){ tone(340, 0.07, 'triangle', 0.13); tone(500, 0.07, 'triangle', 0.11, 0.05); },
+  correct(){ tone(523, 0.09, 'square', 0.13); tone(659, 0.09, 'square', 0.13, 0.07); tone(784, 0.13, 'square', 0.13, 0.14); },
+  wrong(){ tone(180, 0.18, 'sawtooth', 0.15); tone(120, 0.22, 'sawtooth', 0.13, 0.09); },
+  match(){ tone(660, 0.08, 'triangle', 0.14); tone(880, 0.13, 'triangle', 0.14, 0.07); },
+  fanfare(){ [392,523,659,784,1046].forEach((f,i) => tone(f, 0.13, 'square', 0.12, i*0.09)); noiseBurst(0.5, 0.1, 0.45); },
+  tick(){ tone(1000, 0.03, 'square', 0.05); },
+  cheer(){ noiseBurst(0.9, 0.18); [523,659,784,1046].forEach((f,i) => tone(f, 0.16, 'triangle', 0.11, i*0.12)); }
+};
+
+/* ============================================================
+   PERSISTENT STATE — localStorage with version + try/catch
+============================================================ */
+const LS_KEY = 'friends_vocab_arcade_v1';
+function loadState(){
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) { const p = JSON.parse(raw); if (p && p.v === 1) return p; } } catch(e){}
+  return { v: 1, muted: false, levels: {} };
+}
+function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){} }
+const state = loadState();
+
+/* ============================================================
+   CLEANUP REGISTRY — every game removes timers & listeners
+   FIX #8: later/every entries now self-remove after firing,
+   so the registry no longer grows forever.
+============================================================ */
+const Clean = {
+  list: [],
+  add(fn){ this.list.push(fn); },
+  remove(fn){ const i = this.list.indexOf(fn); if (i > -1) this.list.splice(i, 1); },
+  reset(){ const l = this.list.slice(); this.list = []; l.forEach(f => { try { f(); } catch(e){} }); }
+};
+function setCleanup(fn){ Clean.add(fn); }
+function runCleanup(){ Clean.reset(); }
+function on(el, ev, fn, opt){ el.addEventListener(ev, fn, opt); Clean.add(() => el.removeEventListener(ev, fn, opt)); }
+/* one-shot timer that cleans itself up after firing */
+function later(fn, ms){
+  let id;
+  const cancel = () => clearTimeout(id);
+  id = setTimeout(() => { Clean.remove(cancel); fn(); }, ms);
+  Clean.add(cancel);
+  return id;
+}
+/* repeating timer; entry stays until it is cancelled or the scene is cleaned up */
+function every(fn, ms){
+  let id;
+  const cancel = () => clearInterval(id);
+  id = setInterval(fn, ms);
+  Clean.add(cancel);
+  return id;
+}
+
+/* ============================================================
+   DATA — resources, scenes, question sets
+   FIX #2: slide filenames use THREE digits (slide-001.jpg),
+   matching the real files on the server.
+============================================================ */
+const BASE = 'https://item1000-collab.github.io/ai/engoo/20261001-friends-219/';
+const SLIDE = n => BASE + 'slide-' + String(n).padStart(3, '0') + '.jpg';
+const PDF_URL = BASE + '219-friends.pdf';
+
+const SCENES = [
+  { id:'eddie', num:'01', title:'The Roommate Who Won’t Go', char:'Chandler Bing', emoji:'🙄',
+    color:'#b04a2f', slide:SLIDE(3), tag:'FILL THE BLANKS',
+    obj:'🎯 Fill all 7 blanks with the right expression from the word bank.',
+    tip:'💡 Click a blank first, then a word — or the other way around. Wrong words bounce back and each return costs 15 points.',
+    flavor:'Eddie agreed to move out. Eddie is still here. Eddie is drying fruit. Good luck, pal.' },
+  { id:'brain', num:'02', title:'Real or Delusion?', char:'Eddie Menuek', emoji:'😵‍💫',
+    color:'#3e7c79', slide:SLIDE(13), tag:'REACTION · TRUE / FALSE',
+    obj:'🎯 Judge 8 statements. REAL matches the lesson. DELUSION matches Eddie’s head.',
+    tip:'💡 Arrow keys to choose, Enter to confirm. Streaks multiply your score, and the tape waits while you read every explanation.',
+    flavor:'Did we take a road trip to Las Vegas? …Did we?' },
+  { id:'proud', num:'03', title:'Pride vs. Poverty', char:'Joey Tribbiani', emoji:'🍕',
+    color:'#c9962c', slide:SLIDE(6), tag:'MULTIPLE CHOICE',
+    obj:'🎯 Answer 5 questions about Joey’s empty pockets. One attempt each.',
+    tip:'💡 Read all three options before you click. Joey’s pride is expensive — wrong answers cost 25 points.',
+    flavor:'$3,500. On ceramic animals. Okay? Okay.' },
+  { id:'wind', num:'04', title:'Match the Meaning', char:'Rachel Green', emoji:'📖',
+    color:'#8b4a68', slide:SLIDE(9), tag:'MATCH THE MEANING',
+    obj:'🎯 Connect 6 expressions on the left with their meanings on the right.',
+    tip:'💡 Click a word, then a meaning. Correct pairs lock green. Wrong picks shake, clear the selection, and cost 10 points.',
+    flavor:'This is about you stealing my wind! How do you expect me to grow if you won’t let me blow?' },
+  { id:'bonus', num:'05', title:'Windkeeper Bonus Round', char:'Phoebe Buffay', emoji:'⚡',
+    color:'#77834e', slide:SLIDE(10), tag:'TIMED BONUS · 750s',
+    obj:'🎯 12 rapid questions from every reel. 750 seconds on one big clock.',
+    tip:'💡 Streak builds a × multiplier. The clock flashes red in the final minute. Don’t stop growing!',
+    flavor:'Women are goddesses. Men are lightning-bearers. Breathe.' }
+];
+
+/* --- Level 1 · fill the blanks --- */
+const FB_ITEMS = [
+  { s:['Eddie swears that Chandler’s demand to move out came completely ',' — he says it arrived from nowhere.'], a:'out of the blue' },
+  { s:['Chandler fires back that his demand did not come from nowhere: it landed ',' in the middle of the blue!'], a:'smack-dab' },
+  { s:['Eddie’s new hobby is to ',' grapes, apricots and, bizarrely, water balloons.'], a:'dehydrate' },
+  { s:['Joey insists he is not starting from ',' just because he lost his job.'], a:'square one' },
+  { s:['Ross tells Joey to ',' and take the cab driver job to pay his bills.'], a:'suck it up' },
+  { s:['Joey accuses Ross of being judgmental and ',' when Ross lectures him about his $3,500 bill.'], a:'condescending' },
+  { s:['Rachel yells, “This is about you ',' my wind! How do you expect me to grow if you won’t let me blow?”'], a:'stealing' }
+];
+const FB_BANK = ['out of the blue','smack-dab','dehydrate','square one','suck it up','condescending','stealing',
+                 'gossiping','refreshing','condensing','sidewalk'];
+
+/* --- Level 2 · real or delusion (a: 0 = REAL, 1 = DELUSION) --- */
+const TF_ITEMS = [
+  { t:'Eddie happily dehydrates fruit the day after he agreed to move out.', a:0,
+    x:'REAL. The lesson says: “The next day, Eddie is still there, happily dehydrating fruit. He has completely forgotten the conversation.”' },
+  { t:'If an event happens out of the blue, it means it was carefully planned.', a:1,
+    x:'DELUSION. The definition says: “Happening suddenly and unexpectedly, without warning.” Nothing was planned — that is the whole point.' },
+  { t:'Joey’s money problems started when his Days of Our Lives character fell down an elevator shaft.', a:0,
+    x:'REAL. The slide states: “Joey’s character on Days of Our Lives falls down an elevator shaft, leaving him unemployed.”' },
+  { t:'Dehydrating fruit means adding extra water to make it bigger.', a:1,
+    x:'DELUSION. To dehydrate is “to remove all water and moisture from a substance (usually food) to preserve it.” Eddie removes water — he does not add it.' },
+  { t:'A condescending person treats you like you are their equal.', a:1,
+    x:'DELUSION. The answer key is explicit: condescending people treat you like you are LESS than them — “speaking down to someone.”' },
+  { t:'Eddie believes he and Chandler just took a road trip to Las Vegas.', a:0,
+    x:'REAL. Eddie “thinks they are best friends who just took a road trip to Las Vegas.” That is Eddie logic.' },
+  { t:'At the end of the episode, Ross buys Joey’s ceramic dog.', a:0,
+    x:'REAL. The synthesis matrix says Joey’s resolution: “Realizes he has to work; Ross buys his dog.”' },
+  { t:'The Windkeeper book says men are windkeepers who give women their power.', a:1,
+    x:'DELUSION. The book claims “men are lightning-bearers who constantly steal women’s power.” Giving power? Eddie-level fantasy.' }
+];
+
+/* --- Level 3 · multiple choice --- */
+const MC_ITEMS = [
+  { q:'Why is Joey suddenly unemployed?', o:['His soap-opera character fell down an elevator shaft','He was fired for arriving late to the studio','He quit acting to become a full-time cab driver'], a:0,
+    x:'The slide: “Joey’s character on Days of Our Lives falls down an elevator shaft, leaving him unemployed.”',
+    ok:['How you doin’! Nailed it.','Correct! Somebody gets a celebratory sandwich.','Boom! Brain intact.'],
+    no:['Oh no. My brain just fell down an elevator shaft.','Could this answer BE any more wrong?','Wrong! And I already bought ceramic animals with the prize money.'] },
+  { q:'Which role does Joey refuse to audition for?', o:['A small cab driver part','The lead in a Hollywood movie','A coffee commercial'], a:0,
+    x:'He “refuses to audition for a small cab driver role because he feels it is a step backward for his career.”',
+    ok:['Nailed it! Pride intact… for now.','Correct! You should charge for this.','Yes! Dr. Drake Ramoray would agree.'],
+    no:['Wrong! That one hurt my wallet.','Nope. Back to square one, baby.','Incorrect — and I still owe $3,500.'] },
+  { q:'How big is Joey’s credit card bill?', o:['$3,500','$350','$35,000'], a:0,
+    x:'Joey accuses Ross of being condescending “when Ross lectures him about his $3,500 credit card bill.”',
+    ok:['Correct! Unfortunately it is true.','How you doin’! Painfully right.','Yes. $3,500. I need to sit down.'],
+    no:['I wish it were that small.','Wrong — and my mail keeps screaming OVERDUE.','Nope. Add a comma and try again.'] },
+  { q:'What did Joey buy that destroyed his budget?', o:['Ceramic animals','Water balloons','A sailboat'], a:0,
+    x:'The slide: “He owes thousands of dollars on his credit cards for buying ceramic animals.” The porcelain dog is real. And expensive.',
+    ok:['Correct! The dog is beautiful, though.','Yes! Kibbles for the porcelain dog.','Right! He’s a quality boy.'],
+    no:['Wrong! Balloons are Eddie’s thing.','Nope. The dog judges you now.','Incorrect — the dog is disappointed.'] },
+  { q:'How does Joey’s storyline resolve?', o:['He realizes he has to work, and Ross buys his dog','Chandler changes the locks on him','The girls burn the Windkeeper book'], a:0,
+    x:'The synthesis matrix: “Realizes he has to work; Ross buys his dog.” Core idiom: suck it up.',
+    ok:['Correct! Time to suck it up.','Yes! Work first, dignity negotiations later.','Right! And the dog gets a good home.'],
+    no:['Wrong — that’s Chandler’s storyline.','Nope, that’s the girls’ ending.','Incorrect! Even the dog knew that.'] }
+];
+
+/* --- Level 4 · match the meaning (6 pairs) --- */
+const PAIRS = [
+  { w:'out of the blue', m:'suddenly and without warning' },
+  { w:'dehydrate',       m:'to remove all the water' },
+  { w:'square one',      m:'the very beginning again' },
+  { w:'suck it up',      m:'endure it without complaining' },
+  { w:'condescending',   m:'speaking down to people' },
+  { w:'steal my wind',   m:'drain someone’s drive to grow' }
+];
+
+/* --- Level 5 · timed bonus (tf: a true/false, mc: a index) --- */
+const BONUS_ITEMS = [
+  { t:'tf', q:'Chandler’s resolution: he changes the locks and pretends Joey never left.', a:true,
+    x:'Matrix: “Changes the locks and pretends Joey never left.”' },
+  { t:'tf', q:'Smack-dab means roughly and approximately.', a:false,
+    x:'Smack-dab means exactly in the middle; squarely.' },
+  { t:'mc', q:'What is Eddie’s new hobby?', o:['Dehydrating fruit and water balloons','Sailing model ships','Collecting ceramic dogs'], a:0,
+    x:'Eddie becomes a “dehydrating maniac, drying grapes, apricots, and bizarrely, water balloons.”' },
+  { t:'tf', q:'The Windkeeper book claims that women are goddesses.', a:true,
+    x:'The slide: “The book claims that women are goddesses and men are lightning-bearers.”' },
+  { t:'tf', q:'Joey’s credit card bill came to $3,500.', a:true,
+    x:'Ross lectures him “about his $3,500 credit card bill.”' },
+  { t:'tf', q:'Square one means the final victory.', a:false,
+    x:'Square one means the very beginning — having to start over after a failure.' },
+  { t:'mc', q:'Who reads Be Your Own Windkeeper?', o:['Rachel, Monica and Phoebe','Chandler and Eddie','Ross and Joey'], a:0,
+    x:'“Phoebe, Monica, and Rachel read a feminist empowerment book that changes their worldview.”' },
+  { t:'tf', q:'Athletes must drink water so they don’t dehydrate.', a:true,
+    x:'Straight from the usage note: “Athletes must drink water so they don’t dehydrate.”' },
+  { t:'tf', q:'“Suck it up” is formal English for board meetings.', a:false,
+    x:'The lesson labels it “idiom – informal.” Keep it away from your boss.' },
+  { t:'mc', q:'Literally, “steal my wind” means…', o:['To block the breeze from a sailboat','To take someone’s wallet','To whisper very loudly'], a:0,
+    x:'“Literal meaning: To block the breeze from a sailboat, stopping it from moving.”' },
+  { t:'tf', q:'Eddie thinks he and Chandler just took a road trip to Las Vegas.', a:true,
+    x:'Eddie “thinks they are best friends who just took a road trip to Las Vegas.”' },
+  { t:'tf', q:'Rachel yells: “How do you expect me to grow if you won’t let me blow?”', a:true,
+    x:'Exactly — that is her windkeeper accusation at Ross.' },
+  { t:'mc', q:'The girls finally realize that…', o:['Friendship is more important than a book','The book is a legal document','Ross is a true windkeeper'], a:0,
+    x:'Matrix: “Realize friendship is more important than a book.”' },
+  { t:'tf', q:'Chandler snaps that his demand was smack-dab in the middle of the blue.', a:true,
+    x:'Chandler “angrily replies that his demand is NOT out of the blue, but rather smack-dab in the middle of the blue!”' }
+];
+
+/* --- scoring constants --- */
+const PTS = { fb:100, fbPen:15, tfBase:80, tfSpeed:40, tfStreak:25, tfPen:20,
+              mc:150, mcPen:25, match:100, matchPen:10, bonusBase:60, bonusPen:20 };
+const TIMER_TF = 600;   /* ten minutes per card, per spec */
+const TIMER_BONUS = 750;
+const BONUS_READ_MS = 1600; /* FIX #7: time to actually read the bonus explanation */
+
+/* ============================================================
+   SHELL — screens, HUD, modals
+============================================================ */
+let currentScene = null;
+let screenNow = 'intro';
+
+function showScreen(name){
+  if (screenNow === 'scene' && name !== 'scene') runCleanup();
+  $$('.screen').forEach(s => s.classList.remove('active'));
+  $('#screen-' + name).classList.add('active');
+  const app = $('#app');
+  app.classList.remove('glitching'); void app.offsetWidth; app.classList.add('glitching');
+  screenNow = name;
+  window.scrollTo({ top: 0, behavior: RM ? 'auto' : 'smooth' });
+}
+
+function totalScore(){ let t = 0; SCENES.forEach(s => { const r = state.levels[s.id]; if (r) t += r.best || 0; }); return t; }
+function isComplete(id){ return !!(state.levels[id]); }
+function allComplete(){ return SCENES.every(s => isComplete(s.id)); }
+
+function updateHUD(live){
+  const t = totalScore() + (live || 0);
+  $('#hud-score').textContent = t + ' PTS';
+  const prog = $('#hud-progress');
+  let html = '';
+  SCENES.forEach(s => {
+    const done = isComplete(s.id);
+    html += '<button class="cell' + (done ? ' done' : '') + '" style="--lc:' + s.color + '" data-goto="' + s.id +
+            '" aria-label="Reel ' + s.num + ': ' + s.title + (done ? ' — completed' : ' — not completed yet') + '">' + s.num + '</button>';
+  });
+  prog.innerHTML = html;
+}
+
+function renderSound(){
+  const b = $('#btn-sound');
+  b.innerHTML = state.muted ? '<i data-lucide="volume-x">🔇</i>' : '<i data-lucide="volume-2">🔊</i>';
+  b.setAttribute('aria-pressed', String(!state.muted));
+  refreshIcons();
+}
+
+/* modals */
+let lastFocus = null;
+function openModal(m){ lastFocus = document.activeElement; m.hidden = false; const f = m.querySelector('[data-autofocus]'); if (f) setTimeout(() => f.focus(), 60); }
+function closeModal(m){ m.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+function anyModalOpen(){ return !!document.querySelector('.modal-back:not([hidden])'); }
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const brief = $('#modal-brief'), res = $('#modal-result');
+  if (!brief.hidden){ closeModal(brief); goMap(); }
+  else if (!res.hidden){ closeModal(res); goMap(); }
+});
+
+/* ============================================================
+   LEVEL MAP — free order, per-level progress
+============================================================ */
+function renderMap(){
+  const grid = $('#reel-grid');
+  let html = '';
+  SCENES.forEach(s => {
+    const rec = state.levels[s.id];
+    const stars = rec ? rec.stars : 0;
+    const best = rec ? rec.best : null;
+    let starHtml = '';
+    for (let i = 0; i < 3; i++) starHtml += '<span class="' + (i < stars ? 'lit' : '') + '">★</span>';
+    html += '<button class="reel" style="--lc:' + s.color + '" data-level="' + s.id + '" ' +
+      'aria-label="Reel ' + s.num + ': ' + s.title + ' with ' + s.char + '. ' +
+      (rec ? 'Completed. ' + stars + ' stars, best score ' + best + '. Replay.' : 'Not completed yet. Play.') + '">' +
+      '<span class="reel-preview"><img src="' + s.slide + '" alt="" loading="lazy">' +
+      '<span class="reel-num">REEL ' + s.num + '</span><span class="reel-play" aria-hidden="true">▶</span></span>' +
+      '<span class="reel-body"><span class="reel-tag">' + s.tag + '</span>' +
+      '<span class="reel-title">' + s.title + '</span>' +
+      '<span class="reel-char">' + s.emoji + ' with ' + s.char + '</span>' +
+      '<span class="reel-meta"><span class="stars" aria-hidden="true">' + starHtml + '</span>' +
+      '<span class="reel-best">' + (best !== null ? 'BEST ' + best : 'BEST —') + '</span></span></span></button>';
+  });
+  grid.innerHTML = html;
+
+  const slot = $('#finale-slot');
+  slot.innerHTML = allComplete()
+    ? '<button class="final-btn" id="btn-finale">🏆 THE FINALE — WINDKEEPER CEREMONY ▶</button>'
+    : '<span class="free-note">COMPLETE ALL 5 REELS (ANY ORDER) TO UNLOCK THE FINALE</span>';
+}
+
+ $('#reel-grid').addEventListener('click', e => {
+  const card = e.target.closest('.reel');
+  if (!card) return;
+  SFX.flip();
+  openBrief(card.dataset.level);
+});
+ $('#finale-slot').addEventListener('click', e => {
+  if (e.target.closest('#btn-finale')){ SFX.fanfare(); renderFinale(); showScreen('finale'); }
+});
+ $('#hud-progress').addEventListener('click', e => {
+  const c = e.target.closest('.cell');
+  if (!c) return;
+  SFX.click();
+  if (screenNow === 'intro'){ showScreen('map'); renderMap(); }
+  openBrief(c.dataset.goto);
+});
+
+/* ============================================================
+   BRIEFING + RESULTS MODALS
+============================================================ */
+function openBrief(id){
+  const s = SCENES.find(x => x.id === id);
+  currentScene = s;
+  $('#brief-img').src = s.slide;
+  $('#brief-tag').textContent = 'REEL ' + s.num + ' · ' + s.tag;
+  $('#brief-title').textContent = s.title;
+  $('#brief-obj').textContent = s.obj;
+  $('#brief-tip').textContent = s.tip;
+  $('#brief-flavor').textContent = '“' + s.flavor + '” — ' + s.char + ' ' + s.emoji;
+  openModal($('#modal-brief'));
+}
+ $('#brief-start').addEventListener('click', () => { SFX.click(); closeModal($('#modal-brief')); startGame(currentScene); });
+ $('#brief-cancel').addEventListener('click', () => { SFX.click(); closeModal($('#modal-brief')); goMap(); });
+
+function starsFor(mistakes){ return mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1); }
+
+function finishLevel(s, score, mistakes){
+  runCleanup();
+  score = clamp(Math.round(score), 0, 999999);
+  const stars = starsFor(mistakes);
+  const rec = state.levels[s.id] || { best: 0, stars: 0 };
+  const prevBest = rec.best || 0;
+  const best = Math.max(prevBest, score);
+  state.levels[s.id] = { best: best, stars: Math.max(rec.stars || 0, stars) };
+  save();
+  const isNewBest = score > prevBest;
+
+  /* screen-reader announcement for the results */
+  $('#sr').textContent = 'Reel ' + s.num + ' complete. Score ' + score + '. ' + stars + ' of 3 stars.';
+
+  $('#res-tag').textContent = 'REEL ' + s.num + ' · ' + s.tag;
+  $('#res-title').textContent = 'REEL ' + s.num + ' COMPLETE';
+  $('#res-score').textContent = score;
+  $('#res-line').textContent = 'MISTAKES: ' + mistakes + ' · BEST: ' + best;
+  $('#res-best').hidden = !isNewBest;
+  $('#res-flavor').textContent = stars === 3 ? '“Miss Chanandler Bong approved this performance.”' :
+    stars === 2 ? '“So close! Joey believes in you.”' : '“Welcome to square one. It is an honorable place.” — Eddie';
+
+  const starBox = $('#res-stars');
+  starBox.setAttribute('aria-label', stars + ' of 3 stars earned');
+  starBox.innerHTML = '<span class="st">★</span><span class="st">★</span><span class="st">★</span>';
+  const stEls = $$('#res-stars .st');
+  for (let i = 0; i < stars; i++){
+    if (RM) stEls[i].classList.add('lit');
+    else later(() => { stEls[i].classList.add('lit'); SFX.flip(); }, 250 + i * 320);
+  }
+  if (!RM) later(() => { if (stars === 3){ SFX.cheer(); spawnConfetti(120); } else SFX.fanfare(); }, 300 + stars * 320);
+  else if (stars === 3) SFX.cheer();
+
+  const acts = $('#res-actions');
+  let ah = '<button class="btn" id="res-replay">🔁 REPLAY</button><button class="btn ghost" id="res-map" style="color:var(--ink);border-color:#b9a67e;">🗺️ MAP</button>';
+  if (allComplete()) ah += '<button class="btn btn-acc" id="res-finale">🏆 FINALE</button>';
+  acts.innerHTML = ah;
+  openModal($('#modal-result'));
+  $('#res-replay').focus();
+
+  acts.onclick = e => {
+    if (e.target.closest('#res-replay')){ SFX.click(); closeModal($('#modal-result')); startGame(currentScene); }
+    else if (e.target.closest('#res-map')){ SFX.click(); closeModal($('#modal-result')); goMap(); }
+    else if (e.target.closest('#res-finale')){ SFX.fanfare(); closeModal($('#modal-result')); renderFinale(); showScreen('finale'); }
+  };
+  updateHUD();
+}
+
+function goMap(){ showScreen('map'); renderMap(); updateHUD(); }
+
+/* ============================================================
+   SCENE CHROME
+============================================================ */
+const gameArea = $('#game-area');
+function setStats(score, mistakes){
+  $('#scene-score').textContent = clamp(Math.round(score), 0, 999999) + ' PTS';
+  $('#scene-mist').textContent = '✖ ' + mistakes;
+}
+function renderSceneHead(s){
+  $('#scene-thumb').src = s.slide;
+  $('#scene-tag').textContent = 'REEL ' + s.num + ' · ' + s.tag;
+  $('#scene-name').textContent = s.title;
+  $('#scene-char').textContent = s.emoji + ' ' + s.char;
+  setStats(0, 0);
+}
+/* FIX #3: always wipe the previous game's timers and listeners
+   before starting a new one — prevents "ghost games" when the
+   player jumps to another reel straight from the header. */
+function startGame(s){
+  runCleanup();
+  currentScene = s;
+  renderSceneHead(s);
+  showScreen('scene');
+  updateHUD(0);
+  if (s.id === 'eddie') gameFill(s);
+  else if (s.id === 'brain') gameTF(s);
+  else if (s.id === 'proud') gameMC(s);
+  else if (s.id === 'wind') gameMatch(s);
+  else if (s.id === 'bonus') gameBonus(s);
+}
+ $('#btn-exit').addEventListener('click', () => { SFX.click(); goMap(); });
+ $('#btn-map').addEventListener('click', () => { SFX.click(); if (screenNow !== 'map') goMap(); });
+
+/* ============================================================
+   GAME 1 · FILL THE BLANKS (word bank, bounce-back)
+============================================================ */
+function gameFill(scene){
+  const answers = FB_ITEMS.map(i => i.a);
+  const bank = shuffle(FB_BANK);
+  const st = { selChip: null, selSlot: null, locked: 0, mistakes: 0, score: 0 };
+
+  let html = '<div class="panel"><p class="mt-example"><b>HOW IT WORKS</b> · click a blank, then a word from the bank (or the reverse). Wrong words bounce back: −' + PTS.fbPen + '.</p>';
+  FB_ITEMS.forEach((it, i) => {
+    html += '<p class="fb-sent">' + it.s[0] + '<button class="fb-blank" data-slot="' + i + '" aria-label="Blank ' + (i + 1) + '">＿＿＿</button>' + it.s[1] + '</p>';
+  });
+  html += '<div class="fb-bank" id="fb-bank" role="listbox" aria-label="Word bank">';
+  bank.forEach(w => { html += '<button class="fb-chip" data-w="' + w + '" role="option">' + w + '</button>'; });
+  html += '</div><p class="fb-count" id="fb-count">FILLED 0/7</p></div>';
+  gameArea.innerHTML = html;
+
+  function paint(){
+    $$('.fb-blank', gameArea).forEach(b => {
+      const i = +b.dataset.slot;
+      if (b.dataset.locked) { b.classList.add('locked'); b.classList.remove('sel'); }
+      else b.classList.toggle('sel', st.selSlot === i);
+    });
+    $$('.fb-chip', gameArea).forEach(c => c.classList.toggle('sel', st.selChip === c.dataset.w));
+    $('#fb-count').textContent = 'FILLED ' + st.locked + '/7' + (st.mistakes ? ' · RETURNS ' + st.mistakes : '');
+  }
+
+  function tryPlace(slotIdx, word, chipEl, blankEl){
+    if (word === answers[slotIdx]){
+      blankEl.textContent = word; blankEl.dataset.locked = '1';
+      blankEl.classList.add('locked'); blankEl.classList.remove('sel');
+      if (chipEl) chipEl.classList.add('gone');
+      st.locked++; st.score += PTS.fb; setStats(st.score, st.mistakes); updateHUD(st.score);
+      SFX.correct();
+      const r = blankEl.getBoundingClientRect();
+      popFloat(r.left + r.width / 2, r.top, '+' + PTS.fb);
+      st.selChip = null; st.selSlot = null; paint();
+      /* FIX #6: save the result immediately — a delayed finish could
+         be cancelled by navigating away and lose the progress */
+      if (st.locked === FB_ITEMS.length) finishLevel(scene, st.score, st.mistakes);
+    } else {
+      st.mistakes++; st.score = Math.max(0, st.score - PTS.fbPen);
+      setStats(st.score, st.mistakes); updateHUD(st.score);
+      SFX.wrong(); toast('Bounce back! −' + PTS.fbPen);
+      if (!RM){
+        blankEl.classList.add('shake'); if (chipEl) chipEl.classList.add('shake');
+        later(() => { blankEl.classList.remove('shake'); if (chipEl) chipEl.classList.remove('shake'); }, 480);
+      }
+      st.selChip = null; st.selSlot = null; paint();
+    }
+  }
+
+  on(gameArea, 'click', e => {
+    const chip = e.target.closest('.fb-chip');
+    const blank = e.target.closest('.fb-blank');
+    if (chip && !chip.classList.contains('gone')){
+      SFX.flip();
+      if (st.selSlot !== null){ tryPlace(st.selSlot, chip.dataset.w, chip, $('.fb-blank[data-slot="' + st.selSlot + '"]', gameArea)); }
+      else { st.selChip = (st.selChip === chip.dataset.w ? null : chip.dataset.w); paint(); }
+      return;
+    }
+    if (blank && !blank.dataset.locked){
+      SFX.click();
+      if (st.selChip !== null){
+        const chipEl = $('.fb-chip[data-w="' + st.selChip + '"]', gameArea);
+        tryPlace(+blank.dataset.slot, st.selChip, chipEl, blank);
+      } else { st.selSlot = (st.selSlot === +blank.dataset.slot ? null : +blank.dataset.slot); paint(); }
+    }
+  });
+}
+
+/* ============================================================
+   GAME 2 · REAL OR DELUSION (no auto-advance, 600s per card)
+============================================================ */
+function gameTF(scene){
+  const st = { i: 0, sel: null, phase: 'answer', streak: 0, mistakes: 0, score: 0, timeLeft: TIMER_TF };
+
+  function cardHtml(){
+    const it = TF_ITEMS[st.i];
+    return '<div class="panel">' +
+      '<div class="timer" id="tf-timer"><div class="timer-label"><span>STATEMENT ' + (st.i + 1) + '/' + TF_ITEMS.length + '</span><span id="tf-clock">' + TIMER_TF + 's</span></div>' +
+      '<div class="track"><span class="fill" id="tf-fill"></span></div></div>' +
+      '<span class="streak-badge" id="tf-streak">STREAK ' + st.streak + '</span>' +
+      '<p class="q-text">“' + it.t + '”</p>' +
+      '<div class="tf-btns" id="tf-btns">' +
+      '<button class="tf-btn real" data-c="0">✔ REAL</button>' +
+      '<button class="tf-btn delu" data-c="1">✖ DELUSION</button></div>' +
+      '<div id="tf-after"></div></div>';
+  }
+
+  function render(){
+    st.sel = null; st.phase = 'answer';
+    gameArea.innerHTML = cardHtml();
+    on($('#tf-btns'), 'click', e => {
+      const b = e.target.closest('.tf-btn'); if (!b || st.phase !== 'answer') return;
+      answer(+b.dataset.c);
+    });
+    paintSel(); startTimer();
+  }
+
+  function paintSel(){
+    $$('.tf-btn', gameArea).forEach(b => b.classList.toggle('sel', st.sel === +b.dataset.c && st.phase === 'answer'));
+  }
+
+  let timerId = null, lastTickSec = TIMER_TF;
+  function startTimer(){
+    stopTimer(); st.timeLeft = TIMER_TF; lastTickSec = TIMER_TF;
+    const fill = $('#tf-fill'), clock = $('#tf-clock'), wrap = $('#tf-timer');
+    const step = () => {
+      st.timeLeft = clamp(st.timeLeft - 0.25, 0, TIMER_TF);
+      fill.style.width = (st.timeLeft / TIMER_TF * 100) + '%';
+      const sec = Math.ceil(st.timeLeft);
+      clock.textContent = sec + 's';
+      wrap.classList.toggle('danger', st.timeLeft <= 60);
+      if (st.timeLeft <= 60 && sec !== lastTickSec){ lastTickSec = sec; SFX.tick(); }
+      if (st.timeLeft <= 0){ stopTimer(); answer(-1); }
+    };
+    timerId = every(step, 250);
+  }
+  function stopTimer(){ if (timerId){ clearInterval(timerId); timerId = null; } }
+  setCleanup(stopTimer);
+
+  function answer(choice){
+    if (st.phase !== 'answer') return;
+    stopTimer();
+    const it = TF_ITEMS[st.i];
+    const correct = choice === it.a;
+    const btns = $$('.tf-btn', gameArea);
+    btns.forEach(b => { b.disabled = true; b.classList.remove('sel'); });
+    const goodBtn = btns[it.a];
+    /* FIX #5: explicit verdict — a time-out must not be labeled "WRONG" */
+    let verdictText, prefix;
+    if (choice === -1){
+      verdictText = 'TIME OUT'; prefix = '⏰ Time’s up on this statement! ';
+      st.mistakes++; st.streak = 0; st.score = Math.max(0, st.score - PTS.tfPen);
+      goodBtn.classList.add('good');
+      SFX.wrong();
+    } else if (correct){
+      const speed = Math.round(PTS.tfSpeed * (st.timeLeft / TIMER_TF));
+      const streakBonus = Math.min(4, st.streak) * PTS.tfStreak;
+      const pts = PTS.tfBase + streakBonus + speed;
+      st.streak++; st.score += pts;
+      btns[choice].classList.add('good');
+      const r = btns[choice].getBoundingClientRect();
+      popFloat(r.left + r.width / 2, r.top, '+' + pts);
+      verdictText = 'CORRECT! STREAK ×' + st.streak; prefix = '';
+      SFX.correct();
+    } else {
+      st.mistakes++; st.streak = 0; st.score = Math.max(0, st.score - PTS.tfPen);
+      btns[choice].classList.add('badd'); goodBtn.classList.add('good');
+      verdictText = 'WRONG'; prefix = 'Not this time. ';
+      SFX.wrong();
+    }
+    setStats(st.score, st.mistakes); updateHUD(st.score);
+
+    const isLast = st.i === TF_ITEMS.length - 1;
+    $('#tf-after').innerHTML =
+      '<div class="explain ' + (correct ? 'good' : 'bad') + '">' +
+      '<span class="verdict ' + (correct ? 'good' : 'bad') + '">' + verdictText + '</span>' +
+      prefix + it.x + '</div>' +
+      '<button class="btn btn-acc next-btn" id="tf-next">' + (isLast ? 'SEE RESULTS 🏁' : 'NEXT ▶') + '</button>';
+    st.phase = 'explain';
+    $('#tf-streak').textContent = 'STREAK ' + st.streak;
+    on($('#tf-next'), 'click', nextCard);
+    $('#tf-next').focus();
+  }
+
+  function nextCard(){
+    if (st.phase !== 'explain') return;
+    SFX.click();
+    st.i++;
+    if (st.i >= TF_ITEMS.length){ finishLevel(scene, st.score, st.mistakes); return; }
+    render();
+  }
+
+  on(document, 'keydown', e => {
+    if (anyModalOpen() || screenNow !== 'scene' || currentScene !== scene) return;
+    if (e.key === 'ArrowLeft'){ e.preventDefault(); if (st.phase === 'answer'){ st.sel = 0; paintSel(); } }
+    else if (e.key === 'ArrowRight'){ e.preventDefault(); if (st.phase === 'answer'){ st.sel = 1; paintSel(); } }
+    else if (e.key === 'Enter'){
+      if (e.target && e.target.tagName === 'BUTTON') return; /* focused button fires its own click */
+      e.preventDefault();
+      if (st.phase === 'explain') nextCard();
+      else if (st.sel !== null) answer(st.sel);
+    }
+  });
+
+  render();
+}
+
+/* ============================================================
+   GAME 3 · MULTIPLE CHOICE (one attempt, character reaction)
+============================================================ */
+function gameMC(scene){
+  const st = { i: 0, mistakes: 0, score: 0, done: false };
+
+  function render(){
+    st.done = false;
+    const q = MC_ITEMS[st.i];
+    const order = shuffle([0, 1, 2]);
+    let html = '<div class="panel"><span class="streak-badge">QUESTION ' + (st.i + 1) + '/' + MC_ITEMS.length + ' · ONE ATTEMPT</span>' +
+      '<p class="q-text">' + q.q + '</p><div class="mc-opts" id="mc-opts">';
+    order.forEach((oi, pos) => {
+      html += '<button class="mc-opt" data-oi="' + oi + '"><span class="ol">' + 'ABC'[pos] + '.</span>' + q.o[oi] + '</button>';
+    });
+    html += '</div><div id="mc-after"></div></div>';
+    gameArea.innerHTML = html;
+    on($('#mc-opts'), 'click', e => {
+      const b = e.target.closest('.mc-opt');
+      if (!b || st.done) return;
+      st.done = true;
+      answer(+b.dataset.oi, b);
+    });
+  }
+
+  function answer(oi, btn){
+    const q = MC_ITEMS[st.i];
+    const correct = oi === q.a;
+    const opts = $$('.mc-opt', gameArea);
+    opts.forEach(o => {
+      o.disabled = true;
+      if (+o.dataset.oi === q.a) o.classList.add('good');
+      else if (o === btn) o.classList.add('badd');
+      else o.classList.add('dim');
+    });
+    const say = correct ? q.ok[Math.floor(Math.random() * q.ok.length)] : q.no[Math.floor(Math.random() * q.no.length)];
+    if (correct){
+      st.score += PTS.mc;
+      const r = btn.getBoundingClientRect();
+      popFloat(r.left + r.width / 2, r.top, '+' + PTS.mc);
+      SFX.correct();
+    } else {
+      st.mistakes++; st.score = Math.max(0, st.score - PTS.mcPen);
+      SFX.wrong(); if (!RM) btn.classList.add('shake');
+    }
+    setStats(st.score, st.mistakes); updateHUD(st.score);
+
+    const isLast = st.i === MC_ITEMS.length - 1;
+    $('#mc-after').innerHTML =
+      '<div class="char-line">' + scene.emoji + ' “' + say + '”</div>' +
+      '<div class="explain ' + (correct ? 'good' : 'bad') + '"><span class="verdict ' + (correct ? 'good' : 'bad') + '">' +
+      (correct ? 'CORRECT!' : 'WRONG') + '</span>' + q.x + '</div>' +
+      '<button class="btn btn-acc next-btn" id="mc-next">' + (isLast ? 'SEE RESULTS 🏁' : 'NEXT ▶') + '</button>';
+    on($('#mc-next'), 'click', () => {
+      SFX.click(); st.i++;
+      if (st.i >= MC_ITEMS.length) finishLevel(scene, st.score, st.mistakes);
+      else render();
+    });
+    $('#mc-next').focus();
+  }
+
+  render();
+}
+
+/* ============================================================
+   GAME 4 · MATCH THE MEANING (click word → click meaning)
+============================================================ */
+function gameMatch(scene){
+  const rightOrder = shuffle(PAIRS.map((p, i) => i));
+  const st = { selW: null, selM: null, found: 0, attempts: 0, mistakes: 0, score: 0 };
+
+  let html = '<div class="panel"><p class="mt-example"><b>WORD</b> · roommate → <b>MEANING</b> · a person who shares your flat. ' +
+    'Now match all 6 pairs from the episode!</p><div class="mt-cols">' +
+    '<div class="mt-col"><h4>EXPRESSIONS</h4><div id="mt-words">';
+  PAIRS.forEach((p, i) => { html += '<button class="mt-item" data-wi="' + i + '">' + p.w + '</button>'; });
+  html += '</div></div><div class="mt-col"><h4>MEANINGS</h4><div id="mt-means">';
+  rightOrder.forEach(pi => { html += '<button class="mt-item" data-pi="' + pi + '">' + PAIRS[pi].m + '</button>'; });
+  html += '</div></div></div><p class="mt-count" id="mt-count">PAIRS 0/6 · ATTEMPTS 0</p></div>';
+  gameArea.innerHTML = html;
+
+  function paintCount(){ $('#mt-count').textContent = 'PAIRS ' + st.found + '/6 · ATTEMPTS ' + st.attempts; }
+  function clearSel(){ st.selW = null; st.selM = null; $$('.mt-item', gameArea).forEach(b => b.classList.remove('sel')); }
+
+  function tryMatch(){
+    const wBtn = $('.mt-item[data-wi="' + st.selW + '"]', gameArea);
+    const mBtn = $('.mt-item[data-pi="' + st.selM + '"]', gameArea);
+    st.attempts++;
+    if (st.selW === st.selM){
+      wBtn.classList.add('locked'); mBtn.classList.add('locked');
+      wBtn.classList.remove('sel'); mBtn.classList.remove('sel');
+      wBtn.disabled = true; mBtn.disabled = true;
+      st.found++; st.score += PTS.match;
+      setStats(st.score, st.mistakes); updateHUD(st.score);
+      SFX.match();
+      const r = mBtn.getBoundingClientRect();
+      popFloat(r.left + r.width / 2, r.top, '+' + PTS.match);
+      clearSel(); paintCount();
+      /* FIX #6: immediate save on the final pair */
+      if (st.found === PAIRS.length) finishLevel(scene, st.score, st.mistakes);
+    } else {
+      st.mistakes++; st.score = Math.max(0, st.score - PTS.matchPen);
+      setStats(st.score, st.mistakes); updateHUD(st.score);
+      SFX.wrong(); toast('No match! −' + PTS.matchPen);
+      if (!RM){
+        wBtn.classList.add('err'); mBtn.classList.add('err');
+        later(() => { wBtn.classList.remove('err', 'sel'); mBtn.classList.remove('err', 'sel'); }, 480);
+      } else { wBtn.classList.remove('sel'); mBtn.classList.remove('sel'); }
+      st.selW = null; st.selM = null; paintCount();
+    }
+  }
+
+  on($('#mt-words'), 'click', e => {
+    const b = e.target.closest('.mt-item');
+    if (!b || b.disabled || b.classList.contains('locked')) return;
+    SFX.flip();
+    if (st.selM !== null){ st.selW = +b.dataset.wi; tryMatch(); return; }
+    st.selW = (st.selW === +b.dataset.wi ? null : +b.dataset.wi);
+    $$('#mt-words .mt-item').forEach(x => x.classList.toggle('sel', +x.dataset.wi === st.selW));
+  });
+  on($('#mt-means'), 'click', e => {
+    const b = e.target.closest('.mt-item');
+    if (!b || b.disabled || b.classList.contains('locked')) return;
+    SFX.flip();
+    if (st.selW !== null){ st.selM = +b.dataset.pi; tryMatch(); return; }
+    st.selM = (st.selM === +b.dataset.pi ? null : +b.dataset.pi);
+    $$('#mt-means .mt-item').forEach(x => x.classList.toggle('sel', +x.dataset.pi === st.selM));
+  });
+}
+
+/* ============================================================
+   GAME 5 · TIMED BONUS ROUND (750s, streak ×, red flash)
+============================================================ */
+function gameBonus(scene){
+  const list = shuffle(BONUS_ITEMS).slice(0, 12);
+  const st = { i: 0, streak: 0, mistakes: 0, score: 0, timeLeft: TIMER_BONUS, finished: false };
+  let timerId = null, lastTickSec = TIMER_BONUS;
+
+  function mult(){ return 1 + Math.min(4, st.streak) * 0.25; }
+  function multLabel(){ return mult().toFixed(2).replace(/\.00$/, ''); }
+
+  function qHtml(){
+    const q = list[st.i];
+    let opts = '';
+    if (q.t === 'tf'){
+      opts = '<div class="tf-btns" id="bn-opts">' +
+        '<button class="tf-btn real" data-c="1">✔ REAL</button>' +
+        '<button class="tf-btn delu" data-c="0">✖ DELUSION</button></div>';
+    } else {
+      const order = shuffle([0, 1, 2]);
+      opts = '<div class="mc-opts" id="bn-opts">';
+      order.forEach((oi, pos) => { opts += '<button class="mc-opt" data-c="' + oi + '"><span class="ol">' + 'ABC'[pos] + '.</span>' + q.o[oi] + '</button>'; });
+      opts += '</div>';
+    }
+    return '<div class="panel">' +
+      '<div class="timer" id="bn-timer"><div class="timer-label"><span>QUESTION ' + (st.i + 1) + '/' + list.length + '</span><span id="bn-clock">' + Math.ceil(st.timeLeft) + 's</span></div>' +
+      '<div class="track"><span class="fill" id="bn-fill"></span></div></div>' +
+      '<span class="streak-badge" id="bn-mult">STREAK ' + st.streak + ' · ×' + multLabel() + '</span>' +
+      '<p class="q-text">' + (q.t === 'tf' ? '“' + q.q + '”' : q.q) + '</p>' + opts +
+      '<div id="bn-after"></div></div>';
+  }
+
+  function renderQ(){
+    gameArea.innerHTML = qHtml();
+    on($('#bn-opts'), 'click', e => {
+      const b = e.target.closest('[data-c]');
+      if (!b || b.disabled) return;
+      answer(+b.dataset.c, b);
+    });
+  }
+
+  function startTimer(){
+    stopTimer(); lastTickSec = Math.ceil(st.timeLeft);
+    timerId = every(() => {
+      st.timeLeft = clamp(st.timeLeft - 0.25, 0, TIMER_BONUS);
+      const fill = $('#bn-fill'), clock = $('#bn-clock'), wrap = $('#bn-timer');
+      if (!fill) return;
+      fill.style.width = (st.timeLeft / TIMER_BONUS * 100) + '%';
+      const sec = Math.ceil(st.timeLeft);
+      clock.textContent = sec + 's';
+      wrap.classList.toggle('danger', st.timeLeft <= 60);
+      if (st.timeLeft <= 60 && sec !== lastTickSec){ lastTickSec = sec; SFX.tick(); }
+      if (st.timeLeft <= 0) endRound(true);
+    }, 250);
+  }
+  function stopTimer(){ if (timerId){ clearInterval(timerId); timerId = null; } }
+  setCleanup(stopTimer);
+
+  function answer(c, btn){
+    const q = list[st.i];
+    const truth = q.t === 'tf' ? (q.a ? 1 : 0) : q.a;
+    const correct = c === truth;
+    const btns = $$('#bn-opts [data-c]');
+    btns.forEach(b => { b.disabled = true; });
+    if (q.t === 'mc') btns.forEach(b => { if (+b.dataset.c !== truth) b.classList.add('dim'); });
+    const goodBtn = btns.find(b => +b.dataset.c === truth);
+    if (goodBtn) goodBtn.classList.add('good');
+    if (!correct){
+      btn.classList.add('badd');
+      st.mistakes++; st.streak = 0; st.score = Math.max(0, st.score - PTS.bonusPen);
+      SFX.wrong();
+    } else {
+      const pts = Math.round(PTS.bonusBase * mult());
+      st.streak++; st.score += pts;
+      SFX.correct();
+      const r = btn.getBoundingClientRect();
+      popFloat(r.left + r.width / 2, r.top, '+' + pts);
+    }
+    setStats(st.score, st.mistakes); updateHUD(st.score);
+    /* FIX #7 (b): refresh the streak/multiplier badge right away */
+    const mb = $('#bn-mult');
+    if (mb) mb.textContent = 'STREAK ' + st.streak + ' · ×' + multLabel();
+    const after = $('#bn-after');
+    after.innerHTML = '<div class="explain ' + (correct ? 'good' : 'bad') + '"><span class="verdict ' + (correct ? 'good' : 'bad') + '">' +
+      (correct ? 'CORRECT!' : 'WRONG') + '</span>' + q.x + '</div>';
+    later(() => {
+      st.i++;
+      if (st.i >= list.length || st.timeLeft <= 0) endRound(false);
+      else { renderQ(); }
+    }, BONUS_READ_MS);
+  }
+
+  function endRound(timedOut){
+    if (st.finished) return;
+    st.finished = true;
+    stopTimer();
+    if (timedOut) toast('⏰ Time’s up! The tape keeps spinning…');
+    finishLevel(scene, st.score, st.mistakes);
+  }
+
+  renderQ();
+  startTimer();
+}
+
+/* ============================================================
+   FINALE
+============================================================ */
+function rankFor(total){
+  if (total >= 3600) return ['WINDKEEPER LEGEND', '🌬️'];
+  if (total >= 2600) return ['CENTRAL PERK ACE', '☕'];
+  if (total >= 1600) return ['COFFEE HOUSE REGULAR', '🛋️'];
+  if (total >= 800)  return ['PROMISING NEWCOMER', '🎬'];
+  return ['SQUARE ONE ROOKIE', '🎲'];
+}
+
+function renderFinale(){
+  let total = 0, stars = 0, rows = '';
+  SCENES.forEach(s => {
+    const r = state.levels[s.id] || { best: 0, stars: 0 };
+    total += r.best; stars += r.stars;
+    let sh = ''; for (let i = 0; i < 3; i++) sh += i < r.stars ? '★' : '☆';
+    rows += '<tr><td>REEL ' + s.num + '</td><td>' + s.title + '</td><td class="num">' + r.best + '</td><td class="st">' + sh + '</td></tr>';
+  });
+  const rank = rankFor(total);
+  $('#finale-wrap').innerHTML =
+    '<div class="panel">' +
+    '<div class="fin-hero"><span class="rank-badge">' + rank[1] + ' ' + rank[0] + '</span>' +
+    '<div class="fin-total">' + total + ' PTS</div>' +
+    '<div class="fin-stars">' + '★'.repeat(stars) + '<span style="opacity:.35;">' + '★'.repeat(15 - stars) + '</span> <span style="font-size:.9rem;color:var(--muted-d);">/ 15</span></div></div>' +
+    '<table class="fin-table"><thead><tr><th>REEL</th><th>TITLE</th><th>BEST</th><th>STARS</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div class="fin-actions">' +
+    '<button class="btn btn-acc" id="fin-map">🗺️ BACK TO THE MAP</button>' +
+    '<button class="btn" id="fin-rewind">📼 REWIND THE TAPE</button></div>' +
+    '<p class="fin-note">Keep practicing your English, and we’ll see you in the next episode! · ' +
+    '<a href="' + PDF_URL + '" target="_blank" rel="noopener noreferrer">Open the lesson PDF ↗</a></p></div>';
+
+  SFX.cheer(); spawnConfetti(140);
+
+  $('#fin-map').addEventListener('click', () => { SFX.click(); goMap(); });
+  let armed = false;
+  $('#fin-rewind').addEventListener('click', function(){
+    if (!armed){
+      armed = true;
+      this.textContent = '⚠️ SURE? CLICK AGAIN';
+      SFX.wrong();
+      later(() => { armed = false; this.textContent = '📼 REWIND THE TAPE'; }, 3000);
+      return;
+    }
+    state.levels = {}; save();
+    renderMap(); updateHUD();
+    toast('Tape rewound. Fresh start!');
+    SFX.fanfare();
+    goMap();
+  });
+}
+
+/* ============================================================
+   GLOBAL WIRING
+============================================================ */
+ $('#btn-play').addEventListener('click', () => {
+  initAudio(); SFX.fanfare();
+  showScreen('map'); renderMap(); updateHUD();
+  toast('Welcome to 1996. Pick any reel — free order!');
+});
+ $('#btn-sound').addEventListener('click', () => {
+  state.muted = !state.muted; save(); renderSound();
+  if (!state.muted){ initAudio(); SFX.click(); }
+  toast(state.muted ? 'Sound off 🤫' : 'Sound on 🔊');
+});
+
+/* ===== preloader with PLAY ▶ effect and upward exit ===== */
+(function preload(){
+  const pl = $('#preloader'), fill = $('#pl-fill'), stEl = $('#pl-status'), playEl = $('#pl-play');
+  let p = 0, ready = false, gone = false;
+  function makeReady(){
+    if (ready) return; ready = true;
+    fill.style.width = '100%'; stEl.textContent = 'TAPE READY';
+    playEl.hidden = false;
+    setTimeout(exit, 1200);
+  }
+  function exit(){
+    if (gone) return; gone = true;
+    pl.classList.add('exit');
+    setTimeout(() => pl.remove(), 800);
+  }
+  const iv = setInterval(() => {
+    if (ready || gone){ clearInterval(iv); return; }
+    p = Math.min(100, p + 8 + Math.random() * 16);
+    fill.style.width = p + '%';
+    if (p >= 100){ clearInterval(iv); makeReady(); }
+  }, 110);
+  pl.addEventListener('click', () => { if (!ready) makeReady(); exit(); });
+  window.addEventListener('load', () => setTimeout(makeReady, 500));
+})();
+
+/* ============================================================
+   BOOT — required ending order
+============================================================ */
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+window.addEventListener('load', refreshIcons);
+
+})();
+</script>
+</body>
+</html>
