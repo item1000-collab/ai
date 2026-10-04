@@ -1,1 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="The Imperial Jewel Box Arcade — a five-reel educational game about the architectural opulence of St. Petersburg: fill the gaps, judge palace legends, name the masters, pair the jeweler's lexicon, and outrun the Grand Cascade.">
+<title>The Imperial Jewel Box — Arcade of St. Petersburg</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Lora:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@500;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+/* ===== palette & tokens ===== */
+:root{
+  --bg0:#2a070d; --bg1:#4a0e19; --bg2:#31161f;
+  --paper:#faf6ee; --paper2:#f3ead6;
+  --ink:#2e2018; --ink-soft:#6b5747;
+  --gold:#d4a017; --gold-hi:#f3d27c; --gold-deep:#8a5a1f; --gold-pale:#ecd9ac;
+  --mint:#0e7a55; --teal:#7fd8c4; --navy:#1b3a5b; --wine:#c22e4d;
+  --ok:#1e7d43; --bad:#c0392b;
+  --r:18px; --shadow-hard:0 6px 0 rgba(46,12,6,.55);
+  --shadow-card:0 10px 26px rgba(20,4,2,.45);
+  --f-display:'Playfair Display',Georgia,serif;
+  --f-body:'Lora',Georgia,serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --f-hand:'Caveat',cursive;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;min-height:100vh;color:var(--paper);
+  font-family:var(--f-body);font-size:1rem;line-height:1.6;
+  background:
+    radial-gradient(900px 420px at 50% -80px, rgba(212,160,23,.16), transparent 70%),
+    radial-gradient(1200px 700px at 85% 110%, rgba(14,122,85,.14), transparent 60%),
+    linear-gradient(160deg,var(--bg1),var(--bg0) 55%,var(--bg2));
+  background-attachment:fixed;
+  padding:0 14px 70px;
+}
+/* film grain over everything */
+#grain{
+  position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.09;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* candlelight vignette */
+#vignette{
+  position:fixed;inset:0;z-index:59;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 30%, transparent 55%, rgba(10,1,2,.5) 100%);
+}
+.wrap{max-width:940px;margin:0 auto;}
+[hidden]{display:none !important;}
+.ic{display:inline-flex;width:1.05em;height:1.05em;vertical-align:-.18em;}
+.ic svg{width:100%;height:100%;display:block;}
+button{font:inherit;color:inherit;}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:6px;}
 
+/* ===== boot / preloader ===== */
+#boot{
+  position:fixed;inset:0;z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+  background:linear-gradient(165deg,#3d0a14,#2a070d 70%);
+  transition:transform .75s cubic-bezier(.6,.05,.3,1), opacity .75s ease;
+}
+#boot.leave{transform:translateY(-100%);opacity:.4;}
+#boot .boot-gem{width:74px;height:74px;color:var(--gold);filter:drop-shadow(0 0 18px rgba(212,160,23,.55));animation:gemFloat 2.6s ease-in-out infinite;}
+@keyframes gemFloat{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-8px) rotate(3deg);}}
+#boot h1{font-family:var(--f-display);font-size:clamp(1.5rem,4.5vw,2.2rem);color:var(--gold-hi);margin:0;letter-spacing:.04em;text-align:center;}
+#boot .boot-sub{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:#d9b978;margin:0;}
+.boot-bar{width:min(320px,70vw);height:10px;border:1.5px solid var(--gold-pale);border-radius:99px;overflow:hidden;background:rgba(0,0,0,.35);}
+.boot-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold-deep),var(--gold-hi));animation:bootFill 1s ease forwards;}
+@keyframes bootFill{to{width:100%;}}
+#btn-play{
+  font-family:var(--f-mono);font-size:1.05rem;letter-spacing:.28em;text-transform:uppercase;
+  color:#2a070d;background:linear-gradient(180deg,var(--gold-hi),var(--gold));
+  border:0;border-radius:16px;padding:16px 42px;cursor:pointer;
+  box-shadow:0 7px 0 #6e4a08, 0 16px 34px rgba(212,160,23,.35);
+  opacity:0;transform:translateY(14px);transition:opacity .4s ease,transform .4s ease;
+}
+#btn-play.ready{opacity:1;transform:translateY(0);animation:playPulse 1.6s ease-in-out infinite;}
+#btn-play:active{transform:translateY(5px);box-shadow:0 2px 0 #6e4a08;}
+@keyframes playPulse{0%,100%{box-shadow:0 7px 0 #6e4a08,0 16px 34px rgba(212,160,23,.35);}50%{box-shadow:0 7px 0 #6e4a08,0 16px 44px rgba(212,160,23,.6);}}
+
+/* ===== header console ===== */
+#hdr{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:10px 14px;margin:0 -14px 18px;
+  background:rgba(30,6,10,.88);backdrop-filter:blur(6px);
+  border-bottom:1px solid rgba(212,160,23,.35);
+}
+body.booting #hdr{display:none;}
+.brand{display:flex;align-items:center;gap:9px;font-family:var(--f-display);font-weight:800;color:var(--gold-hi);letter-spacing:.03em;font-size:1rem;}
+.brand .ic{width:1.3em;height:1.3em;color:var(--gold);}
+.hud-dots{display:flex;gap:7px;align-items:center;}
+.hud-dot{width:13px;height:13px;border-radius:50%;border:1.5px solid rgba(236,217,172,.5);background:rgba(0,0,0,.3);transition:background .3s,border-color .3s,box-shadow .3s;}
+.hud-dot.done{background:linear-gradient(140deg,var(--gold-hi),var(--gold));border-color:var(--gold-hi);box-shadow:0 0 9px rgba(212,160,23,.55);}
+.hud-spacer{flex:1;}
+.hud-score{font-family:var(--f-mono);font-size:.8rem;letter-spacing:.12em;color:var(--gold-hi);}
+.hud-score b{color:#fff;}
+.hbtn{
+  display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+  font-family:var(--f-mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold-pale);background:rgba(0,0,0,.32);
+  border:1px solid rgba(236,217,172,.4);border-radius:10px;padding:8px 12px;
+  transition:background .15s, transform .1s;
+}
+.hbtn:hover{background:rgba(212,160,23,.18);}
+.hbtn:active{transform:translateY(2px);}
+
+/* ===== screens ===== */
+.screen{display:none;}
+.screen.active{display:block;animation:screenIn .45s ease both;}
+@keyframes screenIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+/* ===== intro ===== */
+.hero{
+  text-align:center;padding:34px 20px 30px;margin-top:8px;
+  background:linear-gradient(170deg,rgba(212,160,23,.12),rgba(0,0,0,.25));
+  border:1px solid rgba(212,160,23,.4);border-radius:24px;
+  box-shadow:var(--shadow-card);
+}
+.kicker{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.32em;text-transform:uppercase;color:#d9b978;margin:0 0 10px;}
+.hero h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.8rem,5.4vw,3rem);margin:0 0 6px;color:var(--gold-hi);line-height:1.15;}
+.hero h1 em{font-style:italic;color:#fff;}
+.hero .lede{max-width:58ch;margin:8px auto 20px;color:#efe3c8;font-size:1.02rem;}
+.hero-frame{
+  max-width:620px;margin:0 auto 20px;padding:10px;border-radius:var(--r);
+  background:var(--paper);box-shadow:var(--shadow-hard);
+  transform:rotate(-1.1deg);
+}
+.hero-frame img{width:100%;display:block;border-radius:10px;filter:sepia(.12) saturate(1.05);}
+.hero-frame figcaption{font-family:var(--f-hand);font-size:1.15rem;color:var(--gold-deep);padding:6px 4px 2px;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 22px;}
+.chip{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-pale);border:1px solid rgba(236,217,172,.4);border-radius:99px;padding:6px 12px;background:rgba(0,0,0,.28);}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+  font-family:var(--f-mono);font-size:.8rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  border-radius:14px;padding:14px 26px;border:0;color:#2a070d;
+  background:linear-gradient(180deg,var(--gold-hi),var(--gold));
+  box-shadow:var(--shadow-hard);transition:transform .1s, box-shadow .1s;
+}
+.btn:hover{filter:brightness(1.05);}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(46,12,6,.55);}
+.btn.ghost{background:rgba(0,0,0,.3);color:var(--gold-pale);border:1px solid rgba(236,217,172,.45);box-shadow:none;}
+.btn.ghost:active{transform:translateY(2px);}
+.btn.danger{background:linear-gradient(180deg,#e07b6a,var(--bad));color:#fff;box-shadow:0 6px 0 #6e1f14;}
+.intro-note{font-family:var(--f-hand);font-size:1.25rem;color:#e8cf9b;margin-top:16px;}
+
+/* ===== map ===== */
+.map-head{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:6px 2px 16px;}
+.map-head h2{font-family:var(--f-display);font-size:1.7rem;color:var(--gold-hi);margin:0;}
+.map-head p{margin:0;color:#e3cf9f;font-size:.92rem;flex:1;min-width:220px;}
+.map-meta{display:flex;gap:8px;align-items:center;}
+#map-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:16px;}
+.reel{
+  position:relative;display:flex;flex-direction:column;text-align:left;cursor:pointer;
+  background:var(--paper);color:var(--ink);border:0;border-radius:var(--r);overflow:hidden;
+  box-shadow:var(--shadow-card);transition:transform .18s ease, box-shadow .18s ease;
+  padding:0;
+}
+.reel:hover{transform:translateY(-5px) rotate(-.4deg);box-shadow:0 18px 34px rgba(20,4,2,.55);}
+.reel:active{transform:translateY(0);}
+.reel-strip{
+  height:13px;flex:0 0 auto;
+  background-image:radial-gradient(circle at 7px 6px, rgba(20,4,2,.4) 2.6px, transparent 3.2px);
+  background-size:18px 13px;background-repeat:repeat-x;background-color:#241014;
+}
+.reel-view{position:relative;display:block;aspect-ratio:16/9;background:linear-gradient(150deg,var(--lc,#d4a017),#1c0a10 130%);overflow:hidden;}
+.reel-view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.94;filter:sepia(.14) saturate(1.08) contrast(1.02);}
+.reel-view.noimg img{display:none;}
+.reel-view.noimg::after{
+  content:attr(data-initials);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--f-display);font-weight:800;font-size:2rem;color:rgba(255,255,255,.85);text-shadow:0 2px 10px rgba(0,0,0,.5);
+}
+.reel-num{
+  position:absolute;top:9px;left:9px;font-family:var(--f-mono);font-weight:600;font-size:.72rem;
+  color:#2a070d;background:linear-gradient(180deg,var(--gold-hi),var(--gold));
+  border-radius:8px;padding:3px 9px;box-shadow:0 3px 0 rgba(46,12,6,.4);
+}
+.reel-tag{
+  position:absolute;bottom:9px;left:9px;font-family:var(--f-mono);font-size:.56rem;letter-spacing:.16em;
+  text-transform:uppercase;color:#fff;background:rgba(20,4,2,.62);border:1px solid rgba(236,217,172,.4);
+  border-radius:99px;padding:4px 10px;
+}
+.reel-body{display:flex;flex-direction:column;gap:4px;padding:12px 14px 10px;}
+.reel-title{font-family:var(--f-display);font-weight:700;font-size:1.08rem;line-height:1.25;color:var(--ink);}
+.reel-char{font-family:var(--f-hand);font-size:1.08rem;color:var(--gold-deep);line-height:1.25;}
+.reel-stars{display:flex;gap:3px;margin-top:2px;}
+.star{width:17px;height:17px;color:#d8c9a5;}
+.star svg{fill:none;}
+.star.on{color:var(--gold);filter:drop-shadow(0 1px 2px rgba(138,90,31,.6));}
+.star.on svg{fill:currentColor;}
+.reel-best{font-family:var(--f-mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);}
+.reel-cta{
+  margin-top:auto;display:flex;align-items:center;justify-content:center;gap:7px;
+  font-family:var(--f-mono);font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:#2a070d;background:linear-gradient(180deg,var(--gold-hi),var(--gold));
+  padding:10px;border-top:1px solid rgba(138,90,31,.35);
+}
+#btn-final{margin:20px auto 0;display:flex;}
+
+/* ===== scene ===== */
+.scene-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:2px 0 14px;}
+.tag{
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;
+  color:#fff;background:var(--lc,var(--gold));border-radius:99px;padding:6px 13px;
+  box-shadow:0 3px 0 rgba(20,4,2,.5);
+}
+.scene-head{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px;}
+.scene-reel{
+  flex:0 0 250px;max-width:250px;padding:8px;border-radius:var(--r);
+  background:var(--paper);box-shadow:var(--shadow-hard);transform:rotate(-1.2deg);
+}
+.scene-reel img{width:100%;display:block;border-radius:10px;filter:sepia(.12);}
+.scene-kicker{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:#d9b978;margin:0 0 4px;}
+.scene-title{font-family:var(--f-display);font-weight:800;font-size:clamp(1.4rem,4vw,1.9rem);color:var(--gold-hi);margin:0 0 6px;line-height:1.2;}
+.scene-obj{margin:0 0 4px;color:#efe3c8;font-size:.98rem;}
+.scene-tip{font-family:var(--f-hand);font-size:1.25rem;color:var(--teal);margin:0;}
+.game-mount{margin-top:6px;}
+.panel{
+  background:var(--paper);color:var(--ink);border-radius:var(--r);
+  border-top:6px solid var(--lc,var(--gold));
+  box-shadow:var(--shadow-card);padding:20px 20px 22px;
+}
+.gstats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.gstat{
+  font-family:var(--f-mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold-deep);background:var(--paper2);border:1px solid var(--gold-pale);
+  border-radius:9px;padding:6px 11px;
+}
+.gstat b{color:var(--ink);font-size:.8rem;}
+.mult-chip{
+  font-family:var(--f-mono);font-weight:600;font-size:.74rem;color:#fff;
+  background:linear-gradient(180deg,var(--wine),#8f1f36);border-radius:99px;padding:6px 13px;
+  box-shadow:0 3px 0 rgba(20,4,2,.5);
+}
+
+/* timer bars */
+.tbar{height:14px;border-radius:99px;background:#e4d6b4;border:1px solid var(--gold-pale);overflow:hidden;margin-bottom:8px;}
+.tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--mint),var(--teal));transition:width .12s linear;}
+.tbar.danger i{background:linear-gradient(90deg,var(--bad),#e07b6a);animation:tFlash .55s steps(2) infinite;}
+@keyframes tFlash{50%{filter:brightness(1.6);}}
+.tlabel{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:12px;}
+.tlabel .red{color:var(--bad);font-weight:600;animation:tFlash .55s steps(2) infinite;}
+
+/* fill the gaps */
+.gap-list{display:grid;gap:10px;margin-bottom:4px;}
+.gap-line{font-size:1rem;line-height:2.15;margin:0;background:var(--paper2);border:1px solid var(--gold-pale);border-radius:12px;padding:9px 14px;}
+.gap-blank{
+  font-family:var(--f-mono);font-size:.9em;font-weight:600;color:var(--gold-deep);
+  background:#fff;border:1.6px dashed var(--gold);border-radius:8px;
+  padding:2px 12px;cursor:pointer;min-width:74px;transition:background .15s;
+}
+.gap-blank.armed{background:#fff6da;border-style:solid;box-shadow:0 0 0 3px rgba(212,160,23,.3);}
+.gap-blank.filled{background:#e8f6ec;border:1.6px solid var(--ok);color:var(--ok);cursor:default;min-width:0;}
+.gap-blank.flash{border-color:var(--bad);color:var(--bad);}
+.bank{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px;padding-top:14px;border-top:1.5px dashed var(--gold-pale);}
+.bank-title{width:100%;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 2px;}
+.bank-chip{
+  font-family:var(--f-mono);font-size:.82rem;font-weight:600;color:var(--ink);
+  background:#fff;border:1.5px solid var(--gold-pale);border-radius:10px;
+  padding:8px 15px;cursor:pointer;box-shadow:0 3px 0 rgba(138,90,31,.28);
+  transition:transform .1s, box-shadow .1s;
+}
+.bank-chip:hover:not(:disabled){border-color:var(--gold);}
+.bank-chip.armed{border-color:var(--gold);box-shadow:0 3px 0 rgba(138,90,31,.28),0 0 0 3px rgba(212,160,23,.28);transform:translateY(-2px);}
+.bank-chip.used{opacity:.32;cursor:default;box-shadow:none;text-decoration:line-through;}
+.bank-chip:active:not(:disabled){transform:translateY(3px);box-shadow:none;}
+.bank-chip.bounce{animation:shake .4s ease;}
+
+/* questions / options */
+.qcard{background:var(--paper2);border:1px solid var(--gold-pale);border-radius:14px;padding:18px 20px;}
+.qtext{font-size:1.12rem;font-weight:600;line-height:1.6;margin:0;}
+.opts{display:grid;gap:10px;margin-top:14px;}
+.opt{
+  display:flex;align-items:center;gap:12px;text-align:left;width:100%;cursor:pointer;
+  font-family:var(--f-body);font-size:1rem;line-height:1.45;color:var(--ink);
+  background:#fff;border:1.6px solid var(--gold-pale);border-radius:12px;padding:12px 15px;
+  transition:border-color .15s, background .15s, transform .1s;
+}
+.opt:hover:not(:disabled){border-color:var(--gold);background:#fffaf0;}
+.opt:active:not(:disabled){transform:translateY(2px);}
+.opt .key{
+  flex:0 0 auto;font-family:var(--f-mono);font-size:.7rem;font-weight:600;color:var(--gold-deep);
+  border:1px solid var(--gold-pale);border-radius:7px;padding:2px 9px;
+}
+.opt.correct{background:#e8f6ec;border-color:var(--ok);}
+.opt.correct .key{background:var(--ok);color:#fff;border-color:var(--ok);}
+.opt.wrong{background:#fdecea;border-color:var(--bad);animation:shake .4s ease;}
+.opt.wrong .key{background:var(--bad);color:#fff;border-color:var(--bad);}
+.opt.dimmed{opacity:.45;}
+.opt:disabled{cursor:default;}
+
+/* truth */
+.truth-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+.tbtn{
+  display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;
+  font-family:var(--f-mono);font-size:.9rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  border-radius:14px;padding:17px 10px;color:#fff;border:0;
+  transition:transform .1s, box-shadow .1s;
+}
+.tbtn.real{background:linear-gradient(180deg,#2fa06c,var(--ok));box-shadow:0 6px 0 #135233;}
+.tbtn.delu{background:linear-gradient(180deg,#e06a58,var(--bad));box-shadow:0 6px 0 #7c231a;}
+.tbtn:disabled{cursor:default;opacity:.55;}
+.tbtn:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 rgba(46,12,6,.55);}
+.tbtn.correct{opacity:1 !important;outline:3px solid var(--gold);outline-offset:2px;}
+.tbtn.wrong{outline:3px solid var(--bad);outline-offset:2px;}
+.thint{font-size:.75em;opacity:.75;letter-spacing:0;}
+.explain{
+  margin-top:15px;background:#f7efdb;border-left:5px solid var(--gold);
+  border-radius:0 12px 12px 0;padding:13px 16px;font-size:.96rem;line-height:1.6;
+}
+.explain .ex-title{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);display:block;margin-bottom:4px;}
+.next-row{display:flex;justify-content:flex-end;margin-top:14px;}
+.react{
+  display:flex;gap:12px;align-items:flex-start;margin-top:12px;
+  background:linear-gradient(160deg,#fff9ea,#f7ecd2);border:1.5px solid var(--gold-pale);
+  border-radius:14px;padding:12px 15px;
+}
+.react .ava{
+  flex:0 0 auto;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:1.35rem;background:var(--lc,var(--gold));box-shadow:0 3px 0 rgba(46,12,6,.4);
+}
+.react p{margin:0;font-size:.95rem;font-style:italic;color:#4c3a2a;}
+
+/* match the meaning */
+.match-example{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px;
+  font-family:var(--f-mono);font-size:.74rem;color:var(--gold-deep);
+  background:#fff6da;border:1.5px dashed var(--gold);border-radius:11px;padding:9px 13px;
+}
+.match-example b{color:var(--ink);}
+.match-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.mcol-title{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 8px;}
+.mlist{display:grid;gap:9px;}
+.mitem{
+  text-align:left;width:100%;cursor:pointer;
+  font-family:var(--f-body);font-size:.94rem;line-height:1.4;color:var(--ink);
+  background:#fff;border:1.6px solid var(--gold-pale);border-radius:11px;padding:11px 14px;
+  transition:border-color .15s, background .15s, transform .1s;
+}
+.mitem .mw{font-family:var(--f-display);font-weight:700;font-size:1.02rem;display:block;}
+.mitem:hover:not(:disabled){border-color:var(--gold);}
+.mitem.armed{border-color:var(--gold);background:#fff6da;box-shadow:0 0 0 3px rgba(212,160,23,.25);}
+.mitem.locked{background:#e8f6ec;border-color:var(--ok);cursor:default;}
+.mitem.locked .mw{color:var(--ok);}
+.mitem.shake{animation:shake .4s ease;}
+
+/* bonus */
+.bq-wrap{min-height:230px;}
+
+/* ===== modal ===== */
+#modal-root{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(16,2,4,.72);backdrop-filter:blur(4px);}
+#modal-root.open{display:flex;}
+.modal{
+  width:min(560px,100%);max-height:88vh;overflow:auto;
+  background:var(--paper);color:var(--ink);border-radius:20px;
+  border-top:7px solid var(--mc,var(--gold));
+  box-shadow:0 30px 70px rgba(10,1,2,.7);
+  padding:24px 24px 22px;animation:modalIn .35s ease both;
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(26px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
+.modal .m-tag{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;color:#fff;background:var(--mc,var(--gold));border-radius:99px;padding:5px 13px;display:inline-block;margin-bottom:10px;}
+.modal h3{font-family:var(--f-display);font-weight:800;font-size:1.5rem;color:var(--ink);margin:0 0 8px;line-height:1.25;}
+.modal .m-img{width:100%;border-radius:12px;display:block;margin:0 0 14px;border:1px solid var(--gold-pale);filter:sepia(.1);}
+.modal .m-obj{margin:0 0 6px;}
+.modal .m-tip{font-family:var(--f-hand);font-size:1.3rem;color:var(--gold-deep);margin:0 0 6px;}
+.modal .m-flavor{font-style:italic;color:var(--ink-soft);margin:0 0 16px;}
+.modal .m-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.m-stars{display:flex;gap:8px;justify-content:center;margin:6px 0 12px;}
+.m-stars .star{width:42px;height:42px;color:#d8c9a5;}
+.m-stars .star.on{color:var(--gold);animation:starPop .5s cubic-bezier(.3,1.6,.5,1) both;}
+.m-stars .star.on:nth-child(2){animation-delay:.15s;}
+.m-stars .star.on:nth-child(3){animation-delay:.3s;}
+@keyframes starPop{0%{transform:scale(0) rotate(-90deg);}70%{transform:scale(1.25) rotate(8deg);}100%{transform:scale(1) rotate(0);}}
+.m-bigscore{font-family:var(--f-display);font-weight:800;font-size:2.5rem;color:var(--gold-deep);text-align:center;margin:0;line-height:1.1;}
+.m-line{text-align:center;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin:6px 0 8px;}
+.m-line b{color:var(--ink);}
+
+/* ===== finale ===== */
+.fin-head{text-align:center;margin:10px 0 22px;}
+.fin-head h2{font-family:var(--f-display);font-size:clamp(1.7rem,5vw,2.4rem);color:var(--gold-hi);margin:0 0 4px;}
+.fin-totals{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:22px;}
+.fin-card{
+  background:var(--paper);color:var(--ink);border-radius:var(--r);
+  box-shadow:var(--shadow-card);padding:18px 26px;text-align:center;min-width:150px;
+}
+.fin-card .fc-label{font-family:var(--f-mono);font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-deep);display:block;}
+.fin-card .fc-value{font-family:var(--f-display);font-weight:800;font-size:2rem;color:var(--ink);line-height:1.2;}
+.fin-table{width:100%;border-collapse:separate;border-spacing:0 9px;margin:0 0 22px;}
+.fin-table th{font-family:var(--f-mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#d9b978;text-align:left;padding:0 12px;}
+.fin-table td{background:var(--paper);color:var(--ink);padding:11px 12px;}
+.fin-table tr td:first-child{border-radius:12px 0 0 12px;font-family:var(--f-mono);font-weight:600;color:var(--gold-deep);width:46px;}
+.fin-table tr td:last-child{border-radius:0 12px 12px 0;font-family:var(--f-mono);font-size:.8rem;text-align:right;}
+.fin-table .ft-title{font-family:var(--f-display);font-weight:700;}
+.fin-table .ft-stars{white-space:nowrap;}
+.fin-table .ft-stars .star{width:14px;height:14px;}
+.rank-box{
+  text-align:center;background:linear-gradient(170deg,rgba(212,160,23,.14),rgba(0,0,0,.25));
+  border:1px solid rgba(212,160,23,.45);border-radius:20px;padding:24px 20px;margin-bottom:22px;
+}
+.rank-box .rk-kicker{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:#d9b978;margin:0;}
+.rank-box .rk-name{font-family:var(--f-display);font-weight:800;font-size:1.8rem;color:var(--gold-hi);margin:6px 0;}
+.rank-box .rk-line{font-style:italic;color:#efe3c8;margin:0 auto;max-width:48ch;}
+.fin-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;}
+.fin-pdf{text-align:center;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;}
+.fin-pdf a{color:var(--gold-hi);}
+
+/* ===== toasts / fx ===== */
+#toast-root{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+.toast{
+  display:flex;align-items:center;gap:9px;
+  font-family:var(--f-mono);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;
+  color:#2a070d;background:linear-gradient(180deg,var(--gold-hi),var(--gold));
+  border-radius:99px;padding:10px 20px;box-shadow:0 10px 24px rgba(10,1,2,.5);
+  animation:toastIn .3s ease both;
+}
+.toast.out{animation:toastOut .3s ease both;}
+@keyframes toastIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes toastOut{to{opacity:0;transform:translateY(10px);}}
+#fx-root{position:fixed;inset:0;z-index:85;pointer-events:none;overflow:hidden;}
+.pop{
+  position:absolute;font-family:var(--f-mono);font-weight:600;font-size:1rem;
+  color:var(--ok);text-shadow:0 1px 0 #fff, 0 0 10px rgba(255,255,255,.6);
+  animation:popUp .95s ease forwards;white-space:nowrap;
+}
+.pop.neg{color:var(--bad);}
+@keyframes popUp{0%{opacity:0;transform:translate(-50%,0) scale(.6);}20%{opacity:1;transform:translate(-50%,-14px) scale(1.1);}100%{opacity:0;transform:translate(-50%,-58px) scale(1);}}
+.conf{position:absolute;top:-14px;border-radius:3px;animation:confFall linear forwards;}
+@keyframes confFall{
+  0%{transform:translateY(0) rotate(0) scale(1);opacity:1;}
+  100%{transform:translateY(105vh) rotate(720deg) scale(.7);opacity:.15;}
+}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px);}40%{transform:translateX(6px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
+
+/* ===== responsive ===== */
+@media (max-width:640px){
+  .scene-reel{flex:1 1 100%;max-width:none;}
+  .match-cols{grid-template-columns:1fr;}
+  .truth-btns{grid-template-columns:1fr;}
+  .hud-score{display:none;}
+}
+@media (max-width:420px){
+  #map-grid{grid-template-columns:1fr;}
+  .panel{padding:15px 14px 18px;}
+}
+
+/* ===== reduced motion ===== */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.001s !important;}
+  #boot.leave{transition:none;}
+  .tbar i{transition:none;}
+}
+</style>
+</head>
+<body class="booting">
+
+<div id="grain" aria-hidden="true"></div>
+<div id="vignette" aria-hidden="true"></div>
+
+<!-- ===== header console ===== -->
+<header id="hdr">
+  <span class="brand"><i class="ic" data-icon="gem"></i> JEWEL BOX ARCADE</span>
+  <div class="hud-dots" id="hud-dots" aria-label="Completed reels"></div>
+  <span class="hud-spacer"></span>
+  <span class="hud-score">SCORE <b id="hud-total">0</b></span>
+  <button class="hbtn" id="btn-sound" type="button" aria-pressed="false" aria-label="Toggle sound"></button>
+  <button class="hbtn" id="btn-map" type="button"><i class="ic" data-icon="map"></i> MAP</button>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== screen: intro ===== -->
+  <section class="screen active" id="scr-intro" aria-label="Intro">
+    <div class="hero">
+      <p class="kicker">A five-reel learning arcade · Est. 1703</p>
+      <h1>The Imperial <em>Jewel Box</em></h1>
+      <p class="lede">St.&nbsp;Petersburg was never merely a functional city — it was a decorative artifact engineered to project absolute power. Five reels of its archive are loaded. Restore the blueprint, judge the palace legends, name the masters, pair the jeweler's lexicon, and outrun the Grand Cascade.</p>
+      <figure class="hero-frame">
+        <img src="https://item1000-collab.github.io/ai/engoo/20261004-ptb/slide-001.jpg" alt="A Fabergé-style egg opening to reveal a glowing palace — the title artwork of The Imperial Jewel Box" onerror="this.style.display='none'">
+        <figcaption>The jewel box is already open. — the Archivist</figcaption>
+      </figure>
+      <div class="chips">
+        <span class="chip">🃏 5 mini-games</span>
+        <span class="chip">⭐ 15 stars</span>
+        <span class="chip">🔊 Synth soundtrack</span>
+        <span class="chip">♻️ Free order</span>
+      </div>
+      <button class="btn" id="btn-enter" type="button"><i class="ic" data-icon="play"></i> ENTER THE ARCHIVE</button>
+      <p class="intro-note">based on the deck “The Imperial Jewel Box: Crafting the Architectural Opulence of St.&nbsp;Petersburg”</p>
+      <p style="margin:10px 0 0;">
+        <a href="https://item1000-collab.github.io/ai/engoo/20261004-ptb/the-imperial-box.pdf" target="_blank" rel="noopener noreferrer" style="color:var(--gold-hi);font-family:var(--f-mono);font-size:.74rem;letter-spacing:.1em;">📖 open the source deck · the-imperial-box.pdf</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== screen: level map ===== -->
+  <section class="screen" id="scr-map" aria-label="Level map">
+    <div class="map-head">
+      <h2>🎬 The Reel Archive</h2>
+      <p>Every reel is unlocked from the start. Enter any level in any order — the archive keeps your best results and remembers every gem you set.</p>
+      <div class="map-meta">
+        <span class="chip" id="map-stars">⭐ 0 / 15</span>
+      </div>
+    </div>
+    <div id="map-grid" aria-label="Reels"></div>
+    <button class="btn" id="btn-final" type="button" hidden><i class="ic" data-icon="crown"></i> OPEN THE FINAL REEL</button>
+  </section>
+
+  <!-- ===== screen: scene ===== -->
+  <section class="screen" id="scr-scene" aria-label="Level scene">
+    <div id="scene-shell"></div>
+  </section>
+
+  <!-- ===== screen: finale ===== -->
+  <section class="screen" id="scr-final" aria-label="Finale">
+    <div id="fin-shell"></div>
+  </section>
+
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+<div id="fx-root" aria-hidden="true"></div>
+
+<!-- ===== boot / preloader ===== -->
+<div id="boot" role="dialog" aria-label="Loading">
+  <i class="ic boot-gem" data-icon="gem" aria-hidden="true"></i>
+  <h1>The Imperial Jewel Box</h1>
+  <p class="boot-sub">Splicing the reel…</p>
+  <div class="boot-bar"><i></i></div>
+  <button id="btn-play" type="button">PLAY ▶</button>
+</div>
+
+<script>
+(function () {
+"use strict";
+
+/* ================= data: source ================= */
+var SLIDES = "https://item1000-collab.github.io/ai/engoo/20261004-ptb/";
+var PDF_URL = SLIDES + "the-imperial-box.pdf";
+var PREFERS_REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ================= data: scenes (levels) ================= */
+var SCENES = [
+  { id:"plan", num:1, title:"The Golden Trident", mech:"gaps",
+    char:"Peter Eropkin — City Planner", emoji:"📐", color:"#0e7a55", slide:"slide-003.jpg",
+    tag:"FILL THE GAPS", obj:"Restore six lines of the city blueprint. Wrong words bounce back — every return costs points.",
+    tip:"Tap an empty socket first, then tap the right word in the vault below.",
+    flavor:"Two plans fought for the young capital. Only one learned how to grow." },
+
+  { id:"truth", num:2, title:"The Restorer's Verdict", mech:"truth",
+    char:"Anna Petrovna — Palace Restorer", emoji:"🎨", color:"#0f8a63", slide:"slide-006.jpg",
+    tag:"REAL OR DELUSION", obj:"Judge eight legends about the palace coats of paint. A streak raises your bonus.",
+    tip:"REAL ← Left arrow · DELUSION → Right arrow. The clock pauses while you read.",
+    flavor:"Four gemstones remember every color the Winter Palace ever wore." },
+
+  { id:"masters", num:3, title:"The Imported Masters", mech:"choice",
+    char:"Bartolomeo Rastrelli — Court Architect", emoji:"🏛️", color:"#c22e4d", slide:"slide-004.jpg",
+    tag:"QUICK PICK", obj:"Six questions, one attempt each — name the true master and his masterpiece.",
+    tip:"Read carefully. A wrong chisel strike cannot be undone.",
+    flavor:"Italy had the talent, Russia had the gold — together they built a world capital." },
+
+  { id:"vocab", num:4, title:"The Jeweler's Lexicon", mech:"match",
+    char:"The Court Jeweler", emoji:"💎", color:"#d4a017", slide:"slide-002.jpg",
+    tag:"MATCH THE MEANING", obj:"Pair six jewel-words with their meanings. Wrong picks shake and clear the selection.",
+    tip:"Tap a WORD on the left, then its MEANING on the right.",
+    flavor:"A jewel box is only as rich as the words that describe it." },
+
+  { id:"bonus", num:5, title:"The Grand Cascade Bonus", mech:"bonus",
+    char:"Neptune — Keeper of the Fountains", emoji:"🌊", color:"#1b3a5b", slide:"slide-007.jpg",
+    tag:"TIMED BONUS", obj:"Answer while the water falls — 750 seconds for the whole cascade of questions.",
+    tip:"Streaks multiply your points up to ×5. When the clock turns red, hurry!",
+    flavor:"Thirty-seven gilded statues watch you. Silver veils fall. The clock is liquid." }
+];
+
+/* ================= data: reel 1 — fill the gaps ================= */
+var GAP_SENTENCES = [
+  { pre:"Founded in 1703 by ", post:", St. Petersburg was a decisive break from Moscow's medieval past.", a:"Peter the Great" },
+  { pre:"To drag the empire into the Age of Reason, the court imported Italian master ", post:" to build a capital of unparalleled splendor.", a:"architects" },
+  { pre:"Early plans proposed strict, enclosed ", post:". The final city embraced a dynamic, radiating goose-foot layout.", a:"grids" },
+  { pre:"Le Blond's plan was abandoned due to its ", post:" limitations on growth.", a:"rigid" },
+  { pre:"Three main thoroughfares ", post:" perfectly on the Admiralty tower.", a:"converge" },
+  { pre:"Eropkin established a dynamic patte d'oie — a ", post:" — motif on the mainland.", a:"goose-foot" }
+];
+var GAP_DISTR = ["Catherine", "cascades", "neoclassical", "gilded", "canals", "fortress"];
+
+/* ================= data: reel 2 — real or delusion ================= */
+var TRUTH_ITEMS = [
+  { s:"St. Petersburg was founded in 1703 by Peter the Great as a decisive break from Moscow's medieval past.", real:true,
+    why:"The founding panel is explicit: founded in 1703, built to drag the empire into the Age of Reason." },
+  { s:"Jean-Baptiste Le Blond's rectangular grid of 1717 became the final plan of the city.", real:false,
+    why:"The grid was rejected — abandoned due to its rigid limitations on growth. Eropkin's goose-foot of 1737 won." },
+  { s:"The iconic mint green of the Winter Palace was Rastrelli's original 1762 color.", real:false,
+    why:"The original coat was warm sand and ochre with lime-white trim. Mint green came with the 1946 restoration." },
+  { s:"Before World War I the palace wore a heavy, dull brick-red.", real:true,
+    why:"The pre-WWI coat was brick-red, adopted in the late imperial period." },
+  { s:"Kazan Cathedral's semi-circular colonnade holds 94 columns and mimics St. Peter's in Rome.", real:true,
+    why:"Voronikhin's urban embrace of 1801–1811 frames the square with 94 massive columns." },
+  { s:"Rossi Street stretches 220 meters — exactly ten times its 22-meter width.", real:true,
+    why:"Width 22 m, height 22 m, length 220 m — absolute mathematical harmony." },
+  { s:"The Griboedov Canal was cut with strict mathematical precision, ignoring the old Krivusha river.", real:false,
+    why:"Catherine the Great ordered it to follow the natural, winding course of the old river — the serpentine exception." },
+  { s:"The Winter Palace contains over 1,000 rooms bound together by a single unbroken cornice.", real:true,
+    why:"The Unified Mass: one horizontal cornice binds the three-story quadrangle with over 1,000 rooms." }
+];
+var TRUTH_OK = ["Exactly. The archive confirms every pigment.", "Sharp eyes. The varnish never fooled you.", "Correct — the gemstones approve."];
+var TRUTH_BAD = ["A delusion slipped past the gilding.", "The patina lied to you this time.", "Not quite — the ledger tells another story."];
+
+/* ================= data: reel 3 — multiple choice ================= */
+var MC_ITEMS = [
+  { q:"Who designed the Peter and Paul Fortress — the first stone of the new capital?",
+    o:["Domenico Trezzini","Carlo Rossi","Giacomo Quarenghi"], c:0,
+    ok:"Trezzini! An eclectic, rational mix of Dutch and Italian ideas — Petrine Baroque at its birth.",
+    bad:"The archive disagrees. The fortress belongs to Trezzini, the dawn of Petrine Baroque." },
+  { q:"Which masterpiece made Rastrelli the king of Elizabethan Baroque?",
+    o:["Smolny Institute","The Winter Palace","Alexandrinsky Theater"], c:1,
+    ok:"The Winter Palace — whipped cream caprices and 176 statues on the roof balustrade!",
+    bad:"Not this one. The Winter Palace is Rastrelli's crown jewel of 1762." },
+  { q:"Giacomo Quarenghi's strict, symmetrical order flourished under which monarch?",
+    o:["Peter the Great","Catherine II","Alexander I"], c:1,
+    ok:"Under Catherine II — Neoclassicism's rational shift, cast in Smolny Institute.",
+    bad:"The court ledger says Catherine II — the age of strict Neoclassical order." },
+  { q:"Carlo Rossi's heavy, triumphant Empire style projected…",
+    o:["post-Napoleonic power","Dutch modesty","medieval piety"], c:0,
+    ok:"Post-Napoleonic power — grandeur as a political declaration, cut in stone.",
+    bad:"It projected post-Napoleonic power. Empire style always speaks of victory." },
+  { q:"Who created the dramatic urban embrace of Kazan Cathedral on Nevsky Prospect?",
+    o:["Thomas de Thomon","Peter Eropkin","Andrey Voronikhin"], c:2,
+    ok:"Voronikhin — 94 columns sweeping around the square like an embrace.",
+    bad:"It was Andrey Voronikhin, 1801–1811, mimicking St. Peter's in Rome." },
+  { q:"Which Art Nouveau building shattered the horizontal skyline with a glass globe tower?",
+    o:["The Singer Building","The Old Stock Exchange","Peter and Paul Fortress"], c:0,
+    ok:"The Singer Building, 1906 — its glass globe permanently altered Nevsky's proportions.",
+    bad:"The glass globe crowns the Singer Building on Nevsky Prospekt." }
+];
+
+/* ================= data: reel 4 — match the meaning ================= */
+var MATCH_PAIRS = [
+  { w:"opulence",   m:"great wealth and luxuriousness" },
+  { w:"splendor",   m:"dazzling, magnificent grandeur" },
+  { w:"gilded",     m:"covered with a thin layer of gold" },
+  { w:"facade",     m:"the face a building shows the street" },
+  { w:"cascade",    m:"a waterfall descending in stages" },
+  { w:"serpentine", m:"winding and curving like a snake" }
+];
+
+/* ================= data: reel 5 — timed bonus ================= */
+var BONUS_ITEMS = [
+  { q:"Which year saw the founding of St. Petersburg?", o:["1703","1723","1762"], c:0 },
+  { q:"The Golden Trident street plan is also called…", o:["goose-foot","fish-bone","star-map"], c:0 },
+  { q:"176 statues and vases line the palace's…", o:["roof balustrade","main gates","canal bridges"], c:0 },
+  { q:"The Grand Cascade at Peterhof was inaugurated in…", o:["1723","1806","1906"], c:0 },
+  { q:"How many bronze gilded statues crown the Cascade since 1806?", o:["37","94","176"], c:0 },
+  { q:"“Water falls like a silver ___ into the scoop.”", o:["veil","ribbon","mirror"], c:0 },
+  { q:"The Bankovsky Bridge is guarded by four golden…", o:["griffins","lions","eagles"], c:0 },
+  { q:"The Church of the Saviour on Spilled Blood disrupts the city with…", o:["traditional Russian style","strict Doric order","glass domes"], c:0 },
+  { q:"Rossi Street's buildings are exactly ___ meters tall.", o:["22","32","44"], c:0 },
+  { q:"The Winter Palace leads the eye along a length of…", o:["210 meters","320 meters","105 meters"], c:0 },
+  { q:"Dostoevsky's darker slums are immortalized along…", o:["the Griboedov Canal","Rossi Street","Vasily Island"], c:0 },
+  { q:"On the final panel, “The Gold” of the city is called…", o:["The Exclamation","The Mirror","The Structure"], c:0 }
+];
+
+/* ================= data: ranks ================= */
+var RANKS = [
+  { min:4500, name:"Gilded Sovereign",         line:"The crown fits. Every facet of the jewel box answers to you." },
+  { min:3300, name:"Court Architect",           line:"Eropkin would trust you with the trident blueprint." },
+  { min:2200, name:"Master Jeweler",            line:"Your cuts are clean; a few gems still wait for polish." },
+  { min:1100, name:"Apprentice of the Neva",    line:"The foundations are laid. The enameled domes await." },
+  { min:0,    name:"Barefoot on Vasily Island", line:"Every empire begins in a swamp. Deal the reels again." }
+];
+
+/* ================= utils ================= */
+function $(s){ return document.querySelector(s); }
+function $$(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); }
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+function shuffle(arr){
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function fmtT(sec){
+  var m = Math.floor(sec / 60), s = sec % 60;
+  return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+}
+function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+/* cleanup registry — every mini-game registers timers/listeners here */
+var cleanups = [];
+function setCleanup(fn){ cleanups.push(fn); }
+function runCleanups(){
+  cleanups.forEach(function (f) { try { f(); } catch (e) {} });
+  cleanups = [];
+}
+/* document-level key listener that is removed on cleanup */
+function onKey(fn){
+  var h = function (e) { fn(e); };
+  document.addEventListener("keydown", h);
+  setCleanup(function () { document.removeEventListener("keydown", h); });
+}
+
+/* inline SVG icon system (no external libraries) */
+var ICONS = {
+  play:'<path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/>',
+  star:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/>',
+  crown:'<path d="M3 17h18M4 17 3 8l5 3 4-6 4 6 5-3-1 9z"/>',
+  gem:'<path d="M7 3h10l4 6-9 12L3 9l4-6z"/><path d="M3 9h18M12 21 8 9l4-6 4 6-4 12"/>',
+  map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>',
+  sound:'<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.4 5.6a9 9 0 0 1 0 12.8"/>',
+  mute:'<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/>',
+  back:'<path d="M19 12H5M12 19l-7-7 7-7"/>',
+  rewind:'<path d="M11 19V5l-9 7zM22 19V5l-9 7z"/>'
+};
+function refreshIcons(){
+  $$("[data-icon]").forEach(function (el) {
+    if (el.dataset.iconDone) { return; }
+    var k = el.getAttribute("data-icon");
+    if (!ICONS[k]) { return; }
+    el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[k] + '</svg>';
+    el.dataset.iconDone = "1";
+  });
+}
+
+/* toast / floating points / confetti */
+function toast(msg){
+  var t = document.createElement("div");
+  t.className = "toast";
+  t.innerHTML = '<i class="ic" data-icon="star"></i>' + esc(msg);
+  $("#toast-root").appendChild(t);
+  refreshIcons();
+  setTimeout(function () {
+    t.classList.add("out");
+    setTimeout(function () { t.remove(); }, 320);
+  }, 2200);
+}
+function popFloat(text, x, y, neg){
+  if (PREFERS_REDUCED) { return; }
+  var p = document.createElement("span");
+  p.className = "pop" + (neg ? " neg" : "");
+  p.textContent = text;
+  p.style.left = x + "px";
+  p.style.top = y + "px";
+  $("#fx-root").appendChild(p);
+  setTimeout(function () { p.remove(); }, 1000);
+}
+function popAt(el, text, neg){
+  if (!el) { return; }
+  var r = el.getBoundingClientRect();
+  popFloat(text, r.left + r.width / 2, r.top - 6, neg);
+}
+var CONF_COLORS = ["#d4a017", "#f3d27c", "#7fd8c4", "#c22e4d", "#faf6ee"];
+function spawnConfetti(n){
+  if (PREFERS_REDUCED) { return; }
+  var root = $("#fx-root");
+  for (var i = 0; i < n; i++) {
+    (function (i) {
+      var c = document.createElement("i");
+      c.className = "conf";
+      c.style.left = (Math.random() * 100) + "vw";
+      c.style.width = (6 + Math.random() * 8) + "px";
+      c.style.height = (9 + Math.random() * 10) + "px";
+      c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+      c.style.animationDuration = (1.5 + Math.random() * 1.2) + "s";
+      c.style.animationDelay = (Math.random() * 0.5) + "s";
+      root.appendChild(c);
+      setTimeout(function () { c.remove(); }, 3400);
+    })(i);
+  }
+}
+
+/* ================= sound (Web Audio, fully synthesized) ================= */
+var actx = null, master = null, audioArmed = false;
+var MUTED_KEY = "imperial-jewel-arcade-muted-v1";
+var muted = false;
+try { muted = localStorage.getItem(MUTED_KEY) === "1"; } catch (e) {}
+
+function armAudio(){
+  if (audioArmed) { return; }
+  audioArmed = true;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { return; }
+    actx = new AC();
+    master = actx.createGain();
+    master.gain.value = 0.9;
+    master.connect(actx.destination);
+  } catch (e) { actx = null; }
+}
+function tone(freq, dur, type, vol, when){
+  if (muted || !actx) { return; }
+  try {
+    if (actx.state === "suspended" && actx.resume) { actx.resume(); }
+    var t0 = actx.currentTime + (when || 0);
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    o.type = type || "sine";
+    o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.15, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.06);
+  } catch (e) {}
+}
+function noiseBurst(dur, vol, when){
+  if (muted || !actx) { return; }
+  try {
+    var t0 = actx.currentTime + (when || 0);
+    var len = Math.floor(actx.sampleRate * dur);
+    var buf = actx.createBuffer(1, len, actx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) { d[i] = Math.random() * 2 - 1; }
+    var src = actx.createBufferSource();
+    src.buffer = buf;
+    var g = actx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.1, t0 + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(g); g.connect(master);
+    src.start(t0);
+  } catch (e) {}
+}
+var SND = {
+  click:   function () { tone(480, 0.06, "triangle", 0.08); },
+  flip:    function () { tone(300, 0.08, "triangle", 0.1); tone(430, 0.08, "triangle", 0.08, 0.06); },
+  correct: function () { tone(523.25, 0.12, "sine", 0.14); tone(659.25, 0.15, "sine", 0.12, 0.09); },
+  wrong:   function () { tone(196, 0.2, "sawtooth", 0.08); tone(147, 0.22, "sawtooth", 0.08, 0.08); },
+  match:   function () { tone(660, 0.1, "sine", 0.12); tone(880, 0.13, "sine", 0.12, 0.08); tone(1320, 0.18, "sine", 0.09, 0.16); },
+  fanfare: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.18, "triangle", 0.13, i * 0.12); }); noiseBurst(0.5, 0.05, 0.5); },
+  tick:    function () { tone(900, 0.045, "square", 0.05); },
+  cheer:   function () { noiseBurst(1.1, 0.11); tone(784, 0.5, "sine", 0.06, 0.1); tone(1047, 0.5, "sine", 0.06, 0.2); }
+};
+/* AudioContext is initialized only after the user's first click */
+document.addEventListener("pointerdown", armAudio, { once:true });
+
+/* ================= storage (versioned, crash-safe) ================= */
+var STORE_KEY = "imperial-jewel-arcade-v1";
+var prog = {};
+try { prog = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { prog = {}; }
+function saveProg(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(prog)); } catch (e) {} }
+function lvlProg(id){ return prog[id] || null; }
+function allLevelsDone(){
+  return SCENES.every(function (s) { return !!lvlProg(s.id); });
+}
+
+/* ================= state ================= */
+var S = { screen:"intro", current:null, inGame:null };
+
+/* ================= HUD ================= */
+function updateHUD(){
+  var total = 0, stars = 0, dots = "";
+  SCENES.forEach(function (sc) {
+    var p = lvlProg(sc.id);
+    dots += '<span class="hud-dot' + (p ? " done" : "") + '" title="Reel ' + sc.num + '"></span>';
+    if (p) { total += p.best || 0; stars += p.stars || 0; }
+  });
+  $("#hud-dots").innerHTML = dots;
+  $("#hud-total").textContent = total;
+  $("#map-stars").textContent = "⭐ " + stars + " / " + (SCENES.length * 3);
+}
+
+/* ================= screens ================= */
+function showScreen(name){
+  S.screen = name;
+  $$(".screen").forEach(function (s) { s.classList.remove("active"); });
+  var scr = $("#scr-" + name);
+  if (scr) { scr.classList.add("active"); }
+  window.scrollTo({ top: 0, behavior: PREFERS_REDUCED ? "auto" : "smooth" });
+}
+
+/* ================= sound button ================= */
+function renderSound(){
+  var b = $("#btn-sound");
+  b.innerHTML = '<i class="ic" data-icon="' + (muted ? "mute" : "sound") + '"></i>' + (muted ? " OFF" : " ON");
+  b.setAttribute("aria-pressed", muted ? "true" : "false");
+  b.setAttribute("aria-label", muted ? "Sound is off. Turn sound on." : "Sound is on. Turn sound off.");
+  refreshIcons();
+}
+ $("#btn-sound").addEventListener("click", function () {
+  muted = !muted;
+  try { localStorage.setItem(MUTED_KEY, muted ? "1" : "0"); } catch (e) {}
+  renderSound();
+  if (!muted) { SND.click(); }
+  toast(muted ? "Sound off" : "Sound on");
+});
+
+/* ================= modal system ================= */
+var lastFocus = null, modalCtx = null;
+function openModal(html, color, ctx){
+  lastFocus = document.activeElement;
+  modalCtx = ctx || null;
+  var root = $("#modal-root");
+  root.innerHTML = '<div class="modal" role="dialog" aria-modal="true" style="--mc:' + (color || "var(--gold)") + '">' + html + '</div>';
+  root.classList.add("open");
+  refreshIcons();
+  var primary = root.querySelector("[data-act]");
+  if (primary) { primary.focus(); }
+}
+function closeModal(){
+  $("#modal-root").classList.remove("open");
+  $("#modal-root").innerHTML = "";
+  modalCtx = null;
+  if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} }
+}
+function modalOpen(){ return $("#modal-root").classList.contains("open"); }
+
+ $("#modal-root").addEventListener("click", function (e) {
+  var b = e.target.closest("[data-act]");
+  if (!b) { return; }
+  SND.click();
+  var act = b.getAttribute("data-act");
+  if (act === "start" || act === "replay") { closeModal(); startGame(); }
+  else if (act === "map") { closeModal(); backToMap(); }
+  else if (act === "finale") { closeModal(); openFinale(); }
+  else if (act === "confirm-rewind") { closeModal(); doRewind(); }
+  else if (act === "cancel") { closeModal(); }
+});
+
+/* ================= stars helpers ================= */
+function starsHtml(n){
+  var s = "";
+  for (var i = 1; i <= 3; i++) {
+    s += '<i class="star' + (i <= n ? " on" : "") + '" data-icon="star" aria-hidden="true"></i>';
+  }
+  return s;
+}
+function calcStars(mistakes){ return mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1); }
+
+/* ================= level map ================= */
+function renderMap(){
+  var html = "";
+  SCENES.forEach(function (sc) {
+    var p = lvlProg(sc.id);
+    var best = p ? p.best : null;
+    var st = p ? p.stars : 0;
+    var initials = sc.title.split(" ").map(function (w) { return w.charAt(0); }).join("");
+    html +=
+      '<button class="reel" type="button" data-level="' + sc.id + '" style="--lc:' + sc.color + '" aria-label="Reel ' + sc.num + ": " + esc(sc.title) + (p ? ", completed with " + st + " stars" : "") + '">' +
+        '<span class="reel-strip" aria-hidden="true"></span>' +
+        '<span class="reel-view" data-initials="' + esc(initials) + '">' +
+          '<img loading="lazy" src="' + SLIDES + sc.slide + '" alt="Preview: ' + esc(sc.title) + '" onerror="this.parentElement.classList.add(\'noimg\'); this.remove();">' +
+          '<span class="reel-num">' + (sc.num < 10 ? "0" : "") + sc.num + '</span>' +
+          '<span class="reel-tag">' + esc(sc.tag) + '</span>' +
+        '</span>' +
+        '<span class="reel-body">' +
+          '<span class="reel-title">' + esc(sc.title) + '</span>' +
+          '<span class="reel-char">' + sc.emoji + " " + esc(sc.char) + '</span>' +
+          '<span class="reel-stars" aria-label="' + st + ' of 3 stars">' + starsHtml(st) + '</span>' +
+          '<span class="reel-best">BEST ' + (best === null ? "—" : best) + '</span>' +
+        '</span>' +
+        '<span class="reel-cta"><i class="ic" data-icon="play"></i> PLAY ▶</span>' +
+        '<span class="reel-strip" aria-hidden="true"></span>' +
+      '</button>';
+  });
+  $("#map-grid").innerHTML = html;
+  refreshIcons();
+  $("#btn-final").hidden = !allLevelsDone();
+}
+ $("#map-grid").addEventListener("click", function (e) {
+  var reel = e.target.closest(".reel");
+  if (!reel) { return; }
+  SND.flip();
+  openLevel(reel.getAttribute("data-level"));
+});
+ $("#btn-final").addEventListener("click", function () { SND.fanfare(); openFinale(); });
+
+/* ================= scene shell & briefing ================= */
+function renderSceneShell(sc){
+  $("#scene-shell").innerHTML =
+    '<div class="scene-top">' +
+      '<button class="hbtn" id="btn-back" type="button"><i class="ic" data-icon="back"></i> BACK TO MAP</button>' +
+      '<span class="tag" style="--lc:' + sc.color + '">' + esc(sc.tag) + '</span>' +
+    '</div>' +
+    '<div class="scene-head">' +
+      '<div class="scene-reel"><img src="' + SLIDES + sc.slide + '" alt="Reel ' + sc.num + ' preview: ' + esc(sc.title) + '" onerror="this.style.display=\'none\'"></div>' +
+      '<div>' +
+        '<p class="scene-kicker">REEL ' + sc.num + ' OF ' + SCENES.length + " · " + esc(sc.char) + '</p>' +
+        '<h2 class="scene-title">' + esc(sc.title) + '</h2>' +
+        '<p class="scene-obj">' + esc(sc.obj) + '</p>' +
+        '<p class="scene-tip">' + esc(sc.tip) + '</p>' +
+      '</div>' +
+    '</div>' +
+    '<div class="game-mount" id="game-mount"></div>';
+  refreshIcons();
+  $("#btn-back").addEventListener("click", function () { SND.click(); backToMap(); });
+}
+
+function openLevel(id){
+  runCleanups();
+  var sc = null;
+  for (var i = 0; i < SCENES.length; i++) { if (SCENES[i].id === id) { sc = SCENES[i]; break; } }
+  if (!sc) { return; }
+  S.current = sc;
+  S.inGame = null;
+  showScreen("scene");
+  renderSceneShell(sc);
+  openModal(
+    '<span class="m-tag">REEL ' + sc.num + " · " + esc(sc.tag) + '</span>' +
+    '<h3>' + esc(sc.title) + '</h3>' +
+    '<img class="m-img" src="' + SLIDES + sc.slide + '" alt="" onerror="this.style.display=\'none\'">' +
+    '<p class="m-obj">' + esc(sc.char) + " " + sc.emoji + ' says: <em>“' + esc(sc.flavor) + '”</em></p>' +
+    '<p class="m-obj"><strong>Objective:</strong> ' + esc(sc.obj) + '</p>' +
+    '<p class="m-tip">' + esc(sc.tip) + '</p>' +
+    '<div class="m-row">' +
+      '<button class="btn" data-act="start" type="button"><i class="ic" data-icon="play"></i> START LEVEL</button>' +
+      '<button class="btn ghost" data-act="map" type="button">BACK TO MAP</button>' +
+    '</div>', sc.color, "briefing");
+}
+
+function backToMap(){
+  runCleanups();
+  closeModal();
+  S.current = null;
+  S.inGame = null;
+  updateHUD();
+  renderMap();
+  showScreen("map");
+}
+
+function startGame(){
+  runCleanups();
+  var sc = S.current;
+  if (!sc) { return; }
+  S.inGame = sc.mech;
+  var games = { gaps: runGaps, truth: runTruth, choice: runChoice, match: runMatch, bonus: runBonus };
+  games[sc.mech](sc);
+}
+
+/* ================= finishing a level ================= */
+function finishLevel(score, mistakes){
+  runCleanups();
+  var sc = S.current;
+  if (!sc) { return; }
+  score = clamp(Math.round(score), 0, 99999);
+  var stars = calcStars(mistakes);
+  var prev = lvlProg(sc.id);
+  var prevBest = prev ? (prev.best || 0) : 0;
+  var isBest = score > prevBest;
+  prog[sc.id] = { best: Math.max(score, prevBest), stars: Math.max(stars, prev ? (prev.stars || 0) : 0) };
+  saveProg();
+  updateHUD();
+
+  if (isBest && prev) { toast("New best on reel " + sc.num + "!"); }
+  if (stars === 3) { SND.cheer(); spawnConfetti(80); }
+  else if (stars === 2) { SND.fanfare(); spawnConfetti(45); }
+  else { SND.match(); }
+
+  var finaleBtn = allLevelsDone()
+    ? '<button class="btn" data-act="finale" type="button"><i class="ic" data-icon="crown"></i> FINALE</button>' : "";
+
+  openModal(
+    '<span class="m-tag">REEL ' + sc.num + " · RESULTS</span>" +
+    '<h3 style="text-align:center;">' + esc(sc.title) + '</h3>' +
+    '<div class="m-stars" aria-label="' + stars + ' of 3 stars">' + starsHtml(stars) + '</div>' +
+    '<p class="m-bigscore">' + score + '</p>' +
+    '<p class="m-line">MISSES <b>' + mistakes + '</b> · BEST <b>' + prog[sc.id].best + '</b>' + (isBest ? " · NEW BEST!" : "") + '</p>' +
+    '<div class="m-row" style="justify-content:center;">' +
+      '<button class="btn" data-act="replay" type="button"><i class="ic" data-icon="rewind"></i> REPLAY</button>' +
+      '<button class="btn ghost" data-act="map" type="button">TO THE MAP</button>' + finaleBtn +
+    '</div>', sc.color, "results");
+}
+
+/* ================= shared render helpers ================= */
+function stat(label, value){
+  return '<span class="gstat">' + label + ' <b>' + value + '</b></span>';
+}
+function reaction(emoji, text){
+  return '<div class="react"><span class="ava" aria-hidden="true">' + emoji + '</span><p>' + esc(text) + '</p></div>';
+}
+
+/* ================= reel 1 — FILL THE GAPS ================= */
+function runGaps(sc){
+  var mount = $("#game-mount");
+  var bank = shuffle(GAP_SENTENCES.map(function (g) { return g.a; }).concat(GAP_DISTR));
+  var armed = -1, filled = 0, mistakes = 0, score = 0, streak = 0, doneId = null;
+
+  var lines = GAP_SENTENCES.map(function (g, i) {
+    return '<p class="gap-line">' + esc(g.pre) +
+      '<button class="gap-blank" type="button" data-blank="' + i + '" aria-label="Blank ' + (i + 1) + '">____</button>' +
+      esc(g.post) + '</p>';
+  }).join("");
+  var chips = bank.map(function (w) {
+    return '<button class="bank-chip" type="button" data-word="' + esc(w) + '">' + esc(w) + '</button>';
+  }).join("");
+
+  mount.innerHTML =
+    '<div class="panel" style="--lc:' + sc.color + '">' +
+      '<div class="gstats" id="g-stats"></div>' +
+      '<div class="gap-list">' + lines + '</div>' +
+      '<div class="bank" id="g-bank"><p class="bank-title">WORD VAULT — TAP A SOCKET, THEN A WORD</p>' + chips + '</div>' +
+    '</div>';
+
+  function stats(){
+    $("#g-stats").innerHTML = stat("LINES", filled + "/" + GAP_SENTENCES.length) + stat("SCORE", score) + stat("MISSES", mistakes);
+  }
+
+  mount.addEventListener("click", function (e) {
+    var blank = e.target.closest(".gap-blank");
+    var chip = e.target.closest(".bank-chip");
+
+    if (blank && !blank.classList.contains("filled")) {
+      var i = +blank.getAttribute("data-blank");
+      $$(".gap-blank").forEach(function (b) { b.classList.remove("armed"); });
+      blank.classList.add("armed");
+      armed = i;
+      SND.click();
+      return;
+    }
+    if (chip && !chip.disabled) {
+      if (armed < 0) { toast("Choose an empty socket first"); SND.click(); return; }
+      var target = $$('.gap-blank[data-blank="' + armed + '"]')[0];
+      var word = chip.getAttribute("data-word");
+      var correct = GAP_SENTENCES[armed].a === word;
+
+      if (correct) {
+        streak++;
+        var pts = 100 + (streak - 1) * 10;
+        score += pts;
+        target.textContent = word;
+        target.classList.remove("armed");
+        target.classList.add("filled");
+        target.disabled = true;
+        chip.disabled = true;
+        chip.classList.add("used");
+        chip.classList.remove("armed");
+        filled++;
+        armed = -1;
+        SND.correct();
+        popAt(target, "+" + pts);
+        if (filled === GAP_SENTENCES.length) {
+          doneId = setTimeout(function () { finishLevel(score, mistakes); }, 600);
+          setCleanup(function () { clearTimeout(doneId); });
+        }
+      } else {
+        mistakes++;
+        streak = 0;
+        score = clamp(score - 30, 0, 99999);
+        SND.wrong();
+        popAt(chip, "-30", true);
+        chip.classList.add("bounce");
+        target.classList.add("flash");
+        setTimeout(function () { chip.classList.remove("bounce"); target.classList.remove("flash"); }, 420);
+      }
+      stats();
+    }
+  });
+
+  stats();
+}
+
+/* ================= reel 2 — REAL OR DELUSION ================= */
+function runTruth(sc){
+  var mount = $("#game-mount");
+  var items = shuffle(TRUTH_ITEMS);
+  var N = items.length;
+  var idx = 0, mistakes = 0, score = 0, streak = 0;
+  var PER = 600, left = PER, tId = null, answered = false, moving = false;
+  var curItem = null;
+
+  mount.innerHTML =
+    '<div class="panel" style="--lc:' + sc.color + '">' +
+      '<div class="gstats" id="t-stats"></div>' +
+      '<div class="tbar" id="t-bar" aria-hidden="true"><i style="width:100%"></i></div>' +
+      '<div class="tlabel"><span id="t-card"></span><span id="t-time">10:00</span></div>' +
+      '<div class="qcard"><p class="qtext" id="t-q"></p></div>' +
+      '<div class="truth-btns">' +
+        '<button class="tbtn real" type="button" data-truth="1">✔ REAL <span class="thint">←</span></button>' +
+        '<button class="tbtn delu" type="button" data-truth="0">✘ DELUSION <span class="thint">→</span></button>' +
+      '</div>' +
+      '<div class="explain" id="t-ex" hidden></div>' +
+      '<div class="next-row"><button class="btn" id="t-next" type="button" hidden><i class="ic" data-icon="play"></i> NEXT ▶</button></div>' +
+    '</div>';
+
+  function stats(){
+    $("#t-stats").innerHTML =
+      stat("SCORE", score) + stat("MISSES", mistakes) +
+      '<span class="mult-chip">STREAK ×' + Math.max(1, streak) + '</span>';
+  }
+  function paint(){
+    var bar = $("#t-bar");
+    bar.querySelector("i").style.width = (left / PER * 100) + "%";
+    var low = left <= 60;
+    bar.classList.toggle("danger", low);
+    var t = $("#t-time");
+    t.textContent = fmtT(left);
+    t.classList.toggle("red", low);
+  }
+  function stopTimer(){ if (tId) { clearInterval(tId); tId = null; } }
+  function startTimer(){
+    stopTimer();
+    tId = setInterval(function () {
+      left--;
+      paint();
+      if (left <= 0) { stopTimer(); onTimeout(); }
+    }, 1000);
+    setCleanup(stopTimer);
+  }
+  function reveal(title, extra){
+    var ex = $("#t-ex");
+    ex.innerHTML = '<span class="ex-title">' + esc(title) + '</span>' + esc(curItem.why) + (extra || "");
+    ex.hidden = false;
+    var nb = $("#t-next");
+    nb.hidden = false;
+    nb.lastChild.textContent = (idx === N - 1 ? " SEE RESULTS" : " NEXT ▶");
+    nb.focus();
+  }
+  function onTimeout(){
+    if (answered) { return; }
+    answered = true;
+    mistakes++; streak = 0; score = clamp(score - 40, 0, 99999);
+    $$(".tbtn").forEach(function (b) { b.disabled = true; });
+    $$('.tbtn[data-truth="' + (curItem.real ? "1" : "0") + '"]')[0].classList.add("correct");
+    SND.wrong();
+    stats();
+    reveal("TIME'S UP — THE SAND RAN OUT", reaction(sc.emoji, "The restorer sighs. Patience is also a pigment."));
+  }
+  function showCard(i){
+    moving = false; answered = false;
+    curItem = items[i];
+    $("#t-q").textContent = curItem.s;
+    $("#t-card").textContent = "STATEMENT " + (i + 1) + "/" + N;
+    $("#t-ex").hidden = true;
+    $("#t-next").hidden = true;
+    $$(".tbtn").forEach(function (b) {
+      b.disabled = false;
+      b.classList.remove("correct", "wrong");
+    });
+    left = PER;
+    paint();
+    startTimer();
+    stats();
+  }
+  function answer(v){
+    if (answered || moving) { return; }
+    answered = true;
+    stopTimer();
+    var chosen = $$('.tbtn[data-truth="' + v + '"]')[0];
+    var truthBtn = $$('.tbtn[data-truth="' + (curItem.real ? "1" : "0") + '"]')[0];
+    $$(".tbtn").forEach(function (b) { b.disabled = true; });
+    var correct = (v === 1) === curItem.real;
+    if (correct) {
+      streak++;
+      var pts = 100 + (streak - 1) * 25;
+      score += pts;
+      chosen.classList.add("correct");
+      SND.correct();
+      popAt(chosen, "+" + pts);
+    } else {
+      mistakes++; streak = 0;
+      score = clamp(score - 40, 0, 99999);
+      chosen.classList.add("wrong");
+      truthBtn.classList.add("correct");
+      SND.wrong();
+      popAt(chosen, "-40", true);
+    }
+    stats();
+    reveal("THE RESTORER'S NOTE", reaction(sc.emoji, correct ? pick(TRUTH_OK) : pick(TRUTH_BAD)));
+  }
+  function goNext(){
+    if (moving || !answered) { return; }
+    moving = true;
+    idx++;
+    if (idx >= N) { finishLevel(score, mistakes); }
+    else { showCard(idx); }
+  }
+
+  $$(".tbtn").forEach(function (b) {
+    b.addEventListener("click", function () { answer(+b.getAttribute("data-truth")); });
+  });
+  $("#t-next").addEventListener("click", goNext);
+
+  onKey(function (e) {
+    if (modalOpen()) { return; }
+    if (e.key === "ArrowLeft" && !answered) { answer(1); }
+    else if (e.key === "ArrowRight" && !answered) { answer(0); }
+    else if (e.key === "Enter" && answered) { goNext(); }
+  });
+
+  showCard(0);
+}
+
+/* ================= reel 3 — MULTIPLE CHOICE ================= */
+function runChoice(sc){
+  var mount = $("#game-mount");
+  var items = shuffle(MC_ITEMS);
+  var N = items.length;
+  var idx = 0, mistakes = 0, score = 0, streak = 0, answered = false, moving = false;
+  var curItem = null, curCorrect = 0;
+
+  mount.innerHTML =
+    '<div class="panel" style="--lc:' + sc.color + '">' +
+      '<div class="gstats" id="c-stats"></div>' +
+      '<div class="qcard"><p class="qtext" id="c-q"></p><div class="opts" id="c-opts"></div></div>' +
+      '<div id="c-react"></div>' +
+      '<div class="next-row"><button class="btn" id="c-next" type="button" hidden><i class="ic" data-icon="play"></i> NEXT ▶</button></div>' +
+    '</div>';
+
+  function stats(){
+    $("#c-stats").innerHTML =
+      stat("QUESTION", (idx + 1) + "/" + N) + stat("SCORE", score) + stat("MISSES", mistakes) +
+      '<span class="mult-chip">STREAK ×' + Math.max(1, streak) + '</span>';
+  }
+  function showCard(i){
+    moving = false; answered = false;
+    curItem = items[i];
+    $("#c-q").textContent = curItem.q;
+    $("#c-react").innerHTML = "";
+    $("#c-next").hidden = true;
+
+    var order = shuffle([0, 1, 2]);
+    curCorrect = order.indexOf(curItem.c);
+    var optsHtml = order.map(function (orig, pos) {
+      return '<button class="opt" type="button" data-opt="' + pos + '">' +
+        '<span class="key">' + (pos + 1) + '</span>' + esc(curItem.o[orig]) + '</button>';
+    }).join("");
+    $("#c-opts").innerHTML = optsHtml;
+    stats();
+  }
+  function answer(pos){
+    if (answered || moving) { return; }
+    answered = true;
+    var btns = $$("#c-opts .opt");
+    btns.forEach(function (b) { b.disabled = true; });
+    var chosen = btns[pos];
+    var correctBtn = btns[curCorrect];
+    var correct = pos === curCorrect;
+    if (correct) {
+      streak++;
+      var pts = 120 + (streak - 1) * 20;
+      score += pts;
+      chosen.classList.add("correct");
+      SND.correct();
+      popAt(chosen, "+" + pts);
+    } else {
+      mistakes++; streak = 0;
+      score = clamp(score - 40, 0, 99999);
+      chosen.classList.add("wrong");
+      correctBtn.classList.add("correct");
+      btns.forEach(function (b) { if (b !== chosen && b !== correctBtn) { b.classList.add("dimmed"); } });
+      SND.wrong();
+      popAt(chosen, "-40", true);
+    }
+    $("#c-react").innerHTML = reaction(sc.emoji, correct ? curItem.ok : curItem.bad);
+    var nb = $("#c-next");
+    nb.hidden = false;
+    nb.lastChild.textContent = (idx === N - 1 ? " SEE RESULTS" : " NEXT ▶");
+    nb.focus();
+    stats();
+  }
+  function goNext(){
+    if (moving || !answered) { return; }
+    moving = true;
+    idx++;
+    if (idx >= N) { finishLevel(score, mistakes); }
+    else { showCard(idx); }
+  }
+
+  $("#c-opts").addEventListener("click", function (e) {
+    var b = e.target.closest(".opt");
+    if (b) { answer(+b.getAttribute("data-opt")); }
+  });
+  $("#c-next").addEventListener("click", goNext);
+
+  onKey(function (e) {
+    if (modalOpen()) { return; }
+    if (!answered && (e.key === "1" || e.key === "2" || e.key === "3")) { answer(+e.key - 1); }
+    else if (e.key === "Enter" && answered) { goNext(); }
+  });
+
+  showCard(0);
+}
+
+/* ================= reel 4 — MATCH THE MEANING ================= */
+function runMatch(sc){
+  var mount = $("#game-mount");
+  var words = MATCH_PAIRS;
+  var meanings = shuffle(MATCH_PAIRS.map(function (p, i) { return { m: p.m, pair: i }; }));
+  var armedW = -1, matched = 0, attempts = 0, mistakes = 0, score = 0, doneId = null;
+  var shakeTimers = [];
+
+  var wordsHtml = words.map(function (p, i) {
+    return '<button class="mitem" type="button" data-w="' + i + '"><span class="mw">WORD · ' + esc(p.w) + '</span>tap, then tap a meaning</button>';
+  }).join("");
+  var meaningsHtml = meanings.map(function (mi, i) {
+    return '<button class="mitem" type="button" data-m="' + i + '"><span class="mw">MEANING</span>' + esc(mi.m) + '</button>';
+  }).join("");
+
+  mount.innerHTML =
+    '<div class="panel" style="--lc:' + sc.color + '">' +
+      '<div class="gstats" id="m-stats"></div>' +
+      '<div class="match-example">HOW IT WORKS: <b>WORD · boasts</b> → <b>MEANING · proudly has</b></div>' +
+      '<div class="match-cols">' +
+        '<div><p class="mcol-title">💎 JEWEL WORDS</p><div class="mlist">' + wordsHtml + '</div></div>' +
+        '<div><p class="mcol-title">📜 MEANINGS</p><div class="mlist">' + meaningsHtml + '</div></div>' +
+      '</div>' +
+    '</div>';
+
+  function stats(){
+    $("#m-stats").innerHTML =
+      stat("PAIRS", matched + "/" + MATCH_PAIRS.length) + stat("ATTEMPTS", attempts) +
+      stat("SCORE", score) + stat("MISSES", mistakes);
+  }
+  function lockPair(wi, mBtn){
+    var wBtn = $$('.mitem[data-w="' + wi + '"]')[0];
+    [wBtn, mBtn].forEach(function (b) {
+      b.classList.remove("armed");
+      b.classList.add("locked");
+      b.disabled = true;
+    });
+  }
+  mount.addEventListener("click", function (e) {
+    var btn = e.target.closest(".mitem");
+    if (!btn || btn.disabled) { return; }
+
+    if (btn.hasAttribute("data-w")) {
+      if (btn.classList.contains("locked")) { return; }
+      $$(".mitem[data-w]").forEach(function (b) { b.classList.remove("armed"); });
+      btn.classList.add("armed");
+      armedW = +btn.getAttribute("data-w");
+      SND.click();
+      return;
+    }
+    /* meaning column */
+    if (armedW < 0) { toast("Pick a WORD first"); SND.click(); return; }
+    attempts++;
+    var mi = meanings[+btn.getAttribute("data-m")];
+    if (mi.pair === armedW) {
+      matched++;
+      score += 100;
+      lockPair(armedW, btn);
+      armedW = -1;
+      SND.match();
+      popAt(btn, "+100");
+    } else {
+      mistakes++;
+      score = clamp(score - 30, 0, 99999);
+      SND.wrong();
+      popAt(btn, "-30", true);
+      var wBtn = $$('.mitem[data-w="' + armedW + '"]')[0];
+      [wBtn, btn].forEach(function (b) {
+        b.classList.add("shake");
+        shakeTimers.push(setTimeout(function () { b.classList.remove("shake", "armed"); }, 420));
+      });
+      armedW = -1;
+    }
+    stats();
+    if (matched === MATCH_PAIRS.length) {
+      doneId = setTimeout(function () { finishLevel(score, mistakes); }, 600);
+      setCleanup(function () { clearTimeout(doneId); });
+    }
+  });
+
+  setCleanup(function () { shakeTimers.forEach(clearTimeout); });
+  stats();
+}
+
+/* ================= reel 5 — TIMED BONUS ================= */
+function runBonus(sc){
+  var mount = $("#game-mount");
+  var items = shuffle(BONUS_ITEMS);
+  var N = items.length;
+  var TOTAL = 750;
+  var left = TOTAL, idx = 0, mistakes = 0, score = 0, streak = 0;
+  var tId = null, nextId = null, answered = false;
+  var curItem = null, curCorrect = 0;
+
+  mount.innerHTML =
+    '<div class="panel" style="--lc:' + sc.color + '">' +
+      '<div class="gstats" id="b-stats"></div>' +
+      '<div class="tbar" id="b-bar" aria-hidden="true"><i style="width:100%"></i></div>' +
+      '<div class="tlabel"><span id="b-feed"></span><span id="b-time">' + fmtT(TOTAL) + '</span></div>' +
+      '<div class="bq-wrap" id="b-wrap"></div>' +
+    '</div>';
+
+  function multOf(s){ return s >= 8 ? 5 : s >= 6 ? 4 : s >= 4 ? 3 : s >= 2 ? 2 : 1; }
+  function stats(){
+    $("#b-stats").innerHTML =
+      stat("SCORE", score) + stat("MISSES", mistakes) +
+      '<span class="mult-chip">MULTIPLIER ×' + multOf(streak) + '</span>';
+  }
+  function paint(){
+    var bar = $("#b-bar");
+    bar.querySelector("i").style.width = (left / TOTAL * 100) + "%";
+    var low = left <= 60;
+    bar.classList.toggle("danger", low);
+    $("#b-time").textContent = fmtT(left);
+    $("#b-time").classList.toggle("red", low);
+  }
+  function stopTimer(){ if (tId) { clearInterval(tId); tId = null; } }
+  function startTimer(){
+    stopTimer();
+    tId = setInterval(function () {
+      left--;
+      paint();
+      if (left <= 10 && left > 0) { SND.tick(); }
+      if (left <= 0) { stopTimer(); toast("The cascade ran dry!"); finishLevel(score, mistakes); }
+    }, 1000);
+    setCleanup(stopTimer);
+  }
+  function showCard(i){
+    answered = false;
+    curItem = items[i];
+    $("#b-feed").textContent = "QUESTION " + (i + 1) + "/" + N;
+    var order = shuffle([0, 1, 2]);
+    curCorrect = order.indexOf(curItem.c);
+    $("#b-wrap").innerHTML =
+      '<div class="qcard"><p class="qtext">' + esc(curItem.q) + '</p>' +
+      '<div class="opts">' + order.map(function (orig, pos) {
+        return '<button class="opt" type="button" data-opt="' + pos + '">' +
+          '<span class="key">' + (pos + 1) + '</span>' + esc(curItem.o[orig]) + '</button>';
+      }).join("") + '</div></div>';
+    stats();
+  }
+  function answer(pos){
+    if (answered) { return; }
+    answered = true;
+    var btns = $$("#b-wrap .opt");
+    btns.forEach(function (b) { b.disabled = true; });
+    var chosen = btns[pos], correctBtn = btns[curCorrect];
+    var correct = pos === curCorrect;
+    if (correct) {
+      streak++;
+      var pts = 150 * multOf(streak);
+      score += pts;
+      chosen.classList.add("correct");
+      SND.correct();
+      popAt(chosen, "+" + pts);
+    } else {
+      mistakes++; streak = 0;
+      score = clamp(score - 40, 0, 99999);
+      chosen.classList.add("wrong");
+      correctBtn.classList.add("correct");
+      btns.forEach(function (b) { if (b !== chosen && b !== correctBtn) { b.classList.add("dimmed"); } });
+      SND.wrong();
+      popAt(chosen, "-40", true);
+    }
+    stats();
+    nextId = setTimeout(function () {
+      idx++;
+      if (idx >= N || left <= 0) { finishLevel(score, mistakes); }
+      else { showCard(idx); }
+    }, correct ? 600 : 950);
+    setCleanup(function () { clearTimeout(nextId); });
+  }
+
+  $("#b-wrap").addEventListener("click", function (e) {
+    var b = e.target.closest(".opt");
+    if (b) { answer(+b.getAttribute("data-opt")); }
+  });
+  onKey(function (e) {
+    if (modalOpen() || answered) { return; }
+    if (e.key === "1" || e.key === "2" || e.key === "3") { answer(+e.key - 1); }
+  });
+
+  paint();
+  startTimer();
+  showCard(0);
+}
+
+/* ================= finale ================= */
+function openFinale(){
+  runCleanups();
+  closeModal();
+  var totalScore = 0, totalStars = 0;
+  var rows = SCENES.map(function (sc) {
+    var p = lvlProg(sc.id) || { best: 0, stars: 0 };
+    totalScore += p.best; totalStars += p.stars;
+    return '<tr>' +
+      '<td>' + (sc.num < 10 ? "0" : "") + sc.num + '</td>' +
+      '<td class="ft-title">' + esc(sc.title) + '</td>' +
+      '<td class="ft-stars">' + starsHtml(p.stars) + '</td>' +
+      '<td>' + p.best + '</td></tr>';
+  }).join("");
+  var rank = RANKS[0];
+  for (var i = 0; i < RANKS.length; i++) {
+    if (totalScore >= RANKS[i].min) { rank = RANKS[i]; break; }
+  }
+
+  $("#fin-shell").innerHTML =
+    '<div class="fin-head">' +
+      '<p class="kicker">THE REEL ARCHIVE · PROJECT COMPLETE</p>' +
+      '<h2>👑 The Jewel Box Is Restored</h2>' +
+    '</div>' +
+    '<div class="fin-totals">' +
+      '<div class="fin-card"><span class="fc-label">TOTAL SCORE</span><span class="fc-value">' + totalScore + '</span></div>' +
+      '<div class="fin-card"><span class="fc-label">STARS</span><span class="fc-value">⭐ ' + totalStars + '/' + (SCENES.length * 3) + '</span></div>' +
+      '<div class="fin-card"><span class="fc-label">REELS</span><span class="fc-value">' + SCENES.length + '/' + SCENES.length + '</span></div>' +
+    '</div>' +
+    '<table class="fin-table" aria-label="Results by level">' +
+      '<thead><tr><th>№</th><th>REEL</th><th>STARS</th><th>BEST</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table>' +
+    '<div class="rank-box">' +
+      '<p class="rk-kicker">FINAL RANK</p>' +
+      '<p class="rk-name">' + esc(rank.name) + '</p>' +
+      '<p class="rk-line">“' + esc(rank.line) + '”</p>' +
+    '</div>' +
+    '<figure class="hero-frame" style="transform:rotate(1deg);">' +
+      '<img src="' + SLIDES + 'slide-012.jpg" alt="Water, stone and gold — the three elements of the ultimate imperial stage set" onerror="this.style.display=\'none\'">' +
+      '<figcaption>Water, stone and gold — the city was always a stage set.</figcaption>' +
+    '</figure>' +
+    '<div class="fin-actions">' +
+      '<button class="btn danger" id="btn-rewind" type="button"><i class="ic" data-icon="rewind"></i> REWIND THE TAPE</button>' +
+      '<button class="btn ghost" id="btn-fin-map" type="button">BACK TO THE MAP</button>' +
+    '</div>' +
+    '<p class="fin-pdf"><a href="' + PDF_URL + '" target="_blank" rel="noopener noreferrer">📖 reopen the source deck · the-imperial-box.pdf</a></p>';
+
+  showScreen("final");
+  SND.cheer();
+  spawnConfetti(120);
+
+  $("#btn-rewind").addEventListener("click", function () {
+    SND.click();
+    openModal(
+      '<span class="m-tag">SYSTEM</span>' +
+      '<h3>Rewind the tape?</h3>' +
+      '<p class="m-obj">All stars, best scores and gems will be wiped from the archive. This cannot be undone.</p>' +
+      '<div class="m-row">' +
+        '<button class="btn danger" data-act="confirm-rewind" type="button">YES, REWIND IT</button>' +
+        '<button class="btn ghost" data-act="cancel" type="button">CANCEL</button>' +
+      '</div>', "var(--bad)", "confirm");
+  });
+  $("#btn-fin-map").addEventListener("click", function () { SND.click(); backToMap(); });
+}
+
+function doRewind(){
+  prog = {};
+  saveProg();
+  updateHUD();
+  renderMap();
+  showScreen("map");
+  toast("The tape is rewound — the archive is empty again");
+}
+
+/* ================= header / global keys ================= */
+ $("#btn-map").addEventListener("click", function () { SND.click(); backToMap(); });
+ $("#btn-enter").addEventListener("click", function () { SND.flip(); backToMap(); });
+
+document.addEventListener("keydown", function (e) {
+  if (e.key !== "Escape" || !modalOpen()) { return; }
+  if (modalCtx === "confirm") { closeModal(); }
+  else { backToMap(); }
+});
+
+/* ================= boot / preloader ================= */
+var boot = $("#boot");
+var playBtn = $("#btn-play");
+setTimeout(function () { playBtn.classList.add("ready"); playBtn.focus(); }, 900);
+playBtn.addEventListener("click", function () {
+  SND.flip();
+  boot.classList.add("leave");
+  document.body.classList.remove("booting");
+  setTimeout(function () { boot.hidden = true; }, 800);
+  showScreen("intro");
+  toast("Welcome to the reel archive");
+});
+
+/* ================= init ================= */
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+</script>
+</body>
+</html>
