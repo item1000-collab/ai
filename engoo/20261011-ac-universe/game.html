@@ -1,1 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Across the Universe · Vocab Arcade</title>
 
+<!-- Fonts (Google Fonts allowed) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Space+Mono:wght@400;700&family=Caveat:wght@600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Lucide icons (CDN allowed) -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+/* ============================================================
+   ACROSS THE ARCADE — retro cinema-arcade cabinet aesthetic
+   Palette: deep plum night / warm cream ink / amber marquee /
+   neon pink + teal accents / gold stars / warm error red
+   ============================================================ */
+:root{
+  --bg:#201632; --bg2:#160E26;
+  --panel:#2C1F45; --panel2:#37285A; --edge:#4A3A6B;
+  --ink:#F6EDDD; --dim:#C9BBD6;
+  --amber:#F5A93C; --amber2:#FFC85C; --amber-dk:#8A5A1A;
+  --pink:#FF6B9D; --teal:#3BD6C4; --gold:#FFC93C; --violet:#A78BFA;
+  --err:#FF5A6E; --ok:#4ADE8C;
+  --shadow:0 6px 0 rgba(10,5,22,.5);
+  --radius:18px;
+  --f-disp:'Righteous',cursive;
+  --f-mono:'Space Mono',monospace;
+  --f-hand:'Caveat',cursive;
+  --f-body:'Nunito Sans',sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;
+  background:
+    radial-gradient(1100px 700px at 85% -10%, rgba(122,46,140,.28), transparent 60%),
+    radial-gradient(900px 700px at -10% 110%, rgba(255,107,157,.14), transparent 60%),
+    radial-gradient(700px 500px at 50% 120%, rgba(59,214,196,.10), transparent 60%),
+    var(--bg);
+  min-height:100vh;
+}
+/* Film grain */
+#grain{position:fixed;inset:-60%;pointer-events:none;z-index:64;opacity:.055;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='260' height='260' filter='url(%23n)'/></svg>");
+  animation:grain 6s steps(8) infinite;}
+@keyframes grain{0%,100%{transform:translate(0,0)}20%{transform:translate(-4%,-6%)}40%{transform:translate(3%,-3%)}60%{transform:translate(-2%,4%)}80%{transform:translate(4%,2%)}}
+/* CRT scanlines */
+#scanlines{position:fixed;inset:0;pointer-events:none;z-index:65;opacity:.05;
+  background:repeating-linear-gradient(0deg,transparent 0 2px,#000 2px 3px);}
+
+.mono{font-family:var(--f-mono);}
+.hand{font-family:var(--f-hand);}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.28em;color:var(--amber);text-transform:uppercase;margin:0 0 10px;font-weight:700;}
+
+/* ============ Header console ============ */
+#console{position:fixed;top:0;left:0;right:0;z-index:55;display:flex;align-items:center;gap:14px;
+  padding:10px 14px;background:rgba(22,14,38,.88);backdrop-filter:blur(10px);
+  border-bottom:2px solid rgba(245,169,60,.35);}
+.brand{display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--ink);cursor:pointer;padding:2px;}
+.brand:focus-visible{outline:3px dashed var(--amber);outline-offset:3px;border-radius:10px;}
+.brand-reel{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#1A1128;
+  background:conic-gradient(var(--amber2),var(--pink),var(--teal),var(--amber2));box-shadow:0 0 14px rgba(245,169,60,.4);}
+.brand-reel svg{width:20px;height:20px;}
+.brand-text{display:flex;flex-direction:column;line-height:1;text-align:left;}
+.brand-text small{font-family:var(--f-mono);font-size:.58rem;letter-spacing:.3em;color:var(--dim);}
+.brand-text strong{font-family:var(--f-disp);font-size:1.05rem;letter-spacing:.06em;color:var(--amber2);}
+.hud-dots{display:flex;gap:7px;flex:1;justify-content:center;}
+.pdot{width:15px;height:15px;border-radius:5px;border:2px solid var(--edge);background:#1A1128;cursor:pointer;padding:0;transition:.25s;}
+.pdot.done{background:var(--amber);border-color:var(--amber2);box-shadow:0 0 10px rgba(245,169,60,.6);}
+.pdot:focus-visible{outline:3px dashed var(--amber);outline-offset:2px;}
+.hud-right{display:flex;align-items:center;gap:9px;}
+.hud-score{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;color:var(--gold);
+  background:#1A1128;border:2px solid var(--edge);border-radius:999px;padding:6px 12px;}
+.hud-score svg{width:14px;height:14px;}
+.icon-btn{width:42px;height:42px;border-radius:12px;border:2px solid var(--edge);background:var(--panel);
+  color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 0 rgba(10,5,22,.5);transition:.12s;}
+.icon-btn svg{width:19px;height:19px;}
+.icon-btn:hover{border-color:var(--amber);}
+.icon-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(10,5,22,.5);}
+.icon-btn.wide{width:auto;padding:0 13px;display:flex;gap:6px;font-family:var(--f-mono);font-size:.75rem;letter-spacing:.12em;}
+.icon-btn:focus-visible{outline:3px dashed var(--amber);outline-offset:3px;}
+
+/* ============ Screens ============ */
+main{max-width:1080px;margin:0 auto;padding:96px 16px 70px;}
+.screen{display:none;}
+.screen.active{display:block;animation:screenIn .5s cubic-bezier(.2,.9,.3,1.15);}
+@keyframes screenIn{from{opacity:0;transform:translateY(26px) scale(.985)}to{opacity:1;transform:none}}
+
+/* Buttons */
+.btn{font-family:var(--f-disp);font-size:1rem;letter-spacing:.07em;border:none;border-radius:16px;
+  padding:13px 26px;cursor:pointer;color:#241536;display:inline-flex;align-items:center;gap:9px;
+  background:linear-gradient(180deg,var(--amber2),var(--amber));
+  box-shadow:0 6px 0 var(--amber-dk),0 12px 26px rgba(0,0,0,.35);transition:transform .09s,box-shadow .09s;}
+.btn svg{width:18px;height:18px;}
+.btn:hover{filter:brightness(1.05);}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--amber-dk);}
+.btn:focus-visible{outline:3px dashed var(--ink);outline-offset:3px;}
+.btn-big{font-size:1.15rem;padding:16px 34px;}
+.btn-pink{background:linear-gradient(180deg,#FF8AB4,var(--pink));box-shadow:0 6px 0 #96305A,0 12px 26px rgba(0,0,0,.35);}
+.btn-pink:active{box-shadow:0 2px 0 #96305A;}
+.btn-ghost{background:transparent;color:var(--ink);border:2px solid var(--edge);box-shadow:0 5px 0 rgba(10,5,22,.5);}
+.btn-ghost:active{box-shadow:0 1px 0 rgba(10,5,22,.5);}
+.btn-ghost:hover{border-color:var(--amber);color:var(--amber2);}
+
+/* ============ Intro ============ */
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:34px;align-items:center;}
+.game-title{font-family:var(--f-disp);font-size:clamp(2.4rem,6vw,4rem);line-height:.98;margin:.1em 0 .25em;
+  color:var(--ink);text-shadow:0 0 30px rgba(245,169,60,.35),0 6px 0 rgba(10,5,22,.55);}
+.cursor{color:var(--amber);animation:blink 1.1s steps(2) infinite;}
+@keyframes blink{50%{opacity:0}}
+.lede{font-size:1.06rem;color:var(--dim);max-width:52ch;}
+.feat{list-style:none;padding:0;margin:18px 0;display:flex;flex-wrap:wrap;gap:9px;}
+.feat li{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;display:flex;align-items:center;gap:8px;
+  background:var(--panel);border:2px solid var(--edge);border-radius:999px;padding:8px 14px;}
+.feat svg{width:15px;height:15px;color:var(--teal);}
+.feat li:nth-child(2) svg{color:var(--pink);}
+.feat li:nth-child(4) svg{color:var(--violet);}
+.feat li:nth-child(5) svg{color:var(--amber);}
+.cta-row{display:flex;gap:14px;flex-wrap:wrap;margin:22px 0 14px;}
+.note{font-size:.7rem;letter-spacing:.14em;color:var(--dim);opacity:.85;}
+.hero-poster{margin:0;text-align:center;}
+.hero-poster img{width:100%;border-radius:14px;border:3px solid var(--ink);transform:rotate(-2deg);
+  box-shadow:var(--shadow),0 20px 50px rgba(0,0,0,.45);display:block;}
+.hero-poster figcaption{font-family:var(--f-hand);font-size:1.35rem;color:var(--amber2);margin-top:14px;transform:rotate(-1deg);}
+
+/* ============ Map ============ */
+.map-head{text-align:center;margin-bottom:8px;}
+.map-head h2{font-family:var(--f-disp);font-size:clamp(1.7rem,4vw,2.4rem);margin:.1em 0;letter-spacing:.04em;}
+#final-banner{text-align:center;margin:14px 0 22px;padding:20px;border-radius:var(--radius);
+  background:linear-gradient(180deg,rgba(255,201,60,.16),rgba(255,107,157,.10));
+  border:2px dashed var(--gold);box-shadow:0 0 30px rgba(255,201,60,.15);animation:screenIn .6s;}
+.fb-title{font-family:var(--f-disp);letter-spacing:.14em;color:var(--gold);margin:.1em 0 14px;font-size:1.15rem;text-shadow:0 0 18px rgba(255,201,60,.5);}
+.reels{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px;margin-top:18px;}
+.reel{position:relative;text-align:left;border:2px solid var(--edge);border-radius:var(--radius);overflow:hidden;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));color:var(--ink);cursor:pointer;padding:0;
+  box-shadow:var(--shadow);transition:transform .16s,border-color .16s;font-family:var(--f-body);}
+.reel:hover{transform:translateY(-5px) rotate(-.5deg);border-color:var(--c,var(--amber));}
+.reel:focus-visible{outline:3px dashed var(--amber);outline-offset:4px;}
+.sprocket{display:block;height:9px;margin:7px 12px;border-radius:3px;
+  background:repeating-linear-gradient(90deg,rgba(10,5,22,.75) 0 9px,transparent 9px 21px);}
+.reel-media{display:block;position:relative;height:112px;background:linear-gradient(135deg,var(--c,#555),#1A1128 85%);}
+.reel-media img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.05) contrast(1.04);}
+.reel-num{position:absolute;top:8px;left:10px;font-family:var(--f-mono);font-weight:700;font-size:.8rem;
+  background:#12101E;border:2px solid var(--c,var(--amber));color:var(--c,var(--amber));border-radius:9px;padding:1px 9px;}
+.reel-body{display:block;padding:2px 16px 12px;}
+.reel-tag{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.2em;color:var(--c,var(--amber));font-weight:700;}
+.reel-title{display:block;font-family:var(--f-disp);font-size:1.06rem;margin:6px 0 8px;letter-spacing:.02em;}
+.reel-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.reel-char{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--dim);}
+.reel-char svg{width:13px;height:13px;}
+.reel-stars{color:var(--gold);letter-spacing:3px;font-size:.95rem;text-shadow:0 0 8px rgba(255,201,60,.4);}
+.reel-stars .off{color:#544570;text-shadow:none;}
+.reel-best{display:block;margin-top:8px;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.1em;color:var(--dim);}
+
+/* ============ Scene ============ */
+.scene-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px;}
+.scene-title{flex:1;min-width:200px;}
+.scene-title h2{font-family:var(--f-disp);font-size:clamp(1.2rem,3vw,1.7rem);margin:2px 0 0;letter-spacing:.03em;}
+.avatar{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;flex:none;
+  font-family:var(--f-disp);font-size:1.15rem;color:#1A1128;background:var(--c,var(--amber));
+  box-shadow:0 0 0 3px rgba(246,237,221,.15),0 4px 0 rgba(10,5,22,.5);}
+.run-score{font-weight:700;color:var(--gold);background:#1A1128;border:2px solid var(--edge);border-radius:12px;
+  padding:8px 14px;font-size:.95rem;}
+.run-score.bump{animation:bump .3s;}
+@keyframes bump{50%{transform:scale(1.2)}}
+#stage{min-height:300px;}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:2px solid var(--edge);
+  border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;}
+.game-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.g-label{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.2em;color:var(--dim);font-weight:700;}
+.g-mult{font-family:var(--f-mono);font-size:.75rem;font-weight:700;color:#1A1128;background:var(--gold);
+  border-radius:999px;padding:3px 12px;box-shadow:0 3px 0 rgba(10,5,22,.5);}
+
+/* Fill the blanks */
+.sentence{font-size:1.02rem;line-height:2.05;margin:10px 0;padding:11px 15px;
+  background:rgba(246,237,221,.045);border:1px dashed var(--edge);border-radius:13px;}
+.blank{display:inline-block;min-width:104px;border:2px dashed var(--teal);border-radius:10px;
+  background:rgba(59,214,196,.08);color:var(--teal);font-family:var(--f-mono);font-size:.9rem;
+  padding:1px 12px;margin:0 3px;cursor:pointer;transition:.15s;}
+.blank.sel{border-style:solid;background:rgba(59,214,196,.22);box-shadow:0 0 14px rgba(59,214,196,.4);}
+.blank.filled{border:2px solid var(--ok);background:rgba(74,222,140,.13);color:var(--ok);cursor:default;}
+.blank.err{animation:shake .45s;}
+.bank{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:20px;}
+.chip{font-family:var(--f-mono);font-size:.9rem;border:2px solid var(--pink);color:var(--pink);
+  background:rgba(255,107,157,.08);border-radius:999px;padding:8px 17px;cursor:pointer;
+  box-shadow:0 4px 0 rgba(10,5,22,.5);transition:.13s;}
+.chip:hover{transform:translateY(-2px);background:rgba(255,107,157,.16);}
+.chip:disabled{cursor:default;}
+.chip.gone{opacity:0;pointer-events:none;transform:scale(.5);transition:.3s;}
+.chip.rejected{animation:jolt .5s;}
+@keyframes jolt{0%,100%{transform:translateX(0)}20%{transform:translateX(-11px) rotate(-4deg)}45%{transform:translateX(11px) rotate(4deg)}70%{transform:translateX(-5px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+
+/* Multiple choice */
+.q-card{min-height:120px;display:grid;place-items:center;text-align:center;font-size:1.14rem;font-weight:700;padding:10px 6px;}
+.opts{display:grid;gap:12px;margin-top:16px;}
+.opt{text-align:left;font-family:var(--f-body);font-size:.98rem;font-weight:600;color:var(--ink);
+  background:rgba(246,237,221,.05);border:2px solid var(--edge);border-radius:13px;padding:13px 16px;
+  cursor:pointer;box-shadow:0 4px 0 rgba(10,5,22,.5);transition:.13s;}
+.opt:not(:disabled):hover{border-color:var(--teal);transform:translateX(4px);}
+.opt:focus-visible{outline:3px dashed var(--amber);outline-offset:3px;}
+.opt:disabled{cursor:default;}
+.opt.correct{border-color:var(--ok);background:rgba(74,222,140,.14);}
+.opt.wrongpick{border-color:var(--err);background:rgba(255,90,110,.13);animation:shake .45s;}
+.opt.faded{opacity:.4;}
+.react{display:flex;gap:13px;align-items:flex-start;margin-top:18px;background:rgba(246,237,221,.05);
+  border:1px dashed var(--edge);border-radius:14px;padding:13px;}
+.react .avatar{width:42px;height:42px;font-size:1rem;}
+.react p{margin:2px 0 0;font-family:var(--f-hand);font-size:1.28rem;line-height:1.35;}
+.react strong{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.18em;color:var(--dim);}
+
+/* True / False */
+.tf-wrap{max-width:660px;margin:0 auto;}
+.tf-clock{display:flex;align-items:center;gap:10px;}
+.tf-clock .mono{font-size:.85rem;color:var(--teal);min-width:56px;}
+.tfbar{flex:1;height:14px;border-radius:8px;background:#1A1128;border:2px solid var(--edge);overflow:hidden;}
+.tfbar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--pink));transition:width 1s linear;}
+.tfbar.danger i{background:var(--err);animation:blink .5s steps(2) infinite;}
+.tf-card{min-height:170px;display:grid;place-items:center;text-align:center;font-size:1.13rem;line-height:1.75;padding:20px 12px;}
+.tf-btns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;}
+.tf-btn{font-family:var(--f-disp);font-size:1.1rem;letter-spacing:.1em;border-radius:16px;padding:15px;
+  cursor:pointer;color:#1A1128;box-shadow:0 5px 0 rgba(10,5,22,.55);transition:.1s;display:flex;justify-content:center;gap:8px;align-items:center;}
+.tf-btn svg{width:18px;height:18px;}
+.tf-btn.real{background:linear-gradient(180deg,#6FE8D6,var(--teal));box-shadow:0 5px 0 #1A7A6C,0 5px 0 rgba(10,5,22,.55);}
+.tf-btn.real:active{box-shadow:0 2px 0 #1A7A6C;}
+.tf-btn.del{background:linear-gradient(180deg,#FF93B8,var(--pink));box-shadow:0 5px 0 #96305A,0 5px 0 rgba(10,5,22,.55);}
+.tf-btn.del:active{box-shadow:0 2px 0 #96305A;}
+.tf-btn:disabled{opacity:.45;cursor:default;}
+.tf-btn:focus-visible{outline:3px dashed var(--ink);outline-offset:3px;}
+.explain{margin-top:16px;display:none;background:rgba(245,169,60,.08);border:2px dashed var(--amber);
+  border-radius:14px;padding:15px 17px;}
+.explain.show{display:block;animation:screenIn .35s;}
+.verdict{font-family:var(--f-mono);font-weight:700;font-size:.8rem;letter-spacing:.14em;margin:0 0 8px;}
+.verdict.ok{color:var(--ok);} .verdict.bad{color:var(--err);}
+.explain p{margin:0 0 12px;color:var(--dim);}
+.next-row{text-align:center;}
+
+/* Match the meaning */
+.m-example{font-family:var(--f-mono);font-size:.76rem;color:var(--teal);text-align:center;
+  background:rgba(59,214,196,.07);border:1px dashed var(--teal);border-radius:10px;padding:8px 12px;margin:0 0 16px;}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.mcol{display:grid;gap:10px;align-content:start;}
+.mcol-t{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.22em;color:var(--dim);text-align:center;margin-bottom:2px;}
+.mbtn{text-align:left;font-family:var(--f-body);font-size:.93rem;font-weight:600;color:var(--ink);
+  background:rgba(246,237,221,.05);border:2px solid var(--edge);border-radius:12px;padding:11px 14px;
+  cursor:pointer;box-shadow:0 4px 0 rgba(10,5,22,.5);transition:.13s;}
+.mbtn:not(:disabled):hover{border-color:var(--violet);}
+.mbtn:focus-visible{outline:3px dashed var(--amber);outline-offset:3px;}
+.mbtn.sel{border-color:var(--amber);background:rgba(245,169,60,.14);box-shadow:0 0 14px rgba(245,169,60,.35);}
+.mbtn.locked{border-color:var(--ok);background:rgba(74,222,140,.13);opacity:.8;cursor:default;}
+.mbtn.err{animation:shake .45s;}
+.m-count{text-align:center;font-family:var(--f-mono);font-size:.8rem;letter-spacing:.12em;color:var(--gold);margin-top:16px;}
+
+/* Blitz */
+.bt-clockrow{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.bt-clock{font-family:var(--f-mono);font-weight:700;font-size:1.15rem;color:var(--teal);min-width:84px;text-align:center;
+  border:2px solid var(--edge);border-radius:12px;padding:6px 4px;background:#1A1128;}
+.bt-clock.danger{color:var(--err);border-color:var(--err);animation:blink .5s steps(2) infinite;}
+.bt-bar{flex:1;height:16px;border-radius:9px;background:#1A1128;border:2px solid var(--edge);overflow:hidden;}
+.bt-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--pink));transition:width 1s linear;}
+.bt-bar.danger i{background:var(--err);animation:blink .5s steps(2) infinite;}
+.bt-q{min-height:96px;display:grid;place-items:center;text-align:center;font-size:1.1rem;font-weight:700;}
+
+/* ============ Modal ============ */
+#modal-overlay{position:fixed;inset:0;z-index:70;display:none;place-items:center;padding:16px;
+  background:rgba(12,6,24,.72);backdrop-filter:blur(5px);}
+#modal-overlay.show{display:grid;}
+.modal{width:min(580px,94vw);max-height:86vh;overflow:auto;background:var(--ink);color:#2A1E3F;
+  border:3px solid #2A1E3F;border-radius:20px;box-shadow:0 10px 0 rgba(10,5,22,.55),0 30px 70px rgba(0,0,0,.5);
+  padding:24px;animation:screenIn .4s cubic-bezier(.2,.9,.3,1.2);}
+.m-tag{font-family:var(--f-mono);font-size:.7rem;font-weight:700;letter-spacing:.26em;color:#B02A5C;margin:0 0 6px;}
+.m-title{font-family:var(--f-disp);font-size:1.6rem;margin:.05em 0 .5em;line-height:1.15;}
+.m-char{display:flex;gap:13px;align-items:center;background:rgba(42,30,63,.06);border-radius:14px;padding:11px 13px;margin:12px 0;}
+.m-char .avatar{box-shadow:0 3px 0 rgba(42,30,63,.3);}
+.m-char p{margin:2px 0 0;font-family:var(--f-hand);font-size:1.3rem;line-height:1.25;color:#5A4370;}
+.m-img{width:100%;border-radius:12px;border:2px solid #2A1E3F;display:block;margin:12px 0;box-shadow:0 5px 0 rgba(42,30,63,.25);}
+.m-obj{font-weight:600;}
+.m-tip{background:rgba(245,169,60,.25);border:1.5px dashed #B07A22;border-radius:12px;padding:10px 13px;font-size:.92rem;}
+.m-btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;justify-content:center;}
+.stars-big{text-align:center;font-size:2.5rem;letter-spacing:10px;margin:6px 0 10px;}
+.star-pop{display:inline-block;color:var(--gold);text-shadow:0 0 18px rgba(255,201,60,.6);animation:starPop .55s cubic-bezier(.2,1.5,.4,1) backwards;}
+.star-pop.dim{color:#C9B8A2;text-shadow:none;opacity:.4;}
+@keyframes starPop{from{transform:scale(0) rotate(-40deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+.m-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;margin:14px 0;}
+.m-stats span{display:block;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.18em;color:#8A7550;}
+.m-stats strong{font-family:var(--f-disp);font-size:1.35rem;color:#2A1E3F;}
+.new-best{text-align:center;font-family:var(--f-disp);color:#B02A5C;letter-spacing:.1em;margin:4px 0 0;animation:bump .6s;}
+.m-gold{text-align:center;font-weight:800;color:#8A6A00;background:rgba(255,201,60,.35);border:2px dashed #B07A22;border-radius:12px;padding:10px 12px;}
+
+/* ============ Toast / float / confetti ============ */
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(24px);opacity:0;z-index:80;
+  background:#12101E;border:2px solid var(--amber);border-radius:14px;padding:11px 20px;
+  font-family:var(--f-mono);font-size:.85rem;transition:.3s;pointer-events:none;max-width:88vw;text-align:center;}
+#toast.show{opacity:1;transform:translateX(-50%);}
+.pfloat{position:fixed;z-index:90;font-family:var(--f-mono);font-weight:700;font-size:1.05rem;pointer-events:none;
+  animation:floatUp .95s ease forwards;text-shadow:0 2px 0 rgba(0,0,0,.55);}
+@keyframes floatUp{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-52px) scale(1.15)}}
+.confetti{position:fixed;top:-18px;z-index:85;width:10px;height:15px;pointer-events:none;animation:confFall linear forwards;}
+@keyframes confFall{to{transform:translateY(112vh) rotate(760deg);opacity:.85;}}
+
+/* ============ Finale ============ */
+.finale-wrap{max-width:760px;margin:0 auto;}
+.fin-hero{text-align:center;margin-bottom:18px;}
+.fin-title{font-family:var(--f-disp);font-size:clamp(2.2rem,6vw,3.4rem);margin:.05em 0;letter-spacing:.06em;
+  text-shadow:0 0 34px rgba(255,201,60,.4),0 6px 0 rgba(10,5,22,.55);}
+.fin-quote{font-size:1.5rem;color:var(--amber2);margin:.2em 0 0;}
+.fin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0;}
+.fin-stat{background:linear-gradient(180deg,var(--panel2),var(--panel));border:2px solid var(--edge);
+  border-radius:16px;padding:16px 10px;text-align:center;box-shadow:var(--shadow);}
+.fin-stat span{display:block;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.2em;color:var(--dim);margin-bottom:6px;}
+.fin-stat strong{font-family:var(--f-disp);font-size:1.5rem;color:var(--gold);display:inline-flex;align-items:center;gap:8px;}
+.fin-stat strong svg{width:20px;height:20px;}
+.fin-stat small{font-size:.85rem;color:var(--dim);}
+.fin-ladder{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px;}
+.fin-ladder span{font-size:.68rem;letter-spacing:.06em;border:1.5px solid var(--edge);border-radius:999px;
+  padding:5px 12px;color:var(--dim);}
+.fin-ladder span.hit{border-color:var(--gold);color:var(--gold);box-shadow:0 0 12px rgba(255,201,60,.25);}
+.fin-table{border:2px solid var(--edge);border-radius:16px;overflow:hidden;margin-bottom:22px;background:var(--panel);}
+.fin-row{display:grid;grid-template-columns:46px 1fr 90px 92px;gap:8px;align-items:center;padding:11px 15px;
+  border-bottom:1px dashed var(--edge);font-size:.92rem;}
+.fin-row:last-child{border-bottom:none;}
+.fin-row:nth-child(odd){background:rgba(246,237,221,.035);}
+.fr-t{font-weight:700;}
+.fr-stars{color:var(--gold);letter-spacing:2px;text-align:right;}
+.fr-stars .off{color:#544570;}
+.fin-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:18px;}
+.fin-close{text-align:center;font-size:1.45rem;color:var(--teal);}
+
+/* ============ Preloader ============ */
+#preloader{position:fixed;inset:0;z-index:100;display:grid;place-items:center;text-align:center;
+  background:linear-gradient(180deg,#241736,#140C22);
+  transition:transform .8s cubic-bezier(.7,0,.3,1),opacity .8s;}
+#preloader.exit{transform:translateY(-100%);opacity:.3;}
+.pl-inner{display:grid;justify-items:center;gap:16px;padding:20px;}
+.reel-spin{width:86px;height:86px;border-radius:50%;border:7px solid var(--amber);
+  border-top-color:var(--pink);border-bottom-color:var(--teal);position:relative;animation:spin 1.6s linear infinite;
+  box-shadow:0 0 34px rgba(245,169,60,.35);}
+.reel-spin span{position:absolute;inset:26px;border-radius:50%;background:var(--amber);
+  box-shadow:inset 0 0 0 5px #1A1128;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pl-title{font-family:var(--f-disp);font-size:1.7rem;letter-spacing:.1em;margin:6px 0 0;color:var(--ink);}
+#pl-status{font-size:.75rem;letter-spacing:.24em;color:var(--dim);margin:0;}
+.load-bar{width:230px;height:11px;border-radius:7px;background:#1A1128;border:2px solid var(--edge);overflow:hidden;}
+.load-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--pink),var(--gold));transition:width .18s;}
+#pl-play{opacity:0;transform:translateY(10px);transition:.4s;}
+#pl-play.ready{opacity:1;transform:none;animation:playPulse 1.4s ease infinite;}
+@keyframes playPulse{50%{box-shadow:0 6px 0 var(--amber-dk),0 12px 26px rgba(0,0,0,.35),0 0 34px rgba(245,169,60,.55);}}
+
+/* ============ Responsive ============ */
+@media (max-width:860px){
+  .hero{grid-template-columns:1fr;}
+  .hero-poster{max-width:420px;margin:0 auto;}
+  .hud-dots{display:none;}
+  .match-grid{grid-template-columns:1fr;}
+  .fin-stats{grid-template-columns:1fr;}
+  .fin-row{grid-template-columns:36px 1fr 70px 84px;font-size:.85rem;}
+}
+/* ============ Reduced motion ============ */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.001s !important;}
+  #grain{animation:none;}
+  html{scroll-behavior:auto;}
+}
+</style>
+</head>
+<body>
+
+<div id="grain" aria-hidden="true"></div>
+<div id="scanlines" aria-hidden="true"></div>
+
+<!-- ============ Fixed header console ============ -->
+<header id="console">
+  <button class="brand" id="brand-btn" aria-label="Across the Arcade — back to title screen">
+    <span class="brand-reel" aria-hidden="true"><i data-lucide="film"></i></span>
+    <span class="brand-text"><small>ACROSS THE</small><strong>ARCADE</strong></span>
+  </button>
+  <div class="hud-dots" id="hud-dots" aria-label="Level completion progress"></div>
+  <div class="hud-right">
+    <span class="hud-score mono" title="Total of best scores"><i data-lucide="star"></i><span id="hud-score">0</span></span>
+    <button id="sound-btn" class="icon-btn" aria-label="Toggle sound" aria-pressed="false"></button>
+    <button id="map-btn" class="icon-btn" aria-label="Open level map"><i data-lucide="map"></i></button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ Intro screen ============ -->
+  <section id="screen-intro" class="screen active" aria-label="Title screen">
+    <div class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Side A · A Vocab Odyssey</p>
+        <h1 class="game-title">ACROSS THE<br>ARCADE<span class="cursor" aria-hidden="true">▌</span></h1>
+        <p class="lede">Five reels of pure psychedelia built on Julie Taymor’s <em>Across the Universe</em> — 33 Beatles songs, one generation, and a fractured world stitched back together with <strong>words</strong>.</p>
+        <ul class="feat">
+          <li><i data-lucide="puzzle"></i>Fill the Blanks</li>
+          <li><i data-lucide="check-check"></i>REAL or DELUSION</li>
+          <li><i data-lucide="list-checks"></i>Multiple Choice</li>
+          <li><i data-lucide="shuffle"></i>Match the Meaning</li>
+          <li><i data-lucide="timer"></i>Bonus Blitz · 750s</li>
+        </ul>
+        <div class="cta-row">
+          <button id="start-btn" class="btn btn-big">▶ START THE TOUR</button>
+          <a class="btn btn-ghost" href="https://item1000-collab.github.io/ai/engoo/20261011-ac-universe/across-the-universe.pdf" target="_blank" rel="noopener noreferrer"><i data-lucide="link"></i>SOURCE SLIDES (PDF)</a>
+        </div>
+        <p class="mono note">FREE ORDER · PROGRESS STICKS TO THE TAPE · LEAVE ANY REEL AT ANY TIME</p>
+      </div>
+      <figure class="hero-poster">
+        <img src="https://item1000-collab.github.io/ai/engoo/20261011-ac-universe/slide-001.jpg" alt="Presentation cover: Across the Universe — A Journey Through Consciousness" >
+        <figcaption>“Words are flowing out like endless rain into a paper cup…”</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ Level map screen ============ -->
+  <section id="screen-map" class="screen" aria-label="Level map">
+    <header class="map-head">
+      <p class="eyebrow">Now Showing · Five Reels</p>
+      <h2>THE REEL MAP</h2>
+      <p class="mono note">ALL REELS UNLOCKED — PLAY IN ANY ORDER · ★ = BEST STARS · BEST SCORE SAVED PER REEL</p>
+    </header>
+    <div id="final-banner" hidden>
+      <p class="fb-title">★ ALL REELS CLEARED ★</p>
+      <button id="final-btn" class="btn btn-big btn-pink">🏆 ENTER THE FINALE</button>
+    </div>
+    <div id="reels" class="reels" aria-label="Level reels"></div>
+  </section>
+
+  <!-- ============ Scene screen ============ -->
+  <section id="screen-scene" class="screen" aria-label="Level scene">
+    <div class="scene-top">
+      <button id="back-map" class="icon-btn wide" aria-label="Back to level map"><i data-lucide="chevron-left"></i><span>MAP</span></button>
+      <div class="scene-title">
+        <span class="reel-tag mono" id="scene-tag"></span>
+        <h2 id="scene-title"></h2>
+      </div>
+      <span class="avatar" id="scene-char" aria-hidden="true"></span>
+      <span class="run-score mono" id="run-score" aria-live="polite">0</span>
+    </div>
+    <div id="stage" aria-live="polite"></div>
+  </section>
+
+  <!-- ============ Finale screen ============ -->
+  <section id="screen-finale" class="screen" aria-label="Finale">
+    <div class="finale-wrap" id="finale-wrap"></div>
+  </section>
+</main>
+
+<!-- ============ Modal / toast roots ============ -->
+<div id="modal-overlay">
+  <div class="modal" role="dialog" aria-modal="true" id="modal"></div>
+</div>
+<div id="toast" role="status" aria-live="polite"><span id="toast-text"></span></div>
+
+<!-- ============ Preloader ============ -->
+<div id="preloader" role="dialog" aria-label="Loading screen">
+  <div class="pl-inner">
+    <div class="reel-spin" aria-hidden="true"><span></span></div>
+    <p class="pl-title">ACROSS THE ARCADE</p>
+    <p class="mono" id="pl-status">THREADING THE FILM…</p>
+    <div class="load-bar" aria-hidden="true"><i id="pl-fill"></i></div>
+    <button id="pl-play" class="btn btn-big" hidden>PLAY ▶</button>
+  </div>
+</div>
+
+<script>
+(function(){ "use strict";
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+var $  = function(s, r){ return (r||document).querySelector(s); };
+var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+var pad2  = function(n){ return String(n).padStart(2,"0"); };
+var fmt   = function(n){ return Number(n).toLocaleString("en-US"); };
+var shuffle = function(arr){
+  var a = arr.slice();
+  for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+};
+var RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function refreshIcons(){ if(window.lucide && window.lucide.createIcons){ try{ window.lucide.createIcons(); }catch(e){} } }
+
+/* Floating score text near an element */
+function popFloat(el, text, color){
+  if(RM || !el){ return; }
+  var r = el.getBoundingClientRect();
+  var s = document.createElement("span");
+  s.className = "pfloat";
+  s.textContent = text;
+  s.style.left = (r.left + r.width/2 - 20) + "px";
+  s.style.top  = (r.top - 8) + "px";
+  s.style.color = color || "var(--gold)";
+  document.body.appendChild(s);
+  setTimeout(function(){ s.remove(); }, 1000);
+}
+
+/* Toast notification */
+var toastTimer = null;
+function toast(msg, emoji){
+  var t = $("#toast");
+  $("#toast-text").textContent = (emoji ? emoji + "  " : "") + msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2400);
+}
+
+/* Confetti burst (skipped under reduced motion) */
+function spawnConfetti(n){
+  if(RM){ return; }
+  var colors = ["#F5A93C","#FF6B9D","#3BD6C4","#FFC93C","#A78BFA","#F6EDDD"];
+  for(var i=0;i<n;i++){
+    var c = document.createElement("i");
+    c.className = "confetti";
+    c.style.left = Math.random()*100 + "vw";
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration = (1.7 + Math.random()*1.6) + "s";
+    c.style.animationDelay = (Math.random()*0.5) + "s";
+    c.style.transform = "rotate(" + Math.random()*360 + "deg)";
+    if(Math.random()>.5){ c.style.borderRadius = "50%"; }
+    document.body.appendChild(c);
+    setTimeout(function(node){ return function(){ node.remove(); }; }(c), 4200);
+  }
+}
+
+/* ============================================================
+   AUDIO — Web Audio API, synthesized only
+   ============================================================ */
+var actx = null;
+var MUTE_KEY = "ata-universe-mute-v1";
+var muted = false;
+try{ muted = localStorage.getItem(MUTE_KEY) === "1"; }catch(e){}
+
+function initAudio(){
+  if(!actx){
+    try{ actx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ actx = null; }
+  }
+  if(actx && actx.state === "suspended"){ actx.resume(); }
+}
+function tone(freq, dur, type, vol, when){
+  if(!actx || muted){ return; }
+  type = type || "sine"; vol = (vol==null) ? 0.12 : vol; when = when || 0;
+  var t0 = actx.currentTime + when;
+  var o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(Math.max(vol,0.0002), t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function noiseBurst(dur, vol){
+  if(!actx || muted){ return; }
+  var n = Math.floor(actx.sampleRate * dur);
+  var buf = actx.createBuffer(1, n, actx.sampleRate);
+  var d = buf.getChannelData(0);
+  for(var i=0;i<n;i++){ d[i] = (Math.random()*2-1) * (1 - i/n); }
+  var src = actx.createBufferSource(); src.buffer = buf;
+  var g = actx.createGain(); g.gain.value = vol || 0.05;
+  var f = actx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 900;
+  src.connect(f); f.connect(g); g.connect(actx.destination);
+  src.start();
+}
+var SFX = {
+  click:   function(){ tone(720, 0.055, "square", 0.045); },
+  flip:    function(){ tone(500, 0.08, "triangle", 0.07); tone(760, 0.08, "triangle", 0.06, 0.06); },
+  correct: function(){ tone(523, 0.09, "triangle", 0.10); tone(659, 0.09, "triangle", 0.10, 0.08); tone(784, 0.16, "triangle", 0.11, 0.16); },
+  wrong:   function(){ tone(185, 0.2, "sawtooth", 0.11); tone(140, 0.26, "sawtooth", 0.09, 0.08); },
+  match:   function(){ tone(660, 0.1, "sine", 0.1); tone(990, 0.16, "sine", 0.09, 0.09); },
+  fanfare: function(){ [392,523,659,784,1047].forEach(function(f,i){ tone(f, 0.16, "triangle", 0.1, i*0.09); }); noiseBurst(0.4, 0.045); },
+  tick:    function(){ tone(1250, 0.03, "square", 0.028); },
+  cheer:   function(){ noiseBurst(0.5, 0.06); [440,554,659].forEach(function(f,i){ tone(f, 0.2, "sine", 0.08, i*0.1); }); }
+};
+
+/* ============================================================
+   RESOURCES (pre-known URLs only)
+   ============================================================ */
+var BASE = "https://item1000-collab.github.io/ai/engoo/20261011-ac-universe/";
+function IMG(n){ return BASE + "slide-00" + n + ".jpg"; }
+
+/* ============================================================
+   GAME DATA — levels built on the presentation slides
+   ============================================================ */
+var SCENES = [
+  { id:"innocence", num:1, title:"The Vulnerability of Innocence", char:"Lucy", color:"#FF6B9D", slide:4,
+    game:"blanks", tag:"FILL THE BLANKS",
+    obj:"Eight lines from the presentation have lost a word each. Tap a blank, then tap the matching word in the bank. Wrong words bounce back — and every bounce costs points.",
+    tip:"Read the whole sentence in your head first — the missing word usually follows the rhythm of the idea.",
+    flavor:"“If I fell in love with you, would you promise to be true?”" },
+  { id:"cast", num:2, title:"Six Faces of a Generation", char:"Jude", color:"#3BD6C4", slide:3,
+    game:"choice", tag:"MULTIPLE CHOICE",
+    obj:"Eight questions about the ensemble. Three options, one attempt — choose wisely and earn the character’s blessing.",
+    tip:"Origin plus burden equals the character’s fingerprint. Learn the pair, not just the name.",
+    flavor:"“I’ve just seen a face I can’t forget…”" },
+  { id:"rewired", num:3, title:"The Song Restructured", char:"Max", color:"#F5A93C", slide:5,
+    game:"tf", tag:"REAL OR DELUSION",
+    obj:"Eight statements about rewired songs and practical psychedelia. Judge each one REAL or DELUSION. The tape pauses while the truth is on screen — press NEXT to roll on.",
+    tip:"Streak ×2 at three correct in a row, ×3 at six. Arrow keys work: ◀ for REAL, ▶ for DELUSION.",
+    flavor:"“Living is easy with eyes closed, misunderstanding all you see…”" },
+  { id:"metaphor", num:4, title:"Anatomy of a Metaphor", char:"Sadie", color:"#A78BFA", slide:7,
+    game:"match", tag:"MATCH THE MEANING",
+    obj:"Six terms from the material, six meanings, two columns. Click a word, then click its meaning. Locked pairs glow green and leave the board.",
+    tip:"Say every meaning out loud — the words that survive are the ones you actually use.",
+    flavor:"“I am the eggman, they are the eggmen, I am the walrus…”" },
+  { id:"rooftop", num:5, title:"The Rooftop Encore", char:"Prudence", color:"#FFC93C", slide:10,
+    game:"blitz", tag:"BONUS BLITZ · 750s",
+    obj:"750 seconds on the clock and twelve quick-fire questions from every reel. Streak multipliers climb to ×3 — and the clock blushes red when it gets hungry.",
+    tip:"Skip nothing. Every question the clock eats counts as a mistake.",
+    flavor:"“Nothing’s gonna change my world.”" }
+];
+
+/* --- Level 1 · Fill the blanks (quotes from the slides) --- */
+var BLANKS = [
+  { text:"Taymor’s film operates not as a traditional narrative, but as a three-movement visual {0}.", ans:"symphony" },
+  { text:"The plot serves as the {0}; the music and shifting color palettes do the cognitive work of capturing a generation’s awakening.", ans:"scaffolding" },
+  { text:"The film grounds its opening in strict {0}, placing early pop hits into the mouths of ordinary teenagers.", ans:"naturalism" },
+  { text:"Global anthems are transformed back into intimate, breathless {0}.", ans:"confessions" },
+  { text:"As the era fractures, so does the film’s {0}; naturalism is abandoned for theatrical surrealism.", ans:"reality" },
+  { text:"The music no longer just underscores the scene; it {0} the physical world around the characters.", ans:"bends" },
+  { text:"The surviving characters are scarred but {0}.", ans:"awake" },
+  { text:"“All You Need Is Love” is earned not through naive 1960s idealism, but through the {0} of profound loss and sacrifice.", ans:"crucible" }
+];
+var BLANK_DECOYS = ["guitar","curtain","chorus","camera"];
+
+/* --- Level 2 · Multiple choice (the character cards) --- */
+var MC_QS = [
+  { who:"Jude",   q:"Which character is “the immigrant observer, grappling with the guilt of the bystander”?",
+    opts:["Jude — the Artist","Max — the Soldier","Jo-Jo — the Musician"], c:0,
+    ok:"Guilty as charged, mate. Some burdens sail with you across an ocean.",
+    no:"Not me… but I’ll keep watching from the dock, just in case." },
+  { who:"Lucy",   q:"Lucy’s Historical Burden is “the radicalization of…”",
+    opts:["American innocence","Detroit rock’n’roll","Greenwich Village"], c:0,
+    ok:"They handed me a sign, and the signs kept getting heavier.",
+    no:"Read my card again — it all began in Ohio, innocent." },
+  { who:"Max",    q:"Max is “the drafted youth fed into the ___ machine.”",
+    opts:["Vietnam","Liverpool","Detroit"], c:0,
+    ok:"One morning I had a dorm room. By noon I had a helmet.",
+    no:"Wrong war, wrong city — check the draft card." },
+  { who:"Sadie",  q:"Sadie carries which Janis-shaped archetype?",
+    opts:["Janis Joplin","Jimi Hendrix","Joan Baez"], c:0,
+    ok:"Raw, loud, and sold by the pound — baby, that’s showbiz.",
+    no:"Honey, my roots grow somewhere else entirely." },
+  { who:"Jo-Jo",  q:"Jo-Jo represents “the Black American roots of ___ rock.”",
+    opts:["’60s","’50s","’80s"], c:0,
+    ok:"Every chord I play was born in Detroit and the Delta.",
+    no:"Wrong decade, friend — the ’60s made my guitar weep." },
+  { who:"Prudence", q:"Prudence is “the closeted, alienated youth searching for…”",
+    opts:["identity","fortune","revenge"], c:0,
+    ok:"Some songs you sing quietly, hoping no one hears the truth.",
+    no:"I never wanted riches — just to be seen." },
+  { who:"Jo-Jo",  q:"Where does Jo-Jo come from?",
+    opts:["Detroit","Ohio","Liverpool Docks"], c:0,
+    ok:"Motor City blood runs through these strings.",
+    no:"Close — but my city burns with a different fire." },
+  { who:"Sadie",  q:"Sadie’s origin is…",
+    opts:["Greenwich Village","Ivy League","Ohio Suburbia"], c:0,
+    ok:"The Village raised me — cheap wine, cheaper rooms, real music.",
+    no:"Darling, I never set foot in a lecture hall." }
+];
+
+/* --- Level 3 · REAL or DELUSION (rewired songs & metaphors) --- */
+var TF_TIME = 600; /* ten minutes per card, per design */
+var TF_QS = [
+  { real:true,  text:"“I Want to Hold Your Hand” becomes a tortured, tempo-slowed lament, sung by Prudence alone on a football field: “It’s not happy if it’s a hand you are never, never, never going to hold.”",
+    why:"The 1964 Ed Sullivan hysteria is rewired into unrequited, closeted longing — the lyrics fracture into tragedy." },
+  { real:false, text:"In Taymor’s vision, “Let It Be” is staged as a light-hearted summer-camp sing-along by a lake.",
+    why:"Delusion. It becomes “a soaring, devastating gospel eulogy sung in a church, mourning a Black child murdered in the 1967 Detroit Riots — a visceral parallel to modern tragedies.”" },
+  { real:true,  text:"In the draft sequence, dancers wear identical, larger-than-life plastic masks, and Uncle Sam’s romantic “I Want You” morphs into a meat-packing assembly line.",
+    why:"The material names the psychological output outright: “Dehumanization” — practical psychedelia built from masks, bodies and props." },
+  { real:false, text:"The film uses cutting-edge CGI dragons to visualize the draft.",
+    why:"Delusion. Taymor relies on the “Double Experience” — the rawness of physical theatrical puppetry plus cinematic scale — to force the audience to suspend disbelief." },
+  { real:true,  text:"“Strawberry Fields” ends with the visual horror of strawberry bombs falling on the jungle.",
+    why:"Super 8 projections on actors’ faces and paint splattered on the lens merge Jude’s artistic frustration with the literal blood of a generation." },
+  { real:false, text:"“Helter Skelter” scores a gentle beach picnic between Jude and Lucy.",
+    why:"Delusion. It scores “the raw, violent clash between anti-war activists and police at Columbia University” — the Macro-History reel." },
+  { real:true,  text:"“And I Love Her” is reimagined as a sweeping, wordless orchestral motif representing Lucy’s tragic drift away from Jude toward radicalism.",
+    why:"The Micro-Love Story (The Sacrifice) — heartbreak synchronized to the collision of an era." },
+  { real:false, text:"The film ends by presenting “All You Need Is Love” as naive 1960s idealism.",
+    why:"Delusion. It is “earned not through naive 1960s idealism, but through the crucible of profound loss and sacrifice.”" }
+];
+
+/* --- Level 4 · Match the meaning (six target terms) --- */
+var MATCH_PAIRS = [
+  { w:"swansong",    m:"A final work or performance — an artistic farewell" },
+  { w:"crucible",    m:"An ordeal that melts you down and reforges you" },
+  { w:"unrequited",  m:"Love or longing that lives on one side only" },
+  { w:"archetype",   m:"A universal character pattern everyone instantly recognizes" },
+  { w:"visceral",    m:"Felt in the gut — instinctive, not intellectual" },
+  { w:"tapestry",    m:"A rich story woven from many threads" }
+];
+var MATCH_EXAMPLE = { w:"boasts", m:"proudly has" };
+
+/* --- Level 5 · Bonus blitz (mixed quick-fire) --- */
+var BLITZ_TIME = 750;
+var BONUS_QS = [
+  { q:"The film’s plot serves as the ___; music does the cognitive work.", opts:["scaffolding","locket","catalyst"], c:0 },
+  { q:"Who sings “I Want to Hold Your Hand” in Taymor’s vision?", opts:["Prudence on a football field","Max at the prom","Sadie at the club"], c:0 },
+  { q:"“Let It Be” becomes a gospel eulogy mourning a child lost in the…", opts:["1967 Detroit Riots","1964 Liverpool storms","1970 Ohio floods"], c:0 },
+  { q:"“Dehumanization” is the psychological output of…", opts:["the draft sequence","the rooftop concert","the subway scene"], c:0 },
+  { q:"“Words are flowing out like endless rain into a…”", opts:["paper cup","silver spoon","tin roof"], c:0 },
+  { q:"Which movement is titled “The Neon Descent”?", opts:["Movement II","Movement I","Movement IV"], c:0 },
+  { q:"Lucy’s tragic drift away from Jude is scored by…", opts:["“And I Love Her”","“Helter Skelter”","“Let It Be”"], c:0 },
+  { q:"The audience is forced to suspend disbelief through the…", opts:["“Double Experience”","“Third Act Twist”","“Velvet Curtain”"], c:0 },
+  { q:"“The surviving characters are scarred but…”", opts:["awake","alone","angry"], c:0 },
+  { q:"Jude sings the title track in the subway as…", opts:["an internal monologue of helplessness and observation","a commercial jingle","a wedding toast"], c:0 },
+  { q:"The reconciliation movement returns to…", opts:["a rooftop in New York","a beach in Liverpool","a stadium in Ohio"], c:0 },
+  { q:"The music of Lennon and McCartney is described as…", opts:["a mythic, ever-shifting language","a closed historical vault","a strict period costume"], c:0 }
+];
+
+/* --- Ranks for the finale --- */
+var RANKS = [
+  { min:0,    name:"Paper-Cup Listener",   icon:"cup-soda" },
+  { min:1800, name:"Subway Dreamer",       icon:"train-front" },
+  { min:3600, name:"Neon Wanderer",        icon:"sparkles" },
+  { min:5600, name:"Walrus Whisperer",     icon:"egg" },
+  { min:7800, name:"Cosmic Chart-Topper",  icon:"rocket" }
+];
+
+/* ============================================================
+   STATE + PERSISTENCE (localStorage, versioned, try/catch)
+   ============================================================ */
+var SAVE_KEY = "ata-universe-save-v1";
+var save = { levels:{} };
+try{
+  var raw = localStorage.getItem(SAVE_KEY);
+  if(raw){ save = JSON.parse(raw) || { levels:{} }; }
+}catch(e){ save = { levels:{} }; }
+if(!save.levels){ save.levels = {}; }
+
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){ /* private mode */ } }
+function recordResult(id, score, stars){
+  var rec = save.levels[id] || { best:0, stars:0 };
+  var isNewBest = score > rec.best;
+  rec.best  = Math.max(rec.best, score);
+  rec.stars = Math.max(rec.stars, stars);
+  save.levels[id] = rec;
+  persist();
+  return isNewBest;
+}
+function levelRecord(id){ return save.levels[id] || { best:0, stars:0 }; }
+
+var screen = "intro";
+var state = { scene:null };
+var run = { score:0, mistakes:0, streak:0 };
+
+/* ============================================================
+   CLEANUP — every mini-game registers timers/listeners here
+   ============================================================ */
+var cleanups = [];
+function setCleanup(fn){ cleanups.push(fn); }
+function cleanupRun(){
+  cleanups.forEach(function(f){ try{ f(); }catch(e){} });
+  cleanups = [];
+}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+function showScreen(name){
+  cleanupRun();
+  closeModal(false);
+  screen = name;
+  $$(".screen").forEach(function(sc){ sc.classList.toggle("active", sc.id === "screen-" + name); });
+  window.scrollTo({ top:0, behavior: RM ? "auto" : "smooth" });
+}
+
+/* ============================================================
+   HUD (header console)
+   ============================================================ */
+function updateHUD(){
+  var total = SCENES.reduce(function(a,s){ return a + levelRecord(s.id).best; }, 0);
+  $("#hud-score").textContent = fmt(total);
+  var dots = $("#hud-dots").children;
+  SCENES.forEach(function(s, i){
+    var d = dots[i];
+    if(d){
+      var done = levelRecord(s.id).stars > 0;
+      d.classList.toggle("done", done);
+      d.setAttribute("aria-label", "Reel " + s.num + (done ? " — cleared" : " — not cleared yet"));
+    }
+  });
+}
+function renderSound(){
+  var b = $("#sound-btn");
+  b.innerHTML = '<i data-lucide="' + (muted ? "volume-x" : "volume-2") + '"></i>';
+  b.setAttribute("aria-pressed", String(!muted));
+  b.setAttribute("aria-label", muted ? "Sound off — turn on" : "Sound on — turn off");
+  refreshIcons();
+}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+var overlay = $("#modal-overlay"), modal = $("#modal");
+var modalOnClose = null, lastFocus = null;
+function openModal(html, onClose){
+  lastFocus = document.activeElement;
+  modalOnClose = (typeof onClose === "function") ? onClose : null;
+  modal.innerHTML = html;
+  overlay.classList.add("show");
+  refreshIcons();
+  var f = modal.querySelector("button, a");
+  if(f){ setTimeout(function(){ f.focus(); }, 40); }
+}
+function closeModal(runOnClose){
+  if(!overlay.classList.contains("show")){ return; }
+  overlay.classList.remove("show");
+  modal.innerHTML = "";
+  var cb = modalOnClose; modalOnClose = null;
+  if(runOnClose && cb){ cb(); }
+  if(lastFocus && lastFocus.focus){ try{ lastFocus.focus(); }catch(e){} }
+}
+overlay.addEventListener("click", function(e){
+  if(e.target === overlay){ closeModal(true); SFX.click(); return; }
+  var a = e.target.closest("[data-action]");
+  if(!a){ return; }
+  var act = a.dataset.action;
+  if(act === "start-level"){ SFX.click(); closeModal(false); startGame(); }
+  else if(act === "replay"){ SFX.click(); closeModal(false); startGame(); }
+  else if(act === "to-map"){ SFX.click(); closeModal(false); goMap(); }
+  else if(act === "rewind-cancel"){ SFX.click(); closeModal(false); }
+  else if(act === "rewind-do"){ doRewind(); }
+});
+
+/* ============================================================
+   LEVEL MAP
+   ============================================================ */
+function renderMap(){
+  var html = "";
+  SCENES.forEach(function(s){
+    var rec = levelRecord(s.id);
+    var starStr = "★".repeat(rec.stars) + '<span class="off">' + "★".repeat(3 - rec.stars) + "</span>";
+    var played = rec.stars > 0;
+    html += '<button class="reel" style="--c:' + s.color + '" data-level="' + s.id + '" aria-label="Reel ' + s.num + ': ' + s.title + '. Mechanic: ' + s.tag + '. ' + (played ? "Best score " + fmt(rec.best) + ", " + rec.stars + " of 3 stars." : "Not played yet.") + ' Open reel.">' +
+      '<span class="sprocket" aria-hidden="true"></span>' +
+      '<span class="reel-media"><img src="' + IMG(s.slide) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' +
+        '<span class="reel-num">' + pad2(s.num) + "</span></span>" +
+      '<span class="reel-body">' +
+        '<span class="reel-tag">' + s.tag + "</span>" +
+        '<strong class="reel-title">' + s.title + "</strong>" +
+        '<span class="reel-meta"><span class="reel-char"><i data-lucide="user"></i>' + s.char + "</span>" +
+        '<span class="reel-stars" aria-hidden="true">' + starStr + "</span></span>" +
+        '<span class="reel-best">' + (played ? "BEST " + fmt(rec.best) : "UNPLAYED") + "</span>" +
+      "</span>" +
+      '<span class="sprocket" aria-hidden="true"></span>' +
+    "</button>";
+  });
+  $("#reels").innerHTML = html;
+  var allDone = SCENES.every(function(s){ return levelRecord(s.id).stars > 0; });
+  $("#final-banner").hidden = !allDone;
+  refreshIcons();
+}
+
+/* ============================================================
+   SCENE HOSTING — briefing → game → results
+   ============================================================ */
+function updateRunHUD(){
+  var el = $("#run-score");
+  el.textContent = fmt(run.score);
+  el.classList.remove("bump");
+  void el.offsetWidth;
+  el.classList.add("bump");
+}
+function addScore(pts){ run.score = Math.max(0, run.score + pts); updateRunHUD(); }
+function addMistake(){ run.mistakes++; run.streak = 0; }
+function goodStreak(){ run.streak++; return run.streak; }
+function multNow(){ return run.streak >= 6 ? 3 : run.streak >= 3 ? 2 : 1; }
+
+function goMap(){ showScreen("map"); }
+
+function openLevel(id){
+  var s = SCENES.find(function(x){ return x.id === id; });
+  if(!s){ return; }
+  state.scene = s;
+  showScreen("scene");
+  $("#scene-tag").textContent = "REEL " + pad2(s.num) + " · " + s.tag;
+  $("#scene-title").textContent = s.title;
+  var ch = $("#scene-char");
+  ch.style.setProperty("--c", s.color);
+  ch.textContent = s.char.charAt(0);
+  $("#run-score").textContent = "0";
+  $("#stage").innerHTML = '<div class="card"><p class="mono" style="text-align:center;color:var(--dim)">THREADING REEL ' + pad2(s.num) + '…</p></div>';
+  showBriefing(s);
+}
+
+function showBriefing(s){
+  openModal(
+    '<p class="m-tag">REEL ' + pad2(s.num) + " · " + s.tag + "</p>" +
+    "<h2 class=\"m-title\">" + s.title + "</h2>" +
+    '<div class="m-char"><span class="avatar" style="--c:' + s.color + '">' + s.char.charAt(0) + "</span>" +
+    "<div><strong>" + s.char + "</strong><p>" + s.flavor + "</p></div></div>" +
+    '<img class="m-img" src="' + IMG(s.slide) + '" alt="Slide artwork for reel ' + s.num + '" onerror="this.style.display=\'none\'">' +
+    '<p class="m-obj">' + s.obj + "</p>" +
+    '<p class="m-tip">💡 ' + s.tip + "</p>" +
+    '<div class="m-btn-row"><button class="btn" data-action="start-level">▶ START</button></div>',
+    goMap
+  );
+}
+
+function startGame(){
+  cleanupRun();
+  var s = state.scene;
+  if(!s){ return; }
+  run = { score:0, mistakes:0, streak:0 };
+  updateRunHUD();
+  var stage = $("#stage");
+  stage.innerHTML = "";
+  if(s.game === "blanks"){ gameBlanks(stage, s); }
+  else if(s.game === "choice"){ gameChoice(stage, s); }
+  else if(s.game === "tf"){ gameTF(stage, s); }
+  else if(s.game === "match"){ gameMatch(stage, s); }
+  else if(s.game === "blitz"){ gameBlitz(stage, s); }
+}
+
+function starsFor(){ return run.mistakes === 0 ? 3 : run.mistakes <= 2 ? 2 : 1; }
+
+function endLevel(){
+  cleanupRun();
+  var s = state.scene;
+  var stars = starsFor();
+  var isNewBest = recordResult(s.id, run.score, stars);
+  updateHUD();
+  renderMap();
+  showResultsModal(s, stars, isNewBest);
+}
+
+function showResultsModal(s, stars, isNewBest){
+  var rec = levelRecord(s.id);
+  var allDone = SCENES.every(function(x){ return levelRecord(x.id).stars > 0; });
+  var starsHtml = [0,1,2].map(function(k){
+    return '<span class="star-pop ' + (k < stars ? "" : "dim") + '" style="animation-delay:' + (0.15 + k*0.2) + 's">★</span>';
+  }).join("");
+  openModal(
+    '<p class="m-tag">REEL ' + pad2(s.num) + " · CLEARED</p>" +
+    "<h2 class=\"m-title\">" + s.title + "</h2>" +
+    '<div class="stars-big" role="img" aria-label="' + stars + ' of 3 stars">' + starsHtml + "</div>" +
+    '<div class="m-stats">' +
+      "<div><span>SCORE</span><strong>" + fmt(run.score) + "</strong></div>" +
+      "<div><span>BEST</span><strong>" + fmt(rec.best) + "</strong></div>" +
+      "<div><span>MISTAKES</span><strong>" + run.mistakes + "</strong></div>" +
+    "</div>" +
+    (isNewBest ? '<p class="new-best">🏆 NEW BEST!</p>' : "") +
+    (allDone ? '<p class="m-gold">🎬 Every reel cleared — the FINALE button is waiting on the map!</p>' : "") +
+    '<div class="m-btn-row">' +
+      '<button class="btn" data-action="replay">↻ REPLAY</button>' +
+      '<button class="btn btn-ghost" data-action="to-map">☰ MAP</button>' +
+    "</div>"
+  );
+  if(allDone){ spawnConfetti(170); SFX.cheer(); }
+  else if(stars === 3){ spawnConfetti(120); SFX.fanfare(); }
+  else if(stars === 2){ SFX.correct(); }
+  else { SFX.flip(); }
+}
+
+/* ============================================================
+   MINI-GAME 1 · FILL THE BLANKS
+   ============================================================ */
+function gameBlanks(stage, s){
+  var items = BLANKS;
+  var bank = shuffle(items.map(function(b){ return b.ans; }).concat(BLANK_DECOYS));
+  var left = items.length;
+  var sel = null;
+
+  var html = '<div class="card">' +
+    '<div class="game-head"><span class="g-label" id="bl-count">BLANKS 0/' + left + "</span>" +
+    '<span class="g-label">' + s.tag + "</span></div>";
+  items.forEach(function(b, i){
+    var parts = b.text.split("{0}");
+    html += '<p class="sentence">' + parts[0] +
+      '<button class="blank" data-i="' + i + '" data-ans="' + b.ans + '" aria-label="Blank ' + (i+1) + ' — choose the missing word">— — —</button>' +
+      (parts[1] || "") + "</p>";
+  });
+  html += '<div class="bank">' + bank.map(function(w){
+    return '<button class="chip" data-word="' + w + '">' + w + "</button>";
+  }).join("") + "</div></div>";
+  stage.innerHTML = html;
+
+  function setCount(){ $("#bl-count").textContent = "BLANKS " + (items.length - left) + "/" + items.length; }
+  setCount();
+
+  function handler(e){
+    var blank = e.target.closest(".blank");
+    var chip  = e.target.closest(".chip");
+    if(blank && !blank.disabled){
+      if(sel){ sel.classList.remove("sel"); }
+      if(sel === blank){ sel = null; SFX.click(); return; }
+      sel = blank; blank.classList.add("sel"); SFX.click();
+      return;
+    }
+    if(chip && !chip.disabled){
+      if(!sel){ toast("Tap a blank first, then a word.", "☝️"); SFX.click(); return; }
+      if(chip.dataset.word === sel.dataset.ans){
+        var word = chip.dataset.word;
+        sel.textContent = word;
+        sel.classList.add("filled"); sel.classList.remove("sel");
+        sel.disabled = true;
+        chip.classList.add("gone"); chip.disabled = true;
+        goodStreak();
+        var pts = 120 + Math.min(run.streak - 1, 5) * 10;
+        addScore(pts); SFX.correct(); popFloat(sel, "+" + pts, "var(--ok)");
+        left--; setCount();
+        if(left === 0){
+          var t = setTimeout(endLevel, 850);
+          setCleanup(function(){ clearTimeout(t); });
+        }
+      } else {
+        addMistake(); addScore(-40); SFX.wrong();
+        popFloat(sel, "-40", "var(--err)");
+        sel.classList.add("err");
+        chip.classList.add("rejected");
+        setTimeout(function(){ sel.classList.remove("err"); }, 480);
+        setTimeout(function(){ chip.classList.remove("rejected"); }, 520);
+      }
+      sel = null;
+    }
+  }
+  stage.addEventListener("click", handler);
+  setCleanup(function(){ stage.removeEventListener("click", handler); });
+}
+
+/* ============================================================
+   MINI-GAME 2 · MULTIPLE CHOICE (one attempt, character reaction)
+   ============================================================ */
+function gameChoice(stage, s){
+  var i = 0, lock = false, advTimer = null;
+  function renderQ(){
+    lock = false;
+    var q = MC_QS[i];
+    var order = shuffle([0,1,2]);
+    var btns = order.map(function(oi){
+      return '<button class="opt" data-o="' + oi + '"><span class="mono" style="color:var(--violet)">' + "ABC".charAt(order.indexOf(oi)) + ".</span> " + q.opts[oi] + "</button>";
+    }).join("");
+    stage.innerHTML = '<div class="card">' +
+      '<div class="game-head"><span class="g-label">QUESTION ' + (i+1) + "/" + MC_QS.length + "</span>" +
+      '<span class="g-label">' + s.tag + "</span></div>" +
+      '<div class="q-card">' + q.q + "</div>" +
+      '<div class="opts">' + btns + "</div>" +
+      '<div class="react" id="mc-react" hidden></div>' +
+      "</div>";
+    refreshIcons();
+  }
+  function react(q, good){
+    var box = $("#mc-react");
+    box.hidden = false;
+    box.innerHTML = '<span class="avatar" style="--c:' + s.color + '">' + q.who.charAt(0) + "</span>" +
+      "<div><strong>" + q.who.toUpperCase() + (good ? " · APPROVES" : " · SHRUGS") + "</strong><p>“" + (good ? q.ok : q.no) + "”</p></div>";
+  }
+  function handler(e){
+    var b = e.target.closest(".opt");
+    if(!b || lock || b.disabled){ return; }
+    lock = true;
+    var q = MC_QS[i];
+    var picked = parseInt(b.dataset.o, 10);
+    var good = picked === q.c;
+    $$(".opt", stage).forEach(function(o){
+      o.disabled = true;
+      if(parseInt(o.dataset.o, 10) === q.c){ o.classList.add("correct"); }
+      else if(o !== b){ o.classList.add("faded"); }
+    });
+    if(good){
+      goodStreak();
+      var pts = 120 + Math.min(run.streak - 1, 5) * 10;
+      addScore(pts); SFX.correct(); popFloat(b, "+" + pts, "var(--ok)");
+    } else {
+      b.classList.add("wrongpick");
+      addMistake(); addScore(-30); SFX.wrong();
+      popFloat(b, "-30", "var(--err)");
+    }
+    react(q, good);
+    advTimer = setTimeout(function(){
+      i++;
+      if(i >= MC_QS.length){ endLevel(); } else { renderQ(); }
+    }, 1750);
+  }
+  stage.addEventListener("click", handler);
+  setCleanup(function(){
+    stage.removeEventListener("click", handler);
+    clearTimeout(advTimer);
+  });
+  renderQ();
+}
+
+/* ============================================================
+   MINI-GAME 3 · REAL or DELUSION (timed, manual NEXT — no auto-advance)
+   ============================================================ */
+function gameTF(stage, s){
+  var i = 0, timeLeft = TF_TIME, timer = null, answered = false, explaining = false;
+
+  function clock(){ return Math.floor(timeLeft/60) + ":" + pad2(timeLeft % 60); }
+  function renderCard(){
+    answered = false; explaining = false;
+    timeLeft = TF_TIME;
+    var st = TF_QS[i];
+    stage.innerHTML = '<div class="card tf-wrap">' +
+      '<div class="game-head"><span class="g-label">STATEMENT ' + (i+1) + "/" + TF_QS.length + "</span>" +
+      '<span class="g-mult" id="tf-mult">STREAK ' + run.streak + " · ×" + multNow() + "</span></div>" +
+      '<div class="tf-clock"><span class="mono" id="tf-clock">' + clock() + '</span>' +
+        '<div class="tfbar" id="tf-bar" aria-hidden="true"><i id="tf-fill" style="width:100%"></i></div></div>' +
+      '<div class="tf-card">' + st.text + "</div>" +
+      '<div class="tf-btns">' +
+        '<button class="tf-btn real" data-pick="real" aria-keyshortcuts="ArrowLeft"><i data-lucide="check"></i>REAL</button>' +
+        '<button class="tf-btn del" data-pick="del" aria-keyshortcuts="ArrowRight"><i data-lucide="x"></i>DELUSION</button>' +
+      "</div>" +
+      '<div class="explain" id="tf-explain"></div>' +
+      "</div>";
+    refreshIcons();
+    startTimer();
+  }
+  function startTimer(){
+    stopTimer();
+    timer = setInterval(function(){
+      if(answered || explaining){ return; }
+      timeLeft--;
+      var bar = $("#tf-bar"), fill = $("#tf-fill");
+      if(fill){ fill.style.width = Math.max(0, timeLeft/TF_TIME*100) + "%"; }
+      $("#tf-clock").textContent = clock();
+      if(timeLeft <= 30){ if(bar){ bar.classList.add("danger"); } SFX.tick(); }
+      if(timeLeft <= 0){ handle(null); }
+    }, 1000);
+    setCleanup(stopTimer);
+  }
+  function stopTimer(){ if(timer){ clearInterval(timer); timer = null; } }
+
+  function handle(pickedReal){
+    if(answered){ return; }
+    answered = true;
+    stopTimer();
+    var st = TF_QS[i];
+    var good = pickedReal !== null && pickedReal === st.real;
+    var verdict;
+    if(good){
+      goodStreak();
+      var pts = 150 * multNow();
+      addScore(pts); SFX.correct();
+      popFloat($("#tf-mult"), "+" + pts, "var(--ok)");
+      verdict = '<p class="verdict ok">✔ CORRECT · THE STATEMENT WAS ' + (st.real ? "REAL" : "DELUSION") + "</p>";
+    } else {
+      addMistake(); addScore(-50); SFX.wrong();
+      if(pickedReal === null){ toast("The clock dissolved this card.", "⏰"); }
+      verdict = '<p class="verdict bad">✘ ' + (pickedReal === null ? "TIME OUT" : "WRONG") + " · IT WAS " + (st.real ? "REAL" : "DELUSION") + "</p>";
+    }
+    explaining = true;
+    $$(".tf-btn", stage).forEach(function(b){ b.disabled = true; });
+    var last = i >= TF_QS.length - 1;
+    var ex = $("#tf-explain");
+    ex.innerHTML = verdict + "<p>" + st.why + "</p>" +
+      '<div class="next-row"><button class="btn" data-role="tf-next">' + (last ? "SEE RESULTS ▶" : "NEXT ▶") + "</button></div>";
+    ex.classList.add("show");
+    var nb = ex.querySelector("button");
+    if(nb){ nb.focus(); }
+  }
+  function next(){
+    if(!explaining){ return; }
+    SFX.click();
+    i++;
+    if(i >= TF_QS.length){ endLevel(); } else { renderCard(); }
+  }
+  function handler(e){
+    var pick = e.target.closest(".tf-btn");
+    if(pick && !pick.disabled && !answered){ handle(pick.dataset.pick === "real"); return; }
+    if(e.target.closest('[data-role="tf-next"]')){ next(); }
+  }
+  function keys(e){
+    if(screen !== "scene"){ return; }
+    if(!answered && !explaining){
+      if(e.key === "ArrowLeft"){ e.preventDefault(); handle(true); }
+      else if(e.key === "ArrowRight"){ e.preventDefault(); handle(false); }
+    } else if(explaining && e.key === "Enter"){
+      e.preventDefault(); next();
+    }
+  }
+  stage.addEventListener("click", handler);
+  document.addEventListener("keydown", keys);
+  setCleanup(function(){
+    stage.removeEventListener("click", handler);
+    document.removeEventListener("keydown", keys);
+    stopTimer();
+  });
+  renderCard();
+}
+
+/* ============================================================
+   MINI-GAME 4 · MATCH THE MEANING (two columns)
+   ============================================================ */
+function gameMatch(stage, s){
+  var words = shuffle(MATCH_PAIRS.slice());
+  var means = shuffle(MATCH_PAIRS.slice());
+  var sel = null, found = 0, attempts = 0;
+
+  stage.innerHTML = '<div class="card">' +
+    '<div class="game-head"><span class="g-label" id="mt-count">PAIRS 0/6 · ATTEMPTS 0</span>' +
+    '<span class="g-label">' + s.tag + "</span></div>" +
+    '<p class="m-example">HOW IT WORKS · WORD · ' + MATCH_EXAMPLE.w + " → MEANING · " + MATCH_EXAMPLE.m + "</p>" +
+    '<div class="match-grid">' +
+      '<div class="mcol"><span class="mcol-t">WORD</span>' +
+        words.map(function(p){ return '<button class="mbtn word" data-w="' + p.w + '">' + p.w + "</button>"; }).join("") + "</div>" +
+      '<div class="mcol"><span class="mcol-t">MEANING</span>' +
+        means.map(function(p){ return '<button class="mbtn mean" data-w="' + p.w + '">' + p.m + "</button>"; }).join("") + "</div>" +
+    "</div>" +
+    '<p class="m-count" id="mt-live" aria-live="polite"></p>' +
+    "</div>";
+
+  function setCount(){
+    $("#mt-count").textContent = "PAIRS " + found + "/6 · ATTEMPTS " + attempts;
+    $("#mt-live").textContent = found + " of 6 pairs locked";
+  }
+  setCount();
+
+  function handler(e){
+    var b = e.target.closest(".mbtn");
+    if(!b || b.disabled){ return; }
+    if(b.classList.contains("locked")){ return; }
+    if(b.classList.contains("word")){
+      if(sel){ sel.classList.remove("sel"); }
+      if(sel === b){ sel = null; SFX.click(); return; }
+      sel = b; b.classList.add("sel"); SFX.click();
+      return;
+    }
+    /* meaning button */
+    if(!sel){ toast("Pick a word on the left first.", "👈"); SFX.click(); return; }
+    attempts++;
+    if(sel.dataset.w === b.dataset.w){
+      sel.classList.remove("sel");
+      sel.classList.add("locked"); sel.disabled = true;
+      b.classList.add("locked"); b.disabled = true;
+      found++;
+      addScore(150); SFX.match(); popFloat(b, "+150 · MATCH", "var(--ok)");
+      setCount();
+      sel = null;
+      if(found === MATCH_PAIRS.length){
+        var t = setTimeout(endLevel, 950);
+        setCleanup(function(){ clearTimeout(t); });
+      }
+    } else {
+      var w = sel;
+      addMistake(); addScore(-30); SFX.wrong();
+      popFloat(b, "-30", "var(--err)");
+      w.classList.add("err"); b.classList.add("err");
+      setTimeout(function(){
+        w.classList.remove("sel", "err");
+        b.classList.remove("err");
+      }, 480);
+      sel = null;
+      setCount();
+    }
+  }
+  stage.addEventListener("click", handler);
+  setCleanup(function(){ stage.removeEventListener("click", handler); });
+}
+
+/* ============================================================
+   MINI-GAME 5 · BONUS BLITZ (750s, streak ×, red-flash timer)
+   ============================================================ */
+function gameBlitz(stage, s){
+  var left = BLITZ_TIME, qi = 0, timer = null, lock = false, adv = null, finished = false;
+
+  function clockTxt(){ return Math.floor(left/60) + ":" + pad2(left % 60); }
+  function renderQ(){
+    lock = false;
+    var q = BONUS_QS[qi];
+    var order = shuffle([0,1,2]);
+    var btns = order.map(function(oi, pos){
+      return '<button class="opt" data-o="' + oi + '"><span class="mono" style="color:var(--gold)">' + (pos+1) + ".</span> " + q.opts[oi] + "</button>";
+    }).join("");
+    stage.innerHTML = '<div class="card">' +
+      '<div class="game-head"><span class="g-label">Q ' + (qi+1) + "/" + BONUS_QS.length + "</span>" +
+      '<span class="g-mult" id="bt-mult">STREAK ' + run.streak + " · ×" + multNow() + "</span></div>" +
+      '<div class="bt-clockrow"><span class="bt-clock" id="bt-clock">' + clockTxt() + "</span>" +
+        '<div class="bt-bar" id="bt-bar" aria-hidden="true"><i id="bt-fill" style="width:100%"></i></div></div>' +
+      '<div class="bt-q">' + q.q + "</div>" +
+      '<div class="opts">' + btns + "</div>" +
+      "</div>";
+    refreshIcons();
+  }
+  function startTimer(){
+    timer = setInterval(function(){
+      if(finished){ return; }
+      left--;
+      var fill = $("#bt-fill"), bar = $("#bt-bar"), ck = $("#bt-clock");
+      if(fill){ fill.style.width = Math.max(0, left/BLITZ_TIME*100) + "%"; }
+      if(ck){ ck.textContent = clockTxt(); }
+      if(left <= 60){
+        if(bar){ bar.classList.add("danger"); }
+        if(ck){ ck.classList.add("danger"); }
+        SFX.tick();
+      }
+      if(left <= 0){ finish(true); }
+    }, 1000);
+    setCleanup(stopTimer);
+  }
+  function stopTimer(){ if(timer){ clearInterval(timer); timer = null; } }
+
+  function finish(timedOut){
+    if(finished){ return; }
+    finished = true;
+    stopTimer();
+    clearTimeout(adv);
+    if(timedOut){
+      var skipped = BONUS_QS.length - qi;
+      run.mistakes += skipped;
+      toast("TIME! The clock ate " + skipped + " question" + (skipped === 1 ? "" : "s") + ".", "⏰");
+      SFX.wrong();
+    } else {
+      var bonus = left * 2;
+      addScore(bonus);
+      toast("All questions cleared — time bonus +" + bonus + "!", "⏱️");
+      SFX.cheer();
+      popFloat($("#bt-clock"), "+" + bonus, "var(--gold)");
+    }
+    var t = setTimeout(endLevel, 1200);
+    setCleanup(function(){ clearTimeout(t); });
+  }
+  function handler(e){
+    var b = e.target.closest(".opt");
+    if(!b || lock || b.disabled || finished){ return; }
+    lock = true;
+    var q = BONUS_QS[qi];
+    var good = parseInt(b.dataset.o, 10) === q.c;
+    $$(".opt", stage).forEach(function(o){
+      o.disabled = true;
+      if(parseInt(o.dataset.o, 10) === q.c){ o.classList.add("correct"); }
+      else if(o !== b){ o.classList.add("faded"); }
+    });
+    if(good){
+      goodStreak();
+      var pts = 120 * multNow();
+      addScore(pts); SFX.correct(); popFloat(b, "+" + pts, "var(--ok)");
+    } else {
+      b.classList.add("wrongpick");
+      addMistake(); addScore(-30); SFX.wrong(); popFloat(b, "-30", "var(--err)");
+    }
+    adv = setTimeout(function(){
+      qi++;
+      if(qi >= BONUS_QS.length){ finish(false); } else { renderQ(); }
+    }, good ? 620 : 1050);
+  }
+  stage.addEventListener("click", handler);
+  setCleanup(function(){
+    stage.removeEventListener("click", handler);
+    clearTimeout(adv);
+    stopTimer();
+  });
+  renderQ();
+  startTimer();
+}
+
+/* ============================================================
+   FINALE
+   ============================================================ */
+var finaleSeen = false;
+function renderFinale(){
+  var totals = SCENES.reduce(function(a, s){
+    var r = levelRecord(s.id);
+    a.best += r.best; a.stars += r.stars;
+    return a;
+  }, { best:0, stars:0 });
+  var rank = RANKS.slice().reverse().find(function(r){ return totals.best >= r.min; }) || RANKS[0];
+  var rows = SCENES.map(function(s){
+    var r = levelRecord(s.id);
+    return '<div class="fin-row" role="row">' +
+      '<span class="mono">' + pad2(s.num) + "</span>" +
+      '<span class="fr-t">' + s.title + "</span>" +
+      '<span class="mono">' + fmt(r.best) + "</span>" +
+      '<span class="fr-stars" role="img" aria-label="' + r.stars + ' of 3 stars">' +
+        "★".repeat(r.stars) + '<span class="off">' + "★".repeat(3 - r.stars) + "</span></span></div>";
+  }).join("");
+  $("#finale-wrap").innerHTML =
+    '<div class="fin-hero"><p class="eyebrow">The Rooftop Encore</p>' +
+    "<h2 class=\"fin-title\">FINALE</h2>" +
+    '<p class="hand fin-quote">“There’s nothing you can do that can’t be done…”</p></div>' +
+    '<div class="fin-stats">' +
+      '<div class="fin-stat"><span>TOTAL SCORE</span><strong>' + fmt(totals.best) + "</strong></div>" +
+      '<div class="fin-stat"><span>TOTAL STARS</span><strong>' + totals.stars + "<small> / 15</small></strong></div>" +
+      '<div class="fin-stat"><span>RANK</span><strong><i data-lucide="' + rank.icon + '"></i> ' + rank.name + "</strong></div>" +
+    "</div>" +
+    '<div class="fin-ladder" aria-label="Rank ladder">' +
+      RANKS.map(function(r){ return '<span class="' + (totals.best >= r.min ? "hit" : "") + '">' + fmt(r.min) + "+ · " + r.name + "</span>"; }).join("") +
+    "</div>" +
+    '<div class="fin-table" role="table" aria-label="Results by level">' +
+      '<div class="fin-row" role="row" style="font-family:var(--f-mono);font-size:.66rem;letter-spacing:.2em;color:var(--dim)">' +
+        "<span>REEL</span><span>TITLE</span><span>BEST</span><span style='text-align:right'>STARS</span></div>" + rows +
+    "</div>" +
+    '<div class="fin-actions">' +
+      '<button id="rewind-btn" class="btn btn-ghost"><i data-lucide="rotate-ccw"></i>REWIND THE TAPE</button>' +
+      '<a class="btn btn-ghost" href="' + BASE + 'across-the-universe.pdf" target="_blank" rel="noopener noreferrer"><i data-lucide="link"></i>SOURCE SLIDES (PDF)</a>' +
+    "</div>" +
+    '<p class="hand fin-close">All you need is love — and a three-star streak. 🎶</p>';
+  refreshIcons();
+  if(!finaleSeen){
+    finaleSeen = true;
+    spawnConfetti(200);
+    SFX.fanfare();
+    setTimeout(function(){ SFX.cheer(); }, 700);
+  }
+}
+function doRewind(){
+  SFX.flip();
+  save = { levels:{} };
+  persist();
+  finaleSeen = false;
+  closeModal(false);
+  updateHUD();
+  renderMap();
+  showScreen("map");
+  toast("Tape rewound — a fresh start.", "⏪");
+}
+function confirmRewind(){
+  SFX.click();
+  openModal(
+    '<p class="m-tag">SIDE B · MAINTENANCE</p><h2 class="m-title">Rewind the tape?</h2>' +
+    "<p class='m-obj'>This erases every score, star and best result stored on this device. The reels themselves stay exactly where they are — free order, always.</p>" +
+    '<div class="m-btn-row">' +
+      '<button class="btn btn-pink" data-action="rewind-do">⏪ REWIND</button>' +
+      '<button class="btn btn-ghost" data-action="rewind-cancel">KEEP PROGRESS</button>' +
+    "</div>"
+  );
+}
+
+/* ============================================================
+   GLOBAL WIRING (delegation on stable containers)
+   ============================================================ */
+ $("#reels").addEventListener("click", function(e){
+  var card = e.target.closest(".reel");
+  if(!card){ return; }
+  SFX.flip();
+  openLevel(card.dataset.level);
+});
+ $("#final-btn").addEventListener("click", function(){
+  SFX.click();
+  showScreen("finale");
+  renderFinale();
+});
+ $("#finale-wrap").addEventListener("click", function(e){
+  if(e.target.closest("#rewind-btn")){ confirmRewind(); }
+});
+ $("#start-btn").addEventListener("click", function(){ SFX.click(); showScreen("map"); });
+ $("#brand-btn").addEventListener("click", function(){ SFX.click(); showScreen("intro"); });
+ $("#map-btn").addEventListener("click", function(){ SFX.click(); goMap(); });
+ $("#back-map").addEventListener("click", function(){ SFX.click(); goMap(); });
+ $("#hud-dots").addEventListener("click", function(){ SFX.click(); goMap(); });
+ $("#sound-btn").addEventListener("click", function(){
+  muted = !muted;
+  try{ localStorage.setItem(MUTE_KEY, muted ? "1" : "0"); }catch(e){}
+  if(!muted){ initAudio(); SFX.click(); }
+  renderSound();
+});
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){
+    if(overlay.classList.contains("show")){ SFX.click(); closeModal(true); }
+    else if(screen === "scene"){ goMap(); }
+  }
+});
+
+/* Build HUD dots */
+(function(){
+  var box = $("#hud-dots");
+  var html = "";
+  SCENES.forEach(function(s, i){
+    html += '<button class="pdot" data-i="' + i + '" aria-label="Reel ' + s.num + ' progress"></button>';
+  });
+  box.innerHTML = html;
+})();
+
+/* ============================================================
+   PRELOADER — PLAY ▶ effect, upward exit
+   ============================================================ */
+(function(){
+  var pre = $("#preloader"), fill = $("#pl-fill"), status = $("#pl-status"), play = $("#pl-play");
+  var p = 0;
+  var msgs = ["THREADING THE FILM…", "SPOOLING 33 SONGS…", "POLISHING THE NEON…", "REEL READY."];
+  var iv = setInterval(function(){
+    p = Math.min(100, p + 9 + Math.random()*14);
+    fill.style.width = p + "%";
+    status.textContent = msgs[Math.min(msgs.length - 1, Math.floor(p / 28))];
+    if(p >= 100){
+      clearInterval(iv);
+      play.hidden = false;
+      requestAnimationFrame(function(){ play.classList.add("ready"); });
+    }
+  }, RM ? 40 : 110);
+  play.addEventListener("click", function(){
+    initAudio();          /* AudioContext wakes on the very first click */
+    SFX.correct();
+    pre.classList.add("exit");
+    setTimeout(function(){ pre.remove(); }, RM ? 60 : 850);
+    var sb = $("#start-btn");
+    if(sb){ setTimeout(function(){ sb.focus(); }, RM ? 80 : 900); }
+  });
+})();
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+</script>
+</body>
+</html>
