@@ -1,2759 +1,1374 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Friends Vocab Arcade — The One With The Two Parties</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Courier+Prime:wght@400;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        /* ===== RESET & BASE ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --paper: #faf3e4;
-            --ink: #2e2438;
-            --red: #d9433b;
-            --teal: #3e8e8c;
-            --yellow: #f2b33d;
-            --success: #3e8e8c;
-            --error: #d9433b;
-            --bg: #1a1423;
-            --surface: #2e2438;
-            --text: #faf3e4;
-            --text-dim: #b8a99a;
-            --radius: 18px;
-            --shadow-hard: 0 6px 0 rgba(0, 0, 0, 0.4);
-            --font-display: 'Righteous', cursive;
-            --font-mono: 'Courier Prime', monospace;
-            --font-main: 'Nunito Sans', sans-serif;
-            --scanline-opacity: 0.06;
-        }
-
-        body {
-            font-family: var(--font-main);
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            background-image:
-                radial-gradient(ellipse at 20% 50%, rgba(217, 67, 59, 0.06) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 50%, rgba(62, 142, 140, 0.06) 0%, transparent 60%);
-        }
-
-        /* ===== CRT SCANLINES ===== */
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9999;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0, 0, 0, var(--scanline-opacity)) 2px,
-                rgba(0, 0, 0, var(--scanline-opacity)) 4px
-            );
-        }
-
-        /* ===== FILM GRAIN ===== */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9998;
-            opacity: 0.04;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-            background-size: 256px 256px;
-        }
-
-        /* ===== UTILITY ===== */
-        .hidden { display: none !important; }
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0,0,0,0);
-            border: 0;
-        }
-
-        button {
-            font-family: var(--font-main);
-            cursor: pointer;
-            border: none;
-            background: none;
-            color: inherit;
-        }
-
-        button:focus-visible {
-            outline: 3px solid var(--yellow);
-            outline-offset: 2px;
-        }
-
-        /* ===== PRELOADER ===== */
-        #preloader {
-            position: fixed;
-            inset: 0;
-            z-index: 10000;
-            background: var(--bg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 24px;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s;
-        }
-
-        #preloader.exit {
-            transform: translateY(-100%);
-            opacity: 0;
-        }
-
-        .preloader-logo {
-            font-family: var(--font-display);
-            font-size: clamp(2rem, 6vw, 3.5rem);
-            color: var(--yellow);
-            text-shadow: 0 0 20px rgba(242, 179, 61, 0.4), 0 0 60px rgba(242, 179, 61, 0.2);
-            letter-spacing: 0.06em;
-            text-align: center;
-            line-height: 1.2;
-        }
-
-        .preloader-sub {
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            color: var(--text-dim);
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-        }
-
-        .preloader-btn {
-            margin-top: 16px;
-            padding: 14px 48px;
-            background: var(--red);
-            color: var(--paper);
-            font-family: var(--font-display);
-            font-size: 1.2rem;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-hard);
-            letter-spacing: 0.08em;
-            transition: transform 0.15s, box-shadow 0.15s;
-            animation: pulseBtn 1.5s ease-in-out infinite;
-        }
-
-        .preloader-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 0 rgba(0, 0, 0, 0.4);
-        }
-
-        .preloader-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
-        }
-
-        @keyframes pulseBtn {
-            0%, 100% { box-shadow: 0 6px 0 rgba(0,0,0,0.4), 0 0 0 0 rgba(217, 67, 59, 0.4); }
-            50% { box-shadow: 0 6px 0 rgba(0,0,0,0.4), 0 0 0 12px rgba(217, 67, 59, 0); }
-        }
-
-        /* ===== HEADER ===== */
-        #header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: var(--surface);
-            border-bottom: 3px solid var(--yellow);
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            flex-wrap: wrap;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-        }
-
-        .brand {
-            font-family: var(--font-display);
-            font-size: 1.1rem;
-            color: var(--yellow);
-            letter-spacing: 0.04em;
-            white-space: nowrap;
-        }
-
-        .brand span {
-            color: var(--red);
-        }
-
-        .header-center {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex: 1;
-            justify-content: center;
-            min-width: 0;
-        }
-
-        .progress-cells {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .progress-cell {
-            width: 28px;
-            height: 10px;
-            border-radius: 3px;
-            background: rgba(250, 243, 228, 0.15);
-            transition: background 0.3s;
-        }
-
-        .progress-cell.done {
-            background: var(--teal);
-        }
-
-        .progress-cell.current {
-            background: var(--yellow);
-            box-shadow: 0 0 8px rgba(242, 179, 61, 0.6);
-        }
-
-        .score-display {
-            font-family: var(--font-mono);
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--yellow);
-            letter-spacing: 0.06em;
-            white-space: nowrap;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .icon-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(250, 243, 228, 0.08);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            transition: background 0.2s, transform 0.1s;
-            color: var(--text);
-        }
-
-        .icon-btn:hover {
-            background: rgba(250, 243, 228, 0.18);
-        }
-
-        .icon-btn:active {
-            transform: scale(0.92);
-        }
-
-        .icon-btn.muted {
-            opacity: 0.4;
-        }
-
-        /* ===== SCREENS ===== */
-        .screen {
-            display: none;
-            min-height: calc(100vh - 70px);
-            padding: 32px 20px 80px;
-        }
-
-        .screen.active {
-            display: block;
-            animation: fadeSlideIn 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(24px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .container {
-            max-width: 960px;
-            margin: 0 auto;
-        }
-
-        /* ===== INTRO SCREEN ===== */
-        .intro-hero {
-            text-align: center;
-            padding: 40px 0 32px;
-        }
-
-        .intro-hero h1 {
-            font-family: var(--font-display);
-            font-size: clamp(1.8rem, 5vw, 3rem);
-            color: var(--yellow);
-            line-height: 1.2;
-            margin-bottom: 12px;
-            text-shadow: 0 0 30px rgba(242, 179, 61, 0.3);
-        }
-
-        .intro-hero p {
-            font-size: 1.05rem;
-            color: var(--text-dim);
-            max-width: 600px;
-            margin: 0 auto 24px;
-            line-height: 1.7;
-        }
-
-        .intro-hero .quote {
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            color: var(--teal);
-            font-style: italic;
-            margin-bottom: 32px;
-        }
-
-        .btn-primary {
-            display: inline-block;
-            padding: 16px 44px;
-            background: var(--red);
-            color: var(--paper);
-            font-family: var(--font-display);
-            font-size: 1.15rem;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-hard);
-            letter-spacing: 0.06em;
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 0 rgba(0, 0, 0, 0.4);
-        }
-
-        .btn-primary:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
-        }
-
-        /* ===== LEVEL MAP ===== */
-        .map-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 28px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .map-header h2 {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            color: var(--yellow);
-        }
-
-        .map-header .sub {
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--text-dim);
-        }
-
-        .reel-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 24px;
-        }
-
-        .reel-card {
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-hard);
-            overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-            border: 2px solid rgba(250, 243, 228, 0.08);
-            position: relative;
-        }
-
-        .reel-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 0 rgba(0, 0, 0, 0.4);
-        }
-
-        .reel-card:active {
-            transform: translateY(2px);
-            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4);
-        }
-
-        .reel-card:focus-visible {
-            outline: 3px solid var(--yellow);
-            outline-offset: 3px;
-        }
-
-        .reel-preview {
-            height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .reel-preview .preview-icon {
-            font-size: 3rem;
-            z-index: 1;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
-        }
-
-        .reel-preview .preview-bg {
-            position: absolute;
-            inset: 0;
-            opacity: 0.25;
-        }
-
-        .reel-info {
-            padding: 16px 18px 18px;
-        }
-
-        .reel-num {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-
-        .reel-title {
-            font-family: var(--font-display);
-            font-size: 1.05rem;
-            color: var(--text);
-            margin-bottom: 4px;
-            line-height: 1.3;
-        }
-
-        .reel-char {
-            font-size: 0.82rem;
-            color: var(--teal);
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .reel-stars {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 6px;
-        }
-
-        .reel-stars .star {
-            font-size: 1.1rem;
-            color: rgba(250, 243, 228, 0.15);
-            transition: color 0.3s;
-        }
-
-        .reel-stars .star.filled {
-            color: var(--yellow);
-            text-shadow: 0 0 8px rgba(242, 179, 61, 0.5);
-        }
-
-        .reel-best {
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            color: var(--text-dim);
-        }
-
-        .reel-best strong {
-            color: var(--yellow);
-        }
-
-        .reel-complete-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: var(--teal);
-            color: var(--paper);
-            font-family: var(--font-mono);
-            font-size: 0.65rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 100px;
-            letter-spacing: 0.06em;
-            z-index: 2;
-        }
-
-        /* ===== MODAL ===== */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 500;
-            background: rgba(26, 20, 35, 0.85);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal-box {
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-hard), 0 0 60px rgba(0,0,0,0.5);
-            max-width: 520px;
-            width: 100%;
-            padding: 32px 28px;
-            transform: translateY(20px) scale(0.96);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid rgba(250, 243, 228, 0.08);
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-
-        .modal-overlay.active .modal-box {
-            transform: translateY(0) scale(1);
-        }
-
-        .modal-box h3 {
-            font-family: var(--font-display);
-            font-size: 1.4rem;
-            color: var(--yellow);
-            margin-bottom: 12px;
-        }
-
-        .modal-box p {
-            color: var(--text-dim);
-            line-height: 1.7;
-            margin-bottom: 20px;
-            font-size: 0.95rem;
-        }
-
-        .modal-box .modal-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .btn-secondary {
-            padding: 12px 28px;
-            background: rgba(250, 243, 228, 0.1);
-            color: var(--text);
-            font-family: var(--font-main);
-            font-weight: 700;
-            font-size: 0.95rem;
-            border-radius: var(--radius);
-            transition: background 0.2s, transform 0.1s;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(250, 243, 228, 0.18);
-        }
-
-        .btn-secondary:active {
-            transform: scale(0.97);
-        }
-
-        .btn-accent {
-            padding: 12px 28px;
-            background: var(--red);
-            color: var(--paper);
-            font-family: var(--font-display);
-            font-size: 1rem;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-hard);
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-
-        .btn-accent:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 0 rgba(0,0,0,0.4);
-        }
-
-        .btn-accent:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 rgba(0,0,0,0.4);
-        }
-
-        /* ===== SCENE ===== */
-        .scene-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .scene-header h2 {
-            font-family: var(--font-display);
-            font-size: 1.4rem;
-            color: var(--yellow);
-        }
-
-        .scene-header .scene-char {
-            font-size: 0.85rem;
-            color: var(--teal);
-            font-weight: 600;
-        }
-
-        .scene-body {
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-hard);
-            padding: 32px 28px;
-            border: 2px solid rgba(250, 243, 228, 0.08);
-            min-height: 400px;
-        }
-
-        .scene-footer {
-            margin-top: 24px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        /* ===== FILL IN THE BLANKS ===== */
-        .fib-sentence {
-            font-size: 1.15rem;
-            line-height: 2;
-            margin-bottom: 28px;
-            color: var(--text);
-        }
-
-        .fib-blank {
-            display: inline-block;
-            min-width: 120px;
-            padding: 4px 12px;
-            border-bottom: 3px solid var(--yellow);
-            text-align: center;
-            font-weight: 700;
-            color: var(--yellow);
-            cursor: pointer;
-            transition: background 0.2s, border-color 0.2s;
-            border-radius: 4px 4px 0 0;
-            vertical-align: middle;
-            margin: 0 4px;
-        }
-
-        .fib-blank:hover {
-            background: rgba(242, 179, 61, 0.1);
-        }
-
-        .fib-blank.active {
-            background: rgba(242, 179, 61, 0.2);
-            border-bottom-color: var(--red);
-        }
-
-        .fib-blank.filled {
-            color: var(--teal);
-            border-bottom-color: var(--teal);
-        }
-
-        .fib-blank.correct {
-            color: var(--success);
-            border-bottom-color: var(--success);
-        }
-
-        .fib-blank.wrong {
-            color: var(--error);
-            border-bottom-color: var(--error);
-            animation: shake 0.4s ease-in-out;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-6px); }
-            40% { transform: translateX(6px); }
-            60% { transform: translateX(-4px); }
-            80% { transform: translateX(4px); }
-        }
-
-        .fib-bank {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 16px;
-        }
-
-        .fib-word {
-            padding: 10px 20px;
-            background: rgba(250, 243, 228, 0.1);
-            border-radius: 100px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s, opacity 0.2s;
-            border: 2px solid rgba(250, 243, 228, 0.08);
-        }
-
-        .fib-word:hover {
-            background: rgba(250, 243, 228, 0.2);
-        }
-
-        .fib-word:active {
-            transform: scale(0.95);
-        }
-
-        .fib-word.used {
-            opacity: 0.25;
-            pointer-events: none;
-            text-decoration: line-through;
-        }
-
-        .fib-word.shake-back {
-            animation: shake 0.4s ease-in-out;
-        }
-
-        /* ===== TRUE/FALSE ===== */
-        .tf-card {
-            background: rgba(250, 243, 228, 0.05);
-            border-radius: var(--radius);
-            padding: 24px;
-            margin-bottom: 24px;
-            border: 2px solid rgba(250, 243, 228, 0.08);
-        }
-
-        .tf-statement {
-            font-size: 1.15rem;
-            line-height: 1.7;
-            margin-bottom: 20px;
-            color: var(--text);
-        }
-
-        .tf-timer-bar {
-            height: 8px;
-            background: rgba(250, 243, 228, 0.1);
-            border-radius: 100px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .tf-timer-fill {
-            height: 100%;
-            background: var(--teal);
-            border-radius: 100px;
-            transition: width 1s linear, background 0.3s;
-            width: 100%;
-        }
-
-        .tf-timer-fill.warning {
-            background: var(--yellow);
-        }
-
-        .tf-timer-fill.danger {
-            background: var(--red);
-            animation: flashTimer 0.5s ease-in-out infinite;
-        }
-
-        @keyframes flashTimer {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        .tf-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .tf-btn {
-            flex: 1;
-            min-width: 120px;
-            padding: 16px;
-            border-radius: var(--radius);
-            font-family: var(--font-display);
-            font-size: 1.05rem;
-            letter-spacing: 0.06em;
-            transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
-            box-shadow: var(--shadow-hard);
-        }
-
-        .tf-btn.real {
-            background: var(--teal);
-            color: var(--paper);
-        }
-
-        .tf-btn.delusion {
-            background: var(--red);
-            color: var(--paper);
-        }
-
-        .tf-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 0 rgba(0,0,0,0.4);
-        }
-
-        .tf-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 rgba(0,0,0,0.4);
-        }
-
-        .tf-btn:disabled {
-            opacity: 0.4;
-            pointer-events: none;
-        }
-
-        .tf-explanation {
-            margin-top: 16px;
-            padding: 16px 20px;
-            background: rgba(250, 243, 228, 0.05);
-            border-radius: var(--radius);
-            border-left: 4px solid var(--yellow);
-            font-size: 0.95rem;
-            color: var(--text-dim);
-            line-height: 1.7;
-            display: none;
-        }
-
-        .tf-explanation.show {
-            display: block;
-            animation: fadeSlideIn 0.3s ease;
-        }
-
-        .tf-next-btn {
-            margin-top: 16px;
-            padding: 14px 36px;
-            background: var(--yellow);
-            color: var(--ink);
-            font-family: var(--font-display);
-            font-size: 1rem;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-hard);
-            transition: transform 0.15s, box-shadow 0.15s;
-            display: none;
-        }
-
-        .tf-next-btn.show {
-            display: inline-block;
-        }
-
-        .tf-next-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 0 rgba(0,0,0,0.4);
-        }
-
-        .tf-next-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 rgba(0,0,0,0.4);
-        }
-
-        .tf-streak {
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            color: var(--yellow);
-            margin-bottom: 12px;
-        }
-
-        /* ===== MULTIPLE CHOICE ===== */
-        .mc-question {
-            font-size: 1.15rem;
-            line-height: 1.7;
-            margin-bottom: 24px;
-            color: var(--text);
-        }
-
-        .mc-options {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .mc-option {
-            padding: 16px 20px;
-            background: rgba(250, 243, 228, 0.06);
-            border: 2px solid rgba(250, 243, 228, 0.1);
-            border-radius: var(--radius);
-            font-size: 1rem;
-            text-align: left;
-            transition: background 0.2s, border-color 0.2s, transform 0.1s;
-            color: var(--text);
-            line-height: 1.5;
-        }
-
-        .mc-option:hover:not(:disabled) {
-            background: rgba(250, 243, 228, 0.12);
-            border-color: var(--yellow);
-        }
-
-        .mc-option:active:not(:disabled) {
-            transform: scale(0.98);
-        }
-
-        .mc-option.correct {
-            background: rgba(62, 142, 140, 0.25);
-            border-color: var(--success);
-            color: var(--success);
-            font-weight: 700;
-        }
-
-        .mc-option.wrong {
-            background: rgba(217, 67, 59, 0.25);
-            border-color: var(--error);
-            color: var(--error);
-            font-weight: 700;
-            animation: shake 0.4s ease-in-out;
-        }
-
-        .mc-option.dimmed {
-            opacity: 0.4;
-        }
-
-        .mc-reaction {
-            margin-top: 20px;
-            padding: 16px 20px;
-            background: rgba(250, 243, 228, 0.05);
-            border-radius: var(--radius);
-            font-size: 0.95rem;
-            color: var(--text-dim);
-            line-height: 1.7;
-            display: none;
-        }
-
-        .mc-reaction.show {
-            display: block;
-            animation: fadeSlideIn 0.3s ease;
-        }
-
-        /* ===== MATCH THE MEANING ===== */
-        .match-hint {
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            margin-bottom: 20px;
-            padding: 10px 16px;
-            background: rgba(250, 243, 228, 0.05);
-            border-radius: 8px;
-            line-height: 1.6;
-        }
-
-        .match-hint .example {
-            color: var(--yellow);
-        }
-
-        .match-stats {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            color: var(--text-dim);
-        }
-
-        .match-stats strong {
-            color: var(--yellow);
-        }
-
-        .match-columns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .match-col h4 {
-            font-family: var(--font-display);
-            font-size: 0.95rem;
-            color: var(--teal);
-            margin-bottom: 12px;
-            letter-spacing: 0.04em;
-        }
-
-        .match-item {
-            padding: 14px 16px;
-            background: rgba(250, 243, 228, 0.06);
-            border: 2px solid rgba(250, 243, 228, 0.1);
-            border-radius: 10px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: background 0.2s, border-color 0.2s, transform 0.1s;
-            font-size: 0.95rem;
-            line-height: 1.4;
-        }
-
-        .match-item:hover:not(.matched) {
-            background: rgba(250, 243, 228, 0.12);
-            border-color: var(--yellow);
-        }
-
-        .match-item:active:not(.matched) {
-            transform: scale(0.98);
-        }
-
-        .match-item.selected {
-            border-color: var(--yellow);
-            background: rgba(242, 179, 61, 0.15);
-        }
-
-        .match-item.matched {
-            background: rgba(62, 142, 140, 0.2);
-            border-color: var(--success);
-            color: var(--success);
-            pointer-events: none;
-            opacity: 0.7;
-        }
-
-        .match-item.wrong-pick {
-            animation: shake 0.4s ease-in-out;
-            border-color: var(--error);
-        }
-
-        /* ===== TIMED BONUS ===== */
-        .bonus-timer {
-            font-family: var(--font-mono);
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--yellow);
-            text-align: center;
-            margin-bottom: 16px;
-            letter-spacing: 0.06em;
-        }
-
-        .bonus-timer.danger {
-            color: var(--red);
-            animation: flashTimer 0.5s ease-in-out infinite;
-        }
-
-        .bonus-streak {
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            color: var(--teal);
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        /* ===== RESULTS MODAL ===== */
-        .results-stars {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin: 16px 0 20px;
-        }
-
-        .results-stars .star {
-            font-size: 2.5rem;
-            color: rgba(250, 243, 228, 0.15);
-            transition: color 0.3s, transform 0.3s;
-        }
-
-        .results-stars .star.filled {
-            color: var(--yellow);
-            text-shadow: 0 0 20px rgba(242, 179, 61, 0.6);
-            animation: starPop 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
-        }
-
-        .results-stars .star.filled:nth-child(1) { animation-delay: 0.1s; }
-        .results-stars .star.filled:nth-child(2) { animation-delay: 0.25s; }
-        .results-stars .star.filled:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes starPop {
-            0% { transform: scale(0) rotate(-30deg); }
-            70% { transform: scale(1.2) rotate(5deg); }
-            100% { transform: scale(1) rotate(0deg); }
-        }
-
-        .results-score {
-            font-family: var(--font-mono);
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--yellow);
-            text-align: center;
-            margin-bottom: 8px;
-        }
-
-        .results-label {
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--text-dim);
-            margin-bottom: 24px;
-        }
-
-        /* ===== FINALE ===== */
-        .finale-hero {
-            text-align: center;
-            padding: 32px 0;
-        }
-
-        .finale-hero h1 {
-            font-family: var(--font-display);
-            font-size: clamp(2rem, 5vw, 3rem);
-            color: var(--yellow);
-            margin-bottom: 8px;
-            text-shadow: 0 0 30px rgba(242, 179, 61, 0.3);
-        }
-
-        .finale-hero .rank {
-            font-family: var(--font-mono);
-            font-size: 1.1rem;
-            color: var(--teal);
-            margin-bottom: 24px;
-        }
-
-        .finale-score {
-            font-family: var(--font-mono);
-            font-size: 3rem;
-            font-weight: 700;
-            color: var(--yellow);
-            text-align: center;
-            margin: 16px 0 8px;
-        }
-
-        .finale-stars {
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-            margin-bottom: 32px;
-        }
-
-        .finale-stars .star {
-            font-size: 1.8rem;
-            color: rgba(250, 243, 228, 0.15);
-        }
-
-        .finale-stars .star.filled {
-            color: var(--yellow);
-            text-shadow: 0 0 12px rgba(242, 179, 61, 0.5);
-        }
-
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 24px 0;
-            font-size: 0.9rem;
-        }
-
-        .results-table th {
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-dim);
-            text-align: left;
-            padding: 10px 12px;
-            border-bottom: 2px solid rgba(250, 243, 228, 0.1);
-        }
-
-        .results-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid rgba(250, 243, 228, 0.06);
-            color: var(--text);
-        }
-
-        .results-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .results-table .td-stars {
-            color: var(--yellow);
-            letter-spacing: 2px;
-        }
-
-        .results-table .td-best {
-            font-family: var(--font-mono);
-            color: var(--yellow);
-        }
-
-        /* ===== TOAST ===== */
-        #toast-container {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 600;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
-            pointer-events: none;
-        }
-
-        .toast {
-            padding: 12px 24px;
-            background: var(--surface);
-            border-radius: 100px;
-            box-shadow: var(--shadow-hard);
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text);
-            border: 2px solid rgba(250, 243, 228, 0.1);
-            animation: toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: auto;
-            max-width: 90vw;
-            text-align: center;
-        }
-
-        .toast.success {
-            border-color: var(--success);
-            color: var(--success);
-        }
-
-        .toast.error {
-            border-color: var(--error);
-            color: var(--error);
-        }
-
-        .toast.info {
-            border-color: var(--yellow);
-            color: var(--yellow);
-        }
-
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        /* ===== CONFETTI ===== */
-        .confetti-piece {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            z-index: 700;
-            pointer-events: none;
-            animation: confettiFall linear forwards;
-        }
-
-        @keyframes confettiFall {
-            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
-
-        /* ===== POP FLOAT ===== */
-        .pop-float {
-            position: fixed;
-            z-index: 800;
-            font-family: var(--font-display);
-            font-size: 1.2rem;
-            color: var(--yellow);
-            pointer-events: none;
-            animation: popFloat 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.4);
-        }
-
-        @keyframes popFloat {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
-        }
-
-        /* ===== PROGRESS BAR (IN-LEVEL) ===== */
-        .level-progress {
-            height: 6px;
-            background: rgba(250, 243, 228, 0.1);
-            border-radius: 100px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .level-progress-fill {
-            height: 100%;
-            background: var(--yellow);
-            border-radius: 100px;
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 640px) {
-            .reel-grid {
-                grid-template-columns: 1fr;
-            }
-            .match-columns {
-                grid-template-columns: 1fr;
-            }
-            .header-center {
-                order: 3;
-                flex-basis: 100%;
-                justify-content: flex-start;
-            }
-            #header {
-                padding: 8px 12px;
-            }
-            .scene-body {
-                padding: 20px 16px;
-            }
-            .modal-box {
-                padding: 24px 20px;
-            }
-            .tf-actions {
-                flex-direction: column;
-            }
-            .tf-btn {
-                min-width: unset;
-            }
-        }
-
-        /* ===== REDUCED MOTION ===== */
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-            .screen.active {
-                animation: none;
-            }
-            .confetti-piece {
-                display: none;
-            }
-            .tf-timer-fill.danger {
-                animation: none;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Friends Vocab Arcade — The One With the Two Parties</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Courier+Prime:wght@400;700&family=Caveat:wght@600&family=Nunito+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* ===== Palette & base ===== */
+:root{
+  --paper:#FAF3E4; --ink:#2E2438; --red:#D9433B; --teal:#3E8E8C;
+  --yellow:#F2B33D; --purple:#7C5CBF; --orange:#D96C2C; --green:#3E8E5A;
+  --card:#FFFDF6; --muted:#7a6f86; --gold:#E0A92E;
+  --shadow:0 6px 0 var(--ink);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0;}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Nunito Sans",sans-serif; font-size:16px; line-height:1.55;
+  min-height:100vh; overflow-x:hidden;
+}
+h1,h2,h3{font-family:"Righteous",cursive; letter-spacing:.02em; line-height:1.15; margin:.2em 0;}
+button{font-family:inherit;}
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible{outline:3px dashed var(--red); outline-offset:3px;}
+::selection{background:var(--yellow); color:var(--ink);}
+
+/* ===== Film grain + CRT scanlines ===== */
+.grain{position:fixed; inset:-50px; z-index:60; pointer-events:none; opacity:.055;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.scanlines{position:fixed; inset:0; z-index:61; pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(46,36,56,.05) 0 1px, transparent 1px 4px);
+  box-shadow:inset 0 0 140px rgba(46,36,56,.28);}
+
+/* ===== Preloader (VHS PLAY) ===== */
+#preloader{position:fixed; inset:0; z-index:100; background:#221a2c; color:var(--paper);
+  display:grid; place-items:center; transition:transform .65s cubic-bezier(.6,.05,.4,1);}
+#preloader.done{transform:translateY(-101%);}
+.pre-inner{text-align:center;}
+.pre-play{font-family:"Righteous",cursive; font-size:clamp(2.4rem,8vw,4.5rem); letter-spacing:.08em;
+  color:#ffe9b8; text-shadow:0 0 22px rgba(242,179,61,.45); animation:vhsBlink 1.1s steps(2) infinite;}
+@keyframes vhsBlink{50%{opacity:.25;}}
+.pre-counter{font-family:"Courier Prime",monospace; font-size:1.1rem; color:#9fe3d2; margin-top:.6rem;}
+.pre-track{width:min(320px,70vw); height:8px; margin:1rem auto 0; border:2px solid #ffe9b8; border-radius:99px; overflow:hidden;}
+.pre-track span{display:block; height:100%; width:40%; background:var(--yellow); animation:tape 1.2s linear infinite;}
+@keyframes tape{0%{transform:translateX(-100%);}100%{transform:translateX(350%);}}
+.pre-hint{font-family:"Courier Prime",monospace; color:#b7a9c9; font-size:.8rem; letter-spacing:.18em; margin-top:1rem;}
+
+/* ===== Header console ===== */
+#console{position:fixed; top:0; left:0; right:0; z-index:50;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:8px 14px; background:var(--ink); color:var(--paper);
+  box-shadow:0 4px 0 rgba(46,36,56,.25); flex-wrap:wrap;}
+.brand{font-family:"Righteous",cursive; font-size:1rem; letter-spacing:.06em; display:flex; align-items:center; gap:8px; white-space:nowrap;}
+.brand .tape{filter:drop-shadow(0 0 6px rgba(242,179,61,.7));}
+.hud{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.dots{display:flex; gap:6px;}
+.dotc{width:14px; height:14px; border-radius:50%; border:2px solid var(--paper); background:transparent; transition:transform .2s;}
+.dotc.done{transform:scale(1.15); box-shadow:0 0 8px rgba(255,255,255,.35);}
+.hud-score{font-family:"Courier Prime",monospace; font-weight:700; font-size:.85rem; letter-spacing:.08em;
+  background:var(--yellow); color:var(--ink); padding:3px 10px; border-radius:8px;}
+.icon-btn{background:transparent; border:2px solid var(--paper); color:var(--paper); border-radius:10px;
+  font-size:1rem; line-height:1; padding:6px 9px; cursor:pointer; transition:transform .12s, background .12s;}
+.icon-btn:hover{background:rgba(255,255,255,.12); transform:translateY(-1px);}
+
+/* ===== Layout / screens ===== */
+main{max-width:980px; margin:0 auto; padding:86px 16px 60px;}
+.screen{display:none;}
+.screen.active{display:block; animation:screenIn .45s ease both;}
+@keyframes screenIn{
+  0%{opacity:0; transform:translateY(14px); clip-path:inset(0 0 90% 0);}
+  35%{clip-path:inset(0 0 0 0);}
+  45%{clip-path:inset(12% 0 0 0);}
+  55%{clip-path:inset(0 0 0 0);}
+  100%{opacity:1; transform:none;}
+}
+
+/* ===== Buttons ===== */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  border:2px solid var(--ink); border-radius:16px; background:var(--card); color:var(--ink);
+  font-weight:800; font-size:.95rem; padding:11px 20px; cursor:pointer;
+  box-shadow:0 6px 0 var(--ink); transition:transform .1s, box-shadow .1s, background .15s; user-select:none;}
+.btn:hover{filter:brightness(1.04);}
+.btn:active{transform:translateY(4px); box-shadow:0 2px 0 var(--ink);}
+.btn-primary{background:var(--yellow);}
+.btn-danger{background:var(--red); color:#fff;}
+.btn-ghost{background:transparent; box-shadow:0 4px 0 var(--ink);}
+.btn-gold{background:linear-gradient(135deg,#fbe29a,#f2c94c 45%,#e0a92e); color:#3d2b0a;}
+.btn-big{font-size:1.15rem; padding:15px 30px; border-radius:20px;}
+.btn-small{font-size:.8rem; padding:7px 12px; border-radius:12px; box-shadow:0 4px 0 var(--ink);}
+.btn-real{background:var(--teal); color:#fff;}
+.btn-delu{background:var(--red); color:#fff;}
+.btn:disabled{opacity:.55; cursor:default; transform:none;}
+
+/* ===== Intro ===== */
+.intro-card{background:var(--card); border:3px solid var(--ink); border-radius:24px; box-shadow:0 10px 0 var(--ink);
+  padding:clamp(20px,4vw,40px); text-align:center; position:relative; overflow:hidden;}
+.intro-kicker{font-family:"Courier Prime",monospace; font-size:.75rem; letter-spacing:.22em; color:var(--teal); margin:0;}
+.intro-title{font-size:clamp(2.6rem,9vw,4.6rem); margin:.15em 0 0;}
+.intro-title span{display:block; color:var(--orange); text-shadow:0 4px 0 rgba(46,36,56,.18);}
+.intro-sub{font-family:"Caveat",cursive; font-size:clamp(1.4rem,4vw,1.9rem); color:var(--purple); margin:.1em 0 .6em;}
+.intro-story{max-width:560px; margin:0 auto 1em; color:#4b4157;}
+.intro-banner{width:100%; max-height:180px; object-fit:cover; border-radius:16px; border:2px solid var(--ink); margin:.4em 0 1em; display:block;}
+.intro-chips{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:.8em 0 1.2em;}
+.chip{font-family:"Courier Prime",monospace; font-size:.72rem; letter-spacing:.06em; border:2px solid var(--ink);
+  border-radius:99px; padding:5px 12px; background:var(--paper);}
+.intro-credit{font-size:.78rem; color:var(--muted);}
+.intro-credit a{color:var(--purple);}
+
+/* ===== Map ===== */
+.map-head{text-align:center; margin-bottom:1.2em;}
+.map-head p{font-family:"Caveat",cursive; font-size:1.3rem; color:var(--purple); margin:.1em 0 0;}
+.map-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:18px;}
+.reel-card{background:var(--card); border:3px solid var(--ink); border-radius:20px; overflow:hidden;
+  box-shadow:0 6px 0 var(--ink); cursor:pointer; transition:transform .14s, box-shadow .14s; text-align:left; padding:0;}
+.reel-card:hover{transform:translateY(-4px) rotate(-.4deg); box-shadow:0 10px 0 var(--ink);}
+.reel-card:active{transform:translateY(2px); box-shadow:0 3px 0 var(--ink);}
+.reel-preview{position:relative; aspect-ratio:16/9; background:linear-gradient(135deg,var(--pc,#7C5CBF),#2E2438); overflow:hidden;}
+.reel-preview img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:2;}
+.reel-fallback{position:absolute; inset:0; display:grid; place-items:center; font-size:2.6rem; z-index:1;}
+.reel-num{position:absolute; z-index:3; left:10px; top:10px; font-family:"Courier Prime",monospace; font-weight:700;
+  background:var(--ink); color:var(--yellow); padding:2px 9px; border-radius:8px; font-size:.85rem;}
+.reel-char{position:absolute; z-index:3; right:8px; bottom:6px; font-size:1.9rem; filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));}
+.reel-body{padding:12px 14px 14px;}
+.reel-body h3{font-size:1.02rem; margin:0 0 2px;}
+.reel-tag{font-family:"Courier Prime",monospace; font-size:.68rem; letter-spacing:.12em; color:var(--pc,#7C5CBF); margin:0 0 8px; text-transform:uppercase;}
+.reel-stars{font-size:1.05rem; letter-spacing:2px; color:#cfc4da;}
+.reel-stars .on{color:var(--gold); text-shadow:0 2px 0 rgba(46,36,56,.25);}
+.reel-best{font-family:"Courier Prime",monospace; font-size:.75rem; color:var(--muted); margin-top:4px;}
+.map-final{text-align:center; margin-top:26px;}
+
+/* ===== Game panels ===== */
+.game-panel{background:var(--card); border:3px solid var(--ink); border-radius:22px; box-shadow:0 8px 0 var(--ink);
+  padding:clamp(14px,3vw,26px); margin-bottom:20px;}
+.game-head{display:flex; align-items:center; gap:12px; flex-wrap:wrap; border-bottom:2px dashed rgba(46,36,56,.25); padding-bottom:12px; margin-bottom:14px;}
+.g-emoji{font-size:2.2rem; filter:drop-shadow(0 3px 0 rgba(46,36,56,.2));}
+.g-titles{flex:1; min-width:180px;}
+.g-title{font-size:1.25rem; margin:0;}
+.g-sub{font-family:"Courier Prime",monospace; font-size:.72rem; letter-spacing:.12em; color:var(--muted); margin:2px 0 0; text-transform:uppercase;}
+.g-note{font-size:.9rem; color:#4b4157; background:var(--paper); border:2px dashed var(--ink); border-radius:14px; padding:9px 13px; margin:0 0 14px;}
+.g-foot{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:16px;
+  font-family:"Courier Prime",monospace; font-weight:700; letter-spacing:.06em; font-size:.9rem;}
+.g-foot .g-score{color:var(--teal);} .g-foot .g-mist{color:var(--red);}
+
+/* ===== Fill blanks ===== */
+.fill-sentences{display:flex; flex-direction:column; gap:12px; margin-bottom:16px;}
+.fill-sent{margin:0; font-size:1.02rem; background:var(--paper); border:2px solid rgba(46,36,56,.2); border-radius:14px; padding:10px 14px;}
+.blank{display:inline-block; min-width:120px; border:none; border-bottom:3px dashed var(--purple);
+  background:rgba(124,92,191,.1); color:var(--purple); font-weight:800; font-family:"Courier Prime",monospace;
+  font-size:.95rem; padding:2px 8px; border-radius:8px 8px 0 0; cursor:pointer; transition:background .15s; vertical-align:baseline;}
+.blank:hover{background:rgba(124,92,191,.22);}
+.blank.sel{background:var(--yellow); border-bottom-style:solid; color:var(--ink);}
+.blank.locked{border-bottom:3px solid var(--green); background:#DFF2E4; color:var(--green); cursor:default;}
+.bank{display:flex; flex-wrap:wrap; gap:9px;}
+.bank-word{border:2px solid var(--ink); background:#fff; border-radius:12px; padding:8px 14px;
+  font-weight:800; font-size:.92rem; cursor:pointer; box-shadow:0 4px 0 var(--ink); transition:transform .1s, box-shadow .1s;}
+.bank-word:hover{background:var(--yellow);}
+.bank-word:active{transform:translateY(3px); box-shadow:0 1px 0 var(--ink);}
+.bank-word.used{opacity:.3; box-shadow:none; transform:translateY(4px); cursor:default; background:var(--paper);}
+
+/* ===== Timer ===== */
+.timer{height:14px; border:2px solid var(--ink); border-radius:99px; background:#fff; overflow:hidden; margin:12px 0;}
+.timer-fill{height:100%; width:100%; background:var(--teal); transition:width 1s linear;}
+.timer-fill.warn{background:var(--yellow);}
+.timer-fill.danger{background:var(--red); animation:blink .55s steps(2) infinite;}
+@keyframes blink{50%{opacity:.35;}}
+
+/* ===== True / False ===== */
+.tf-streak{text-align:center; font-family:"Courier Prime",monospace; font-weight:700; letter-spacing:.14em;
+  color:var(--orange); font-size:.85rem; margin-bottom:8px;}
+.tf-card{background:var(--paper); border:3px solid var(--ink); border-radius:18px; padding:18px 20px; text-align:center;
+  box-shadow:0 5px 0 rgba(46,36,56,.18);}
+.tf-label{font-family:"Courier Prime",monospace; font-size:.7rem; letter-spacing:.22em; color:var(--purple); margin:0 0 8px;}
+.tf-text{font-size:1.25rem; font-weight:800; margin:0; min-height:3.4em; display:grid; place-items:center;}
+.tf-btns{display:flex; gap:12px; justify-content:center; margin-top:14px; flex-wrap:wrap;}
+.tf-btns .btn{flex:1; min-width:140px; font-size:1.05rem;}
+.tf-expl{margin-top:14px; background:#EAF4EC; border:2px solid var(--green); border-radius:16px; padding:14px 16px; animation:screenIn .3s ease both;}
+.tf-expl.bad{background:#FBEAE8; border-color:var(--red);}
+.tf-verdict{font-family:"Righteous",cursive; font-size:1.15rem; margin:0 0 6px;}
+.tf-expl-text{margin:0 0 12px; font-size:.95rem;}
+
+/* ===== Multiple choice ===== */
+.mc-zone{min-height:220px;}
+.mc-q{font-size:1.15rem; font-weight:800; margin:4px 0 14px;}
+.mc-opt{display:block; width:100%; text-align:left; border:2px solid var(--ink); border-radius:14px; background:#fff;
+  padding:12px 16px; font-size:.98rem; font-weight:600; cursor:pointer; margin-bottom:9px; box-shadow:0 4px 0 var(--ink); transition:background .12s, transform .1s, box-shadow .1s;}
+.mc-opt:hover{background:var(--paper);}
+.mc-opt:active{transform:translateY(3px); box-shadow:0 1px 0 var(--ink);}
+.mc-opt .k{font-family:"Courier Prime",monospace; font-weight:700; color:var(--muted); margin-right:8px;}
+.mc-opt.good{background:#DFF2E4; border-color:var(--green); color:var(--green);}
+.mc-opt.badp{background:#FBEAE8; border-color:var(--red); color:var(--red);}
+.mc-opt:disabled{cursor:default;}
+.react{display:flex; gap:12px; align-items:flex-start; background:var(--paper); border:2px dashed var(--ink);
+  border-radius:16px; padding:12px 14px; margin-top:12px; animation:screenIn .3s ease both;}
+.react .ava{font-size:2rem; filter:drop-shadow(0 2px 0 rgba(46,36,56,.25));}
+.react .line{font-family:"Caveat",cursive; font-size:1.35rem; line-height:1.2; color:var(--ink);}
+.mc-next{margin-top:12px; text-align:center;}
+
+/* ===== Match ===== */
+.match-stats{display:flex; gap:14px; flex-wrap:wrap; font-family:"Courier Prime",monospace; font-weight:700;
+  font-size:.9rem; letter-spacing:.06em; margin-bottom:10px;}
+.match-stats .mp{color:var(--green);} .match-stats .mt{color:var(--orange);}
+.match-wrap{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+@media (max-width:620px){.match-wrap{grid-template-columns:1fr;}}
+.match-col h4{font-family:"Courier Prime",monospace; font-size:.72rem; letter-spacing:.18em; color:var(--muted); margin:0 0 8px; text-transform:uppercase;}
+.m-item{display:block; width:100%; text-align:left; border:2px solid var(--ink); border-radius:14px; background:#fff;
+  padding:11px 14px; font-weight:700; font-size:.92rem; cursor:pointer; margin-bottom:9px; box-shadow:0 4px 0 var(--ink); transition:background .12s;}
+.m-item:hover{background:var(--paper);}
+.m-item.sel{background:var(--yellow);}
+.m-item.locked{background:#DFF2E4; border-color:var(--green); color:var(--green); cursor:default; box-shadow:0 4px 0 var(--green);}
+.m-item .hint-k{font-family:"Caveat",cursive; color:var(--muted); font-size:.85rem;}
+
+/* ===== Bonus ===== */
+.bonus-flash-good{animation:flashGood .5s ease;}
+.bonus-flash-bad{animation:flashBad .5s ease;}
+@keyframes flashGood{0%{box-shadow:0 0 0 6px rgba(62,142,90,.55);}100%{box-shadow:0 0 0 0 transparent;}}
+@keyframes flashBad{0%{box-shadow:0 0 0 6px rgba(217,67,59,.55);}100%{box-shadow:0 0 0 0 transparent;}}
+
+/* ===== Shake ===== */
+.shake{animation:shakeX .45s ease;}
+@keyframes shakeX{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(6px);}60%{transform:translateX(-4px);}80%{transform:translateX(3px);}}
+
+/* ===== Finale ===== */
+.fin-card{background:var(--card); border:3px solid var(--ink); border-radius:24px; box-shadow:0 8px 0 var(--ink); padding:clamp(18px,4vw,32px); text-align:center;}
+.fin-banner{width:100%; max-height:200px; object-fit:cover; border-radius:16px; border:2px solid var(--ink); margin-bottom:16px;}
+.fin-total{font-family:"Righteous",cursive; font-size:clamp(2rem,7vw,3.2rem); color:var(--orange);}
+.fin-total strong{color:var(--ink);}
+.fin-stars{font-size:1.4rem; letter-spacing:3px; color:var(--gold); margin:.2em 0;}
+.fin-rank{display:inline-block; font-family:"Courier Prime",monospace; font-weight:700; letter-spacing:.1em;
+  background:var(--ink); color:var(--yellow); border-radius:99px; padding:8px 18px; margin:.6em 0 1em;}
+.fin-table{width:100%; border-collapse:collapse; margin:0 0 1.2em; font-size:.92rem;}
+.fin-table th,.fin-table td{border-bottom:2px dashed rgba(46,36,56,.25); padding:8px 6px; text-align:left;}
+.fin-table th{font-family:"Courier Prime",monospace; font-size:.7rem; letter-spacing:.16em; color:var(--muted); text-transform:uppercase;}
+.fin-table td.num{font-family:"Courier Prime",monospace; font-weight:700;}
+.fin-actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:8px;}
+
+/* ===== Modal ===== */
+#modal-root .modal-overlay{position:fixed; inset:0; z-index:70; background:rgba(34,26,44,.6);
+  display:grid; place-items:center; padding:18px; opacity:0; transition:opacity .2s;}
+#modal-root .modal-overlay.open{opacity:1;}
+.modal-card{background:var(--card); border:3px solid var(--ink); border-radius:22px; box-shadow:0 10px 0 var(--ink);
+  max-width:520px; width:100%; max-height:88vh; overflow:auto; transform:translateY(16px); transition:transform .22s;}
+.modal-overlay.open .modal-card{transform:none;}
+.modal-img{position:relative; background:linear-gradient(135deg,var(--purple),#2E2438); display:grid; place-items:center; font-size:3rem; min-height:120px;}
+.modal-img img{position:relative; z-index:2; width:100%; display:block; max-height:230px; object-fit:cover;}
+.modal-img.broken{background:linear-gradient(135deg,var(--orange),var(--purple));}
+.modal-body{padding:18px 22px 4px;}
+.modal-title{font-size:1.3rem; margin:0 0 4px;}
+.modal-sub{font-family:"Courier Prime",monospace; font-size:.72rem; letter-spacing:.16em; color:var(--purple); text-transform:uppercase; margin:0 0 10px;}
+.brief-line{margin:.4em 0; font-size:.95rem;}
+.brief-flavor{font-family:"Caveat",cursive; font-size:1.3rem; color:var(--teal); margin:.6em 0 0;}
+.modal-actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding:16px 22px 20px;}
+.res-stars{font-size:2.6rem; letter-spacing:8px; margin:.2em 0;}
+.res-star{color:#d8cdb8; display:inline-block;}
+.res-star.lit{color:var(--gold); animation:starPop .55s cubic-bezier(.3,1.6,.5,1) backwards;}
+@keyframes starPop{0%{transform:scale(0) rotate(-160deg);}100%{transform:scale(1) rotate(0);}}
+.res-score{font-family:"Righteous",cursive; font-size:1.5rem; margin:.2em 0;}
+.res-best{font-family:"Courier Prime",monospace; font-size:.75rem; background:var(--green); color:#fff; border-radius:99px; padding:3px 10px; vertical-align:middle; letter-spacing:.08em;}
+.res-mist{color:var(--muted); font-size:.9rem;}
+
+/* ===== Toast / popFloat / confetti ===== */
+#toast-root{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); z-index:75; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none;}
+.toast{background:var(--ink); color:var(--paper); font-weight:700; font-size:.9rem; border-radius:14px;
+  padding:10px 18px; box-shadow:0 5px 0 rgba(0,0,0,.25); opacity:0; transform:translateY(12px); transition:opacity .25s, transform .25s; max-width:88vw;}
+.toast.show{opacity:1; transform:none;}
+.pop-float{position:fixed; z-index:76; transform:translate(-50%,-50%); font-family:"Courier Prime",monospace;
+  font-weight:700; font-size:1.25rem; pointer-events:none; animation:floatUp .95s ease-out forwards; text-shadow:0 2px 0 rgba(255,255,255,.6);}
+@keyframes floatUp{0%{opacity:0; margin-top:6px;}20%{opacity:1;}100%{opacity:0; margin-top:-52px;}}
+.confetti{position:fixed; inset:0; z-index:78; pointer-events:none;}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important; transition:none !important;}
+  .scanlines{box-shadow:none;}
+}
+</style>
 </head>
 <body>
 
-    <!-- ===== PRELOADER ===== -->
-    <div id="preloader" role="status" aria-label="Loading game">
-        <div class="preloader-logo">FRIENDS<br>VOCAB ARCADE</div>
-        <div class="preloader-sub">The One With The Two Parties</div>
-        <button class="preloader-btn" id="playBtn">PLAY ▶</button>
+<div class="grain" aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
+
+<!-- ===== Preloader (VHS PLAY) ===== -->
+<div id="preloader" aria-hidden="true">
+  <div class="pre-inner">
+    <div class="pre-play">▶ PLAY</div>
+    <div class="pre-counter" id="preCounter">0:00:00</div>
+    <div class="pre-track"><span></span></div>
+    <p class="pre-hint">FRIENDS VOCAB ARCADE · LOADING TAPE…</p>
+  </div>
+</div>
+
+<!-- ===== Header console ===== -->
+<header id="console">
+  <div class="brand"><span class="tape">📼</span> FRIENDS VOCAB ARCADE</div>
+  <div class="hud">
+    <div id="progressDots" class="dots" aria-label="Completed levels"></div>
+    <div id="hudScore" class="hud-score" aria-live="polite">SCORE 0</div>
+    <button id="btnMap" class="icon-btn" aria-label="Back to level map">🗺️</button>
+    <button id="btnSound" class="icon-btn" aria-label="Toggle sound" aria-pressed="false">🔊</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===== SCREEN: INTRO ===== -->
+  <section id="screen-intro" class="screen active" aria-label="Intro">
+    <div class="intro-card">
+      <p class="intro-kicker">📼 NOW PLAYING · SEASON 2 · A BIRTHDAY, TWO PARTIES, ONE HALLWAY</p>
+      <h1 class="intro-title">FRIENDS<span>VOCAB ARCADE</span></h1>
+      <p class="intro-sub">“The One With the Two Parties”</p>
+      <img class="intro-banner" src="https://item1000-collab.github.io/ai/engoo/20261014-friends-222/slide-001.jpg" alt="Central Perk cover of the lesson deck" onerror="this.style.display='none'">
+      <p class="intro-story">It’s Rachel’s birthday. Monica builds a strict, fancy party; Joey and Chandler build a loud, chaotic one. Then Rachel’s divorced parents both arrive as a surprise — and the friends throw <strong>two separate parties at the exact same time</strong> to keep them apart. Play five mini-games, learn the words of the night — <em>poach, committee, flan, staging area, diversion…</em> — and earn all fifteen stars across the purple door and the green one.</p>
+      <div class="intro-chips">
+        <span class="chip">🎮 5 MINI-GAMES</span>
+        <span class="chip">⭐ 15 STARS</span>
+        <span class="chip">🔀 FREE ORDER</span>
+        <span class="chip">🔊 SOUND ON = BETTER</span>
+      </div>
+      <button id="btnStart" class="btn btn-primary btn-big">▶ PRESS START</button>
+      <p class="intro-credit">Source tape: <a href="https://item1000-collab.github.io/ai/engoo/20261014-friends-222/222-sitcom-english-two-parties.pdf" target="_blank" rel="noopener noreferrer">222-sitcom-english-two-parties.pdf</a></p>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN: LEVEL MAP ===== -->
+  <section id="screen-map" class="screen" aria-label="Level map">
+    <div class="map-head">
+      <h2>📼 SELECT YOUR REEL</h2>
+      <p>Any level, any order, any time — the tape is yours.</p>
+    </div>
+    <div id="mapGrid" class="map-grid"></div>
+    <div class="map-final">
+      <button id="btnFinale" class="btn btn-gold btn-big" hidden>🏆 WATCH THE FINALE</button>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN: GAME ===== -->
+  <section id="screen-game" class="screen" aria-label="Level scene">
+
+    <div class="game-panel" id="panel-fill" hidden>
+      <div class="game-head">
+        <span class="g-emoji">👩‍🍳</span>
+        <div class="g-titles"><h2 class="g-title"></h2><p class="g-sub"></p></div>
+        <button type="button" class="btn btn-ghost btn-small" data-back>⬅ MAP</button>
+      </div>
+      <div class="game-body"></div>
     </div>
 
-    <!-- ===== HEADER ===== -->
-    <header id="header" class="hidden" role="banner">
-        <div class="brand">FRIENDS <span>VOCAB</span> ARCADE</div>
-        <div class="header-center">
-            <div class="progress-cells" id="progressCells" aria-label="Level progress"></div>
-            <div class="score-display" id="scoreDisplay">SCORE 0</div>
-        </div>
-        <div class="header-actions">
-            <button class="icon-btn" id="soundBtn" aria-label="Toggle sound" aria-pressed="true">🔊</button>
-            <button class="icon-btn" id="mapBtn" aria-label="Back to map">🗺️</button>
-        </div>
-    </header>
-
-    <!-- ===== INTRO SCREEN ===== -->
-    <div id="screen-intro" class="screen active">
-        <div class="container">
-            <div class="intro-hero">
-                <h1>Two Parties.<br>One Hallway.<br>Five Games.</h1>
-                <p>Master the vocabulary, idioms, and 90s culture of <em>Friends</em> through five retro-arcade mini-games. Every level is unlocked from the start. Play in any order. Collect stars. Become the ultimate sitcom English champion.</p>
-                <div class="quote">"This is just the staging area." — The One With The Two Parties</div>
-                <button class="btn-primary" id="startBtn">ENTER THE ARCADE</button>
-            </div>
-        </div>
+    <div class="game-panel" id="panel-tf" hidden>
+      <div class="game-head">
+        <span class="g-emoji">😏</span>
+        <div class="g-titles"><h2 class="g-title"></h2><p class="g-sub"></p></div>
+        <button type="button" class="btn btn-ghost btn-small" data-back>⬅ MAP</button>
+      </div>
+      <div class="game-body"></div>
     </div>
 
-    <!-- ===== LEVEL MAP SCREEN ===== -->
-    <div id="screen-map" class="screen">
-        <div class="container">
-            <div class="map-header">
-                <div>
-                    <h2>🎬 Level Map</h2>
-                    <div class="sub">All levels unlocked · Play in any order</div>
-                </div>
-                <div class="sub" id="mapProgress">0 / 5 completed</div>
-            </div>
-            <div class="reel-grid" id="reelGrid"></div>
-        </div>
+    <div class="game-panel" id="panel-mc" hidden>
+      <div class="game-head">
+        <span class="g-emoji">🦖</span>
+        <div class="g-titles"><h2 class="g-title"></h2><p class="g-sub"></p></div>
+        <button type="button" class="btn btn-ghost btn-small" data-back>⬅ MAP</button>
+      </div>
+      <div class="game-body"></div>
     </div>
 
-    <!-- ===== SCENE SCREEN ===== -->
-    <div id="screen-scene" class="screen">
-        <div class="container">
-            <div class="scene-header">
-                <div>
-                    <h2 id="sceneTitle">Level Title</h2>
-                    <div class="scene-char" id="sceneChar"></div>
-                </div>
-                <button class="btn-secondary" id="backToMapBtn">← Back to Map</button>
-            </div>
-            <div class="level-progress">
-                <div class="level-progress-fill" id="levelProgressFill" style="width:0%"></div>
-            </div>
-            <div class="scene-body" id="sceneBody">
-                <!-- Mini-game rendered here -->
-            </div>
-            <div class="scene-footer">
-                <button class="btn-secondary" id="restartLevelBtn">🔄 Restart Level</button>
-            </div>
-        </div>
+    <div class="game-panel" id="panel-match" hidden>
+      <div class="game-head">
+        <span class="g-emoji">🎸</span>
+        <div class="g-titles"><h2 class="g-title"></h2><p class="g-sub"></p></div>
+        <button type="button" class="btn btn-ghost btn-small" data-back>⬅ MAP</button>
+      </div>
+      <div class="game-body"></div>
     </div>
 
-    <!-- ===== FINALE SCREEN ===== -->
-    <div id="screen-finale" class="screen">
-        <div class="container">
-            <div class="finale-hero">
-                <h1>🎉 Finale</h1>
-                <div class="rank" id="finaleRank">RANK: ROOKIE</div>
-                <div class="finale-score" id="finaleScore">0</div>
-                <div class="finale-stars" id="finaleStars"></div>
-                <p style="color:var(--text-dim);max-width:500px;margin:0 auto 24px;">
-                    You have completed all five levels. Your friends are your chosen family, and your English is now a little sharper.
-                </p>
-                <button class="btn-primary" id="rewindBtn">⏪ Rewind the Tape</button>
-            </div>
-            <table class="results-table" id="resultsTable">
-                <thead>
-                    <tr>
-                        <th>Level</th>
-                        <th>Stars</th>
-                        <th>Best Score</th>
-                    </tr>
-                </thead>
-                <tbody id="resultsBody"></tbody>
-            </table>
-        </div>
+    <div class="game-panel" id="panel-bonus" hidden>
+      <div class="game-head">
+        <span class="g-emoji">🍕</span>
+        <div class="g-titles"><h2 class="g-title"></h2><p class="g-sub"></p></div>
+        <button type="button" class="btn btn-ghost btn-small" data-back>⬅ MAP</button>
+      </div>
+      <div class="game-body"></div>
     </div>
 
-    <!-- ===== MODAL OVERLAY ===== -->
-    <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal-box" id="modalBox">
-            <h3 id="modalTitle">Title</h3>
-            <div id="modalContent"></div>
-            <div class="modal-actions" id="modalActions"></div>
-        </div>
-    </div>
+  </section>
 
-    <!-- ===== TOAST CONTAINER ===== -->
-    <div id="toast-container" aria-live="polite"></div>
+  <!-- ===== SCREEN: FINALE ===== -->
+  <section id="screen-finale" class="screen" aria-label="Finale">
+    <div class="fin-card" id="finaleBody"></div>
+  </section>
 
-    <script>
-    (function() {
-        "use strict";
+</main>
 
-        /* ===== UTILITIES ===== */
-        const $ = (sel, ctx = document) => ctx.querySelector(sel);
-        const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
-        const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
-        const shuffle = (arr) => {
-            const a = arr.slice();
-            for (let i = a.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [a[i], a[j]] = [a[j], a[i]];
-            }
-            return a;
-        };
+<div id="modal-root"></div>
+<div id="toast-root" aria-live="polite"></div>
 
-        const STORAGE_KEY = 'friendsVocabArcade_v1';
+<script>
+(function(){
+"use strict";
 
-        /* ===== AUDIO ENGINE ===== */
-        const AudioEngine = (function() {
-            let ctx = null;
-            let muted = false;
+/* ===== Utilities ===== */
+const $  = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+const shuffle = (arr) => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+function refreshIcons(){
+  /* Hook for icon libraries (e.g., Lucide CDN). Emoji icons need no refresh. */
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    try { window.lucide.createIcons(); } catch (e) { /* noop */ }
+  }
+}
+function toast(msg){
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  $("#toast-root").appendChild(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 300); }, 2400);
+}
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function popFloat(x, y, text, color){
+  if (REDUCED) return;
+  const el = document.createElement("div");
+  el.className = "pop-float";
+  el.textContent = text;
+  if (color) el.style.color = color;
+  el.style.left = x + "px";
+  el.style.top  = y + "px";
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 980);
+}
+function spawnConfetti(count){
+  if (REDUCED) return;
+  const c = document.createElement("canvas");
+  c.className = "confetti";
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  document.body.appendChild(c);
+  const ctx2 = c.getContext("2d");
+  const COLORS = ["#D9433B", "#F2B33D", "#3E8E5A", "#7C5CBF", "#D96C2C", "#FAF3E4"];
+  const parts = Array.from({ length: count || 90 }, () => ({
+    x: Math.random() * c.width, y: -20 - Math.random() * c.height * 0.4,
+    w: 6 + Math.random() * 7, h: 8 + Math.random() * 10,
+    vy: 2 + Math.random() * 3.5, vx: -1.5 + Math.random() * 3,
+    rot: Math.random() * Math.PI, vr: -0.12 + Math.random() * 0.24,
+    col: COLORS[(Math.random() * COLORS.length) | 0]
+  }));
+  let frames = 0;
+  (function loop(){
+    ctx2.clearRect(0, 0, c.width, c.height);
+    parts.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      ctx2.save(); ctx2.translate(p.x, p.y); ctx2.rotate(p.rot);
+      ctx2.fillStyle = p.col; ctx2.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx2.restore();
+    });
+    frames++;
+    if (frames < 170) requestAnimationFrame(loop); else c.remove();
+  })();
+}
 
-            function init() {
-                if (ctx) return;
-                try {
-                    ctx = new (window.AudioContext || window.webkitAudioContext)();
-                } catch (e) {
-                    ctx = null;
-                }
-            }
+/* ===== Audio (Web Audio API, fully synthesized) ===== */
+const Sfx = (() => {
+  let actx = null;
+  let muted = false;
+  function ensure(){
+    if (!actx) {
+      try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; }
+    }
+    if (actx && actx.state === "suspended") actx.resume();
+  }
+  function tone(freq, dur, type, vol, when){
+    if (muted) return;
+    ensure(); if (!actx) return;
+    const t0 = actx.currentTime + (when || 0);
+    const osc = actx.createOscillator();
+    const g = actx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.15, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(actx.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.05);
+  }
+  function noiseBurst(dur, vol, when){
+    if (muted) return;
+    ensure(); if (!actx) return;
+    const len = Math.floor(actx.sampleRate * dur);
+    const buf = actx.createBuffer(1, len, actx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = actx.createBufferSource();
+    src.buffer = buf;
+    const g = actx.createGain();
+    g.gain.value = vol || 0.15;
+    src.connect(g).connect(actx.destination);
+    src.start(actx.currentTime + (when || 0));
+  }
+  return {
+    ensure,
+    setMuted(v){ muted = v; },
+    click(){ tone(680, 0.05, "square", 0.06); },
+    flip(){ tone(430, 0.07, "triangle", 0.1); tone(650, 0.07, "triangle", 0.08, 0.05); },
+    correct(){ tone(523, 0.09, "sine", 0.16); tone(659, 0.09, "sine", 0.16, 0.08); tone(784, 0.15, "sine", 0.16, 0.16); },
+    wrong(){ tone(196, 0.2, "sawtooth", 0.13); tone(147, 0.28, "sawtooth", 0.13, 0.1); },
+    match(){ tone(740, 0.08, "sine", 0.14); tone(988, 0.12, "sine", 0.14, 0.07); },
+    fanfare(){ [523, 659, 784, 1046, 784, 1046].forEach((f, i) => tone(f, 0.13, "triangle", 0.15, i * 0.09)); noiseBurst(0.25, 0.07, 0.5); },
+    tick(){ tone(1100, 0.03, "square", 0.05); },
+    cheer(){ noiseBurst(0.7, 0.2); [392, 523, 659].forEach((f, i) => tone(f, 0.16, "triangle", 0.12, i * 0.12)); }
+  };
+})();
+/* AudioContext wakes on the user's very first click/keypress */
+document.addEventListener("pointerdown", () => Sfx.ensure(), { once: true });
 
-            function ensure() {
-                if (!ctx) init();
-                if (ctx && ctx.state === 'suspended') {
-                    ctx.resume();
-                }
-                return ctx;
-            }
+/* ===== Game data ===== */
+const BASE = "https://item1000-collab.github.io/ai/engoo/20261014-friends-222/";
+const PDF_URL = BASE + "222-sitcom-english-two-parties.pdf";
 
-            function tone(freq, dur, type = 'sine', vol = 0.15, when = 0) {
-                const c = ensure();
-                if (!c || muted) return;
-                const osc = c.createOscillator();
-                const gain = c.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, c.currentTime + when);
-                gain.gain.setValueAtTime(vol, c.currentTime + when);
-                gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + when + dur);
-                osc.connect(gain);
-                gain.connect(c.destination);
-                osc.start(c.currentTime + when);
-                osc.stop(c.currentTime + when + dur);
-            }
+/* SCENES: id, num, title, char, color, slide, tag, obj, tip, flavor */
+const SCENES = [
+  { id:"scene-fill",   num:1, title:"Monica’s Kitchen Mission", char:"Monica", emoji:"👩‍🍳", color:"#7C5CBF",
+    slide:BASE + "slide-003.jpg", tag:"Fill in the Blanks", runner:"fill",
+    obj:"Place the right words into Monica’s fancy party sentences. Wrong words bounce back and cost points.",
+    tip:"Click a blank first, then click a word from the bank.",
+    flavor:"Poached salmon. A committee. Zero pizza. Welcome to perfection." },
+  { id:"scene-tf",     num:2, title:"Chandler: REAL or DELUSION", char:"Chandler", emoji:"😏", color:"#D96C2C",
+    slide:BASE + "slide-007.jpg", tag:"True / False Reaction", runner:"tf",
+    obj:"Chandler is remembering the night. Some memories are real, some are a carefully regimented program of denial.",
+    tip:"Arrow keys work: ← for REAL, → for DELUSION. The next card appears only when YOU press NEXT.",
+    flavor:"Could this memory BE any more questionable?" },
+  { id:"scene-mc",     num:3, title:"The Danger Zone Dispatch", char:"Ross", emoji:"🦖", color:"#D9433B",
+    slide:BASE + "slide-006.jpg", tag:"Multiple Choice", runner:"mc",
+    obj:"Five dispatches from the hallway operation. Three options each. Exactly one attempt — no rewinds.",
+    tip:"Read twice, answer once. Keys 1 / 2 / 3 also work.",
+    flavor:"Glasses: stolen. Cigarettes: confiscated. Parents: protected." },
+  { id:"scene-match",  num:4, title:"Phoebe’s Match the Meaning", char:"Phoebe", emoji:"🎸", color:"#3E8E5A",
+    slide:BASE + "slide-005.jpg", tag:"Match the Meaning", runner:"match",
+    obj:"Six words met six meanings in a smelly-cloud dream. Pair them all without waking the wrong one.",
+    tip:"Click a word, then click its meaning. Correct pairs lock green and glow.",
+    flavor:"No Boggle boards were harmed. Probably." },
+  { id:"scene-bonus",  num:5, title:"Joey’s Pizza Bonus Blitz", char:"Joey", emoji:"🍕", color:"#F2B33D",
+    slide:BASE + "slide-004.jpg", tag:"Timed Bonus Round", runner:"bonus",
+    obj:"750 seconds on the clock. Questions from every party in the building. Streaks multiply your score.",
+    tip:"Streak ×2 at 3 in a row, ×3 at 6. When the timer turns red — hurry, okay?",
+    flavor:"When the timer goes red, the pizza gets serious." }
+];
 
-            function noiseBurst(dur = 0.3, vol = 0.1) {
-                const c = ensure();
-                if (!c || muted) return;
-                const bufferSize = c.sampleRate * dur;
-                const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-                }
-                const source = c.createBufferSource();
-                source.buffer = buffer;
-                const gain = c.createGain();
-                gain.gain.setValueAtTime(vol, c.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
-                source.connect(gain);
-                gain.connect(c.destination);
-                source.start();
-            }
+/* Level 1 — fill in the blanks */
+const FILL_SENT = [
+  { before:"Monica clapped twice: “Tonight I will ", after:" a salmon. Gently. In liquid. Like a queen.”", answer:"poach" },
+  { before:"Rachel’s mom smiled at the clipboard: “You wanna be in charge of the food ", after:"?”", answer:"committee" },
+  { before:"“The cake is a tragedy,” Monica announced, “so we are serving ", after:", and everyone will call it sophisticated.”", answer:"flan" },
+  { before:"Chandler raised his glass: “Scotch, ", after:". No ice, no water, no feelings.”", answer:"neat" },
+  { before:"Joey spread his arms: “Relax, this apartment is just the ", after:" area.”", answer:"staging" },
+  { before:"Phoebe winked: “I’m gonna create a ", after:". When I do, walk quickly to the door.”", answer:"diversion" },
+  { before:"Ross watched one more bored guest try to ", after:" off to the fun party — and chose to see nothing.", answer:"sneak" }
+];
+const FILL_DECOYS = ["Boggle", "beer", "volleyball"];
 
-            return {
-                init,
-                get muted() { return muted; },
-                set muted(v) { muted = v; },
-                click() { tone(800, 0.06, 'square', 0.08); },
-                flip() { tone(400, 0.08, 'triangle', 0.1); tone(600, 0.06, 'triangle', 0.08, 0.05); },
-                correct() { tone(523, 0.1, 'sine', 0.12); tone(659, 0.1, 'sine', 0.12, 0.1); tone(784, 0.2, 'sine', 0.12, 0.2); },
-                wrong() { tone(200, 0.15, 'sawtooth', 0.1); tone(150, 0.2, 'sawtooth', 0.1, 0.1); },
-                match() { tone(600, 0.08, 'sine', 0.1); tone(900, 0.12, 'sine', 0.1, 0.06); },
-                fanfare() { tone(523, 0.15, 'sine', 0.12); tone(659, 0.15, 'sine', 0.12, 0.12); tone(784, 0.15, 'sine', 0.12, 0.24); tone(1047, 0.4, 'sine', 0.15, 0.36); },
-                tick() { tone(1200, 0.03, 'square', 0.05); },
-                cheer() { noiseBurst(0.6, 0.12); tone(523, 0.2, 'sine', 0.1, 0.1); tone(659, 0.2, 'sine', 0.1, 0.3); tone(784, 0.3, 'sine', 0.12, 0.5); }
-            };
-        })();
+/* Level 2 — REAL / DELUSION */
+const TF_STATEMENTS = [
+  { text:"Monica’s party was strict, quiet, and formal.", real:true,
+    expl:"The deck is clear: “Strict, quiet, formal.” There was a Boggle tournament, poached salmon, and scotch served neat." },
+  { text:"The guys’ party featured a quiet poetry reading.", real:false,
+    expl:"Pure delusion. The deck says that party was “Laidback, loud, chaotic” — dancing and indoor volleyball, not sonnets." },
+  { text:"Rachel’s divorced parents both arrived as a surprise.", real:true,
+    expl:"Correct — the complication of the whole night: “Rachel’s divorced parents, who strongly dislike each other, both arrive as a surprise.”" },
+  { text:"Rachel originally knew that both of her parents were coming.", real:false,
+    expl:"Delusion. The answer key settles it: “It was a surprise.” That double arrival powers the entire hallway operation." },
+  { text:"Ross kept Dr. Greene busy by taking his glasses and cigarettes.", real:true,
+    expl:"Real. The deck: “Ross steals Dr. Greene’s glasses and cigarettes; Joey kisses Mrs. Greene.” Physical distractions were the plan." },
+  { text:"Guests loved Monica’s party so much that nobody left early.", real:false,
+    expl:"Delusion again. The quick-check answer: “False (Guests sneaked out to the fun party).” The dance floor next door won." },
+  { text:"Chandler survived his own parents’ divorce with “a carefully regimented program of denial.”", real:true,
+    expl:"Real — and iconic. Chandler understood Rachel’s stress because his parents also split up." },
+  { text:"Rachel was thrilled to say: “My mom there, my dad there… Thanksgiving, Christmas.”", real:false,
+    expl:"Delusion. It was her sad realization about her divided future, said on the hallway floor — the emotional core of the episode." }
+];
 
-        /* ===== GAME DATA ===== */
-        const SCENES = [
-            {
-                id: 'fib',
-                num: 1,
-                title: 'Fill in the Blanks',
-                char: 'Monica Geller',
-                color: '#d9433b',
-                icon: '✍️',
-                tag: 'Vocabulary',
-                obj: 'Complete the sentences with the correct words from the bank.',
-                tip: 'Click a blank, then click a word. Wrong words bounce back and cost points.',
-                flavor: 'Monica is planning a party. Help her find the right words.'
-            },
-            {
-                id: 'tf',
-                num: 2,
-                title: 'Real or Delusion',
-                char: 'Chandler Bing',
-                color: '#3e8e8c',
-                icon: '🎭',
-                tag: 'Comprehension',
-                obj: 'Decide if each statement is REAL or a DELUSION.',
-                tip: 'After each answer, read the explanation and click NEXT to continue.',
-                flavor: 'Chandler knows the difference between reality and denial.'
-            },
-            {
-                id: 'mc',
-                num: 3,
-                title: 'Multiple Choice',
-                char: 'Rachel Green',
-                color: '#f2b33d',
-                icon: '❓',
-                tag: 'Details',
-                obj: 'Choose the correct answer for each question.',
-                tip: 'You get one attempt per question. Choose wisely.',
-                flavor: 'Rachel is trying to understand what is happening at her party.'
-            },
-            {
-                id: 'match',
-                num: 4,
-                title: 'Match the Meaning',
-                char: 'Phoebe Buffay',
-                color: '#9b59b6',
-                icon: '🔗',
-                tag: 'Vocabulary',
-                obj: 'Match each word to its correct meaning.',
-                tip: 'Click a word, then click its meaning. Correct pairs lock green.',
-                flavor: 'Phoebe sees the connections between things.'
-            },
-            {
-                id: 'bonus',
-                num: 5,
-                title: 'Timed Bonus Round',
-                char: 'Joey Tribbiani',
-                color: '#e67e22',
-                icon: '⏱️',
-                tag: 'All Topics',
-                obj: 'Answer as many questions as you can before time runs out.',
-                tip: 'Streak multiplier increases your score. Red timer means hurry!',
-                flavor: 'Joey is hungry for points. How many can you get?'
-            }
-        ];
+/* Level 3 — multiple choice (one attempt) */
+const MC_QUESTIONS = [
+  { q:"Why do the friends throw two separate parties?",
+    opts:["Rachel’s divorced parents strongly dislike each other","The building has a strict two-cakes law","Joey believed birthday cake doubles when split"], a:0 },
+  { q:"What does scotch served “neat” mean?",
+    opts:["Served with extra ice","Served with no ice or water","Served in a Boggle cup"], a:1 },
+  { q:"What did the bored guests keep doing at Monica’s party?",
+    opts:["Sneaking off to the fun party","Rewriting the food committee roster","Polishing the flan"], a:0 },
+  { q:"In the hallway plan, a “diversion” was…",
+    opts:["A second dessert","A distraction that hid the real movement","A party game with letter dice"], a:1 },
+  { q:"Why does Rachel sit sadly in the hallway during her own party?",
+    opts:["She lost her party shoes","Birthdays now remind her of her parents’ divorce and their divided future","She simply prefers hallways to apartments"], a:1 }
+];
+const ROSS_GOOD = ["“Correct! *excited dinosaur noise*”", "“See? Three divorces of experience pay off.”", "“We were NOT on a break from being right!”"];
+const ROSS_BAD  = ["“WE WERE ON A BREAK… from getting that one right.”", "“My glasses! I mean… your answer was blurry.”", "“I’m fine. This is fine. *screams internally*”"];
 
-        /* ===== FILL IN THE BLANKS DATA ===== */
-        const FIB_SENTENCES = [
-            {
-                text: 'Monica plans to {0} a salmon for Rachel\'s birthday dinner.',
-                answer: 'poach',
-                bank: ['poach', 'committee', 'flan', 'diversion', 'staging', 'sneak']
-            },
-            {
-                text: 'Rachel\'s mom and dad both arrive as a surprise, so the friends create a {0} to distract them.',
-                answer: 'diversion',
-                bank: ['poach', 'committee', 'flan', 'diversion', 'staging', 'sneak']
-            },
-            {
-                text: 'The friends use Monica\'s apartment as a {0} area to hide one parent.',
-                answer: 'staging',
-                bank: ['poach', 'committee', 'flan', 'diversion', 'staging', 'sneak']
-            },
-            {
-                text: 'Monica asks Rachel if she wants to be in charge of the food {0}.',
-                answer: 'committee',
-                bank: ['poach', 'committee', 'flan', 'diversion', 'staging', 'sneak']
-            },
-            {
-                text: 'Instead of a traditional birthday cake, Monica serves a {0}.',
-                answer: 'flan',
-                bank: ['poach', 'committee', 'flan', 'diversion', 'staging', 'sneak']
-            },
-            {
-                text: 'Joey tries to {0} off to the other party without being noticed.',
-                answer: 'sneak',
-                bank: ['poach', 'committee', 'flan', 'diversion', 'staging', 'sneak']
-            }
-        ];
+/* Level 4 — match the meaning (6 pairs) */
+const MATCH_PAIRS = [
+  { w:"poach",        m:"to cook something gently in liquid" },
+  { w:"flan",         m:"a custard dessert served instead of cake" },
+  { w:"staging area", m:"a place to prepare before going into action" },
+  { w:"diversion",    m:"a distraction that hides what is really happening" },
+  { w:"sneak off",    m:"to leave a place secretly" },
+  { w:"hit the road", m:"to leave and begin the journey home" }
+];
 
-        /* ===== TRUE/FALSE DATA ===== */
-        const TF_STATEMENTS = [
-            {
-                text: 'Monica\'s formal party was the most popular party among the guests.',
-                answer: false,
-                explanation: 'The guests at Monica\'s party were bored and trying to escape. The fun party was at Joey and Chandler\'s place.'
-            },
-            {
-                text: 'Rachel originally knew both her parents were coming to her birthday.',
-                answer: false,
-                explanation: 'Rachel did not know either parent was coming. Both arrived as a surprise, which created the central conflict.'
-            },
-            {
-                text: 'Ross helps keep Dr. Greene away from Mrs. Greene by taking his cigarettes and wearing his glasses.',
-                answer: true,
-                explanation: 'Ross uses physical distractions to stop the parents from crossing paths. Stealing the glasses and cigarettes is part of the plan.'
-            },
-            {
-                text: 'Phoebe creates a diversion at Monica\'s party to help someone move through the hallway.',
-                answer: true,
-                explanation: 'Phoebe creates a diversion so that someone can walk quickly to the door without being seen.'
-            },
-            {
-                text: 'Chandler understands Rachel\'s stress because his parents also split up.',
-                answer: true,
-                explanation: 'Chandler\'s parents also divorced, and he relies on "a carefully regimented program of denial" to cope.'
-            },
-            {
-                text: 'The two parties happen in the same apartment at the same time.',
-                answer: false,
-                explanation: 'The two parties happen in two different apartments: Monica\'s place and Joey and Chandler\'s place.'
-            },
-            {
-                text: 'Monica serves a traditional birthday cake at her party.',
-                answer: false,
-                explanation: 'Monica serves a flan, a traditional Mexican custard dessert, instead of a birthday cake.'
-            }
-        ];
+/* Level 5 — timed bonus blitz (750 seconds) */
+const BONUS_QUESTIONS = [
+  { q:"“I’m gonna hit the road” means…", opts:["I’m leaving for home","I’m repairing the street","I’m ordering more pizza"], a:0 },
+  { q:"“I didn’t think anyone’d buy that.” Here “buy” means…", opts:["to pay money","to believe a likely-untrue story","to applaud politely"], a:1 },
+  { q:"Flan is…", opts:["a volleyball move","a custard dessert","a 90s dance"], a:1 },
+  { q:"A diversion is…", opts:["a distraction that hides the real action","a party-hat style","a second Boggle board"], a:0 },
+  { q:"“Could you guys keep it down?” means…", opts:["put that object on the floor","please make less noise","keep the pizza warm"], a:1 },
+  { q:"Who kissed Mrs. Greene in the hallway?", opts:["Ross","Chandler","Joey"], a:2 },
+  { q:"The guys’ party had…", opts:["poached salmon and flan","dancing and indoor volleyball","a quiet Boggle tournament"], a:1 },
+  { q:"Monica’s party vibe was…", opts:["strict, quiet, formal","laidback, loud, chaotic","smelly but musical"], a:0 },
+  { q:"“This is just the staging area.” A staging area is…", opts:["a theater stage","a place to prepare before action","a closet for coats"], a:1 },
+  { q:"The big idea of the episode:", opts:["never trust a flan","friends are your chosen family","Boggle should be an Olympic sport"], a:1 }
+];
+const JOEY_GOOD = ["“How YOU doin’… correct!”", "“Bang on! Sandwich time.”", "“Joey doesn’t share answers, but that’s right!”"];
+const JOEY_BAD  = ["“Could I BE any more wrong?”", "“Ah… jelly donut moment in my brain.”", "“It’s like a moose met a pastrami in there.”"];
 
-        /* ===== MULTIPLE CHOICE DATA ===== */
-        const MC_QUESTIONS = [
-            {
-                text: 'Why do the friends create two separate parties?',
-                options: [
-                    'They want to invite more people.',
-                    'Rachel\'s divorced parents dislike each other and should not meet.',
-                    'Monica\'s apartment is too small.'
-                ],
-                answer: 1,
-                reaction: 'Exactly. The whole plan is designed to keep Rachel\'s parents from crossing paths in the hallway.'
-            },
-            {
-                text: 'What does the word "poach" mean?',
-                options: [
-                    'To steal something secretly.',
-                    'To cook something gently in liquid.',
-                    'To decorate a cake.'
-                ],
-                answer: 1,
-                reaction: 'Correct. Monica uses "poach" when describing her plans for the salmon.'
-            },
-            {
-                text: 'What is a "diversion" in the context of the episode?',
-                options: [
-                    'A type of party game.',
-                    'Something that distracts attention so something else can happen unseen.',
-                    'A formal invitation to a party.'
-                ],
-                answer: 1,
-                reaction: 'Right. Phoebe creates a diversion to allow someone to move through the hallway.'
-            },
-            {
-                text: 'What does the idiom "hit the road" mean?',
-                options: [
-                    'To start a journey or leave a place.',
-                    'To have a car accident.',
-                    'To dance wildly at a party.'
-                ],
-                answer: 0,
-                reaction: 'Yes. Dr. Greene uses it when he is ready to leave the party.'
-            },
-            {
-                text: 'What dessert does Monica serve instead of a traditional birthday cake?',
-                options: [
-                    'A chocolate cake.',
-                    'A flan.',
-                    'Ice cream.'
-                ],
-                answer: 1,
-                reaction: 'Correct. Monica serves a flan, and Rachel\'s reaction is less than enthusiastic.'
-            },
-            {
-                text: 'What is the "big idea" that the episode ultimately conveys?',
-                options: [
-                    'Birthday parties are always stressful.',
-                    'Your friends can become your chosen family.',
-                    'Formal parties are better than casual ones.'
-                ],
-                answer: 1,
-                reaction: 'Exactly. The friends go to absurd lengths to protect Rachel, making them a chosen family.'
-            }
-        ];
+const RANKS = [
+  { min:6000, name:"CENTRAL PERK ROYALTY",   emoji:"👑" },
+  { min:4500, name:"CHOSEN FAMILY LEGEND",   emoji:"🫂" },
+  { min:3000, name:"HALLWAY OPERATIVE",      emoji:"🕵️" },
+  { min:1500, name:"PARTY PLANNER",          emoji:"📋" },
+  { min:0,    name:"COFFEE SHOP REGULAR",    emoji:"☕" }
+];
 
-        /* ===== MATCH THE MEANING DATA ===== */
-        const MATCH_PAIRS = [
-            { word: 'Poach', meaning: 'To cook gently in liquid' },
-            { word: 'Committee', meaning: 'A group chosen to do a specific job' },
-            { word: 'Flan', meaning: 'A traditional Mexican custard dessert' },
-            { word: 'Diversion', meaning: 'Something that distracts attention' },
-            { word: 'Staging Area', meaning: 'A place where people are kept before going into action' },
-            { word: 'Sneak Off', meaning: 'To leave secretly without being noticed' }
-        ];
+/* ===== State & storage (versioned key, private-mode safe) ===== */
+const SAVE_KEY = "friendsVocabArcade_v1";
+let save = { levels: {}, muted: false };
+function loadSave(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d && typeof d === "object") {
+        save.levels = d.levels || {};
+        save.muted = !!d.muted;
+      }
+    }
+  } catch (e) { /* private mode — play without persistence */ }
+}
+function persist(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* noop */ }
+}
+const levelOf = (id) => save.levels[id] || { best: 0, stars: 0 };
 
-        /* ===== BONUS ROUND DATA ===== */
-        const BONUS_QUESTIONS = [
-            { text: 'What does "poach" mean?', options: ['To cook gently in liquid', 'To steal', 'To decorate'], answer: 0 },
-            { text: 'Who plans the strict, fancy party?', options: ['Monica', 'Joey', 'Phoebe'], answer: 0 },
-            { text: 'What does "buy that" mean?', options: ['To believe a likely lie', 'To purchase something', 'To ignore someone'], answer: 0 },
-            { text: 'Where does the fun party happen?', options: ['Monica\'s apartment', 'Joey and Chandler\'s apartment', 'Central Perk'], answer: 1 },
-            { text: 'What does "keep it down" mean?', options: ['Make less noise', 'Stay in one place', 'Hide something'], answer: 0 },
-            { text: 'What dessert does Monica serve?', options: ['Cake', 'Flan', 'Pie'], answer: 1 },
-            { text: 'What does "hit the road" mean?', options: ['To leave', 'To drive fast', 'To dance'], answer: 0 },
-            { text: 'Who creates a diversion?', options: ['Phoebe', 'Ross', 'Rachel'], answer: 0 },
-            { text: 'What is a "staging area"?', options: ['A place before action', 'A type of stage', 'A party game'], answer: 0 },
-            { text: 'What does "sneak off" mean?', options: ['Leave secretly', 'Run quickly', 'Sleep deeply'], answer: 0 }
-        ];
+/* ===== Cleanup management (no leaks between levels) ===== */
+let cleanupFns = [];
+let keyHandler = null;          // per-mini-game keyboard dispatcher
+const panelHandlers = {};       // per-panel click delegation, set by runners
+function setCleanup(fn){ cleanupFns.push(fn); }
+function runCleanup(){
+  cleanupFns.forEach(fn => { try { fn(); } catch (e) { /* noop */ } });
+  cleanupFns = [];
+  keyHandler = null;
+}
 
-        /* ===== GAME STATE ===== */
-        let state = {
-            currentScreen: 'intro',
-            currentLevel: null,
-            totalScore: 0,
-            levelProgress: {},
-            soundMuted: false
-        };
+/* ===== HUD ===== */
+let currentScreen = "screen-intro";
+function updateHUD(){
+  const total = SCENES.reduce((s, sc) => s + levelOf(sc.id).best, 0);
+  $("#hudScore").textContent = "SCORE " + total;
+  $("#progressDots").innerHTML = SCENES.map(sc => {
+    const done = levelOf(sc.id).stars > 0;
+    return '<span class="dotc' + (done ? ' done' : '') + '" style="' + (done ? 'background:' + sc.color : '') + '" title="Lv ' + sc.num + (done ? ' ✓' : '') + '"></span>';
+  }).join("");
+}
+function renderSound(){
+  const b = $("#btnSound");
+  b.textContent = save.muted ? "🔇" : "🔊";
+  b.setAttribute("aria-pressed", String(!save.muted));
+}
 
-        /* ===== CLEANUP SYSTEM ===== */
-        let cleanupFns = [];
-        function setCleanup(fn) {
-            cleanupFns.push(fn);
+/* ===== Screens ===== */
+function showScreen(id){
+  runCleanup();
+  currentScreen = id;
+  $$(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+  window.scrollTo({ top: 0 });
+}
+
+/* ===== Level map (free order — everything unlocked) ===== */
+function renderMap(){
+  const html = SCENES.map(sc => {
+    const lv = levelOf(sc.id);
+    const stars = "★".repeat(lv.stars) + "☆".repeat(3 - lv.stars);
+    return '' +
+    '<button type="button" class="reel-card" data-scene="' + sc.id + '" style="--pc:' + sc.color + '" ' +
+      'aria-label="Level ' + sc.num + ': ' + sc.title + '. ' + (lv.stars ? lv.stars + ' of 3 stars, best score ' + lv.best + '.' : 'Not completed yet.') + '">' +
+      '<div class="reel-preview">' +
+        '<div class="reel-fallback">' + sc.emoji + '</div>' +
+        '<img src="' + sc.slide + '" alt="" loading="lazy" onerror="this.remove()">' +
+        '<span class="reel-num">REEL 0' + sc.num + '</span>' +
+        '<span class="reel-char">' + sc.emoji + '</span>' +
+      '</div>' +
+      '<div class="reel-body">' +
+        '<h3>' + sc.title + '</h3>' +
+        '<p class="reel-tag">' + sc.tag + '</p>' +
+        '<div class="reel-stars"><span class="on">' + "★".repeat(lv.stars) + '</span>' + "☆".repeat(3 - lv.stars) + '</div>' +
+        '<div class="reel-best">BEST ' + lv.best + (lv.stars ? ' · CLEARED' : ' · UNPLAYED') + '</div>' +
+      '</div>' +
+    '</button>';
+  }).join("");
+  $("#mapGrid").innerHTML = html;
+  const allDone = SCENES.every(sc => levelOf(sc.id).stars > 0);
+  $("#btnFinale").hidden = !allDone;
+}
+
+/* ===== Modal system ===== */
+let lastFocus = null;
+function isModalOpen(){ return !!$("#modal-root .modal-overlay"); }
+function closeModal(){
+  const ov = $("#modal-root .modal-overlay");
+  if (ov) { ov.classList.remove("open"); setTimeout(() => ov.remove(), 220); }
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+function openModal(opts){
+  closeModal();
+  lastFocus = document.activeElement;
+  const ov = document.createElement("div");
+  ov.className = "modal-overlay";
+  const card = document.createElement("div");
+  card.className = "modal-card";
+  card.setAttribute("role", "dialog");
+  card.setAttribute("aria-modal", "true");
+  card.setAttribute("aria-label", opts.title || "Dialog");
+  const imgHTML = opts.img
+    ? '<div class="modal-img">' + (opts.fallbackEmoji || "📼") +
+      '<img src="' + opts.img + '" alt="" onerror="this.parentElement.classList.add(\'broken\');this.remove()"></div>'
+    : "";
+  card.innerHTML = imgHTML +
+    '<div class="modal-body">' +
+      '<h3 class="modal-title">' + (opts.title || "") + '</h3>' +
+      (opts.sub ? '<p class="modal-sub">' + opts.sub + '</p>' : "") +
+      (opts.bodyHTML || "") +
+    '</div><div class="modal-actions"></div>';
+  const acts = card.querySelector(".modal-actions");
+  (opts.buttons || []).forEach(b => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn " + (b.cls || "");
+    btn.textContent = b.label;
+    btn.addEventListener("click", () => {
+      Sfx.click();
+      const keep = b.cb && b.cb() === false;
+      if (!keep) closeModal();
+    });
+    acts.appendChild(btn);
+  });
+  ov.appendChild(card);
+  $("#modal-root").appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add("open"));
+  const focusTarget = card.querySelector(".modal-actions .btn") || card;
+  focusTarget.focus();
+}
+function openBriefing(sc){
+  openModal({
+    title: "LEVEL " + sc.num + " · " + sc.title,
+    sub: sc.tag + " · starring " + sc.char + " " + sc.emoji,
+    img: sc.slide,
+    fallbackEmoji: sc.emoji,
+    bodyHTML:
+      '<p class="brief-line"><strong>🎯 Objective:</strong> ' + sc.obj + '</p>' +
+      '<p class="brief-line"><strong>💡 Tip:</strong> ' + sc.tip + '</p>' +
+      '<p class="brief-flavor">' + sc.flavor + '</p>',
+    buttons: [
+      { label: "▶ START LEVEL", cls: "btn-primary", cb: () => { startLevel(sc); } },
+      { label: "Not yet", cls: "btn-ghost" }
+    ]
+  });
+}
+
+/* ===== Level flow ===== */
+let currentScene = null;
+const RUNNERS = {};
+function startLevel(sc){
+  runCleanup();
+  currentScene = sc;
+  showScreen("screen-game");
+  $$(".game-panel").forEach(p => { p.hidden = true; });
+  const panel = $("#panel-" + sc.runner);
+  panel.hidden = false;
+  panel.querySelector(".g-emoji").textContent = sc.emoji;
+  panel.querySelector(".g-title").textContent = "Lv " + sc.num + " · " + sc.title;
+  panel.querySelector(".g-sub").textContent = sc.tag + " · " + sc.char;
+  panel.querySelector(".game-body").innerHTML = "";
+  RUNNERS[sc.runner](sc, panel);
+}
+function starsFor(mistakes){ return mistakes <= 0 ? 3 : mistakes <= 2 ? 2 : 1; }
+function finishLevel(sc, score, mistakes){
+  runCleanup();
+  const stars = starsFor(mistakes);
+  const prev = save.levels[sc.id] || { best: 0, stars: 0 };
+  const isBest = score > prev.best;
+  if (isBest) prev.best = score;
+  prev.stars = Math.max(prev.stars, stars);
+  save.levels[sc.id] = prev;
+  persist();
+  updateHUD();
+  renderMap();
+  if (stars === 3) { Sfx.cheer(); spawnConfetti(110); } else { Sfx.fanfare(); }
+  const allDone = SCENES.every(s => levelOf(s.id).stars > 0);
+  const starRow = [1, 2, 3].map(i =>
+    '<span class="res-star' + (i <= stars ? ' lit' : '') + '" style="animation-delay:' + (0.15 * i) + 's">★</span>').join("");
+  openModal({
+    title: "LEVEL " + sc.num + " COMPLETE!",
+    sub: sc.title,
+    img: sc.slide,
+    fallbackEmoji: sc.emoji,
+    bodyHTML:
+      '<div class="res-stars">' + starRow + '</div>' +
+      '<p class="res-score">SCORE <strong>' + score + '</strong>' + (isBest ? ' <span class="res-best">NEW BEST!</span>' : '') + '</p>' +
+      '<p class="res-mist">Mistakes: ' + mistakes + (allDone ? ' · 🏆 ALL REELS WATCHED — the FINALE button is waiting on the map!' : '') + '</p>',
+    buttons: [
+      { label: "↻ REPLAY", cls: "btn-primary", cb: () => { startLevel(sc); } },
+      { label: "🗺 BACK TO MAP", cb: () => { showScreen("screen-map"); } }
+    ]
+  });
+  if (allDone) toast("🏆 Every reel cleared! The FINALE is unlocked on the map.");
+}
+function backToMap(){
+  runCleanup();
+  showScreen("screen-map");
+}
+
+/* ============================================================
+   MINI-GAME 1 · FILL IN THE BLANKS (Monica)
+   ============================================================ */
+RUNNERS.fill = function(sc, panel){
+  const body = panel.querySelector(".game-body");
+  const bank = shuffle(FILL_SENT.map(s => s.answer).concat(FILL_DECOYS));
+  let selBlank = null, score = 0, mistakes = 0, solved = 0;
+  const finishedTimers = [];
+
+  let html = '<p class="g-note">📌 Click a blank, then click a word from the bank. A wrong word bounces back and costs <strong>−25</strong>.</p>' +
+    '<div class="fill-sentences">';
+  FILL_SENT.forEach((s, i) => {
+    html += '<p class="fill-sent">' + s.before +
+      '<button type="button" class="blank" data-i="' + i + '" aria-label="Blank ' + (i + 1) + '">______</button>' +
+      s.after + '</p>';
+  });
+  html += '</div><div class="bank" aria-label="Word bank">';
+  bank.forEach(w => { html += '<button type="button" class="bank-word" data-w="' + w + '">' + w + '</button>'; });
+  html += '</div><div class="g-foot"><span class="g-score">SCORE 0</span><span class="g-mist">MISTAKES 0</span></div>';
+  body.innerHTML = html;
+
+  const footScore = $(".g-score", body), footMist = $(".g-mist", body);
+  function updFoot(){ footScore.textContent = "SCORE " + score; footMist.textContent = "MISTAKES " + mistakes; }
+  function flash(el){ el.classList.add("shake"); const t = setTimeout(() => el.classList.remove("shake"), 460); finishedTimers.push(t); }
+
+  panelHandlers["panel-fill"] = (e) => {
+    const blank = e.target.closest(".blank");
+    const word  = e.target.closest(".bank-word");
+    if (blank) {
+      if (blank.classList.contains("locked")) return;
+      if (blank.dataset.w) {
+        /* Return the placed word to the bank, then keep this blank selected */
+        const used = $('.bank-word[data-w="' + blank.dataset.w + '"]', body);
+        if (used) { used.classList.remove("used"); used.disabled = false; }
+        blank.textContent = "______";
+        delete blank.dataset.w;
+        blank.classList.remove("locked");
+        Sfx.flip();
+      }
+      $$(".blank", body).forEach(b => b.classList.remove("sel"));
+      blank.classList.add("sel");
+      selBlank = blank;
+      Sfx.click();
+      return;
+    }
+    if (word) {
+      if (word.classList.contains("used")) return;
+      if (!selBlank) { toast("Pick a blank first 👆"); Sfx.flip(); return; }
+      const w = word.dataset.w;
+      const correct = FILL_SENT[+selBlank.dataset.i].answer === w;
+      const r = selBlank.getBoundingClientRect();
+      if (correct) {
+        word.classList.add("used"); word.disabled = true;
+        selBlank.textContent = w; selBlank.dataset.w = w;
+        selBlank.classList.remove("sel"); selBlank.classList.add("locked");
+        selBlank = null;
+        score += 100; solved++;
+        popFloat(r.left + r.width / 2, r.top, "+100", "var(--green)");
+        Sfx.correct(); updFoot();
+        if (solved === FILL_SENT.length) {
+          const t = setTimeout(() => finishLevel(sc, score, mistakes), 750);
+          finishedTimers.push(t);
         }
-        function runCleanup() {
-            cleanupFns.forEach(fn => {
-                try { fn(); } catch (e) { /* ignore */ }
-            });
-            cleanupFns = [];
+      } else {
+        score = Math.max(0, score - 25); mistakes++;
+        flash(word); flash(selBlank);
+        popFloat(r.left + r.width / 2, r.top, "−25", "var(--red)");
+        selBlank.classList.remove("sel"); selBlank = null;
+        Sfx.wrong(); updFoot();
+      }
+    }
+  };
+  setCleanup(() => { finishedTimers.forEach(clearTimeout); delete panelHandlers["panel-fill"]; });
+};
+
+/* ============================================================
+   MINI-GAME 2 · REAL or DELUSION (Chandler)
+   No auto-advance: explanation + NEXT button after every card.
+   ============================================================ */
+RUNNERS.tf = function(sc, panel){
+  const body = panel.querySelector(".game-body");
+  const CARD_TIME = 600; /* seconds per card, per design spec */
+  let idx = 0, score = 0, mistakes = 0, streak = 0;
+  let phase = "answering"; /* answering | explain */
+  let timeLeft = CARD_TIME, timerId = null;
+
+  body.innerHTML =
+    '<div class="tf-streak" id="tfStreak">STREAK ×1</div>' +
+    '<div class="tf-card"><p class="tf-label">CHANDLER REMEMBERS…</p><p class="tf-text" id="tfText"></p></div>' +
+    '<div class="timer"><div class="timer-fill" id="tfTimer"></div></div>' +
+    '<div class="tf-btns">' +
+      '<button type="button" class="btn btn-real" id="btnReal">← REAL</button>' +
+      '<button type="button" class="btn btn-delu" id="btnDelu">DELUSION →</button>' +
+    '</div>' +
+    '<div class="tf-expl" id="tfExpl" role="status" hidden>' +
+      '<p class="tf-verdict" id="tfVerdict"></p>' +
+      '<p class="tf-expl-text" id="tfExplText"></p>' +
+      '<button type="button" class="btn btn-primary" id="btnNext">NEXT ➜</button>' +
+    '</div>' +
+    '<div class="g-foot"><span class="g-score">SCORE 0</span><span class="g-mist">MISTAKES 0</span></div>';
+
+  const el = {
+    text: $("#tfText", body), timer: $("#tfTimer", body), streak: $("#tfStreak", body),
+    real: $("#btnReal", body), delu: $("#btnDelu", body),
+    expl: $("#tfExpl", body), verdict: $("#tfVerdict", body), explText: $("#tfExplText", body),
+    next: $("#btnNext", body), score: $(".g-score", body), mist: $(".g-mist", body)
+  };
+
+  function stopTimer(){ if (timerId) { clearInterval(timerId); timerId = null; } }
+  function startTimer(){
+    stopTimer();
+    timeLeft = CARD_TIME;
+    el.timer.style.width = "100%";
+    el.timer.classList.remove("danger", "warn");
+    timerId = setInterval(() => {
+      timeLeft--;
+      el.timer.style.width = clamp((timeLeft / CARD_TIME) * 100, 0, 100) + "%";
+      if (timeLeft <= 60) el.timer.classList.add("warn");
+      if (timeLeft <= 15) { el.timer.classList.add("danger"); Sfx.tick(); }
+      if (timeLeft <= 0) { stopTimer(); answer(null); }
+    }, 1000);
+  }
+  function multOf(){ return streak >= 4 ? 3 : streak >= 2 ? 2 : 1; }
+  function updHud(){
+    el.score.textContent = "SCORE " + score;
+    el.mist.textContent = "MISTAKES " + mistakes;
+    el.streak.textContent = "STREAK ×" + multOf() + (streak > 0 ? "  (" + streak + "🔥)" : "");
+  }
+  function showCard(i){
+    phase = "answering";
+    el.text.textContent = "“" + TF_STATEMENTS[i].text + "”";
+    el.expl.hidden = true;
+    el.real.disabled = false; el.delu.disabled = false;
+    startTimer();
+  }
+  function answer(choice){ /* choice: true=REAL, false=DELUSION, null=timeout */
+    if (phase !== "answering") return;
+    phase = "explain";
+    stopTimer();
+    el.real.disabled = true; el.delu.disabled = true;
+    const st = TF_STATEMENTS[idx];
+    const ok = choice !== null && choice === st.real;
+    const cardRect = el.text.getBoundingClientRect();
+    if (ok) {
+      streak++;
+      const pts = 100 * multOf();
+      score += pts;
+      el.verdict.textContent = "✔ CORRECT · +" + pts;
+      popFloat(cardRect.left + cardRect.width / 2, cardRect.top, "+" + pts, "var(--green)");
+      Sfx.correct();
+    } else {
+      streak = 0; mistakes++;
+      el.verdict.textContent = choice === null ? "⏰ TIME’S UP!" : "✘ WRONG — that was ";
+      el.verdict.textContent += st.real ? "REAL." : "DELUSION.";
+      Sfx.wrong();
+    }
+    updHud();
+    el.expl.classList.toggle("bad", !ok);
+    el.explText.textContent = st.expl;
+    el.next.textContent = idx === TF_STATEMENTS.length - 1 ? "🏁 SEE RESULTS" : "NEXT ➜";
+    el.expl.hidden = false;
+    el.next.focus();
+  }
+  function nextStep(){
+    if (phase !== "explain") return; /* idempotent: click + Enter can't double-advance */
+    Sfx.click();
+    idx++;
+    if (idx >= TF_STATEMENTS.length) { finishLevel(sc, score, mistakes); return; }
+    showCard(idx);
+  }
+
+  panelHandlers["panel-tf"] = (e) => {
+    if (e.target.closest("#btnReal")) answer(true);
+    else if (e.target.closest("#btnDelu")) answer(false);
+    else if (e.target.closest("#btnNext")) nextStep();
+  };
+  keyHandler = (e) => {
+    if (phase === "answering") {
+      if (e.key === "ArrowLeft")  { e.preventDefault(); answer(true); }
+      if (e.key === "ArrowRight") { e.preventDefault(); answer(false); }
+    } else if (phase === "explain" && e.key === "Enter") {
+      e.preventDefault(); nextStep();
+    }
+  };
+  setCleanup(() => { stopTimer(); keyHandler = null; delete panelHandlers["panel-tf"]; });
+
+  updHud();
+  showCard(0);
+};
+
+/* ============================================================
+   MINI-GAME 3 · MULTIPLE CHOICE (Ross) — one attempt each
+   ============================================================ */
+RUNNERS.mc = function(sc, panel){
+  const body = panel.querySelector(".game-body");
+  let idx = 0, score = 0, mistakes = 0, answered = false;
+
+  body.innerHTML =
+    '<p class="g-note">📌 Three options, one attempt. Keys <strong>1 / 2 / 3</strong> also work.</p>' +
+    '<div class="mc-zone" id="mcZone"></div>' +
+    '<div class="g-foot"><span class="g-score">SCORE 0</span><span class="g-mist">MISTAKES 0</span></div>';
+  const zone = $("#mcZone", body), footScore = $(".g-score", body), footMist = $(".g-mist", body);
+  function updFoot(){ footScore.textContent = "SCORE " + score; footMist.textContent = "MISTAKES " + mistakes; }
+
+  function renderQ(){
+    answered = false;
+    const q = MC_QUESTIONS[idx];
+    let html = '<p class="mc-q">' + (idx + 1) + ". " + q.q + '</p>';
+    q.opts.forEach((o, oi) => {
+      html += '<button type="button" class="mc-opt" data-o="' + oi + '"><span class="k">' + (oi + 1) + '.</span>' + o + '</button>';
+    });
+    html += '<div id="mcReact"></div><div class="mc-next" id="mcNext"></div>';
+    zone.innerHTML = html;
+  }
+  function pick(oi){
+    if (answered) return;
+    answered = true;
+    const q = MC_QUESTIONS[idx];
+    const ok = oi === q.a;
+    $$(".mc-opt", zone).forEach((b, bi) => {
+      b.disabled = true;
+      if (bi === q.a) b.classList.add("good");
+      else if (bi === oi) b.classList.add("badp", "shake");
+    });
+    if (ok) { score += 150; Sfx.correct(); } else { mistakes++; Sfx.wrong(); }
+    updFoot();
+    const react = $("#mcReact", zone);
+    const lines = ok ? ROSS_GOOD : ROSS_BAD;
+    react.innerHTML = '<div class="react"><span class="ava">🦖</span><span class="line">' +
+      lines[(Math.random() * lines.length) | 0] + '</span></div>';
+    const nx = $("#mcNext", zone);
+    nx.innerHTML = '<button type="button" class="btn btn-primary" id="mcNextBtn">' +
+      (idx === MC_QUESTIONS.length - 1 ? "🏁 SEE RESULTS" : "NEXT DISPATCH ➜") + '</button>';
+    $("#mcNextBtn", zone).focus();
+  }
+  function nextStep(){
+    Sfx.click();
+    idx++;
+    if (idx >= MC_QUESTIONS.length) finishLevel(sc, score, mistakes);
+    else renderQ();
+  }
+  panelHandlers["panel-mc"] = (e) => {
+    const opt = e.target.closest(".mc-opt");
+    if (opt) { pick(+opt.dataset.o); return; }
+    if (e.target.closest("#mcNextBtn")) nextStep();
+  };
+  keyHandler = (e) => {
+    if (["1", "2", "3"].includes(e.key) && !answered) {
+      const oi = +e.key - 1;
+      if (oi < MC_QUESTIONS[idx].opts.length) pick(oi);
+    } else if (e.key === "Enter" && answered && e.target.tagName !== "BUTTON") {
+      e.preventDefault(); nextStep();
+    }
+  };
+  setCleanup(() => { keyHandler = null; delete panelHandlers["panel-mc"]; });
+
+  updFoot();
+  renderQ();
+};
+
+/* ============================================================
+   MINI-GAME 4 · MATCH THE MEANING (Phoebe)
+   ============================================================ */
+RUNNERS.match = function(sc, panel){
+  const body = panel.querySelector(".game-body");
+  const N = MATCH_PAIRS.length;
+  let selW = null, pairs = 0, tries = 0, score = 0, mistakes = 0, done = false;
+  const pendTimers = [];
+  const left  = shuffle(MATCH_PAIRS.map((p, i) => ({ t: p.w, i })));
+  const right = shuffle(MATCH_PAIRS.map((p, i) => ({ t: p.m, i })));
+
+  let html =
+    '<div class="match-stats"><span class="mp" id="mPairs">PAIRS 0/' + N + '</span><span class="mt" id="mTries">ATTEMPTS 0</span></div>' +
+    '<p class="g-note">📌 Example: <em>WORD · boasts</em> → <em>MEANING · proudly has (and always looks great doing it)</em>. Click a word, then its meaning.</p>' +
+    '<div class="match-wrap"><div class="match-col"><h4>Words</h4>';
+  left.forEach(it => { html += '<button type="button" class="m-item m-word" data-wi="' + it.i + '">' + it.t + '</button>'; });
+  html += '</div><div class="match-col"><h4>Meanings</h4>';
+  right.forEach(it => { html += '<button type="button" class="m-item m-mean" data-mi="' + it.i + '">' + it.t + '</button>'; });
+  html += '</div></div><div class="g-foot"><span class="g-score">SCORE 0</span><span class="g-mist">MISTAKES 0</span></div>';
+  body.innerHTML = html;
+
+  const elP = $("#mPairs", body), elT = $("#mTries", body);
+  const footScore = $(".g-score", body), footMist = $(".g-mist", body);
+  function upd(){
+    elP.textContent = "PAIRS " + pairs + "/" + N;
+    elT.textContent = "ATTEMPTS " + tries;
+    footScore.textContent = "SCORE " + score;
+    footMist.textContent = "MISTAKES " + mistakes;
+  }
+  function flash(el){ el.classList.add("shake"); const t = setTimeout(() => el.classList.remove("shake"), 460); pendTimers.push(t); }
+
+  panelHandlers["panel-match"] = (e) => {
+    const wBtn = e.target.closest(".m-word");
+    const mBtn = e.target.closest(".m-mean");
+    if (done) return;
+    if (wBtn && !wBtn.classList.contains("locked")) {
+      $$(".m-word", body).forEach(b => b.classList.remove("sel"));
+      if (selW === wBtn) { selW = null; }
+      else { wBtn.classList.add("sel"); selW = wBtn; Sfx.click(); }
+      return;
+    }
+    if (mBtn && !mBtn.classList.contains("locked")) {
+      if (!selW) { toast("Pick a word on the left first 👈"); Sfx.flip(); return; }
+      tries++;
+      const wi = +selW.dataset.wi, mi = +mBtn.dataset.mi;
+      if (wi === mi) {
+        selW.classList.remove("sel"); selW.classList.add("locked"); selW.disabled = true;
+        mBtn.classList.add("locked"); mBtn.disabled = true;
+        pairs++; score += 100;
+        const r = mBtn.getBoundingClientRect();
+        popFloat(r.left + r.width / 2, r.top, "+100", "var(--green)");
+        Sfx.match(); upd();
+        selW = null;
+        if (pairs === N) {
+          done = true;
+          const t = setTimeout(() => finishLevel(sc, score, mistakes), 700);
+          pendTimers.push(t);
         }
-
-        /* ===== LOCAL STORAGE ===== */
-        function loadProgress() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) {
-                    const data = JSON.parse(raw);
-                    state.totalScore = data.totalScore || 0;
-                    state.levelProgress = data.levelProgress || {};
-                    state.soundMuted = data.soundMuted || false;
-                }
-            } catch (e) { /* private mode */ }
-        }
-
-        function saveProgress() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                    totalScore: state.totalScore,
-                    levelProgress: state.levelProgress,
-                    soundMuted: state.soundMuted
-                }));
-            } catch (e) { /* private mode */ }
-        }
-
-        /* ===== UI HELPERS ===== */
-        function toast(msg, type = 'info', duration = 2500) {
-            const container = $('#toast-container');
-            const el = document.createElement('div');
-            el.className = 'toast ' + type;
-            el.textContent = msg;
-            container.appendChild(el);
-            const t = setTimeout(() => {
-                el.style.opacity = '0';
-                el.style.transition = 'opacity 0.3s';
-                setTimeout(() => el.remove(), 300);
-            }, duration);
-            setCleanup(() => clearTimeout(t));
-        }
-
-        function popFloat(text, x, y) {
-            const el = document.createElement('div');
-            el.className = 'pop-float';
-            el.textContent = text;
-            el.style.left = x + 'px';
-            el.style.top = y + 'px';
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 800);
-        }
-
-        function spawnConfetti(count = 30) {
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-            const colors = ['#d9433b', '#3e8e8c', '#f2b33d', '#faf3e4', '#9b59b6'];
-            for (let i = 0; i < count; i++) {
-                const piece = document.createElement('div');
-                piece.className = 'confetti-piece';
-                piece.style.left = Math.random() * 100 + 'vw';
-                piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-                piece.style.width = (6 + Math.random() * 8) + 'px';
-                piece.style.height = (6 + Math.random() * 8) + 'px';
-                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-                piece.style.animationDuration = (2 + Math.random() * 2) + 's';
-                piece.style.animationDelay = Math.random() * 0.5 + 's';
-                document.body.appendChild(piece);
-                setTimeout(() => piece.remove(), 4000);
-            }
-        }
-
-        /* ===== SCREEN MANAGEMENT ===== */
-        function showScreen(id) {
-            $$('.screen').forEach(s => s.classList.remove('active'));
-            const screen = $('#screen-' + id);
-            if (screen) screen.classList.add('active');
-            state.currentScreen = id;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        /* ===== MODAL SYSTEM ===== */
-        function showModal(title, content, actions) {
-            $('#modalTitle').textContent = title;
-            $('#modalContent').innerHTML = content;
-            const actionsEl = $('#modalActions');
-            actionsEl.innerHTML = '';
-            actions.forEach(a => {
-                const btn = document.createElement('button');
-                btn.className = a.className || 'btn-secondary';
-                btn.textContent = a.label;
-                btn.addEventListener('click', () => {
-                    AudioEngine.click();
-                    a.onClick();
-                });
-                actionsEl.appendChild(btn);
-            });
-            $('#modalOverlay').classList.add('active');
-        }
-
-        function hideModal() {
-            $('#modalOverlay').classList.remove('active');
-        }
-
-        /* ===== HEADER UPDATES ===== */
-        function updateHUD() {
-            $('#scoreDisplay').textContent = 'SCORE ' + state.totalScore;
-
-            const cells = $('#progressCells');
-            cells.innerHTML = '';
-            SCENES.forEach(s => {
-                const cell = document.createElement('span');
-                cell.className = 'progress-cell';
-                const prog = state.levelProgress[s.id];
-                if (prog && prog.completed) {
-                    cell.classList.add('done');
-                }
-                cells.appendChild(cell);
-            });
-
-            if (state.soundMuted) {
-                $('#soundBtn').textContent = '🔇';
-                $('#soundBtn').classList.add('muted');
-                $('#soundBtn').setAttribute('aria-pressed', 'false');
-            } else {
-                $('#soundBtn').textContent = '🔊';
-                $('#soundBtn').classList.remove('muted');
-                $('#soundBtn').setAttribute('aria-pressed', 'true');
-            }
-        }
-
-        /* ===== LEVEL MAP RENDERING ===== */
-        function renderMap() {
-            const grid = $('#reelGrid');
-            grid.innerHTML = '';
-
-            const completedCount = SCENES.filter(s => {
-                const p = state.levelProgress[s.id];
-                return p && p.completed;
-            }).length;
-
-            $('#mapProgress').textContent = completedCount + ' / ' + SCENES.length + ' completed';
-
-            SCENES.forEach(scene => {
-                const prog = state.levelProgress[scene.id] || { stars: 0, bestScore: 0, completed: false };
-                const stars = prog.stars || 0;
-                const best = prog.bestScore || 0;
-
-                const card = document.createElement('div');
-                card.className = 'reel-card';
-                card.setAttribute('tabindex', '0');
-                card.setAttribute('role', 'button');
-                card.setAttribute('aria-label', 'Play level ' + scene.num + ': ' + scene.title);
-
-                let starsHtml = '';
-                for (let i = 0; i < 3; i++) {
-                    starsHtml += '<span class="star' + (i < stars ? ' filled' : '') + '">★</span>';
-                }
-
-                card.innerHTML =
-                    '<div class="reel-preview" style="background: linear-gradient(135deg, ' + scene.color + '33, ' + scene.color + '11);">' +
-                        '<div class="preview-bg" style="background: radial-gradient(circle, ' + scene.color + '44 0%, transparent 70%);"></div>' +
-                        '<div class="preview-icon">' + scene.icon + '</div>' +
-                        (prog.completed ? '<div class="reel-complete-badge">✓ DONE</div>' : '') +
-                    '</div>' +
-                    '<div class="reel-info">' +
-                        '<div class="reel-num">Level ' + scene.num + ' · ' + scene.tag + '</div>' +
-                        '<div class="reel-title">' + scene.title + '</div>' +
-                        '<div class="reel-char">' + scene.char + '</div>' +
-                        '<div class="reel-stars">' + starsHtml + '</div>' +
-                        '<div class="reel-best">BEST: <strong>' + best + '</strong> pts</div>' +
-                    '</div>';
-
-                card.addEventListener('click', () => openLevel(scene.id));
-                card.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        openLevel(scene.id);
-                    }
-                });
-
-                grid.appendChild(card);
-            });
-
-            // Show finale button if all completed
-            if (completedCount === SCENES.length) {
-                const finaleCard = document.createElement('div');
-                finaleCard.className = 'reel-card';
-                finaleCard.setAttribute('tabindex', '0');
-                finaleCard.setAttribute('role', 'button');
-                finaleCard.setAttribute('aria-label', 'View finale');
-                finaleCard.style.border = '2px solid var(--yellow)';
-                finaleCard.innerHTML =
-                    '<div class="reel-preview" style="background: linear-gradient(135deg, #f2b33d33, #d9433b33);">' +
-                        '<div class="preview-icon">🏆</div>' +
-                    '</div>' +
-                    '<div class="reel-info">' +
-                        '<div class="reel-num">All Levels Complete</div>' +
-                        '<div class="reel-title">View Finale</div>' +
-                        '<div class="reel-char">See your final rank</div>' +
-                    '</div>';
-                finaleCard.addEventListener('click', showFinale);
-                finaleCard.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        showFinale();
-                    }
-                });
-                grid.appendChild(finaleCard);
-            }
-        }
-
-        /* ===== LEVEL MANAGEMENT ===== */
-        function openLevel(levelId) {
-            AudioEngine.click();
-            const scene = SCENES.find(s => s.id === levelId);
-            if (!scene) return;
-
-            state.currentLevel = scene;
-            $('#sceneTitle').textContent = 'Level ' + scene.num + ': ' + scene.title;
-            $('#sceneChar').textContent = scene.char;
-            $('#levelProgressFill').style.width = '0%';
-
-            showModal(
-                scene.icon + ' ' + scene.title,
-                '<p><strong>' + scene.flavor + '</strong></p>' +
-                '<p>' + scene.obj + '</p>' +
-                '<p style="font-size:0.85rem;color:var(--teal);">💡 ' + scene.tip + '</p>',
-                [
-                    { label: 'Cancel', className: 'btn-secondary', onClick: () => { hideModal(); showScreen('map'); } },
-                    { label: 'Start ▶', className: 'btn-accent', onClick: () => { hideModal(); startLevel(levelId); } }
-                ]
-            );
-        }
-
-        function startLevel(levelId) {
-            runCleanup();
-            const scene = SCENES.find(s => s.id === levelId);
-            if (!scene) return;
-
-            state.currentLevel = scene;
-            showScreen('scene');
-
-            switch (levelId) {
-                case 'fib': startFillInTheBlanks(); break;
-                case 'tf': startTrueFalse(); break;
-                case 'mc': startMultipleChoice(); break;
-                case 'match': startMatchMeaning(); break;
-                case 'bonus': startBonusRound(); break;
-            }
-        }
-
-        /* ===== SCORING ===== */
-        function calculateStars(mistakes) {
-            if (mistakes === 0) return 3;
-            if (mistakes <= 2) return 2;
-            return 1;
-        }
-
-        function completeLevel(levelId, score, mistakes) {
-            const stars = calculateStars(mistakes);
-            const prev = state.levelProgress[levelId] || { stars: 0, bestScore: 0, completed: false };
-            const newBest = Math.max(prev.bestScore, score);
-            const newStars = Math.max(prev.stars, stars);
-
-            state.levelProgress[levelId] = {
-                stars: newStars,
-                bestScore: newBest,
-                completed: true
-            };
-
-            if (score > prev.bestScore) {
-                state.totalScore += (score - prev.bestScore);
-            } else if (!prev.completed) {
-                state.totalScore += score;
-            }
-
-            saveProgress();
-            updateHUD();
-            renderMap();
-
-            const scene = SCENES.find(s => s.id === levelId);
-            let starsHtml = '';
-            for (let i = 0; i < 3; i++) {
-                starsHtml += '<span class="star' + (i < stars ? ' filled' : '') + '">★</span>';
-            }
-
-            showModal(
-                'Level Complete',
-                '<div class="results-stars">' + starsHtml + '</div>' +
-                '<div class="results-score">' + score + ' pts</div>' +
-                '<div class="results-label">Best: ' + newBest + ' pts · Mistakes: ' + mistakes + '</div>' +
-                '<p style="text-align:center;color:var(--text-dim);font-size:0.9rem;">' + scene.flavor + '</p>',
-                [
-                    { label: 'Back to Map', className: 'btn-secondary', onClick: () => { hideModal(); showScreen('map'); renderMap(); } },
-                    { label: 'Play Again', className: 'btn-accent', onClick: () => { hideModal(); startLevel(levelId); } }
-                ]
-            );
-
-            AudioEngine.fanfare();
-            spawnConfetti(40);
-        }
-
-        /* ===== MINI-GAME 1: FILL IN THE BLANKS ===== */
-        function startFillInTheBlanks() {
-            const body = $('#sceneBody');
-            let currentIndex = 0;
-            let score = 0;
-            let mistakes = 0;
-            let selectedBlank = null;
-
-            const sentences = shuffle(FIB_SENTENCES);
-
-            function render() {
-                const s = sentences[currentIndex];
-                if (!s) {
-                    completeLevel('fib', score, mistakes);
-                    return;
-                }
-
-                const parts = s.text.split('{0}');
-                const bank = shuffle(s.bank);
-
-                let bankHtml = '';
-                bank.forEach(w => {
-                    bankHtml += '<button class="fib-word" data-word="' + w + '">' + w + '</button>';
-                });
-
-                body.innerHTML =
-                    '<div class="fib-sentence">' +
-                        parts[0] + '<span class="fib-blank" data-blank="true" tabindex="0" role="button" aria-label="Blank. Click to select.">___</span>' + parts[1] +
-                    '</div>' +
-                    '<div style="font-family:var(--font-mono);font-size:0.8rem;color:var(--text-dim);margin-bottom:8px;">WORD BANK</div>' +
-                    '<div class="fib-bank">' + bankHtml + '</div>' +
-                    '<div style="margin-top:24px;font-family:var(--font-mono);font-size:0.85rem;color:var(--text-dim);">' +
-                        'Sentence ' + (currentIndex + 1) + ' / ' + sentences.length +
-                    '</div>';
-
-                selectedBlank = null;
-                $('#levelProgressFill').style.width = ((currentIndex / sentences.length) * 100) + '%';
-            }
-
-            function handleBlankClick(blank) {
-                $$('.fib-blank').forEach(b => b.classList.remove('active'));
-                blank.classList.add('active');
-                selectedBlank = blank;
-                AudioEngine.click();
-            }
-
-            function handleWordClick(wordBtn) {
-                if (!selectedBlank) {
-                    toast('Select a blank first!', 'info');
-                    return;
-                }
-                const word = wordBtn.getAttribute('data-word');
-                const s = sentences[currentIndex];
-                const isCorrect = word === s.answer;
-
-                if (isCorrect) {
-                    selectedBlank.textContent = word;
-                    selectedBlank.classList.remove('active');
-                    selectedBlank.classList.add('correct', 'filled');
-                    wordBtn.classList.add('used');
-                    selectedBlank = null;
-                    score += 100;
-                    AudioEngine.correct();
-                    popFloat('+100', window.innerWidth / 2, window.innerHeight / 2);
-
-                    setTimeout(() => {
-                        currentIndex++;
-                        render();
-                    }, 600);
-                } else {
-                    mistakes++;
-                    score = Math.max(0, score - 20);
-                    wordBtn.classList.add('shake-back');
-                    selectedBlank.classList.add('wrong');
-                    AudioEngine.wrong();
-                    popFloat('-20', window.innerWidth / 2, window.innerHeight / 2);
-                    setTimeout(() => {
-                        wordBtn.classList.remove('shake-back');
-                        if (selectedBlank) {
-                            selectedBlank.classList.remove('wrong', 'active');
-                            selectedBlank.textContent = '___';
-                            selectedBlank = null;
-                        }
-                    }, 500);
-                }
-            }
-
-            body.addEventListener('click', (e) => {
-                const blank = e.target.closest('.fib-blank');
-                if (blank) { handleBlankClick(blank); return; }
-                const word = e.target.closest('.fib-word');
-                if (word) { handleWordClick(word); }
-            });
-
-            body.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    const blank = e.target.closest('.fib-blank');
-                    if (blank) { e.preventDefault(); handleBlankClick(blank); }
-                }
-            });
-
-            render();
-        }
-
-        /* ===== MINI-GAME 2: TRUE/FALSE ===== */
-        function startTrueFalse() {
-            const body = $('#sceneBody');
-            let currentIndex = 0;
-            let score = 0;
-            let mistakes = 0;
-            let streak = 0;
-            let timerInterval = null;
-            let timeLeft = 600;
-            let answered = false;
-
-            const statements = shuffle(TF_STATEMENTS);
-
-            function stopTimer() {
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                }
-            }
-
-            function render() {
-                stopTimer();
-                const s = statements[currentIndex];
-                if (!s) {
-                    completeLevel('tf', score, mistakes);
-                    return;
-                }
-
-                answered = false;
-                timeLeft = 600;
-
-                body.innerHTML =
-                    '<div class="tf-streak">STREAK: ' + streak + 'x</div>' +
-                    '<div class="tf-card">' +
-                        '<div class="tf-statement">' + s.text + '</div>' +
-                        '<div class="tf-timer-bar"><div class="tf-timer-fill" id="tfTimerFill"></div></div>' +
-                        '<div class="tf-actions">' +
-                            '<button class="tf-btn real" data-answer="true">✅ REAL</button>' +
-                            '<button class="tf-btn delusion" data-answer="false">❌ DELUSION</button>' +
-                        '</div>' +
-                        '<div class="tf-explanation" id="tfExplanation">' + s.explanation + '</div>' +
-                        '<button class="tf-next-btn" id="tfNextBtn">' + (currentIndex === statements.length - 1 ? 'SEE RESULTS' : 'NEXT →') + '</button>' +
-                    '</div>';
-
-                const fill = $('#tfTimerFill');
-                fill.style.width = '100%';
-                fill.className = 'tf-timer-fill';
-
-                timerInterval = setInterval(() => {
-                    if (answered) return;
-                    timeLeft -= 1;
-                    const pct = (timeLeft / 600) * 100;
-                    fill.style.width = pct + '%';
-                    if (timeLeft <= 120) {
-                        fill.className = 'tf-timer-fill danger';
-                    } else if (timeLeft <= 300) {
-                        fill.className = 'tf-timer-fill warning';
-                    }
-                    if (timeLeft <= 0) {
-                        stopTimer();
-                        handleAnswer(null);
-                    }
-                }, 10); // 600 "seconds" compressed — actually 6 seconds at 10ms
-
-                setCleanup(stopTimer);
-            }
-
-            function handleAnswer(answer) {
-                if (answered) return;
-                answered = true;
-                stopTimer();
-
-                const s = statements[currentIndex];
-                const isCorrect = answer === s.answer;
-
-                $$('.tf-btn').forEach(b => b.disabled = true);
-                $$('.tf-btn').forEach(b => {
-                    const val = b.getAttribute('data-answer') === 'true';
-                    if (val === s.answer) {
-                        b.style.background = 'var(--success)';
-                    } else if (val === answer && !isCorrect) {
-                        b.style.background = 'var(--error)';
-                    } else {
-                        b.style.opacity = '0.4';
-                    }
-                });
-
-                const explanation = $('#tfExplanation');
-                explanation.classList.add('show');
-                const nextBtn = $('#tfNextBtn');
-                nextBtn.classList.add('show');
-
-                if (isCorrect) {
-                    streak++;
-                    const bonus = Math.min(streak, 5) * 20;
-                    score += 100 + bonus;
-                    AudioEngine.correct();
-                    popFloat('+' + (100 + bonus), window.innerWidth / 2, window.innerHeight / 2);
-                } else {
-                    mistakes++;
-                    streak = 0;
-                    score = Math.max(0, score - 30);
-                    AudioEngine.wrong();
-                    popFloat('-30', window.innerWidth / 2, window.innerHeight / 2);
-                }
-            }
-
-            body.addEventListener('click', (e) => {
-                const btn = e.target.closest('.tf-btn');
-                if (btn && !btn.disabled) {
-                    const val = btn.getAttribute('data-answer') === 'true';
-                    handleAnswer(val);
-                    return;
-                }
-                const next = e.target.closest('#tfNextBtn');
-                if (next) {
-                    AudioEngine.click();
-                    currentIndex++;
-                    if (currentIndex >= statements.length) {
-                        completeLevel('tf', score, mistakes);
-                    } else {
-                        render();
-                    }
-                }
-            });
-
-            body.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    const next = e.target.closest('#tfNextBtn');
-                    if (next) {
-                        next.click();
-                    }
-                }
-            });
-
-            render();
-        }
-
-        /* ===== MINI-GAME 3: MULTIPLE CHOICE ===== */
-        function startMultipleChoice() {
-            const body = $('#sceneBody');
-            let currentIndex = 0;
-            let score = 0;
-            let mistakes = 0;
-
-            const questions = shuffle(MC_QUESTIONS);
-
-            function render() {
-                const q = questions[currentIndex];
-                if (!q) {
-                    completeLevel('mc', score, mistakes);
-                    return;
-                }
-
-                let optionsHtml = '';
-                q.options.forEach((opt, i) => {
-                    optionsHtml += '<button class="mc-option" data-opt="' + i + '">' + opt + '</button>';
-                });
-
-                body.innerHTML =
-                    '<div class="mc-question">' + q.text + '</div>' +
-                    '<div class="mc-options">' + optionsHtml + '</div>' +
-                    '<div class="mc-reaction" id="mcReaction">' + q.reaction + '</div>' +
-                    '<div style="margin-top:20px;font-family:var(--font-mono);font-size:0.85rem;color:var(--text-dim);">' +
-                        'Question ' + (currentIndex + 1) + ' / ' + questions.length +
-                    '</div>';
-
-                $('#levelProgressFill').style.width = ((currentIndex / questions.length) * 100) + '%';
-            }
-
-            body.addEventListener('click', (e) => {
-                const btn = e.target.closest('.mc-option');
-                if (!btn || btn.disabled) return;
-
-                const optIndex = parseInt(btn.getAttribute('data-opt'), 10);
-                const q = questions[currentIndex];
-                const isCorrect = optIndex === q.answer;
-
-                $$('.mc-option').forEach(b => {
-                    b.disabled = true;
-                    const idx = parseInt(b.getAttribute('data-opt'), 10);
-                    if (idx === q.answer) {
-                        b.classList.add('correct');
-                    } else if (idx === optIndex && !isCorrect) {
-                        b.classList.add('wrong');
-                    } else {
-                        b.classList.add('dimmed');
-                    }
-                });
-
-                const reaction = $('#mcReaction');
-                reaction.classList.add('show');
-
-                if (isCorrect) {
-                    score += 100;
-                    AudioEngine.correct();
-                    popFloat('+100', window.innerWidth / 2, window.innerHeight / 2);
-                } else {
-                    mistakes++;
-                    score = Math.max(0, score - 30);
-                    AudioEngine.wrong();
-                    popFloat('-30', window.innerWidth / 2, window.innerHeight / 2);
-                }
-
-                setTimeout(() => {
-                    currentIndex++;
-                    if (currentIndex >= questions.length) {
-                        completeLevel('mc', score, mistakes);
-                    } else {
-                        render();
-                    }
-                }, 1800);
-            });
-
-            render();
-        }
-
-        /* ===== MINI-GAME 4: MATCH THE MEANING ===== */
-        function startMatchMeaning() {
-            const body = $('#sceneBody');
-            let score = 0;
-            let mistakes = 0;
-            let attempts = 0;
-            let matchedPairs = 0;
-            let selectedWord = null;
-            let selectedMeaning = null;
-
-            const words = shuffle(MATCH_PAIRS.map(p => p.word));
-            const meanings = shuffle(MATCH_PAIRS.map(p => p.meaning));
-
-            function render() {
-                let wordsHtml = '';
-                words.forEach(w => {
-                    wordsHtml += '<div class="match-item" data-type="word" data-value="' + w + '" tabindex="0" role="button">' + w + '</div>';
-                });
-
-                let meaningsHtml = '';
-                meanings.forEach(m => {
-                    meaningsHtml += '<div class="match-item" data-type="meaning" data-value="' + m + '" tabindex="0" role="button">' + m + '</div>';
-                });
-
-                body.innerHTML =
-                    '<div class="match-hint">' +
-                        'Click a <strong>WORD</strong> on the left, then click its <strong>MEANING</strong> on the right.<br>' +
-                        '<span class="example">WORD · boasts → MEANING · proudly has</span>' +
-                    '</div>' +
-                    '<div class="match-stats">' +
-                        'PAIRS: <strong id="matchPairs">0 / 6</strong>' +
-                        ' · ATTEMPTS: <strong id="matchAttempts">0</strong>' +
-                    '</div>' +
-                    '<div class="match-columns">' +
-                        '<div class="match-col"><h4>Words</h4>' + wordsHtml + '</div>' +
-                        '<div class="match-col"><h4>Meanings</h4>' + meaningsHtml + '</div>' +
-                    '</div>';
-
-                matchedPairs = 0;
-                selectedWord = null;
-                selectedMeaning = null;
-                $('#levelProgressFill').style.width = '0%';
-            }
-
-            function updateStats() {
-                const p = $('#matchPairs');
-                const a = $('#matchAttempts');
-                if (p) p.textContent = matchedPairs + ' / 6';
-                if (a) a.textContent = attempts;
-                $('#levelProgressFill').style.width = ((matchedPairs / 6) * 100) + '%';
-            }
-
-            function checkMatch() {
-                if (!selectedWord || !selectedMeaning) return;
-                attempts++;
-                const wordVal = selectedWord.getAttribute('data-value');
-                const meaningVal = selectedMeaning.getAttribute('data-value');
-                const pair = MATCH_PAIRS.find(p => p.word === wordVal && p.meaning === meaningVal);
-
-                if (pair) {
-                    selectedWord.classList.add('matched');
-                    selectedMeaning.classList.add('matched');
-                    selectedWord.classList.remove('selected');
-                    selectedMeaning.classList.remove('selected');
-                    matchedPairs++;
-                    score += 150;
-                    AudioEngine.match();
-                    popFloat('+150', window.innerWidth / 2, window.innerHeight / 2);
-                    updateStats();
-
-                    if (matchedPairs === 6) {
-                        setTimeout(() => {
-                            completeLevel('match', score, mistakes);
-                        }, 600);
-                    }
-                } else {
-                    mistakes++;
-                    score = Math.max(0, score - 20);
-                    selectedWord.classList.add('wrong-pick');
-                    selectedMeaning.classList.add('wrong-pick');
-                    AudioEngine.wrong();
-                    popFloat('-20', window.innerWidth / 2, window.innerHeight / 2);
-                    setTimeout(() => {
-                        if (selectedWord) selectedWord.classList.remove('wrong-pick', 'selected');
-                        if (selectedMeaning) selectedMeaning.classList.remove('wrong-pick', 'selected');
-                        selectedWord = null;
-                        selectedMeaning = null;
-                    }, 500);
-                }
-
-                selectedWord = null;
-                selectedMeaning = null;
-                updateStats();
-            }
-
-            body.addEventListener('click', (e) => {
-                const item = e.target.closest('.match-item');
-                if (!item || item.classList.contains('matched')) return;
-
-                const type = item.getAttribute('data-type');
-
-                if (type === 'word') {
-                    if (selectedWord) selectedWord.classList.remove('selected');
-                    selectedWord = item;
-                    item.classList.add('selected');
-                    AudioEngine.click();
-                } else {
-                    if (selectedMeaning) selectedMeaning.classList.remove('selected');
-                    selectedMeaning = item;
-                    item.classList.add('selected');
-                    AudioEngine.click();
-                }
-
-                if (selectedWord && selectedMeaning) {
-                    checkMatch();
-                }
-            });
-
-            body.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    const item = e.target.closest('.match-item');
-                    if (item) {
-                        e.preventDefault();
-                        item.click();
-                    }
-                }
-            });
-
-            render();
-            updateStats();
-        }
-
-        /* ===== MINI-GAME 5: TIMED BONUS ROUND ===== */
-        function startBonusRound() {
-            const body = $('#sceneBody');
-            let score = 0;
-            let mistakes = 0;
-            let streak = 0;
-            let currentIndex = 0;
-            let timeLeft = 750;
-            let timerInterval = null;
-            let answered = false;
-
-            const questions = shuffle(BONUS_QUESTIONS);
-
-            function stopTimer() {
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                }
-            }
-
-            function render() {
-                stopTimer();
-                answered = false;
-                const q = questions[currentIndex % questions.length];
-
-                let optionsHtml = '';
-                q.options.forEach((opt, i) => {
-                    optionsHtml += '<button class="mc-option" data-opt="' + i + '">' + opt + '</button>';
-                });
-
-                body.innerHTML =
-                    '<div class="bonus-timer" id="bonusTimer">' + (timeLeft / 100).toFixed(1) + 's</div>' +
-                    '<div class="bonus-streak">STREAK: ' + streak + 'x  ·  SCORE: ' + score + '</div>' +
-                    '<div class="mc-question">' + q.text + '</div>' +
-                    '<div class="mc-options">' + optionsHtml + '</div>';
-
-                const timerEl = $('#bonusTimer');
-                timerInterval = setInterval(() => {
-                    if (answered) return;
-                    timeLeft -= 1;
-                    const t = $('#bonusTimer');
-                    if (t) {
-                        t.textContent = (timeLeft / 100).toFixed(1) + 's';
-                        if (timeLeft <= 150) {
-                            t.classList.add('danger');
-                        }
-                    }
-                    if (timeLeft <= 0) {
-                        stopTimer();
-                        completeLevel('bonus', score, mistakes);
-                    }
-                }, 10);
-
-                setCleanup(stopTimer);
-            }
-
-            body.addEventListener('click', (e) => {
-                const btn = e.target.closest('.mc-option');
-                if (!btn || btn.disabled || answered) return;
-
-                answered = true;
-                stopTimer();
-
-                const optIndex = parseInt(btn.getAttribute('data-opt'), 10);
-                const q = questions[currentIndex % questions.length];
-                const isCorrect = optIndex === q.answer;
-
-                $$('.mc-option').forEach(b => {
-                    b.disabled = true;
-                    const idx = parseInt(b.getAttribute('data-opt'), 10);
-                    if (idx === q.answer) {
-                        b.classList.add('correct');
-                    } else if (idx === optIndex && !isCorrect) {
-                        b.classList.add('wrong');
-                    } else {
-                        b.classList.add('dimmed');
-                    }
-                });
-
-                if (isCorrect) {
-                    streak++;
-                    const mult = Math.min(streak, 5);
-                    const points = 100 * mult;
-                    score += points;
-                    AudioEngine.correct();
-                    popFloat('+' + points, window.innerWidth / 2, window.innerHeight / 2);
-                } else {
-                    mistakes++;
-                    streak = 0;
-                    score = Math.max(0, score - 40);
-                    AudioEngine.wrong();
-                    popFloat('-40', window.innerWidth / 2, window.innerHeight / 2);
-                }
-
-                setTimeout(() => {
-                    currentIndex++;
-                    if (timeLeft > 0) {
-                        render();
-                    } else {
-                        completeLevel('bonus', score, mistakes);
-                    }
-                }, 900);
-            });
-
-            render();
-        }
-
-        /* ===== FINALE ===== */
-        function showFinale() {
-            AudioEngine.fanfare();
-            spawnConfetti(60);
-
-            let totalStars = 0;
-            let totalScore = 0;
-            SCENES.forEach(s => {
-                const p = state.levelProgress[s.id] || { stars: 0, bestScore: 0 };
-                totalStars += p.stars || 0;
-                totalScore += p.bestScore || 0;
-            });
-
-            $('#finaleScore').textContent = totalScore;
-
-            let starsHtml = '';
-            for (let i = 0; i < 15; i++) {
-                starsHtml += '<span class="star' + (i < totalStars ? ' filled' : '') + '">★</span>';
-            }
-            $('#finaleStars').innerHTML = starsHtml;
-
-            let rank = 'ROOKIE';
-            if (totalScore >= 3000) rank = 'LEGEND';
-            else if (totalScore >= 2000) rank = 'CHAMPION';
-            else if (totalScore >= 1000) rank = 'PRO';
-            else if (totalScore >= 500) rank = 'APPRENTICE';
-            $('#finaleRank').textContent = 'RANK: ' + rank;
-
-            const tbody = $('#resultsBody');
-            tbody.innerHTML = '';
-            SCENES.forEach(s => {
-                const p = state.levelProgress[s.id] || { stars: 0, bestScore: 0 };
-                const starStr = '★'.repeat(p.stars) + '☆'.repeat(3 - p.stars);
-                const tr = document.createElement('tr');
-                tr.innerHTML =
-                    '<td>' + s.num + '. ' + s.title + '</td>' +
-                    '<td class="td-stars">' + starStr + '</td>' +
-                    '<td class="td-best">' + p.bestScore + '</td>';
-                tbody.appendChild(tr);
-            });
-
-            showScreen('finale');
-        }
-
-        /* ===== RESET ===== */
-        function resetProgress() {
-            state.totalScore = 0;
-            state.levelProgress = {};
-            saveProgress();
-            updateHUD();
-            renderMap();
-            toast('Progress reset. The tape has been rewound.', 'info');
-            showScreen('map');
-        }
-
-        /* ===== EVENT LISTENERS ===== */
-        function initEvents() {
-            $('#playBtn').addEventListener('click', () => {
-                AudioEngine.init();
-                AudioEngine.click();
-                $('#preloader').classList.add('exit');
-                setTimeout(() => {
-                    $('#preloader').style.display = 'none';
-                    $('#header').classList.remove('hidden');
-                    showScreen('intro');
-                    updateHUD();
-                    renderMap();
-                }, 600);
-            });
-
-            $('#startBtn').addEventListener('click', () => {
-                AudioEngine.click();
-                showScreen('map');
-                renderMap();
-            });
-
-            $('#mapBtn').addEventListener('click', () => {
-                AudioEngine.click();
-                runCleanup();
-                showScreen('map');
-                renderMap();
-            });
-
-            $('#backToMapBtn').addEventListener('click', () => {
-                AudioEngine.click();
-                runCleanup();
-                showScreen('map');
-                renderMap();
-            });
-
-            $('#restartLevelBtn').addEventListener('click', () => {
-                AudioEngine.click();
-                if (state.currentLevel) {
-                    startLevel(state.currentLevel.id);
-                }
-            });
-
-            $('#soundBtn').addEventListener('click', () => {
-                state.soundMuted = !state.soundMuted;
-                AudioEngine.muted = state.soundMuted;
-                saveProgress();
-                updateHUD();
-                if (!state.soundMuted) AudioEngine.click();
-            });
-
-            $('#rewindBtn').addEventListener('click', () => {
-                AudioEngine.click();
-                resetProgress();
-            });
-
-            // Modal overlay click to close
-            $('#modalOverlay').addEventListener('click', (e) => {
-                if (e.target === $('#modalOverlay')) {
-                    hideModal();
-                }
-            });
-
-            // Escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    hideModal();
-                }
-            });
-        }
-
-        /* ===== INIT ===== */
-        function init() {
-            loadProgress();
-            AudioEngine.muted = state.soundMuted;
-            initEvents();
-            updateHUD();
-            renderMap();
-        }
-
-        init();
-
-    })();
-    </script>
+      } else {
+        mistakes++; score = Math.max(0, score - 20);
+        flash(selW); flash(mBtn);
+        selW.classList.remove("sel"); selW = null;
+        Sfx.wrong(); upd();
+      }
+    }
+  };
+  setCleanup(() => { pendTimers.forEach(clearTimeout); delete panelHandlers["panel-match"]; });
+
+  upd();
+};
+
+/* ============================================================
+   MINI-GAME 5 · TIMED BONUS BLITZ (Joey) — 750 seconds
+   ============================================================ */
+RUNNERS.bonus = function(sc, panel){
+  const body = panel.querySelector(".game-body");
+  const TOTAL_TIME = 750;
+  let timeLeft = TOTAL_TIME, timerId = null;
+  const order = shuffle(BONUS_QUESTIONS.map((_, i) => i));
+  let idx = 0, score = 0, mistakes = 0, streak = 0, answered = false, finished = false;
+  const pendTimers = [];
+
+  body.innerHTML =
+    '<div class="tf-streak" id="bnStreak">STREAK ×1</div>' +
+    '<div class="timer"><div class="timer-fill" id="bnTimer" style="background:var(--orange)"></div></div>' +
+    '<div class="tf-card" id="bnCard"><p class="tf-label">JOEY’S RAPID ROUND · <span id="bnCounter"></span></p><p class="mc-q" id="bnQ"></p><div id="bnOpts"></div></div>' +
+    '<div class="g-foot"><span class="g-score">SCORE 0</span><span class="g-mist">MISTAKES 0</span></div>';
+  const el = {
+    streak: $("#bnStreak", body), timer: $("#bnTimer", body), card: $("#bnCard", body),
+    counter: $("#bnCounter", body), q: $("#bnQ", body), opts: $("#bnOpts", body),
+    score: $(".g-score", body), mist: $(".g-mist", body)
+  };
+  function multOf(){ return streak >= 6 ? 3 : streak >= 3 ? 2 : 1; }
+  function upd(){
+    el.score.textContent = "SCORE " + score;
+    el.mist.textContent = "MISTAKES " + mistakes;
+    el.streak.textContent = "STREAK ×" + multOf() + (streak > 0 ? "  (" + streak + "🔥)" : "");
+  }
+  function stopTimer(){ if (timerId) { clearInterval(timerId); timerId = null; } }
+  function finish(){
+    if (finished) return;
+    finished = true;
+    stopTimer();
+    finishLevel(sc, score, mistakes);
+  }
+  function renderQ(){
+    answered = false;
+    const q = BONUS_QUESTIONS[order[idx]];
+    el.counter.textContent = (idx + 1) + "/" + order.length;
+    el.q.textContent = q.q;
+    el.opts.innerHTML = q.opts.map((o, oi) =>
+      '<button type="button" class="mc-opt" data-o="' + oi + '"><span class="k">' + (oi + 1) + '.</span>' + o + '</button>').join("");
+  }
+  function pick(oi){
+    if (answered || finished) return;
+    answered = true;
+    const q = BONUS_QUESTIONS[order[idx]];
+    const ok = oi === q.a;
+    $$(".mc-opt", el.opts).forEach((b, bi) => {
+      b.disabled = true;
+      if (bi === q.a) b.classList.add("good");
+      else if (bi === oi) b.classList.add("badp");
+    });
+    if (ok) {
+      streak++;
+      const pts = 100 * multOf();
+      score += pts;
+      popFloat(window.innerWidth / 2, window.innerHeight * 0.4, "+" + pts, "var(--green)");
+      Sfx.correct();
+      el.card.classList.remove("bonus-flash-bad"); el.card.classList.add("bonus-flash-good");
+    } else {
+      streak = 0; mistakes++;
+      Sfx.wrong();
+      el.card.classList.remove("bonus-flash-good"); el.card.classList.add("bonus-flash-bad");
+    }
+    upd();
+    const t = setTimeout(() => {
+      idx++;
+      if (idx >= order.length) finish();
+      else renderQ();
+    }, 900);
+    pendTimers.push(t);
+  }
+  startTimer = null; /* (placeholder to keep linters calm about hoisting) */
+  timerId = setInterval(() => {
+    timeLeft--;
+    el.timer.style.width = clamp((timeLeft / TOTAL_TIME) * 100, 0, 100) + "%";
+    if (timeLeft <= 60) el.timer.classList.add("danger");
+    if (timeLeft <= 10) Sfx.tick();
+    if (timeLeft <= 0) finish();
+  }, 1000);
+
+  panelHandlers["panel-bonus"] = (e) => {
+    const opt = e.target.closest(".mc-opt");
+    if (opt) pick(+opt.dataset.o);
+  };
+  keyHandler = (e) => {
+    if (["1", "2", "3"].includes(e.key) && !answered) {
+      const oi = +e.key - 1;
+      if (oi < BONUS_QUESTIONS[order[idx]].opts.length) pick(oi);
+    }
+  };
+  setCleanup(() => { stopTimer(); pendTimers.forEach(clearTimeout); keyHandler = null; delete panelHandlers["panel-bonus"]; });
+
+  upd();
+  renderQ();
+};
+
+/* ===== Finale ===== */
+function getRank(total){
+  for (const r of RANKS) { if (total >= r.min) return r; }
+  return RANKS[RANKS.length - 1];
+}
+function renderFinale(){
+  const total = SCENES.reduce((s, sc) => s + levelOf(sc.id).best, 0);
+  const stars = SCENES.reduce((s, sc) => s + levelOf(sc.id).stars, 0);
+  const rank = getRank(total);
+  const rows = SCENES.map(sc => {
+    const lv = levelOf(sc.id);
+    return '<tr><td>' + sc.emoji + ' Lv' + sc.num + ' · ' + sc.title + '</td>' +
+      '<td class="num">' + lv.best + '</td>' +
+      '<td class="num"><span style="color:var(--gold)">' + "★".repeat(lv.stars) + '</span>' + "☆".repeat(3 - lv.stars) + '</td></tr>';
+  }).join("");
+  $("#finaleBody").innerHTML =
+    '<img class="fin-banner" src="' + BASE + 'slide-011.jpg" alt="" onerror="this.style.display=\'none\'">' +
+    '<h2>🏆 THE FINAL CUT</h2>' +
+    '<p class="intro-sub">“They threw two parties at the exact same time — just so you’d feel loved.”</p>' +
+    '<div class="fin-total">TOTAL SCORE <strong>' + total + '</strong></div>' +
+    '<div class="fin-stars">★ ' + stars + ' / ' + (SCENES.length * 3) + '</div>' +
+    '<div class="fin-rank">' + rank.emoji + ' RANK: ' + rank.name + '</div>' +
+    '<table class="fin-table"><thead><tr><th>Reel</th><th>Best</th><th>Stars</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<p class="intro-credit">Re-watch the source tape: <a href="' + PDF_URL + '" target="_blank" rel="noopener noreferrer">222-sitcom-english-two-parties.pdf</a></p>' +
+    '<div class="fin-actions">' +
+      '<button type="button" class="btn btn-danger" id="btnRewind">⏪ REWIND THE TAPE</button>' +
+      '<button type="button" class="btn btn-ghost" id="btnFinMap">🗺 BACK TO MAP</button>' +
+    '</div>';
+  Sfx.fanfare();
+  spawnConfetti(130);
+}
+
+/* ===== Global wiring (delegation) ===== */
+document.addEventListener("pointerdown", () => Sfx.ensure(), { once: true });
+
+ $("#btnStart").addEventListener("click", () => { Sfx.click(); showScreen("screen-map"); });
+ $("#btnMap").addEventListener("click", () => {
+  Sfx.click();
+  if (currentScreen === "screen-game") backToMap(); else showScreen("screen-map");
+});
+ $("#btnSound").addEventListener("click", () => {
+  save.muted = !save.muted;
+  Sfx.setMuted(save.muted);
+  persist();
+  renderSound();
+  if (!save.muted) Sfx.flip();
+  toast(save.muted ? "🔇 Sound off" : "🔊 Sound on");
+});
+ $("#btnFinale").addEventListener("click", () => {
+  Sfx.click();
+  showScreen("screen-finale");
+  renderFinale();
+});
+ $("#mapGrid").addEventListener("click", (e) => {
+  const card = e.target.closest(".reel-card");
+  if (!card) return;
+  const sc = SCENES.find(s => s.id === card.dataset.scene);
+  if (sc) { Sfx.flip(); openBriefing(sc); }
+});
+/* Every game panel uses one persistent delegated listener */
+ $$(".game-panel").forEach(p => {
+  p.addEventListener("click", (e) => {
+    if (e.target.closest("[data-back]")) { Sfx.click(); backToMap(); return; }
+    const h = panelHandlers[p.id];
+    if (h) h(e);
+  });
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (isModalOpen()) closeModal();
+    else if (currentScreen === "screen-game") backToMap();
+    return;
+  }
+  if (currentScreen === "screen-game" && keyHandler) keyHandler(e);
+});
+
+/* ===== Preloader: VHS PLAY effect, exits upward ===== */
+(function preloader(){
+  const pre = $("#preloader");
+  const counter = $("#preCounter");
+  let frames = 0;
+  const iv = setInterval(() => {
+    frames++;
+    const s = String(Math.floor(frames / 10)).padStart(2, "0");
+    counter.textContent = "0:00:" + s;
+  }, 100);
+  function done(){
+    clearInterval(iv);
+    pre.classList.add("done");
+    setTimeout(() => pre.remove(), 750);
+  }
+  if (document.readyState === "complete") setTimeout(done, 1500);
+  else window.addEventListener("load", () => setTimeout(done, 1500));
+  pre.addEventListener("click", done); /* impatient viewers may skip the tracking */
+})();
+
+/* ===== Boot ===== */
+loadSave();
+Sfx.setMuted(save.muted);
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+</script>
 </body>
 </html>
