@@ -1,1 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Friends Vocab Arcade — an interactive retro learning game based on The One with the Chicken Pox (S2E23). Five mini-games, vocabulary, idioms and storytelling.">
+<title>Friends Vocab Arcade · The One with the Chicken Pox</title>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito+Sans:wght@400;700;800;900&family=Courier+Prime:wght@400;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+/* ============================================================
+   FRIENDS VOCAB ARCADE — warm VHS sitcom aesthetic
+   Palette: paper #F7EEDF · ink #33261C · terra #C96F4A ·
+            teal #3E8E8C · mustard #E0A437 · green #4E8A57
+   ============================================================ */
+:root{
+  --paper:#F7EEDF; --paper2:#EFE2CC; --cream:#FFFBF2;
+  --ink:#33261C; --ink-soft:#5C4A3A;
+  --terra:#C96F4A; --teal:#3E8E8C; --mustard:#E0A437;
+  --plum:#8E6C8A; --green:#4E8A57; --red:#C0392B;
+  --hard:rgba(51,38,28,.85);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Nunito Sans',sans-serif; color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #FFF6E4 0%, transparent 60%),
+    radial-gradient(900px 500px at 90% 110%, #F0DFC4 0%, transparent 55%),
+    var(--paper);
+  min-height:100vh; padding-top:84px; -webkit-font-smoothing:antialiased;
+}
+/* film grain + scanlines + vignette */
+#grain{position:fixed;inset:0;z-index:200;pointer-events:none;opacity:.05;mix-blend-mode:multiply;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.6'/></svg>");}
+#scanlines{position:fixed;inset:0;z-index:5;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg, rgba(51,38,28,.03) 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse at center, transparent 58%, rgba(51,38,28,.16) 100%);}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:340}
+.hidden{display:none!important}
+.mono{font-family:'Courier Prime',monospace}
+:focus-visible{outline:3px solid var(--mustard);outline-offset:2px;border-radius:6px}
+::selection{background:var(--mustard);color:var(--ink)}
 
+/* ===== header console ===== */
+#console{position:fixed;top:0;left:0;right:0;z-index:120;display:flex;align-items:center;gap:12px;
+  padding:10px 18px;background:rgba(255,251,242,.94);backdrop-filter:blur(6px);border-bottom:2px solid var(--ink)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:38px;height:38px;flex:none;border-radius:12px;background:var(--terra);color:var(--cream);
+  border:2px solid var(--ink);box-shadow:0 3px 0 var(--hard);display:grid;place-items:center}
+.logo svg{width:20px;height:20px}
+.b1{font-family:Righteous;font-size:.98rem;letter-spacing:.5px;white-space:nowrap}
+.b2{font-family:'Courier Prime';font-size:.6rem;letter-spacing:2px;color:var(--ink-soft)}
+#dots{display:flex;gap:6px;margin-left:auto}
+.dot{width:24px;height:24px;border-radius:8px;border:2px solid var(--ink);background:var(--cream);
+  display:grid;place-items:center;font-family:'Courier Prime';font-size:11px;font-weight:700;color:var(--ink-soft);transition:background .3s}
+.dot.on{color:#FFF6E8;border-color:var(--ink)}
+.hscore{display:flex;align-items:center;gap:7px;font-family:'Courier Prime';font-weight:700;font-size:.95rem;
+  padding:5px 12px;border:2px solid var(--ink);border-radius:12px;background:var(--cream);box-shadow:0 3px 0 var(--hard)}
+.hscore svg{width:16px;height:16px;color:var(--terra)}
+.hscore.bump b{animation:bump .35s}
+.icon-btn{width:38px;height:38px;flex:none;border-radius:12px;border:2px solid var(--ink);background:var(--cream);
+  display:grid;place-items:center;cursor:pointer;box-shadow:0 3px 0 var(--hard);transition:transform .06s}
+.icon-btn:active{transform:translateY(3px);box-shadow:0 0 0 var(--hard)}
+.icon-btn svg{width:18px;height:18px}
+#btn-sound .ic-off{display:none}
+#btn-sound.muted .ic-on{display:none}
+#btn-sound.muted .ic-off{display:block}
+
+/* ===== layout / screens ===== */
+.wrap{max-width:1020px;margin:0 auto;padding:0 18px}
+.screen{display:none}
+.screen.active{display:block;animation:screenIn .45s cubic-bezier(.2,.8,.3,1)}
+@keyframes screenIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.screen-title{font-family:Righteous;font-size:clamp(1.5rem,4vw,2.2rem);margin:14px 0 2px}
+.screen-sub{color:var(--ink-soft);letter-spacing:2px;font-size:.72rem;margin-bottom:20px}
+
+/* ===== intro ===== */
+.intro{text-align:center;padding-bottom:30px}
+.tv-frame{max-width:660px;margin:8px auto 20px;border:3px solid var(--ink);border-radius:24px;overflow:hidden;
+  background:var(--ink);box-shadow:0 10px 0 var(--hard)}
+.tv-frame img{width:100%;display:block;aspect-ratio:16/9;object-fit:cover}
+.tv-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--ink);color:#E8D9BF;
+  font-size:.68rem;letter-spacing:2px}
+.tv-bar .rec{width:9px;height:9px;border-radius:50%;background:#E4573F;animation:blink 1.2s steps(2) infinite}
+.intro h1{font-family:Righteous;font-size:clamp(2rem,6vw,3.3rem);line-height:1.05}
+.intro h1 span{color:var(--terra)}
+.sub{display:inline-block;margin:10px 0 14px;padding:5px 14px;border:2px solid var(--ink);border-radius:999px;
+  background:var(--cream);font-size:.72rem;letter-spacing:2px}
+.blurb{max-width:640px;margin:0 auto 16px;color:var(--ink-soft);font-weight:700;line-height:1.55}
+.tagrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:24px}
+.tagrow span{padding:4px 10px;border:2px dashed var(--ink-soft);border-radius:999px;font-size:.66rem;letter-spacing:1px;color:var(--ink-soft)}
+.btn-xl{font-family:Righteous;font-size:1.25rem;padding:.75em 1.6em;border-radius:18px}
+.mini-note{margin-top:16px;font-size:.64rem;letter-spacing:1.5px;color:var(--ink-soft)}
+
+/* ===== buttons ===== */
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:'Nunito Sans';font-weight:900;font-size:.92rem;
+  color:var(--ink);background:var(--cream);border:2px solid var(--ink);border-radius:14px;padding:.65em 1.2em;
+  cursor:pointer;box-shadow:0 5px 0 var(--hard);transition:transform .06s, box-shadow .06s}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--hard)}
+.btn svg{width:16px;height:16px}
+.btn-primary{background:var(--terra);color:#FFF6E8;border-color:var(--ink)}
+.btn-mustard{background:var(--mustard);color:var(--ink)}
+.btn-teal{background:var(--teal);color:#FFF6E8}
+.btn-danger{background:var(--red);color:#FFF6E8}
+.btn-sm{padding:.45em .85em;font-size:.8rem;border-radius:11px;box-shadow:0 4px 0 var(--hard)}
+
+/* ===== map ===== */
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:22px;margin-bottom:22px}
+.reel{position:relative;background:var(--cream);border:2px solid var(--ink);border-radius:18px;overflow:hidden;
+  box-shadow:0 6px 0 var(--hard);cursor:pointer;transition:transform .15s, box-shadow .15s}
+.reel:hover{transform:translateY(-4px);box-shadow:0 10px 0 var(--hard)}
+.reel-media{position:relative;border-bottom:2px solid var(--ink)}
+.reel-media img{width:100%;height:150px;object-fit:cover;display:block}
+.img-fallback{width:100%;height:150px;display:grid;place-items:center;color:#FFF6E8;font-family:Righteous;font-size:2rem}
+.reel-num{position:absolute;top:10px;left:10px;width:34px;height:34px;border-radius:50%;background:var(--c,var(--terra));
+  border:2px solid var(--ink);color:#FFF6E8;display:grid;place-items:center;font-family:'Courier Prime';font-weight:700}
+.reel-tag{position:absolute;top:12px;right:10px;background:var(--ink);color:var(--cream);padding:4px 9px;
+  border-radius:8px;font-family:'Courier Prime';font-size:.64rem;letter-spacing:1px}
+.reel-body{padding:14px 16px 16px}
+.reel-body h3{font-family:Righteous;font-size:1.12rem;margin-bottom:8px}
+.reel-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:2px solid var(--ink);border-radius:999px;
+  background:var(--cream);font-weight:800;font-size:.76rem}
+.chip svg{width:13px;height:13px}
+.chip.mono{font-family:'Courier Prime';font-weight:700}
+.chip.best{background:var(--paper2)}
+.reel-stars{display:flex;gap:3px;margin-bottom:8px}
+.flavor{font-family:Caveat,cursive;font-size:1.3rem;color:var(--ink-soft);line-height:1.2}
+.reel.final{grid-column:1/-1;display:grid;grid-template-columns:300px 1fr;background:var(--ink);color:var(--cream);border-color:#1E150E}
+.reel.final .reel-media{border-right:2px solid #1E150E;border-bottom:none}
+.reel.final .reel-media img,.reel.final .img-fallback{height:100%;min-height:190px}
+.reel.final .reel-body{align-self:center;padding:22px 26px}
+.reel.final h3{font-size:1.6rem;color:var(--mustard)}
+.reel.final p{color:#E8D9BF;font-weight:700;margin-top:6px}
+
+/* ===== level shell ===== */
+.lvl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 14px}
+.lvl-head h2{font-family:Righteous;font-size:clamp(1.2rem,3.5vw,1.7rem);flex:1;min-width:160px}
+.scene{display:grid;grid-template-columns:300px 1fr;border:3px solid var(--ink);border-radius:20px;overflow:hidden;
+  background:var(--cream);box-shadow:0 8px 0 var(--hard);margin-bottom:18px}
+.scene-img{border-right:2px solid var(--ink);min-height:200px}
+.scene-img img{width:100%;height:100%;object-fit:cover;display:block}
+.scene-info{padding:16px 20px}
+.kicker{font-family:'Courier Prime';font-size:.66rem;letter-spacing:2px;color:var(--ink-soft);margin:8px 0 2px}
+.kicker:first-child{margin-top:0}
+.scene-info p{font-weight:700;line-height:1.45}
+.tip{color:var(--ink-soft)}
+.hud{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.hud-cell{font-family:'Courier Prime';border:2px solid var(--ink);border-radius:12px;padding:6px 14px;
+  background:var(--cream);box-shadow:0 3px 0 var(--hard);font-size:.82rem}
+.hud-cell span{display:block;font-size:.58rem;letter-spacing:2px;color:var(--ink-soft)}
+.hud-cell b{font-size:1rem}
+.hud-cell b.bump{display:inline-block;animation:bump .35s}
+@keyframes bump{50%{transform:scale(1.25)}}
+
+/* ===== shared game widgets ===== */
+.tf-card{background:var(--cream);border:3px solid var(--ink);border-radius:20px;padding:22px;box-shadow:0 8px 0 var(--hard)}
+.tf-top{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tf-q{font-size:1.22rem;font-weight:900;line-height:1.45;margin:6px 0 18px}
+.timer-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.timer{flex:1;height:16px;border:2px solid var(--ink);border-radius:999px;background:var(--paper2);overflow:hidden;position:relative}
+.timer-fill{height:100%;width:100%;background:var(--teal);transition:width .9s linear;border-radius:999px}
+.timer.crit .timer-fill{background:var(--red);animation:critFlash .5s steps(2) infinite}
+@keyframes critFlash{50%{opacity:.35}}
+.timer-num{font-weight:700;color:var(--ink-soft);min-width:52px;text-align:right}
+.tf-btns{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tf-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:1em;font-family:Righteous;font-size:1.05rem;
+  border-radius:16px;border:3px solid var(--ink);cursor:pointer;box-shadow:0 5px 0 var(--hard);transition:transform .06s,box-shadow .06s}
+.tf-btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 2px 0 var(--hard)}
+.tf-btn svg{width:18px;height:18px}
+.tf-btn.real{background:#DFF0E2;border-color:var(--green);color:#2E5A36}
+.tf-btn.delu{background:#F9E0DC;border-color:var(--red);color:#7E241B}
+.tf-btn.good{background:var(--green);border-color:#2E5A36;color:#FFF6E8}
+.tf-btn.bad{background:var(--red);border-color:#7E241B;color:#FFF6E8}
+.tf-btn:disabled{cursor:default}
+.opts{display:grid;gap:12px}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--cream);border:2px solid var(--ink);
+  border-radius:14px;padding:.8em 1em;font-family:'Nunito Sans';font-weight:800;font-size:.98rem;color:var(--ink);
+  cursor:pointer;box-shadow:0 4px 0 var(--hard);transition:transform .06s,box-shadow .06s}
+.opt:active:not(:disabled){transform:translateY(2px);box-shadow:0 2px 0 var(--hard)}
+.opt:disabled{cursor:default}
+.letter{width:27px;height:27px;flex:none;border:2px solid currentColor;border-radius:8px;display:grid;place-items:center;
+  font-family:'Courier Prime';font-size:.8rem}
+.opt.good{background:#DFF0E2;border-color:var(--green);color:#2E5A36}
+.opt.bad{background:#F9E0DC;border-color:var(--red);color:#7E241B}
+.dim{opacity:.4;pointer-events:none}
+.explain{margin-top:16px;background:var(--paper2);border:2px solid var(--teal);border-left:8px solid var(--teal);
+  border-radius:14px;padding:13px 16px;font-size:.95rem;line-height:1.5;animation:screenIn .3s}
+.explain b{color:var(--teal)}
+.react{display:flex;align-items:center;gap:10px;margin-top:14px;font-family:Caveat,cursive;font-size:1.4rem;line-height:1.1}
+.avatar{width:36px;height:36px;flex:none;border-radius:50%;background:var(--mustard);border:2px solid var(--ink);
+  display:grid;place-items:center;font-family:'Courier Prime';font-size:.72rem;font-weight:700;color:var(--ink)}
+.next-row{margin-top:14px;display:flex;justify-content:flex-end}
+.shake{animation:shake .45s}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
+.pulse{animation:pulse .5s}
+@keyframes pulse{50%{transform:scale(1.07)}}
+
+/* ===== fill blanks ===== */
+.fill-list{list-style:none;display:grid;gap:13px}
+.fill-line{background:var(--cream);border:2px solid var(--ink);border-radius:14px;padding:12px 18px;
+  box-shadow:0 4px 0 var(--hard);line-height:2.2;font-weight:700}
+.blank{font-family:'Courier Prime';font-weight:700;color:var(--ink);background:rgba(224,164,55,.16);
+  border:none;border-bottom:3px dashed var(--terra);border-radius:8px;min-width:120px;padding:2px 12px;
+  cursor:pointer;vertical-align:baseline}
+.blank.sel{background:var(--mustard)}
+.blank.filled{border-bottom-style:solid;background:rgba(78,138,87,.2);cursor:default}
+.bank{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;padding:16px;border:2px dashed var(--ink-soft);
+  border-radius:16px;background:var(--paper2)}
+.chip-word{font-family:'Courier Prime';font-weight:700;font-size:.9rem;color:var(--ink);background:var(--cream);
+  border:2px solid var(--ink);border-radius:999px;padding:.45em 1em;cursor:pointer;box-shadow:0 4px 0 var(--hard);transition:transform .06s}
+.chip-word:active{transform:translateY(2px);box-shadow:0 2px 0 var(--hard)}
+
+/* ===== match ===== */
+.match-example{text-align:center;font-size:.72rem;letter-spacing:1px;background:rgba(224,164,55,.25);
+  border:2px dashed var(--ink-soft);border-radius:12px;padding:8px 12px;margin-bottom:14px}
+.match-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.m-col{display:grid;gap:10px;align-content:start}
+.m-item{display:flex;align-items:center;gap:10px;min-height:56px;text-align:left;background:var(--cream);
+  border:2px solid var(--ink);border-radius:14px;padding:10px 14px;font-weight:800;font-size:.92rem;color:var(--ink);
+  cursor:pointer;box-shadow:0 4px 0 var(--hard);transition:transform .06s}
+.m-item svg{width:15px;height:15px;flex:none;color:var(--plum)}
+.m-item:active:not(:disabled){transform:translateY(2px)}
+.m-item.sel{outline:3px solid var(--mustard);outline-offset:1px}
+.m-item.locked{background:#DFF0E2;border-color:var(--green);color:#2E5A36;box-shadow:none;pointer-events:none}
+.m-item.locked svg{color:var(--green)}
+
+/* ===== stars ===== */
+svg.star{width:18px;height:18px;color:#C7B79F}
+svg.star.on{color:var(--ink);fill:var(--mustard)}
+.ft-stars svg.star{width:14px;height:14px}
+
+/* ===== finale ===== */
+.fin-top{border:3px solid var(--ink);border-radius:20px;overflow:hidden;box-shadow:0 8px 0 var(--hard);margin-bottom:18px}
+.fin-top img{width:100%;display:block;aspect-ratio:16/6;object-fit:cover}
+.fin-quote{font-family:Caveat,cursive;font-size:1.5rem;color:var(--ink-soft);max-width:680px;margin:0 auto 22px;text-align:center;line-height:1.3}
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.fin-card{border:3px solid var(--ink);border-radius:18px;background:var(--cream);box-shadow:0 6px 0 var(--hard);
+  padding:18px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.fin-card .mono{font-size:.66rem;letter-spacing:2px;color:var(--ink-soft)}
+.fin-big{font-family:Righteous;font-size:2.6rem;line-height:1}
+.rank-card{flex-direction:row;align-items:center;gap:14px}
+.rank-card svg{width:38px;height:38px;color:var(--c,var(--mustard))}
+.rank-card b{font-family:Righteous;font-size:1.3rem}
+.fin-table{border:3px solid var(--ink);border-radius:18px;overflow:hidden;background:var(--cream);box-shadow:0 6px 0 var(--hard);margin-bottom:22px}
+.ft-row{display:grid;grid-template-columns:44px 1fr 110px 90px;gap:8px;padding:11px 16px;align-items:center;font-size:.88rem}
+.ft-row:nth-child(odd){background:var(--paper)}
+.ft-head{background:var(--ink);color:var(--cream);letter-spacing:1px;font-size:.7rem}
+.ft-stars{display:flex;gap:2px}
+.m-actions{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap}
+.m-actions.center{justify-content:center;margin-top:6px}
+
+/* ===== modal ===== */
+.mback{position:fixed;inset:0;z-index:380;background:rgba(36,26,18,.55);backdrop-filter:blur(3px);
+  display:grid;place-items:center;padding:18px;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0}}
+.modal{background:var(--cream);border:3px solid var(--ink);border-radius:22px;box-shadow:0 10px 0 var(--hard);
+  width:min(94vw,560px);max-height:88vh;overflow:auto;padding:26px;animation:popIn .28s cubic-bezier(.2,.8,.3,1.3)}
+@keyframes popIn{from{opacity:0;transform:scale(.9) translateY(14px)}}
+.m-title{font-family:Righteous;font-size:1.1rem;letter-spacing:1px;color:var(--ink-soft)}
+.m-big{font-family:Righteous;font-size:1.7rem;margin:4px 0 12px}
+.modal p{margin:7px 0;line-height:1.5;font-weight:700}
+.brief-img{border:2px solid var(--ink);border-radius:14px;overflow:hidden;margin:10px 0 6px}
+.brief-img img{width:100%;display:block;aspect-ratio:16/7;object-fit:cover}
+.rstars{display:flex;justify-content:center;gap:12px;margin:14px 0 6px}
+svg.rstar{width:52px;height:52px;color:#CDBBA2}
+svg.rstar.on{color:var(--ink);fill:var(--mustard);animation:starPop .55s backwards}
+@keyframes starPop{0%{transform:scale(0) rotate(-45deg)}60%{transform:scale(1.3) rotate(8deg)}100%{transform:scale(1)}}
+.r-msg{text-align:center;font-family:Caveat,cursive;font-size:1.5rem;color:var(--ink-soft)}
+.r-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0 4px}
+.r-cell{border:2px solid var(--ink);border-radius:12px;padding:10px;text-align:center;background:var(--paper)}
+.r-cell span{display:block;font-size:.6rem;letter-spacing:2px;color:var(--ink-soft)}
+.r-cell b{font-size:1.2rem}
+
+/* ===== toast / float / preloader ===== */
+#toast-root{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;
+  align-items:center;gap:8px;z-index:400;pointer-events:none}
+.toast{display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--cream);border-radius:12px;
+  padding:.6em 1.1em;font-weight:800;font-size:.85rem;box-shadow:0 5px 0 rgba(0,0,0,.3);
+  transform:translateY(20px);opacity:0;transition:.3s}
+.toast.show{transform:none;opacity:1}
+.toast svg{width:15px;height:15px;color:var(--mustard)}
+.pop{position:fixed;z-index:350;transform:translate(-50%,-100%);font-family:Righteous;font-size:1.25rem;
+  pointer-events:none;animation:rise .95s forwards;text-shadow:0 2px 0 rgba(51,38,28,.25)}
+.p-good{color:#3E7D4A}.p-bad{color:#C0392B}
+@keyframes rise{to{transform:translate(-50%,-200%);opacity:0}}
+#preloader{position:fixed;inset:0;z-index:500;background:#241A12;display:grid;place-items:center;
+  transition:transform .8s cubic-bezier(.7,0,.2,1)}
+#preloader.away{transform:translateY(-102%)}
+.vhs{width:min(90vw,430px);border:3px solid #F7EEDF;border-radius:22px;background:#2E221A;color:#F7EEDF;
+  padding:32px 26px;text-align:center;box-shadow:0 0 0 6px #241A12, 0 24px 60px rgba(0,0,0,.6)}
+.vhs-label{font-family:Righteous;font-size:1.5rem;letter-spacing:1px}
+.vhs-sub{font-family:'Courier Prime';font-size:.66rem;letter-spacing:3px;color:#C9B48F;margin-top:6px}
+.vhs-track{font-family:'Courier Prime';font-size:.7rem;letter-spacing:2px;color:#8F7B5F;margin-top:18px}
+.btn-play{margin-top:20px;display:inline-flex;align-items:center;gap:10px;font-family:Righteous;font-size:1.45rem;
+  color:#FFF6E8;background:var(--terra);border:3px solid #F7EEDF;border-radius:18px;padding:.55em 1.6em;
+  cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.45);transition:transform .08s}
+.btn-play:hover{transform:scale(1.04)}
+.btn-play:active{transform:translateY(3px)}
+.btn-play svg{width:22px;height:22px}
+.vhs-hint{font-family:'Courier Prime';font-size:.62rem;letter-spacing:2px;color:#8F7B5F;margin-top:18px}
+.blink{animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.2}}
+
+/* ===== footer ===== */
+footer{text-align:center;padding:26px 18px 34px;color:var(--ink-soft);font-size:.8rem;font-weight:700}
+footer a{color:var(--terra);font-weight:900;text-decoration:underline}
+footer .mono{font-size:.72rem;letter-spacing:1px}
+
+/* ===== responsive ===== */
+@media (max-width:760px){
+  .scene{grid-template-columns:1fr}
+  .scene-img{border-right:none;border-bottom:2px solid var(--ink);min-height:180px;max-height:220px;overflow:hidden}
+  .match-wrap{grid-template-columns:1fr}
+  .fin-grid{grid-template-columns:1fr}
+  .reel.final{grid-template-columns:1fr}
+  .reel.final .reel-media{border-right:none;border-bottom:2px solid #1E150E}
+  .b2{display:none}
+  .dot{width:20px;height:20px;font-size:10px}
+  .ft-row{grid-template-columns:34px 1fr 92px 70px;font-size:.78rem}
+  .r-grid{grid-template-columns:1fr 1fr 1fr;gap:6px}
+}
+/* ===== reduced motion ===== */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<div id="grain" aria-hidden="true"></div>
+<div id="scanlines" aria-hidden="true"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<!-- ===== header console ===== -->
+<header id="console">
+  <div class="brand">
+    <span class="logo"><i data-lucide="coffee"></i></span>
+    <div>
+      <div class="b1">FRIENDS VOCAB ARCADE</div>
+      <div class="b2">EP.223 · THE ONE WITH THE CHICKEN POX</div>
+    </div>
+  </div>
+  <div id="dots" aria-label="Level progress">
+    <span class="dot">1</span><span class="dot">2</span><span class="dot">3</span><span class="dot">4</span><span class="dot">5</span>
+  </div>
+  <div class="hscore" title="Total best score"><i data-lucide="coins"></i><b id="hud-career">0</b></div>
+  <button id="btn-sound" class="icon-btn" data-action="sound" aria-pressed="true" aria-label="Toggle sound">
+    <i data-lucide="volume-2" class="ic-on"></i><i data-lucide="volume-x" class="ic-off"></i>
+  </button>
+  <button class="icon-btn" data-action="to-map" aria-label="Back to level map"><i data-lucide="map"></i></button>
+</header>
+
+<main id="app">
+  <!-- ===== intro screen ===== -->
+  <section id="screen-intro" class="screen active">
+    <div class="wrap intro">
+      <div class="tv-frame" data-c="#C96F4A">
+        <img class="slide-img" src="https://item1000-collab.github.io/ai/engoo/20261015-friends-223/slide-001.jpg"
+             data-initial="&#9749;" alt="Learn English with TV: The One with the Chicken Pox — study guide cover">
+        <div class="tv-bar mono"><span class="rec"></span>REC · CENTRAL PERK ARCHIVE · TAPE 223</div>
+      </div>
+      <h1>FRIENDS <span>VOCAB</span> ARCADE</h1>
+      <p class="sub mono">THE ONE WITH THE CHICKEN POX · SEASON 2 · EPISODE 23</p>
+      <p class="blurb">Phoebe's Navy boyfriend, Ryan, lands in New York for two perfect weeks — right as she catches
+        the chicken pox from baby Ben. Joey invents a fake corporate life as "Joseph" at Chandler's office, and
+        Monica hunts for a flaw in her perfectly normal boyfriend. Five retro mini-games, one warm cup of vocabulary.</p>
+      <div class="tagrow mono">
+        <span>FILL THE BLANKS</span><span>REAL OR DELUSION</span><span>QUIZ</span><span>MATCH THE MEANING</span><span>BONUS ROUND</span>
+      </div>
+      <button class="btn btn-primary btn-xl" data-action="play"><i data-lucide="play"></i>INSERT TAPE &amp; PLAY</button>
+      <p class="mini-note mono">ANY ORDER · PROGRESS SAVES AUTOMATICALLY · SOUND TOGGLE IN THE CONSOLE</p>
+    </div>
+  </section>
+
+  <!-- ===== level map screen ===== -->
+  <section id="screen-map" class="screen">
+    <div class="wrap">
+      <h2 class="screen-title">CHOOSE YOUR REEL</h2>
+      <p class="screen-sub mono">FIVE REELS · ANY ORDER · REPLAY ANYTIME</p>
+      <div id="map-grid" class="map-grid"></div>
+      <article id="final-card" class="reel final hidden" tabindex="0" role="button" data-action="final"
+               aria-label="Open the finale" data-c="#33261C">
+        <div class="reel-media">
+          <img class="slide-img" src="https://item1000-collab.github.io/ai/engoo/20261015-friends-223/slide-015.jpg"
+               data-initial="&#9733;" alt="Great job — neon coffee slide">
+          <span class="reel-tag">TOTAL REWIND</span>
+        </div>
+        <div class="reel-body">
+          <h3>THE FINALE</h3>
+          <p>Count your stars, bank your total score and claim your rank on the Couch of Fame.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===== level screen ===== -->
+  <section id="screen-level" class="screen">
+    <div class="wrap">
+      <div class="lvl-head">
+        <button class="btn btn-sm" data-action="to-map"><i data-lucide="arrow-left"></i>MAP</button>
+        <span class="chip mono" id="lvl-tag"></span>
+        <h2 id="lvl-title"></h2>
+        <span class="chip" id="lvl-char"></span>
+      </div>
+      <div class="scene">
+        <div class="scene-img" id="scene-imgbox" data-c="">
+          <img id="scene-img" class="slide-img" alt="Level scene" data-initial="">
+        </div>
+        <div class="scene-info">
+          <p class="kicker">OBJECTIVE</p><p id="scene-obj"></p>
+          <p class="kicker">TIP</p><p id="scene-tip" class="tip"></p>
+          <p id="scene-flavor" class="flavor"></p>
+        </div>
+      </div>
+      <div class="hud">
+        <div class="hud-cell"><span>REEL SCORE</span><b id="hud-score">0</b></div>
+        <div class="hud-cell"><span>STREAK</span><b id="hud-streak">0</b></div>
+        <div class="hud-cell"><span>SLIPS</span><b id="hud-slips">0</b></div>
+      </div>
+      <div id="game-root"></div>
+    </div>
+  </section>
+
+  <!-- ===== finale screen ===== -->
+  <section id="screen-finale" class="screen">
+    <div class="wrap">
+      <h2 class="screen-title">THAT'S A WRAP!</h2>
+      <p class="screen-sub mono">THE COUCH OF FAME AWAITS</p>
+      <div id="fin-body"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p class="mono">📎 LESSON FILES</p>
+  <p><a href="https://item1000-collab.github.io/ai/engoo/20261015-friends-223/223-90s-sitcom-english-guide.pdf"
+        target="_blank" rel="noopener noreferrer">223-90s-sitcom-english-guide.pdf</a>
+     — the full study guide (opens in a new tab)</p>
+  <p>Learn English with TV · <i>Friends</i> · The One with the Chicken Pox</p>
+</footer>
+
+<div id="modal-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+
+<!-- ===== preloader shell ===== -->
+<div id="preloader" role="dialog" aria-label="Press play to start">
+  <div class="vhs">
+    <div class="vhs-label">FRIENDS VOCAB ARCADE</div>
+    <div class="vhs-sub">EP.223 · THE ONE WITH THE CHICKEN POX</div>
+    <div class="vhs-track">TRACKING &#9646;&#9646;&#9646;&#9646;&#9645; LOADING REELS<span class="blink">_</span></div>
+    <button id="btn-play" class="btn-play"><i data-lucide="play"></i>PLAY</button>
+    <div class="vhs-hint">INSERT COIN · GRAB COFFEE · PRESS PLAY</div>
+  </div>
+</div>
+
+<noscript><p style="text-align:center;padding:20px">This arcade needs JavaScript to play. Please enable it.</p></noscript>
+
+<script>
+(function(){
+"use strict";
+
+/* ===== tiny helpers ===== */
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const pick  = a => a[Math.floor(Math.random()*a.length)];
+const esc   = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle = arr => { const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const refreshIcons = () => { try{ window.lucide && window.lucide.createIcons(); }catch(e){} };
+const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ===== toast notification ===== */
+function toast(msg, icon){
+  const t=document.createElement("div");
+  t.className="toast";
+  t.innerHTML='<i data-lucide="'+(icon||"sparkles")+'"></i><span>'+esc(msg)+"</span>";
+  $("#toast-root").appendChild(t);
+  refreshIcons();
+  requestAnimationFrame(()=>t.classList.add("show"));
+  setTimeout(()=>{ t.classList.remove("show"); setTimeout(()=>t.remove(),350); }, 2300);
+}
+
+/* ===== floating score pop ===== */
+function popFloat(x, y, text, good){
+  const s=document.createElement("span");
+  s.className="pop "+(good===false?"p-bad":"p-good");
+  s.textContent=text;
+  s.style.left=x+"px"; s.style.top=y+"px";
+  document.body.appendChild(s);
+  setTimeout(()=>s.remove(), 980);
+}
+
+/* ===== confetti ===== */
+let confBits=[], confRAF=null;
+function spawnConfetti(n){
+  if(reduced()) return;
+  const cv=$("#confetti"); if(!cv) return;
+  cv.width=innerWidth; cv.height=innerHeight;
+  const colors=["#C96F4A","#3E8E8C","#E0A437","#8E6C8A","#4E8A57","#FFFBF2"];
+  for(let i=0;i<n;i++){
+    confBits.push({ x:Math.random()*cv.width, y:-20-Math.random()*cv.height*0.3,
+      vx:(Math.random()-.5)*2.4, vy:2+Math.random()*3, s:5+Math.random()*7,
+      c:colors[i%colors.length], r:Math.random()*Math.PI, vr:(Math.random()-.5)*0.22 });
+  }
+  if(!confRAF) confLoop();
+}
+function confLoop(){
+  const cv=$("#confetti"), ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,cv.width,cv.height);
+  confBits=confBits.filter(p=>p.y<cv.height+40);
+  confBits.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.035; p.r+=p.vr;
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+    ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62); ctx.restore();
+  });
+  if(confBits.length){ confRAF=requestAnimationFrame(confLoop); }
+  else { confRAF=null; ctx.clearRect(0,0,cv.width,cv.height); }
+}
+
+/* ===== audio (all synthesized, Web Audio API) ===== */
+let actx=null;
+function ensureAudio(){
+  try{
+    if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
+    if(actx && actx.state==="suspended") actx.resume();
+  }catch(e){}
+}
+function tone(freq, dur, type, vol, when){
+  if(!actx || progress.muted) return;
+  type=type||"sine"; vol=vol==null?0.2:vol; when=when||0;
+  const t0=actx.currentTime+when;
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq,t0);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(Math.max(vol,0.001), t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  o.connect(g).connect(actx.destination);
+  o.start(t0); o.stop(t0+dur+0.06);
+}
+function noiseBurst(dur, vol){
+  if(!actx || progress.muted) return;
+  dur=dur||0.4; vol=vol==null?0.22:vol;
+  const rate=actx.sampleRate, buf=actx.createBuffer(1, Math.floor(rate*dur), rate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=actx.createBufferSource(); src.buffer=buf;
+  const f=actx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=1400;
+  const g=actx.createGain();
+  const t0=actx.currentTime;
+  g.gain.setValueAtTime(vol,t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  src.connect(f).connect(g).connect(actx.destination);
+  src.start(t0);
+}
+const SFX={
+  click(){ tone(660,0.06,"square",0.13); },
+  flip(){ tone(440,0.05,"triangle",0.16); tone(560,0.07,"triangle",0.16,0.05); },
+  correct(){ tone(659,0.09,"triangle",0.22); tone(880,0.15,"triangle",0.22,0.09); },
+  wrong(){ tone(196,0.2,"sawtooth",0.18); tone(147,0.28,"sawtooth",0.16,0.06); },
+  match(){ tone(523,0.08,"sine",0.2); tone(659,0.08,"sine",0.2,0.07); tone(784,0.14,"sine",0.2,0.14); },
+  fanfare(){ [523,659,784,1047].forEach((f,i)=>tone(f,0.16,"triangle",0.22,i*0.11)); noiseBurst(0.5,0.16); },
+  tick(){ tone(1250,0.03,"square",0.07); },
+  cheer(){ noiseBurst(0.9,0.26); tone(784,0.2,"triangle",0.18,0.05); tone(1047,0.3,"triangle",0.18,0.2); }
+};
+document.addEventListener("pointerdown", ensureAudio, {passive:true});
+
+/* ===== static data ===== */
+const IMG="https://item1000-collab.github.io/ai/engoo/20261015-friends-223/";
+
+/* SCENES: level definitions (free order, no locks) */
+const SCENES=[
+  { id:"l1", num:1, title:"The Itchy Romance", char:"PHOEBE", color:"#C96F4A",
+    slide:"slide-003.jpg", type:"fill", tag:"FILL THE BLANKS",
+    obj:"Tap a blank, then tap the matching word in the bank. Words that bounce back cost \u221225 points each.",
+    tip:"Read the full sentence out loud first — idioms hate lonely prepositions.",
+    flavor:"Two weeks of love, one pair of oven mitts." },
+  { id:"l2", num:2, title:"Real or Delusion?", char:"CHANDLER", color:"#3E8E8C",
+    slide:"slide-012.jpg", type:"tf", tag:"TRUE / FALSE",
+    obj:"Judge each statement before the tape runs out. The explanation stays on screen until you press NEXT.",
+    tip:"Arrow keys work: \u2190 for REAL, \u2192 for DELUSION, Enter for NEXT.",
+    flavor:"He resurfaces every couple of years. Allegedly." },
+  { id:"l3", num:3, title:"The Office Imposter", char:"JOEY", color:"#E0A437",
+    slide:"slide-007.jpg", type:"mc", tag:"MULTIPLE CHOICE",
+    obj:"Answer 8 questions about Joseph's brilliant office career. One attempt per question.",
+    tip:"Keys 1\u20133 pick an option. A wrong answer still teaches you something.",
+    flavor:"Joseph has a wife. Her name is Karen. Probably." },
+  { id:"l4", num:4, title:"Psychological Evaluation", char:"MONICA", color:"#8E6C8A",
+    slide:"slide-009.jpg", type:"match", tag:"MATCH THE MEANING",
+    obj:"Match 6 words with their meanings. Locked pairs turn green; every slip costs \u221225 points.",
+    tip:"Start with the pairs you know — the rest eliminate themselves.",
+    flavor:"The duvet tag goes bottom right. Always." },
+  { id:"l5", num:5, title:"Prime Time Bonus", char:"GUNTHER", color:"#4E8A57",
+    slide:"slide-011.jpg", type:"bonus", tag:"BONUS ROUND",
+    obj:"750 seconds of rapid questions from every reel. Streaks multiply your score up to \u00D74.",
+    tip:"Wrong answers reset the multiplier — protect the streak like it is the last muffin.",
+    flavor:"One more coffee before the credits roll." }
+];
+const byId = id => SCENES.find(s=>s.id===id);
+
+/* Level 1 question set — fill in the blanks */
+const L1_FILL=[
+  { q:"My boss was really angry because I ___ the ball on the Lender project.", a:"DROPPED" },
+  { q:"You need to cut the new guy some ___ \u2014 it's only his first day!", a:"SLACK" },
+  { q:"Her strange ___ is that she always separates her socks by color.", a:"QUIRK" },
+  { q:"Ryan is Phoebe's ___ from the Navy.", a:"OLD FLAME" },
+  { q:"\u201CHe's my submarine guy. He ___ every couple of years...\u201D", a:"RESURFACES" },
+  { q:"Phoebe hasn't ___ the chicken pox before, so she feels left out.", a:"CAUGHT" },
+  { q:"Richard jokes he would ___ if his socks got mixed up.", a:"FREAK OUT" },
+  { q:"\u201CI guess the panty raid last night was totally ___.\u201D", a:"UNCALLED FOR" },
+  { q:"To make some money, Joey gets a ___ job at Chandler's company.", a:"TEMPORARY" },
+  { q:"Chandler offers Joey an ___ processing job at the bottom of the ladder.", a:"ENTRY-LEVEL" }
+];
+const L1_EXTRA=["NEUROTIC","SCAR"];
+
+/* Level 2 question set — real or delusion */
+const L2_TF=[
+  { t:"Ryan leaves his submarine every single month to visit Phoebe in New York.", real:false,
+    why:"He resurfaces every couple of years — the guide says so, not every month." },
+  { t:"Joey actually has a wife named Karen and two daughters.", real:false,
+    why:"Karen, Ashley and Brittany belong to the imaginary life of \u201CJoseph\u201D, not to Joey." },
+  { t:"Monica is upset because Richard doesn't have any strange, obsessive habits.", real:true,
+    why:"She desperately wants him to have a \u201Cthing\u201D so she isn't the only crazy one." },
+  { t:"Phoebe caught the chicken pox from baby Ben.", real:true,
+    why:"The guide is explicit: Phoebe just caught the chicken pox from baby Ben." },
+  { t:"Phoebe and Ryan tape oven mitts to their hands so they don't scratch.", real:true,
+    why:"Taping oven mitts to their hands stops the scratching — and the scarring." },
+  { t:"\u201CJoseph\u201D stays humble and quiet until his last day at the office.", real:false,
+    why:"Joseph becomes arrogant, demands final numbers and clashes with the boss." },
+  { t:"Chandler takes revenge by pretending to have an affair with the fictional Karen.", real:true,
+    why:"Chandler's revenge: he pretends to have an affair with Joseph's imaginary wife." },
+  { t:"Richard's real quirk is folding the toilet paper into a point.", real:false,
+    why:"Folding toilet paper into a point is Monica's move. Richard claims he separates sweat socks from dress socks." },
+  { t:"Monica lines her duvet tag up with the bottom right corner.", real:true,
+    why:"Monica ensures her duvet tag is at the bottom right — rules are rules." },
+  { t:"Ryan says: \u201CIf I had one wish, it would be to build a time machine and go back to when I was 7.\u201D", real:true,
+    why:"A direct quote — and a perfect example of the 2nd Conditional." }
+];
+
+/* Level 3 question set — multiple choice (correct option is listed first, shuffled at render) */
+const L3_MC=[
+  { q:"Why does Joey take a job at Chandler's company?",
+    ok:"To make some money", wrong:["To find a wife named Karen","To spy on Chandler's emails"],
+    why:"The guide is clear: to make some money, Joey gets a temporary job putting numbers from one column into another." },
+  { q:"What does a data processor at Joey's temp job actually do?",
+    ok:"Puts numbers from one column into another", wrong:["Writes speeches for the boss","Designs the office website"],
+    why:"Putting numbers from one column into another. Glamorous? No. Paid? Also barely." },
+  { q:"Who is \u201CJoseph\u201D?",
+    ok:"Joey's intense imaginary office character", wrong:["Chandler's roommate from college","The boss's nephew"],
+    why:"Because he is an actor, Joey creates an intense imaginary character named \u2018Joseph\u2019 to help him do the job." },
+  { q:"How does \u201CJoseph's\u201D family suddenly grow?",
+    ok:"He claims a wife, Karen, and two daughters", wrong:["He adopts three office cats","He marries Rachel's cousin"],
+    why:"The escalation reel: suddenly has a wife (Karen) and two daughters (Ashley & Brittany)." },
+  { q:"What does Mr. Douglas suspect?",
+    ok:"That Chandler dropped the ball on the Lender project", wrong:["That Chandler is secretly an actor","That the coffee machine is broken"],
+    why:"Mr. Douglas suspects Chandler dropped the ball on the Lender project — thanks, \u2018Joseph\u2019." },
+  { q:"How does Chandler take revenge on \u201CJoseph\u201D?",
+    ok:"By pretending to have an affair with the fictional Karen", wrong:["By deleting Joseph's spreadsheets","By quitting the company"],
+    why:"Chandler fights imagination with imagination: he pretends to have an affair with the fictional Karen." },
+  { q:"What does Richard invent to calm Monica down?",
+    ok:"A quirk about sleeping on the west side of the bed", wrong:["A fear of elevators","An allergy to coffee"],
+    why:"From the Episode Matrix: Richard makes up a quirk about sleeping on the west side of the bed." },
+  { q:"According to Ryan, what would he build with one wish?",
+    ok:"A time machine", wrong:["A bigger submarine","A diner in Montana"],
+    why:"\u201CIf I had one wish, it would be to build a time machine and go back to when I was 7.\u201D" }
+];
+const MC_OK=["Could I BE any more right?","How you doin' — nailed it!","JOSEPH would high-five you. He can't. He's imaginary.","The boss nods approvingly. Nice."];
+const MC_NO=["Ehh... Joseph made that part up too.","That answer just dropped the ball.","My brain clocked out early. Sorry.","Delusion-level answer, my friend."];
+
+/* Level 4 question set — match the meaning */
+const L4_PAIRS=[
+  ["OLD FLAME","a former romantic partner"],
+  ["RESURFACE","to appear again after being hidden"],
+  ["DROP THE BALL","to make a mistake or fail to do your job"],
+  ["CUT SOMEONE SOME SLACK","to treat someone less strictly"],
+  ["RUFFLE FEATHERS","to cause others to become annoyed or upset"],
+  ["QUIRK","a strange or unusual personal habit"]
+];
+
+/* Level 5 question set — bonus round (correct option first, shuffled at render) */
+const L5_BONUS=[
+  { q:"\u201COld flame\u201D means\u2026", ok:"a former romantic partner", wrong:["a burnt breakfast","a cold cup of coffee"] },
+  { q:"Ryan shows up in New York\u2026", ok:"every couple of years", wrong:["every single month","twice a week"] },
+  { q:"Phoebe caught the chicken pox from\u2026", ok:"baby Ben", wrong:["Chandler","Gunther"] },
+  { q:"Joey's office alter ego is named\u2026", ok:"Joseph", wrong:["Josiah","Joester"] },
+  { q:"Joseph's imaginary daughters are\u2026", ok:"Ashley & Brittany", wrong:["Monica & Rachel","Salt & Pepper"] },
+  { q:"\u201CDrop the ball\u201D means\u2026", ok:"to fail to do your job", wrong:["to play sports badly","to celebrate too loudly"] },
+  { q:"\u201CCut someone some slack\u201D means\u2026", ok:"to treat someone less strictly", wrong:["to cut their salary","to hand them a rope"] },
+  { q:"\u201CRuffle feathers\u201D means\u2026", ok:"to annoy or upset people", wrong:["to groom a bird","to fix a collar"] },
+  { q:"Monica desperately wants Richard to have\u2026", ok:"a strange habit", wrong:["a new haircut","a boat"] },
+  { q:"Richard's claimed quirk: separating\u2026", ok:"sweat socks from dress socks", wrong:["tea from coffee","fact from fiction"] },
+  { q:"Who suspects Chandler dropped the ball?", ok:"Mr. Douglas", wrong:["Mr. Heckles","Mr. Bing"] },
+  { q:"Phoebe and Ryan tape ___ to their hands.", ok:"oven mitts", wrong:["postage stamps","bananas"] },
+  { q:"With one wish, Ryan would build\u2026", ok:"a time machine", wrong:["a pizza oven","a yacht"] },
+  { q:"Monica folds the toilet paper into\u2026", ok:"a point", wrong:["a paper crane","two halves"] },
+  { q:"\u201CIf I had one wish\u201D — why \u201Chad\u201D?", ok:"2nd Conditional: an imaginary present", wrong:["He is describing the past","It is a typo"] }
+];
+
+/* Ranks depend on the total banked score */
+const RANKS=[
+  { min:7500, name:"SITCOM LEGEND",        icon:"trophy",       color:"#E0A437" },
+  { min:5500, name:"SENIOR DATA PROCESSOR",icon:"award",        color:"#3E8E8C" },
+  { min:3600, name:"CENTRAL PERK REGULAR", icon:"coffee",       color:"#C96F4A" },
+  { min:1800, name:"ENTRY-LEVEL VIEWER",   icon:"clapperboard", color:"#8E6C8A" },
+  { min:0,    name:"TEMP WITH DREAMS",     icon:"zap",          color:"#5C4A3A" }
+];
+
+/* ===== persistence (localStorage, versioned, private-mode safe) ===== */
+const SAVE_KEY="friends_vocab_arcade_v1";
+function loadProgress(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(raw){ const p=JSON.parse(raw); if(p && p.v===1) return p; }
+  }catch(e){}
+  return { v:1, muted:false, lv:{} };
+}
+function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
+let progress=loadProgress();
+const lvRec   = id => progress.lv[id] || { best:0, stars:0 };
+const career  = () => SCENES.reduce((s,sc)=>s+lvRec(sc.id).best, 0);
+const totalStars = () => SCENES.reduce((s,sc)=>s+lvRec(sc.id).stars, 0);
+const allDone = () => SCENES.every(sc=>lvRec(sc.id).stars>0);
+
+/* ===== session + cleanup ===== */
+let session=null, cleanups=[];
+function setCleanup(fn){ cleanups.push(fn); }
+function callCleanup(){ cleanups.forEach(f=>{ try{f();}catch(e){} }); cleanups=[]; }
+function later(fn, ms){ const t=setTimeout(fn,ms); setCleanup(()=>clearTimeout(t)); return t; }
+function every(fn, ms){ const t=setInterval(fn,ms); setCleanup(()=>clearInterval(t)); return t; }
+
+/* ===== HUD ===== */
+function updateHUD(){
+  const c=$("#hud-career"); if(c) c.textContent=career();
+  $$("#dots .dot").forEach((d,i)=>{
+    const sc=SCENES[i], on=lvRec(sc.id).stars>0;
+    d.classList.toggle("on",on);
+    d.style.background=on?sc.color:"";
+  });
+}
+function renderSound(){
+  const b=$("#btn-sound");
+  b.classList.toggle("muted", progress.muted);
+  b.setAttribute("aria-pressed", String(!progress.muted));
+  b.setAttribute("aria-label", progress.muted?"Turn sound on":"Turn sound off");
+}
+
+/* ===== screens ===== */
+function showScreen(name){
+  $$(".screen").forEach(s=>s.classList.toggle("active", s.id==="screen-"+name));
+  window.scrollTo(0,0);
+  refreshIcons();
+}
+
+/* ===== image fallback (offline-safe placeholders) ===== */
+function guardImages(scope){
+  $$("img.slide-img", scope).forEach(img=>{
+    const kill=()=>{
+      if(img.dataset.dead) return;
+      img.dataset.dead="1";
+      const d=document.createElement("div");
+      d.className="img-fallback";
+      const host=img.closest("[data-c]");
+      const c=(host&&host.dataset.c)||"#C96F4A";
+      d.style.background="linear-gradient(135deg, "+c+", #33261C)";
+      d.textContent=img.dataset.initial||"\uD83D\uDCFA";
+      img.replaceWith(d);
+    };
+    img.addEventListener("error", kill, {once:true});
+    if(img.complete && img.naturalWidth===0) kill();
+  });
+}
+
+/* ===== modal system ===== */
+const modalRoot=$("#modal-root");
+function modalOpen(){ return !!modalRoot.firstChild; }
+function closeModal(){ modalRoot.innerHTML=""; }
+function openModal(html){
+  closeModal();
+  const back=document.createElement("div");
+  back.className="mback";
+  back.innerHTML='<div class="modal" role="dialog" aria-modal="true">'+html+"</div>";
+  back.addEventListener("click", e=>{ if(e.target===back) closeModal(); });
+  modalRoot.appendChild(back);
+  refreshIcons();
+  guardImages(back);
+  const prim=$(".primary", back);
+  if(prim) setTimeout(()=>prim.focus(), 60);
+  return back;
+}
+
+/* ===== preloader ===== */
+ $("#btn-play").addEventListener("click", ()=>{
+  ensureAudio(); SFX.click();
+  const p=$("#preloader");
+  p.classList.add("away");
+  setTimeout(()=>p.remove(), 900);
+});
+
+/* ===== level map ===== */
+function starRow(n, extra){
+  let h="";
+  for(let i=0;i<3;i++) h+='<i data-lucide="star" class="star '+(i<n?"on":"")+" "+(extra||"")+'"></i>';
+  return h;
+}
+function renderMap(){
+  const grid=$("#map-grid");
+  let html="";
+  SCENES.forEach(sc=>{
+    const p=lvRec(sc.id);
+    html+=
+    '<article class="reel" tabindex="0" role="button" data-action="open-level" data-level="'+sc.id+'" '+
+      'style="--c:'+sc.color+'" aria-label="Open level '+sc.num+': '+esc(sc.title)+'">'+
+      '<div class="reel-media" data-c="'+sc.color+'">'+
+        '<img class="slide-img" src="'+IMG+sc.slide+'" data-initial="'+sc.char[0]+'" alt="'+esc(sc.title)+' preview">'+
+        '<span class="reel-num">'+sc.num+"</span>"+
+        '<span class="reel-tag">'+sc.tag+"</span>"+
+      "</div>"+
+      '<div class="reel-body">'+
+        "<h3>"+esc(sc.title)+"</h3>"+
+        '<div class="reel-meta">'+
+          '<span class="chip"><i data-lucide="user"></i>'+sc.char+"</span>"+
+          '<span class="chip best mono"><i data-lucide="coins"></i>'+p.best+"</span>"+
+        "</div>"+
+        '<div class="reel-stars">'+starRow(p.stars)+"</div>"+
+        '<p class="flavor">\u201C'+esc(sc.flavor)+'\u201D</p>'+
+      "</div>"+
+    "</article>";
+  });
+  grid.innerHTML=html;
+  $("#final-card").classList.toggle("hidden", !allDone());
+  refreshIcons();
+  guardImages(grid);
+}
+
+/* ===== level shell ===== */
+function renderLevelHead(sc){
+  $("#lvl-tag").textContent="REEL "+sc.num+" · "+sc.tag;
+  $("#lvl-title").textContent=sc.title;
+  $("#lvl-char").innerHTML='<i data-lucide="user"></i>'+sc.char;
+  const box=$("#scene-imgbox");
+  box.dataset.c=sc.color;
+  box.style.background=sc.color;
+  const img=$("#scene-img");
+  img.src=IMG+sc.slide; img.dataset.initial=sc.char[0]; img.dataset.dead="";
+  img.onerror=()=>{ /* handled by guardImages below */ };
+  $("#scene-obj").textContent=sc.obj;
+  $("#scene-tip").textContent=sc.tip;
+  $("#scene-flavor").textContent="\u201C"+sc.flavor+"\u201D";
+  refreshIcons();
+  guardImages($("#screen-level"));
+}
+function updateLevelHUD(){
+  if(!session) return;
+  const sc=$("#hud-score"), st=$("#hud-streak"), sl=$("#hud-slips");
+  sc.textContent=session.score;
+  st.textContent=session.streak>0 ? "\u00D7"+(1+0.25*Math.min(session.streak,12)).toFixed(2) : "0";
+  sl.textContent=session.mistakes;
+}
+function addScore(pts){
+  session.score+=pts;
+  const el=$("#hud-score");
+  el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+  updateLevelHUD();
+}
+function subScore(pts){
+  session.score=Math.max(0, session.score-pts);
+  updateLevelHUD();
+}
+function startLevel(id){
+  callCleanup(); closeModal();
+  const sc=byId(id); if(!sc) return;
+  session={ id:id, mistakes:0, streak:0, score:0, done:false };
+  renderLevelHead(sc);
+  showScreen("level");
+  updateLevelHUD();
+  RUNNERS[sc.type]($("#game-root"), sc);
+}
+function toMap(){
+  callCleanup(); closeModal();
+  session=null;
+  showScreen("map");
+}
+function openLevel(id){
+  const sc=byId(id); if(!sc) return;
+  openModal(
+    '<p class="m-title mono">REEL '+sc.num+" OF 5 · "+sc.tag+"</p>"+
+    '<h2 class="m-big" style="color:'+sc.color+'">'+esc(sc.title)+"</h2>"+
+    '<div class="brief-img" data-c="'+sc.color+'">'+
+      '<img class="slide-img" src="'+IMG+sc.slide+'" data-initial="'+sc.char[0]+'" alt="'+esc(sc.title)+' scene">'+
+    "</div>"+
+    "<p><b>Character:</b> "+sc.char+"</p>"+
+    "<p><b>Objective:</b> "+esc(sc.obj)+"</p>"+
+    "<p><b>Tip:</b> "+esc(sc.tip)+"</p>"+
+    '<p class="flavor">\u201C'+esc(sc.flavor)+'\u201D</p>'+
+    '<div class="m-actions">'+
+      '<button class="btn" data-action="to-map">BACK TO MAP</button>'+
+      '<button class="btn btn-primary primary" data-action="start-level" data-level="'+sc.id+'">START \u25B6</button>'+
+    "</div>"
+  );
+}
+function endLevel(){
+  if(!session || session.done) return;
+  session.done=true;
+  callCleanup();
+  const sc=byId(session.id);
+  const st = session.mistakes===0 ? 3 : (session.mistakes<=2 ? 2 : 1);
+  const prev=lvRec(sc.id);
+  const newBest=session.score>prev.best;
+  progress.lv[sc.id]={ best:Math.max(prev.best, session.score), stars:Math.max(prev.stars, st) };
+  saveProgress(); updateHUD();
+  if(st===3){ SFX.fanfare(); spawnConfetti(160); }
+  else { SFX.cheer(); if(st===2) spawnConfetti(80); }
+  if(newBest && prev.best>0) toast("NEW BEST SCORE!","trophy");
+  const wasLast=allDone();
+  if(wasLast) setTimeout(()=>toast("ALL REELS COMPLETE — THE FINALE IS OPEN!","party-popper"), 700);
+  const starHtml=[0,1,2].map(i=>
+    '<i data-lucide="star" class="rstar '+(i<st?"on":"")+'" style="animation-delay:'+(i*0.16)+'s"></i>').join("");
+  const msg = st===3 ? "Flawless reel! Direct-to-series material."
+            : st===2 ? "Nice take! A couple of bloopers in the cut."
+            : "It's in the can — barely. Rewatch the guide and try again.";
+  const finBtn = wasLast
+    ? '<button class="btn btn-mustard primary" data-action="goto-finale"><i data-lucide="trophy"></i>FINALE \u25B6</button>'
+    : '<button class="btn btn-primary primary" data-action="close-modal">CONTINUE</button>';
+  openModal(
+    '<h3 class="m-title">'+esc(sc.title).toUpperCase()+" — COMPLETE</h3>"+
+    '<div class="rstars">'+starHtml+"</div>"+
+    '<p class="r-msg">'+msg+"</p>"+
+    '<div class="r-grid mono">'+
+      '<div class="r-cell"><span>SCORE</span><b>'+session.score+"</b></div>"+
+      '<div class="r-cell"><span>BEST</span><b>'+progress.lv[sc.id].best+"</b></div>"+
+      '<div class="r-cell"><span>SLIPS</span><b>'+session.mistakes+"</b></div>"+
+    "</div>"+
+    '<div class="m-actions">'+
+      '<button class="btn" data-action="to-map">MAP</button>'+
+      '<button class="btn btn-teal" data-action="start-level" data-level="'+sc.id+'"><i data-lucide="rotate-ccw"></i>REPLAY</button>'+
+      finBtn+
+    "</div>"
+  );
+}
+
+/* ===== timer helper (per-card and global timers) ===== */
+function makeTimer(scope, secs, onEnd){
+  const bar=$(".timer", scope), fill=$(".timer-fill", scope), num=$(".timer-num", scope);
+  let rem=secs;
+  function paint(){
+    fill.style.width=clamp(rem/secs*100,0,100)+"%";
+    bar.classList.toggle("crit", rem/secs<=0.1 && rem>0);
+    num.textContent=Math.floor(rem/60)+":"+String(rem%60).padStart(2,"0");
+  }
+  paint();
+  const iv=every(()=>{
+    rem--;
+    paint();
+    if(rem<=60 && rem>0) SFX.tick();
+    if(rem<=0){ clearInterval(iv); onEnd && onEnd(); }
+  }, 1000);
+  return { stop(){ clearInterval(iv); }, get remaining(){ return rem; } };
+}
+
+/* ============================================================
+   MINI-GAME 1 — FILL IN THE BLANKS
+   ============================================================ */
+function runFill(root, sc){
+  let sel=-1, done=0;
+  const bank=shuffle(L1_FILL.map(it=>it.a).concat(L1_EXTRA));
+  const listHtml=L1_FILL.map((it,i)=>{
+    const parts=it.q.split("___");
+    return '<li class="fill-line"><span>'+parts[0]+"</span>"+
+      '<button class="blank" data-blank="'+i+'" aria-label="Blank '+(i+1)+'">&nbsp;?&nbsp;</button>'+
+      "<span>"+parts[1]+"</span></li>";
+  }).join("");
+  const bankHtml=bank.map(w=>'<button class="chip-word" data-word="'+esc(w)+'">'+esc(w)+"</button>").join("");
+  root.innerHTML=
+    '<ul class="fill-list">'+listHtml+"</ul>"+
+    '<div class="bank" aria-label="Word bank">'+bankHtml+"</div>";
+  const handler=e=>{
+    const b=e.target.closest(".blank");
+    if(b){
+      if(b.classList.contains("filled")) return;
+      $$(".blank", root).forEach(x=>x.classList.remove("sel"));
+      b.classList.add("sel"); sel=+b.dataset.blank; SFX.click();
+      return;
+    }
+    const c=e.target.closest(".chip-word");
+    if(!c) return;
+    const w=c.dataset.word;
+    if(sel<0){
+      toast("Pick a blank first!","pencil");
+      $$(".blank:not(.filled)", root).forEach(x=>{
+        x.classList.add("pulse"); later(()=>x.classList.remove("pulse"),520);
+      });
+      return;
+    }
+    const blank=$$('.blank', root)[sel];
+    if(L1_FILL[sel].a===w){
+      blank.textContent="\u00A0"+w+"\u00A0";
+      blank.classList.add("filled"); blank.classList.remove("sel");
+      c.remove(); sel=-1; done++;
+      session.streak++;
+      const pts=100+10*Math.min(session.streak-1,10);
+      addScore(pts); SFX.correct();
+      const r=blank.getBoundingClientRect();
+      popFloat(r.left+r.width/2, r.top, "+"+pts, true);
+      if(done===L1_FILL.length) later(()=>endLevel(), 500);
+    }else{
+      SFX.wrong();
+      c.classList.add("shake"); later(()=>c.classList.remove("shake"),500);
+      session.streak=0; session.mistakes++;
+      subScore(25);
+      const r=c.getBoundingClientRect();
+      popFloat(r.left+r.width/2, r.top, "\u221225", false);
+    }
+  };
+  root.addEventListener("click", handler);
+  setCleanup(()=>root.removeEventListener("click", handler));
+}
+
+/* ============================================================
+   MINI-GAME 2 — REAL OR DELUSION (True/False with NEXT gate)
+   ============================================================ */
+function runTF(root, sc){
+  let idx=0, answered=false, tmr=null;
+  const total=L2_TF.length;
+  function card(){
+    answered=false;
+    const st=L2_TF[idx];
+    root.innerHTML=
+      '<div class="timer-row"><div class="timer"><div class="timer-fill"></div></div><span class="timer-num mono">10:00</span></div>'+
+      '<div class="tf-top"><span class="chip mono">CARD '+(idx+1)+"/"+total+'</span>'+
+      '<span class="chip mono">STREAK '+session.streak+"</span></div>"+
+      '<div class="tf-card">'+
+        '<p class="kicker">REAL OR DELUSION?</p>'+
+        '<p class="tf-q">'+st.t+"</p>"+
+        '<div class="tf-btns">'+
+          '<button class="tf-btn real" data-tf="1" aria-label="Answer real"><i data-lucide="check"></i>REAL</button>'+
+          '<button class="tf-btn delu" data-tf="0" aria-label="Answer delusion"><i data-lucide="x"></i>DELUSION</button>'+
+        "</div>"+
+        '<div class="explain" role="status" hidden></div>'+
+        '<div class="next-row" hidden><button class="btn btn-primary next">NEXT STATEMENT</button></div>'+
+      "</div>";
+    refreshIcons();
+    tmr=makeTimer(root, 600, ()=>answer(null));
+  }
+  function answer(choice){
+    if(answered) return;
+    answered=true;
+    if(tmr) tmr.stop();
+    const st=L2_TF[idx];
+    const ok = choice!==null && choice===st.real;
+    const realBtn=$(".tf-btn.real", root), deluBtn=$(".tf-btn.delu", root);
+    realBtn.classList.add(st.real?"good":"dim");
+    deluBtn.classList.add(!st.real?"good":"dim");
+    realBtn.disabled=deluBtn.disabled=true;
+    if(choice!==null){
+      const chosen=choice?realBtn:deluBtn;
+      if(!ok){ chosen.classList.add("bad","shake"); later(()=>chosen.classList.remove("shake"),500); }
+      const r=chosen.getBoundingClientRect();
+      if(ok){
+        session.streak++;
+        const pts=100+25*Math.min(session.streak-1,8);
+        addScore(pts); SFX.correct();
+        popFloat(r.left+r.width/2, r.top, "+"+pts, true);
+      }else{
+        session.mistakes++; session.streak=0; SFX.wrong();
+        popFloat(r.left+r.width/2, r.top, "SLIP", false);
+      }
+    }else{
+      session.mistakes++; session.streak=0; SFX.wrong();
+    }
+    const ex=$(".explain", root);
+    ex.hidden=false;
+    ex.innerHTML="<b>"+(choice===null ? "TIME'S UP!" : ok ? "CORRECT!" : "NOPE — DELUSION DETECTED.")+"</b> "+st.why;
+    const nr=$(".next-row", root);
+    nr.hidden=false;
+    $(".next", root).textContent = idx===total-1 ? "SEE RESULTS" : "NEXT STATEMENT";
+    updateLevelHUD();
+    $(".next", root).focus();
+  }
+  function next(){
+    idx++;
+    if(idx>=total){ endLevel(); return; }
+    card();
+  }
+  const click=e=>{
+    const b=e.target.closest(".tf-btn");
+    if(b && !answered){ answer(b.dataset.tf==="1"); return; }
+    if(e.target.closest(".next")) next();
+  };
+  const key=e=>{
+    if(answered && e.key==="Enter"){
+      const nb=$(".next", root);
+      if(document.activeElement===nb) return; /* native click handles it */
+      e.preventDefault(); nb && nb.click();
+      return;
+    }
+    if(!answered){
+      if(e.key==="ArrowLeft"){ e.preventDefault(); answer(true); }
+      if(e.key==="ArrowRight"){ e.preventDefault(); answer(false); }
+    }
+  };
+  root.addEventListener("click", click);
+  document.addEventListener("keydown", key);
+  setCleanup(()=>{ root.removeEventListener("click", click); document.removeEventListener("keydown", key); if(tmr)tmr.stop(); });
+  card();
+}
+
+/* ============================================================
+   MINI-GAME 3 — MULTIPLE CHOICE (one attempt, character reaction)
+   ============================================================ */
+function runMC(root, sc){
+  let idx=0, answered=false;
+  const total=L3_MC.length;
+  function card(){
+    answered=false;
+    const it=L3_MC[idx];
+    const opts=shuffle([it.ok].concat(it.wrong));
+    root.innerHTML=
+      '<div class="tf-card">'+
+        '<div class="tf-top"><span class="chip mono">Q '+(idx+1)+"/"+total+'</span>'+
+        '<span class="chip mono">STREAK '+session.streak+"</span></div>"+
+        '<p class="tf-q">'+it.q+"</p>"+
+        '<div class="opts">'+opts.map((o,i)=>
+          '<button class="opt" data-ok="'+(o===it.ok)+'"><span class="letter mono">'+(i+1)+"</span><span>"+esc(o)+"</span></button>"
+        ).join("")+"</div>"+
+        '<div class="react" hidden></div>'+
+        '<div class="explain" role="status" hidden></div>'+
+        '<div class="next-row" hidden><button class="btn btn-primary next">'+(idx===total-1?"SEE RESULTS":"NEXT QUESTION")+"</button></div>"+
+      "</div>";
+    refreshIcons();
+  }
+  function answer(btn){
+    if(answered) return;
+    answered=true;
+    const it=L3_MC[idx];
+    const ok=btn.dataset.ok==="true";
+    $$(".opt", root).forEach(b=>{
+      b.disabled=true;
+      if(b.dataset.ok==="true") b.classList.add("good");
+      else if(b!==btn) b.classList.add("dim");
+    });
+    if(ok){
+      session.streak++;
+      const pts=100+15*Math.min(session.streak-1,10);
+      addScore(pts); SFX.correct();
+      const r=btn.getBoundingClientRect();
+      popFloat(r.left+r.width/2, r.top, "+"+pts, true);
+    }else{
+      btn.classList.remove("dim");
+      btn.classList.add("bad","shake");
+      later(()=>btn.classList.remove("shake"),500);
+      session.mistakes++; session.streak=0; SFX.wrong();
+    }
+    const rc=$(".react", root);
+    rc.hidden=false;
+    rc.innerHTML='<span class="avatar">JO</span><span><b>JOEY:</b> '+esc(ok?pick(MC_OK):pick(MC_NO))+"</span>";
+    const ex=$(".explain", root);
+    ex.hidden=false;
+    ex.innerHTML=it.why;
+    $(".next-row", root).hidden=false;
+    updateLevelHUD();
+    $(".next", root).focus();
+  }
+  function next(){
+    idx++;
+    if(idx>=total){ endLevel(); return; }
+    card();
+  }
+  const click=e=>{
+    const o=e.target.closest(".opt");
+    if(o && !answered){ answer(o); return; }
+    if(e.target.closest(".next")) next();
+  };
+  const key=e=>{
+    if(answered && e.key==="Enter"){
+      const nb=$(".next", root);
+      if(document.activeElement===nb) return;
+      e.preventDefault(); nb && nb.click();
+      return;
+    }
+    if(!answered && /^[1-3]$/.test(e.key)){
+      const o=$$(".opt", root)[+e.key-1];
+      if(o) o.click();
+    }
+  };
+  root.addEventListener("click", click);
+  document.addEventListener("keydown", key);
+  setCleanup(()=>{ root.removeEventListener("click", click); document.removeEventListener("keydown", key); });
+  card();
+}
+
+/* ============================================================
+   MINI-GAME 4 — MATCH THE MEANING (click word → click meaning)
+   ============================================================ */
+function runMatch(root, sc){
+  const words=L4_PAIRS.map(p=>p[0]);
+  const meanings=shuffle(L4_PAIRS.map(p=>p[1]));
+  let selW=null, pairs=0, att=0;
+  root.innerHTML=
+    '<div class="match-example mono">HOW TO PLAY — WORD \u00B7 old flame \u2192 MEANING \u00B7 a former romantic partner</div>'+
+    '<div class="tf-top"><span class="chip mono" id="m-pairs">PAIRS 0/6</span><span class="chip mono" id="m-att">ATTEMPTS 0</span></div>'+
+    '<div class="match-wrap">'+
+      '<div class="m-col">'+words.map(w=>
+        '<button class="m-item" data-w="'+esc(w)+'"><i data-lucide="puzzle"></i><span>'+esc(w)+"</span></button>").join("")+"</div>"+
+      '<div class="m-col">'+meanings.map(m=>
+        '<button class="m-item" data-m="'+esc(m)+'"><span>'+esc(m)+"</span></button>").join("")+"</div>"+
+    "</div>";
+  const meaningOf=w=>{ const p=L4_PAIRS.find(pr=>pr[0]===w); return p?p[1]:null; };
+  const counters=()=>{
+    $("#m-pairs", root).textContent="PAIRS "+pairs+"/"+L4_PAIRS.length;
+    $("#m-att", root).textContent="ATTEMPTS "+att;
+  };
+  const handler=e=>{
+    const w=e.target.closest(".m-item[data-w]");
+    const m=e.target.closest(".m-item[data-m]");
+    if(w){
+      if(w.classList.contains("locked")) return;
+      $$(".m-item", root).forEach(x=>{ if(!x.classList.contains("locked")) x.classList.remove("sel"); });
+      w.classList.add("sel"); selW=w.dataset.w; SFX.click();
+      return;
+    }
+    if(m){
+      if(m.classList.contains("locked")) return;
+      if(!selW){ toast("Pick a word on the left first!","puzzle"); return; }
+      att++;
+      const wordBtn=$$(".m-item", root).find(b=>b.dataset.w===selW);
+      if(m.dataset.m===meaningOf(selW)){
+        wordBtn.classList.add("locked"); wordBtn.classList.remove("sel");
+        m.classList.add("locked");
+        pairs++;
+        addScore(150); SFX.match();
+        const r=m.getBoundingClientRect();
+        popFloat(r.left+r.width/2, r.top, "+150", true);
+        selW=null; counters();
+        if(pairs===L4_PAIRS.length) later(()=>endLevel(), 500);
+      }else{
+        session.mistakes++; session.streak=0;
+        subScore(25); SFX.wrong();
+        wordBtn.classList.add("shake"); m.classList.add("shake");
+        later(()=>{ wordBtn.classList.remove("shake","sel"); m.classList.remove("shake"); }, 500);
+        selW=null; counters(); updateLevelHUD();
+      }
+    }
+  };
+  root.addEventListener("click", handler);
+  setCleanup(()=>root.removeEventListener("click", handler));
+  refreshIcons();
+}
+
+/* ============================================================
+   MINI-GAME 5 — TIMED BONUS ROUND (750s, streak multiplier)
+   ============================================================ */
+function runBonus(root, sc){
+  const qs=shuffle(L5_BONUS);
+  let idx=0, answered=false, tmr=null, finished=false;
+  root.innerHTML=
+    '<div class="timer-row"><div class="timer"><div class="timer-fill"></div></div><span class="timer-num mono">12:30</span></div>'+
+    '<div class="tf-top"><span class="chip mono" id="b-count">0/'+qs.length+'</span>'+
+    '<span class="chip mono mult-chip">MULT \u00D71.00</span></div>'+
+    '<div class="tf-card">'+
+      '<p class="kicker">PRIME TIME BONUS — STREAK MULTIPLIER ACTIVE</p>'+
+      '<p class="tf-q" id="b-q"></p>'+
+      '<div class="opts" id="b-opts"></div>'+
+    "</div>";
+  const mult=()=>Math.min(1+0.25*Math.min(session.streak,12), 4);
+  function card(){
+    answered=false;
+    const it=qs[idx];
+    $("#b-count", root).textContent=idx+"/"+qs.length+" ANSWERED";
+    $(".mult-chip", root).textContent="MULT \u00D7"+mult().toFixed(2);
+    $("#b-q", root).textContent=it.q;
+    $("#b-opts", root).innerHTML=shuffle([it.ok].concat(it.wrong)).map((o,i)=>
+      '<button class="opt" data-ok="'+(o===it.ok)+'"><span class="letter mono">'+(i+1)+"</span><span>"+esc(o)+"</span></button>"
+    ).join("");
+    refreshIcons();
+  }
+  function finish(timeUp){
+    if(finished) return;
+    finished=true;
+    if(tmr) tmr.stop();
+    if(!timeUp){
+      const bonus=tmr.remaining*2;
+      if(bonus>0){ addScore(bonus); toast("TIME BONUS +"+bonus,"timer"); }
+    }
+    endLevel();
+  }
+  function answer(btn){
+    if(answered) return;
+    answered=true;
+    const ok=btn.dataset.ok==="true";
+    $$(".opt", root).forEach(b=>{
+      b.disabled=true;
+      if(b.dataset.ok==="true") b.classList.add("good");
+      else if(b!==btn) b.classList.add("dim");
+    });
+    if(ok){
+      const m=mult();
+      session.streak++;
+      const pts=Math.round(120*m);
+      addScore(pts); SFX.correct();
+      const r=btn.getBoundingClientRect();
+      popFloat(r.left+r.width/2, r.top, "+"+pts, true);
+    }else{
+      btn.classList.remove("dim");
+      btn.classList.add("bad","shake");
+      later(()=>btn.classList.remove("shake"),500);
+      session.mistakes++; session.streak=0; SFX.wrong();
+    }
+    $(".mult-chip", root).textContent="MULT \u00D7"+mult().toFixed(2);
+    updateLevelHUD();
+    later(()=>{
+      idx++;
+      if(idx>=qs.length) finish(false);
+      else card();
+    }, ok?600:950);
+  }
+  const click=e=>{
+    const o=e.target.closest(".opt");
+    if(o) answer(o);
+  };
+  const key=e=>{
+    if(/^[1-3]$/.test(e.key)){
+      const o=$$("#b-opts .opt", root)[+e.key-1];
+      if(o) o.click();
+    }
+  };
+  root.addEventListener("click", click);
+  document.addEventListener("keydown", key);
+  setCleanup(()=>{ root.removeEventListener("click", click); document.removeEventListener("keydown", key); if(tmr)tmr.stop(); });
+  tmr=makeTimer(root, 750, ()=>finish(true));
+  card();
+}
+
+/* ===== runners registry ===== */
+const RUNNERS={ fill:runFill, tf:runTF, mc:runMC, match:runMatch, bonus:runBonus };
+
+/* ===== finale ===== */
+function renderFinale(){
+  const total=career(), stars=totalStars();
+  const rank=RANKS.find(r=>total>=r.min)||RANKS[RANKS.length-1];
+  $("#fin-body").innerHTML=
+    '<div class="fin-top" data-c="#33261C">'+
+      '<img class="slide-img" src="'+IMG+'slide-015.jpg" data-initial="\u2605" alt="Great job — neon coffee slide">'+
+    "</div>"+
+    '<blockquote class="fin-quote">\u201CYou\u2019ve successfully processed this lesson. Next time you\u2019re watching TV, '+
+    'listen closely \u2014 you might just catch an old flame resurfacing, or someone dropping the ball. See you next episode.\u201D</blockquote>'+
+    '<div class="fin-grid">'+
+      '<div class="fin-card"><span class="mono">TOTAL SCORE</span><b class="fin-big">'+total+'</b><span class="mono">'+stars+"/15 \u2605</span></div>"+
+      '<div class="fin-card rank-card" style="--c:'+rank.color+'"><i data-lucide="'+rank.icon+'"></i>'+
+        '<div><span class="mono">YOUR RANK</span><b>'+rank.name+"</b></div></div>"+
+    "</div>"+
+    '<div class="fin-table mono" role="table" aria-label="Results by level">'+
+      '<div class="ft-row ft-head" role="row"><span>\u2116</span><span>REEL</span><span>STARS</span><span>BEST</span></div>'+
+      SCENES.map(scr=>{
+        const p=lvRec(scr.id);
+        return '<div class="ft-row" role="row"><span>'+scr.num+"</span><span>"+esc(scr.title)+
+          '</span><span class="ft-stars">'+starRow(p.stars)+"</span><span>"+p.best+"</span></div>";
+      }).join("")+
+    "</div>"+
+    '<div class="m-actions center">'+
+      '<button class="btn btn-danger" data-action="rewind-open"><i data-lucide="rewind"></i>REWIND THE TAPE</button>'+
+      '<button class="btn" data-action="to-map">BACK TO MAP</button>'+
+    "</div>";
+  refreshIcons();
+  guardImages($("#screen-finale"));
+  SFX.cheer();
+  spawnConfetti(180);
+}
+
+/* ===== global action dispatcher (event delegation) ===== */
+document.addEventListener("click", e=>{
+  const el=e.target.closest("[data-action]");
+  if(!el) return;
+  const a=el.dataset.action;
+  switch(a){
+    case "play":          SFX.flip(); showScreen("map"); break;
+    case "to-map":        SFX.click(); toMap(); break;
+    case "open-level":    SFX.click(); openLevel(el.dataset.level); break;
+    case "start-level":   SFX.flip(); startLevel(el.dataset.level); break;
+    case "close-modal":   SFX.click(); closeModal(); break;
+    case "sound":
+      progress.muted=!progress.muted; saveProgress(); renderSound(); SFX.click();
+      toast(progress.muted?"Sound off":"Sound on", progress.muted?"volume-x":"volume-2");
+      break;
+    case "final":         SFX.flip(); renderFinale(); showScreen("finale"); break;
+    case "goto-finale":   SFX.flip(); closeModal(); renderFinale(); showScreen("finale"); break;
+    case "rewind-open":
+      SFX.click();
+      openModal(
+        '<h3 class="m-title mono">REWIND THE TAPE?</h3>'+
+        '<h2 class="m-big">Fresh start</h2>'+
+        "<p>This erases <b>all stars, best scores and your rank</b>. The pilot goes back in the box.</p>"+
+        '<div class="m-actions">'+
+          '<button class="btn" data-action="close-modal">CANCEL</button>'+
+          '<button class="btn btn-danger primary" data-action="rewind-confirm"><i data-lucide="rewind"></i>REWIND</button>'+
+        "</div>"
+      );
+      break;
+    case "rewind-confirm":
+      progress.lv={}; saveProgress();
+      updateHUD(); renderMap(); closeModal();
+      SFX.flip(); toast("Tape rewound — fresh start!","rewind");
+      showScreen("map");
+      break;
+  }
+});
+
+/* ===== keyboard: Enter/Space on map cards, Escape, modal Enter ===== */
+document.addEventListener("keydown", e=>{
+  const t=e.target;
+  if((e.key==="Enter"||e.key===" ") && t && t.classList && t.classList.contains("reel")){
+    e.preventDefault(); t.click(); return;
+  }
+  if(e.key==="Escape"){
+    if(modalOpen()){ closeModal(); return; }
+    if($("#screen-level").classList.contains("active")){ toMap(); return; }
+    return;
+  }
+  if(e.key==="Enter" && modalOpen()){
+    if(document.activeElement && document.activeElement.tagName==="BUTTON") return;
+    const prim=$(".modal .primary");
+    if(prim){ e.preventDefault(); prim.click(); }
+  }
+});
+
+/* ===== init ===== */
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+</script>
+</body>
+</html>
