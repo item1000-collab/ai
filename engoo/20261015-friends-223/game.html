@@ -8,8 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito+Sans:wght@400;700;800;900&family=Courier+Prime:wght@400;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   FRIENDS VOCAB ARCADE v2 — warm VHS sitcom aesthetic
-   No external scripts. All icons are inline SVG.
+   FRIENDS VOCAB ARCADE v3 — warm VHS sitcom aesthetic
+   No external scripts. All icons are inline SVG. ES5 syntax only.
    Palette: paper #F7EEDF · ink #33261C · terra #C96F4A ·
             teal #3E8E8C · mustard #E0A437 · green #4E8A57
    ============================================================ */
@@ -64,7 +64,6 @@ svg.ic{display:inline-block;vertical-align:middle}
 .hscore{display:flex;align-items:center;gap:7px;font-family:'Courier Prime';font-weight:700;font-size:.95rem;
   padding:5px 12px;border:2px solid var(--ink);border-radius:12px;background:var(--cream);box-shadow:0 3px 0 var(--hard)}
 .hscore svg{width:16px;height:16px;color:var(--terra)}
-.hscore.bump b{animation:bump .35s}
 .icon-btn{width:38px;height:38px;flex:none;border-radius:12px;border:2px solid var(--ink);background:var(--cream);
   display:grid;place-items:center;cursor:pointer;box-shadow:0 3px 0 var(--hard);transition:transform .06s}
 .icon-btn:active{transform:translateY(3px);box-shadow:0 0 0 var(--hard)}
@@ -313,6 +312,8 @@ svg.rstar.on{color:var(--ink);fill:var(--mustard);animation:starPop .55s backwar
 footer{text-align:center;padding:26px 18px 34px;color:var(--ink-soft);font-size:.8rem;font-weight:700}
 footer a{color:var(--terra);font-weight:900;text-decoration:underline}
 footer .mono{font-size:.72rem;letter-spacing:1px}
+.badge{display:inline-block;margin-top:8px;padding:4px 12px;border:2px dashed var(--ink-soft);border-radius:999px;
+  font-family:'Courier Prime';font-size:.66rem;letter-spacing:2px;color:var(--ink-soft)}
 
 /* ===== responsive ===== */
 @media (max-width:760px){
@@ -334,22 +335,23 @@ footer .mono{font-size:.72rem;letter-spacing:1px}
 }
 </style>
 
-<!-- Self-rescue: if the game engine fails to boot, remove the preloader and show why -->
+<!-- Boot watchdog: if the engine never reports ready, explain instead of failing silently -->
 <script>
-window.__ARCADE_ERR = false;
 window.__ARCADE_READY = false;
-window.addEventListener("error", function(){ window.__ARCADE_ERR = true; });
+function __arcadeShowBanner(msg){
+  var b = document.getElementById("err-banner");
+  if(b){ b.hidden = false; b.textContent = msg; }
+}
+window.addEventListener("error", function(ev){
+  __arcadeShowBanner("Script error: " + (ev && ev.message ? ev.message : "unknown") +
+    ". The game.html file may be truncated or an old cached copy is served. Re-upload the file fully and refresh with ?v=3 in the URL.");
+});
 window.addEventListener("load", function(){
   setTimeout(function(){
     if(!window.__ARCADE_READY){
-      window.__ARCADE_ERR = true;
       var p = document.getElementById("preloader");
       if(p) p.style.display = "none";
-      var b = document.getElementById("err-banner");
-      if(b){
-        b.hidden = false;
-        b.textContent = "The game engine did not start. The game.html file is probably truncated or an old cached copy is loaded. Re-upload the file and refresh the page.";
-      }
+      __arcadeShowBanner("The game engine did not start. The game.html file is probably truncated or an old cached copy is served. Re-upload the file and open the page with ?v=3 in the URL.");
     }
   }, 1500);
 });
@@ -468,7 +470,7 @@ window.addEventListener("load", function(){
         target="_blank" rel="noopener noreferrer">223-90s-sitcom-english-guide.pdf</a>
      — the full study guide (opens in a new tab)</p>
   <p>Learn English with TV · <i>Friends</i> · The One with the Chicken Pox</p>
-  <p class="mono">ARCADE ENGINE v2.1 · BUILD 2026-10-15</p>
+  <p class="badge">ARCADE ENGINE v3.0 · BUILD 223-V3</p>
 </footer>
 
 <div id="modal-root"></div>
@@ -492,15 +494,14 @@ window.addEventListener("load", function(){
 "use strict";
 
 /* ============================================================
-   BOOT DIAGNOSTICS — visible errors instead of a silent blank map
+   BOOT DIAGNOSTICS — every failure is loud, never silent
    ============================================================ */
 function fail(where, err){
-  window.__ARCADE_ERR = true;
   try{
     var b = document.getElementById("err-banner");
     if(b){
       b.hidden = false;
-      b.textContent = "Startup problem in " + where + ": " + (err && err.message ? err.message : String(err));
+      b.textContent = "Problem in " + where + ": " + (err && err.message ? err.message : String(err));
     }
   }catch(e){}
   if(window.console && console.error) console.error("[Arcade]", where, err);
@@ -509,13 +510,14 @@ function safe(label, fn){
   try{ fn(); }catch(err){ fail(label, err); }
 }
 
-/* ===== tiny helpers ===== */
+/* ===== tiny helpers (ES5 only — maximum Safari compatibility) ===== */
 var $  = function(s, r){ return (r||document).querySelector(s); };
 var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
 var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
 var pick  = function(a){ return a[Math.floor(Math.random()*a.length)]; };
 var esc   = function(s){ return String(s).replace(/[&<>"]/g, function(c){
   return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]; }); };
+var pad2  = function(n){ n = String(n); return n.length < 2 ? "0" + n : n; };
 var shuffle = function(arr){
   var a = arr.slice();
   for(var i=a.length-1;i>0;i--){
@@ -563,7 +565,6 @@ function icon(name, cls){
   return '<svg class="ic ' + (cls || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
          'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + body + '</svg>';
 }
-/* replaces <span data-icon="..."> slots with inline SVG */
 function refreshIcons(scope){
   try{
     $$("[data-icon]", scope || document).forEach(function(el){
@@ -839,7 +840,7 @@ function loadProgress(){
     if(raw){
       var p = JSON.parse(raw);
       if(p && p.v === 2){
-        if(!p.lv || typeof p.lv !== "object") p.lv = {};   /* schema guard */
+        if(!p.lv || typeof p.lv !== "object") p.lv = {};
         return p;
       }
     }
@@ -893,7 +894,7 @@ function showScreen(name){
 /* ===== image fallback (offline-safe placeholders) ===== */
 function guardImages(scope){
   $$("img.slide-img", scope).forEach(function(img){
-    if(img.dataset.dead) return;
+    if(img.getAttribute("data-dead")) return;
     var killed = false;
     var kill = function(){
       if(killed) return;
@@ -916,7 +917,7 @@ function guardImages(scope){
 /* ===== modal system ===== */
 var modalRoot = $("#modal-root");
 function modalOpen(){ return !!modalRoot.firstChild; }
-function closeModal(){ modalRoot.innerHTML = ""; }
+function closeModal(){ if(modalRoot) modalRoot.innerHTML = ""; }
 function openModal(html){
   closeModal();
   var back = document.createElement("div");
@@ -991,12 +992,16 @@ function renderLevelHead(sc){
   $("#lvl-title").textContent = sc.title;
   $("#lvl-char").innerHTML = icon("user") + sc.char;
   var box = $("#scene-imgbox");
-  box.setAttribute("data-c", sc.color);
-  box.style.background = sc.color;
+  if(box){
+    box.setAttribute("data-c", sc.color);
+    box.style.background = sc.color;
+  }
   var img = $("#scene-img");
-  img.setAttribute("src", IMG + sc.slide);
-  img.setAttribute("data-initial", sc.char.charAt(0));
-  img.removeAttribute("data-dead");
+  if(img){
+    img.setAttribute("src", IMG + sc.slide);
+    img.setAttribute("data-initial", sc.char.charAt(0));
+    img.removeAttribute("data-dead");
+  }
   $("#scene-obj").textContent = sc.obj;
   $("#scene-tip").textContent = sc.tip;
   $("#scene-flavor").textContent = "\u201C" + sc.flavor + "\u201D";
@@ -1020,21 +1025,47 @@ function subScore(pts){
   session.score = Math.max(0, session.score - pts);
   updateLevelHUD();
 }
+/* Emergency message if a mini-game fails to build — the player is never stranded */
+function emergencyGameCard(sc, errMsg){
+  var root = $("#game-root");
+  if(!root) return;
+  root.innerHTML =
+    '<div class="tf-card">' +
+      '<p class="kicker">TECHNICAL DIFFICULTIES</p>' +
+      '<p class="tf-q">Reel "' + esc(sc.title) + '" could not start.</p>' +
+      "<p><b>Details:</b> " + esc(errMsg) + "</p>" +
+      "<p>Open the map and try another reel, or refresh the page with <b>?v=3</b> in the URL.</p>" +
+      '<div class="m-actions">' +
+        '<button type="button" class="btn btn-primary" data-action="to-map">BACK TO MAP</button>' +
+      "</div>" +
+    "</div>";
+}
 function startLevel(id){
-  callCleanup(); closeModal();
-  var sc = byId(id); if(!sc) return;
+  callCleanup();
+  var sc = byId(id);
+  if(!sc){ fail("startLevel", new Error("Unknown level id: " + id)); return; }
   session = { id:sc.id, mistakes:0, streak:0, score:0, done:false };
-  renderLevelHead(sc);
-  showScreen("level");
+  try{ renderLevelHead(sc); }catch(err){ fail("renderLevelHead", err); }
+  try{ showScreen("level"); }catch(err){ fail("showScreen", err); }
   updateLevelHUD();
+  var root = $("#game-root");
+  if(root) root.innerHTML = "";
   var runner = RUNNERS[sc.type];
-  if(runner) runner($("#game-root"), sc);
-  else fail("runner " + sc.type, new Error("Unknown game type"));
+  if(typeof runner !== "function"){
+    fail("runner", new Error("No runner registered for type: " + sc.type));
+    emergencyGameCard(sc, "mini-game type '" + sc.type + "' is not registered");
+    return;
+  }
+  try{ runner(root, sc); }
+  catch(err){
+    fail("game:" + sc.type, err);
+    emergencyGameCard(sc, err && err.message ? err.message : String(err));
+  }
 }
 function toMap(){
   callCleanup(); closeModal();
   session = null;
-  $("#game-root").innerHTML = "";
+  var root = $("#game-root"); if(root) root.innerHTML = "";
   showScreen("map");
 }
 function openLevel(id){
@@ -1071,9 +1102,7 @@ function endLevel(){
   var wasLast = allDone();
   if(wasLast) setTimeout(function(){ toast("ALL REELS COMPLETE \u2014 THE FINALE IS OPEN!", "party"); }, 700);
   var starHtml = "";
-  [0,1,2].forEach(function(i){
-    starHtml += icon("star", "rstar " + (i < st ? "on" : "")) ;
-  });
+  [0,1,2].forEach(function(i){ starHtml += icon("star", "rstar " + (i < st ? "on" : "")); });
   var msg = st === 3 ? "Flawless reel! Direct-to-series material."
           : st === 2 ? "Nice take! A couple of bloopers in the cut."
           : "It's in the can \u2014 barely. Rewatch the guide and try again.";
@@ -1097,7 +1126,7 @@ function endLevel(){
   );
 }
 
-/* ===== timer helper (per-card and global timers) ===== */
+/* ===== timer helper ===== */
 function makeTimer(scope, secs, onEnd){
   var bar = $(".timer", scope), fill = $(".timer-fill", scope), num = $(".timer-num", scope);
   var rem = secs;
@@ -1105,7 +1134,7 @@ function makeTimer(scope, secs, onEnd){
     if(!fill || !bar || !num) return;
     fill.style.width = clamp(rem/secs*100, 0, 100) + "%";
     bar.classList.toggle("crit", rem/secs <= 0.1 && rem > 0);
-    num.textContent = Math.floor(rem/60) + ":" + String(rem % 60).padStart(2, "0");
+    num.textContent = Math.floor(rem/60) + ":" + pad2(rem % 60);
   }
   paint();
   var iv = every(function(){
@@ -1157,6 +1186,7 @@ function runFill(root, sc){
       return;
     }
     var blank = $$(".blank", root)[sel];
+    if(!blank) return;
     if(L1_FILL[sel].a === w){
       blank.textContent = "\u00A0" + w + "\u00A0";
       blank.classList.add("filled"); blank.classList.remove("sel");
@@ -1175,6 +1205,7 @@ function runFill(root, sc){
       subScore(25);
       var r2 = c.getBoundingClientRect();
       popFloat(r2.left + r2.width/2, r2.top, "\u221225", false);
+      updateLevelHUD();
     }
   }
   root.addEventListener("click", handler);
@@ -1389,8 +1420,9 @@ function runMatch(root, sc){
     return null;
   }
   function counters(){
-    $("#m-pairs", root).textContent = "PAIRS " + pairs + "/" + L4_PAIRS.length;
-    $("#m-att", root).textContent = "ATTEMPTS " + att;
+    var pc = $("#m-pairs", root), ac = $("#m-att", root);
+    if(pc) pc.textContent = "PAIRS " + pairs + "/" + L4_PAIRS.length;
+    if(ac) ac.textContent = "ATTEMPTS " + att;
   }
   function handler(e){
     var w = closest(e.target, ".m-item[data-w]");
@@ -1410,7 +1442,7 @@ function runMatch(root, sc){
       var wordBtn = null;
       $$(".m-item", root).forEach(function(b){ if(b.getAttribute("data-w") === selW) wordBtn = b; });
       if(m.getAttribute("data-m") === meaningOf(selW)){
-        wordBtn.classList.add("locked"); wordBtn.classList.remove("sel");
+        if(wordBtn){ wordBtn.classList.add("locked"); wordBtn.classList.remove("sel"); }
         m.classList.add("locked");
         pairs++;
         addScore(150); SFX.match();
@@ -1421,11 +1453,12 @@ function runMatch(root, sc){
       }else{
         session.mistakes++; session.streak = 0;
         subScore(25); SFX.wrong();
-        wordBtn.classList.add("shake"); m.classList.add("shake");
-        later(function(){
-          wordBtn.classList.remove("shake", "sel");
-          m.classList.remove("shake");
-        }, 500);
+        if(wordBtn){
+          wordBtn.classList.add("shake");
+          later(function(){ wordBtn.classList.remove("shake", "sel"); }, 500);
+        }
+        m.classList.add("shake");
+        later(function(){ m.classList.remove("shake"); }, 500);
         selW = null; counters(); updateLevelHUD();
       }
     }
@@ -1466,7 +1499,7 @@ function runBonus(root, sc){
     if(finished) return;
     finished = true;
     if(tmr) tmr.stop();
-    if(!timeUp){
+    if(!timeUp && tmr){
       var bonus = tmr.remaining() * 2;
       if(bonus > 0){ addScore(bonus); toast("TIME BONUS +" + bonus, "timer"); }
     }
@@ -1562,16 +1595,20 @@ function renderFinale(){
   spawnConfetti(180);
 }
 
-/* ===== global action dispatcher (event delegation) ===== */
-document.addEventListener("click", function(e){
-  var el = closest(e.target, "[data-action]");
-  if(!el) return;
-  var a = el.getAttribute("data-action");
+/* ===== global action dispatcher — one guarded switch for all actions ===== */
+function handleAction(a, el){
   switch(a){
     case "play":        SFX.flip(); showScreen("map"); break;
     case "to-map":      SFX.click(); toMap(); break;
     case "open-level":  SFX.click(); openLevel(el.getAttribute("data-level")); break;
-    case "start-level": SFX.flip(); startLevel(el.getAttribute("data-level")); break;
+    /* START: close the modal FIRST so it can never stick, then build the level
+       inside its own guard. Any failure lands the player on a visible message. */
+    case "start-level":
+      SFX.flip();
+      closeModal();
+      try{ startLevel(el.getAttribute("data-level")); }
+      catch(err){ fail("startLevel", err); showScreen("map"); }
+      break;
     case "close-modal": SFX.click(); closeModal(); break;
     case "sound":
       progress.muted = !progress.muted; saveProgress(); renderSound(); SFX.click();
@@ -1598,29 +1635,58 @@ document.addEventListener("click", function(e){
       showScreen("map");
       break;
   }
+}
+document.addEventListener("click", function(e){
+  var el = closest(e.target, "[data-action]");
+  if(!el) return;
+  var a = el.getAttribute("data-action");
+  try{ handleAction(a, el); }
+  catch(err){ fail("action:" + a, err); }
 });
 
 /* ===== keyboard: Enter/Space on map cards, Escape, modal Enter ===== */
 document.addEventListener("keydown", function(e){
-  var t = e.target;
-  if((e.key === "Enter" || e.key === " ") && t && t.classList && t.classList.contains("reel")){
-    e.preventDefault(); t.click(); return;
-  }
-  if(e.key === "Escape"){
-    if(modalOpen()){ closeModal(); return; }
-    if($("#screen-level").classList.contains("active")){ toMap(); return; }
-    return;
-  }
-  if(e.key === "Enter" && modalOpen()){
-    if(document.activeElement && document.activeElement.tagName === "BUTTON") return;
-    var prim = $(".modal .primary");
-    if(prim){ e.preventDefault(); prim.click(); }
-  }
+  try{
+    var t = e.target;
+    if((e.key === "Enter" || e.key === " ") && t && t.classList && t.classList.contains("reel")){
+      e.preventDefault(); t.click(); return;
+    }
+    if(e.key === "Escape"){
+      if(modalOpen()){ closeModal(); return; }
+      if($("#screen-level").classList.contains("active")){ toMap(); return; }
+      return;
+    }
+    if(e.key === "Enter" && modalOpen()){
+      if(document.activeElement && document.activeElement.tagName === "BUTTON") return;
+      var prim = $(".modal .primary");
+      if(prim){ e.preventDefault(); prim.click(); }
+    }
+  }catch(err){ fail("keydown", err); }
 });
 
 /* ============================================================
-   INIT — every step is isolated: one failure can no longer
-   blank out the level map silently.
+   BOOT SELF-TEST — verifies the engine before declaring ready
+   ============================================================ */
+function bootSelfTest(){
+  var problems = [];
+  if(!SCENES || SCENES.length !== 5) problems.push("SCENES broken (" + (SCENES ? SCENES.length : "null") + ")");
+  ["fill","tf","mc","match","bonus"].forEach(function(t){
+    if(typeof RUNNERS[t] !== "function") problems.push("runner '" + t + "' missing");
+  });
+  if(!L1_FILL || L1_FILL.length < 5) problems.push("L1_FILL broken");
+  if(!L2_TF || L2_TF.length < 5) problems.push("L2_TF broken");
+  if(!L3_MC || L3_MC.length < 5) problems.push("L3_MC broken");
+  if(!L4_PAIRS || L4_PAIRS.length < 3) problems.push("L4_PAIRS broken");
+  if(!L5_BONUS || L5_BONUS.length < 5) problems.push("L5_BONUS broken");
+  ["map-grid","game-root","modal-root","toast-root","preloader","confetti"].forEach(function(id){
+    if(!document.getElementById(id)) problems.push("#" + id + " missing");
+  });
+  if(problems.length){ fail("self-test", new Error(problems.join("; "))); return false; }
+  return true;
+}
+
+/* ============================================================
+   INIT — every step is isolated, then the engine reports ready
    ============================================================ */
 safe("paintHeaderIcons", function(){ refreshIcons(document); });
 safe("guardStaticImages", function(){ guardImages(document); });
@@ -1628,7 +1694,9 @@ safe("updateHUD", updateHUD);
 safe("renderMap", renderMap);
 safe("renderSound", renderSound);
 safe("refreshIconsFinal", function(){ refreshIcons(document); });
-window.__ARCADE_READY = true;   /* tells the boot watchdog that the engine is alive */
+safe("bootSelfTest", bootSelfTest);
+window.__ARCADE_READY = true;   /* tells the boot watchdog the engine is alive */
+if(window.console && console.log) console.log("[Arcade] v3.0 booted \u2014 self-test OK");
 
 })();
 </script>
