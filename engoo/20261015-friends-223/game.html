@@ -6,10 +6,10 @@
 <meta name="description" content="Friends Vocab Arcade — an interactive retro learning game based on The One with the Chicken Pox (S2E23). Five mini-games, vocabulary, idioms and storytelling.">
 <title>Friends Vocab Arcade · The One with the Chicken Pox</title>
 <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito+Sans:wght@400;700;800;900&family=Courier+Prime:wght@400;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
 /* ============================================================
-   FRIENDS VOCAB ARCADE — warm VHS sitcom aesthetic
+   FRIENDS VOCAB ARCADE v2 — warm VHS sitcom aesthetic
+   No external scripts. All icons are inline SVG.
    Palette: paper #F7EEDF · ink #33261C · terra #C96F4A ·
             teal #3E8E8C · mustard #E0A437 · green #4E8A57
    ============================================================ */
@@ -42,6 +42,11 @@ body{
 .mono{font-family:'Courier Prime',monospace}
 :focus-visible{outline:3px solid var(--mustard);outline-offset:2px;border-radius:6px}
 ::selection{background:var(--mustard);color:var(--ink)}
+svg.ic{display:inline-block;vertical-align:middle}
+
+/* error banner (visible diagnostics) */
+#err-banner{position:fixed;left:12px;right:12px;bottom:12px;z-index:600;background:var(--red);color:#fff;
+  padding:12px 16px;border-radius:12px;font-weight:800;font-size:.85rem;box-shadow:0 8px 20px rgba(0,0,0,.3)}
 
 /* ===== header console ===== */
 #console{position:fixed;top:0;left:0;right:0;z-index:120;display:flex;align-items:center;gap:12px;
@@ -95,9 +100,9 @@ body{
 .mini-note{margin-top:16px;font-size:.64rem;letter-spacing:1.5px;color:var(--ink-soft)}
 
 /* ===== buttons ===== */
-.btn{display:inline-flex;align-items:center;gap:8px;font-family:'Nunito Sans';font-weight:900;font-size:.92rem;
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:'Nunito Sans',sans-serif;font-weight:900;font-size:.92rem;
   color:var(--ink);background:var(--cream);border:2px solid var(--ink);border-radius:14px;padding:.65em 1.2em;
-  cursor:pointer;box-shadow:0 5px 0 var(--hard);transition:transform .06s, box-shadow .06s}
+  cursor:pointer;box-shadow:0 5px 0 var(--hard);transition:transform .06s, box-shadow .06s;text-decoration:none}
 .btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--hard)}
 .btn svg{width:16px;height:16px}
 .btn-primary{background:var(--terra);color:#FFF6E8;border-color:var(--ink)}
@@ -177,7 +182,7 @@ body{
 .tf-btn:disabled{cursor:default}
 .opts{display:grid;gap:12px}
 .opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--cream);border:2px solid var(--ink);
-  border-radius:14px;padding:.8em 1em;font-family:'Nunito Sans';font-weight:800;font-size:.98rem;color:var(--ink);
+  border-radius:14px;padding:.8em 1em;font-family:'Nunito Sans',sans-serif;font-weight:800;font-size:.98rem;color:var(--ink);
   cursor:pointer;box-shadow:0 4px 0 var(--hard);transition:transform .06s,box-shadow .06s}
 .opt:active:not(:disabled){transform:translateY(2px);box-shadow:0 2px 0 var(--hard)}
 .opt:disabled{cursor:default}
@@ -328,17 +333,39 @@ footer .mono{font-size:.72rem;letter-spacing:1px}
   html{scroll-behavior:auto}
 }
 </style>
+
+<!-- Self-rescue: if the game engine fails to boot, remove the preloader and show why -->
+<script>
+window.__ARCADE_ERR = false;
+window.__ARCADE_READY = false;
+window.addEventListener("error", function(){ window.__ARCADE_ERR = true; });
+window.addEventListener("load", function(){
+  setTimeout(function(){
+    if(!window.__ARCADE_READY){
+      window.__ARCADE_ERR = true;
+      var p = document.getElementById("preloader");
+      if(p) p.style.display = "none";
+      var b = document.getElementById("err-banner");
+      if(b){
+        b.hidden = false;
+        b.textContent = "The game engine did not start. The game.html file is probably truncated or an old cached copy is loaded. Re-upload the file and refresh the page.";
+      }
+    }
+  }, 1500);
+});
+</script>
 </head>
 <body>
 
 <div id="grain" aria-hidden="true"></div>
 <div id="scanlines" aria-hidden="true"></div>
 <canvas id="confetti" aria-hidden="true"></canvas>
+<div id="err-banner" role="alert" hidden></div>
 
 <!-- ===== header console ===== -->
 <header id="console">
   <div class="brand">
-    <span class="logo"><i data-lucide="coffee"></i></span>
+    <span class="logo"><span data-icon="coffee"></span></span>
     <div>
       <div class="b1">FRIENDS VOCAB ARCADE</div>
       <div class="b2">EP.223 · THE ONE WITH THE CHICKEN POX</div>
@@ -347,11 +374,11 @@ footer .mono{font-size:.72rem;letter-spacing:1px}
   <div id="dots" aria-label="Level progress">
     <span class="dot">1</span><span class="dot">2</span><span class="dot">3</span><span class="dot">4</span><span class="dot">5</span>
   </div>
-  <div class="hscore" title="Total best score"><i data-lucide="coins"></i><b id="hud-career">0</b></div>
-  <button id="btn-sound" class="icon-btn" data-action="sound" aria-pressed="true" aria-label="Toggle sound">
-    <i data-lucide="volume-2" class="ic-on"></i><i data-lucide="volume-x" class="ic-off"></i>
+  <div class="hscore" title="Total best score"><span data-icon="coins"></span><b id="hud-career">0</b></div>
+  <button id="btn-sound" class="icon-btn" type="button" data-action="sound" aria-pressed="true" aria-label="Toggle sound">
+    <span class="ic-on" data-icon="volume2"></span><span class="ic-off" data-icon="volumex"></span>
   </button>
-  <button class="icon-btn" data-action="to-map" aria-label="Back to level map"><i data-lucide="map"></i></button>
+  <button class="icon-btn" type="button" data-action="to-map" aria-label="Back to level map"><span data-icon="map"></span></button>
 </header>
 
 <main id="app">
@@ -371,7 +398,7 @@ footer .mono{font-size:.72rem;letter-spacing:1px}
       <div class="tagrow mono">
         <span>FILL THE BLANKS</span><span>REAL OR DELUSION</span><span>QUIZ</span><span>MATCH THE MEANING</span><span>BONUS ROUND</span>
       </div>
-      <button class="btn btn-primary btn-xl" data-action="play"><i data-lucide="play"></i>INSERT TAPE &amp; PLAY</button>
+      <button class="btn btn-primary btn-xl" type="button" data-action="play"><span data-icon="play"></span>INSERT TAPE &amp; PLAY</button>
       <p class="mini-note mono">ANY ORDER · PROGRESS SAVES AUTOMATICALLY · SOUND TOGGLE IN THE CONSOLE</p>
     </div>
   </section>
@@ -401,7 +428,7 @@ footer .mono{font-size:.72rem;letter-spacing:1px}
   <section id="screen-level" class="screen">
     <div class="wrap">
       <div class="lvl-head">
-        <button class="btn btn-sm" data-action="to-map"><i data-lucide="arrow-left"></i>MAP</button>
+        <button class="btn btn-sm" type="button" data-action="to-map"><span data-icon="arrowleft"></span>MAP</button>
         <span class="chip mono" id="lvl-tag"></span>
         <h2 id="lvl-title"></h2>
         <span class="chip" id="lvl-char"></span>
@@ -441,6 +468,7 @@ footer .mono{font-size:.72rem;letter-spacing:1px}
         target="_blank" rel="noopener noreferrer">223-90s-sitcom-english-guide.pdf</a>
      — the full study guide (opens in a new tab)</p>
   <p>Learn English with TV · <i>Friends</i> · The One with the Chicken Pox</p>
+  <p class="mono">ARCADE ENGINE v2.1 · BUILD 2026-10-15</p>
 </footer>
 
 <div id="modal-root"></div>
@@ -452,7 +480,7 @@ footer .mono{font-size:.72rem;letter-spacing:1px}
     <div class="vhs-label">FRIENDS VOCAB ARCADE</div>
     <div class="vhs-sub">EP.223 · THE ONE WITH THE CHICKEN POX</div>
     <div class="vhs-track">TRACKING &#9646;&#9646;&#9646;&#9646;&#9645; LOADING REELS<span class="blink">_</span></div>
-    <button id="btn-play" class="btn-play"><i data-lucide="play"></i>PLAY</button>
+    <button id="btn-play" class="btn-play" type="button"><span data-icon="play"></span>PLAY</button>
     <div class="vhs-hint">INSERT COIN · GRAB COFFEE · PRESS PLAY</div>
   </div>
 </div>
@@ -463,120 +491,205 @@ footer .mono{font-size:.72rem;letter-spacing:1px}
 (function(){
 "use strict";
 
+/* ============================================================
+   BOOT DIAGNOSTICS — visible errors instead of a silent blank map
+   ============================================================ */
+function fail(where, err){
+  window.__ARCADE_ERR = true;
+  try{
+    var b = document.getElementById("err-banner");
+    if(b){
+      b.hidden = false;
+      b.textContent = "Startup problem in " + where + ": " + (err && err.message ? err.message : String(err));
+    }
+  }catch(e){}
+  if(window.console && console.error) console.error("[Arcade]", where, err);
+}
+function safe(label, fn){
+  try{ fn(); }catch(err){ fail(label, err); }
+}
+
 /* ===== tiny helpers ===== */
-const $  = (s, r=document) => r.querySelector(s);
-const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
-const pick  = a => a[Math.floor(Math.random()*a.length)];
-const esc   = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const shuffle = arr => { const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
-const refreshIcons = () => { try{ window.lucide && window.lucide.createIcons(); }catch(e){} };
-const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var $  = function(s, r){ return (r||document).querySelector(s); };
+var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+var pick  = function(a){ return a[Math.floor(Math.random()*a.length)]; };
+var esc   = function(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]; }); };
+var shuffle = function(arr){
+  var a = arr.slice();
+  for(var i=a.length-1;i>0;i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+};
+var reduced = function(){ return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); };
+/* safe closest(): never throws on non-element targets */
+var closest = function(el, sel){
+  if(!el || !el.closest) return null;
+  try{ return el.closest(sel); }catch(e){ return null; }
+};
+
+/* ============================================================
+   INLINE SVG ICON SYSTEM — zero external requests, works offline
+   ============================================================ */
+var ICONS = {
+  play:'<polygon points="6 4 20 12 6 20 6 4"/>',
+  coffee:'<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>',
+  coins:'<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
+  volume2:'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
+  volumex:'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/>',
+  map:'<path d="M9 3 3.36 5.26a1 1 0 0 0-.36.78V20a1 1 0 0 0 1.35.93L9 19l6 2 5.64-2.26a1 1 0 0 0 .36-.78V4a1 1 0 0 0-1.35-.93L14 5Z"/><path d="M9 3v16"/><path d="M15 5v16"/>',
+  star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  arrowleft:'<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  pencil:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+  rotateccw:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  trophy:'<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  award:'<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>',
+  clapper:'<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1-.3 2.1.3 2.4 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+  zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  sparkles:'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.29 1.29L3 12l5.8 1.9a2 2 0 0 1 1.29 1.29L12 21l1.9-5.8a2 2 0 0 1 1.29-1.29L21 12l-5.8-1.9a2 2 0 0 1-1.29-1.29Z"/>',
+  timer:'<line x1="10" y1="2" x2="14" y2="2"/><line x1="12" y1="14" x2="15" y2="11"/><circle cx="12" cy="14" r="8"/>',
+  rewind:'<polygon points="11 19 2 12 11 5 11 19"/><polygon points="22 19 13 12 22 5 22 19"/>',
+  party:'<path d="M5.8 11.3 2 22l10.7-3.8"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/>'
+};
+function icon(name, cls){
+  var body = ICONS[name] || ICONS.sparkles;
+  return '<svg class="ic ' + (cls || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+         'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + body + '</svg>';
+}
+/* replaces <span data-icon="..."> slots with inline SVG */
+function refreshIcons(scope){
+  try{
+    $$("[data-icon]", scope || document).forEach(function(el){
+      el.innerHTML = icon(el.getAttribute("data-icon"));
+      el.removeAttribute("data-icon");
+    });
+  }catch(e){ fail("icons", e); }
+}
 
 /* ===== toast notification ===== */
-function toast(msg, icon){
-  const t=document.createElement("div");
-  t.className="toast";
-  t.innerHTML='<i data-lucide="'+(icon||"sparkles")+'"></i><span>'+esc(msg)+"</span>";
-  $("#toast-root").appendChild(t);
-  refreshIcons();
-  requestAnimationFrame(()=>t.classList.add("show"));
-  setTimeout(()=>{ t.classList.remove("show"); setTimeout(()=>t.remove(),350); }, 2300);
+function toast(msg, ic){
+  try{
+    var t = document.createElement("div");
+    t.className = "toast";
+    t.innerHTML = icon(ic || "sparkles") + "<span>" + esc(msg) + "</span>";
+    $("#toast-root").appendChild(t);
+    requestAnimationFrame(function(){ t.classList.add("show"); });
+    setTimeout(function(){ t.classList.remove("show"); setTimeout(function(){ t.remove(); }, 350); }, 2300);
+  }catch(e){}
 }
 
 /* ===== floating score pop ===== */
 function popFloat(x, y, text, good){
-  const s=document.createElement("span");
-  s.className="pop "+(good===false?"p-bad":"p-good");
-  s.textContent=text;
-  s.style.left=x+"px"; s.style.top=y+"px";
-  document.body.appendChild(s);
-  setTimeout(()=>s.remove(), 980);
+  try{
+    var s = document.createElement("span");
+    s.className = "pop " + (good === false ? "p-bad" : "p-good");
+    s.textContent = text;
+    s.style.left = x + "px"; s.style.top = y + "px";
+    document.body.appendChild(s);
+    setTimeout(function(){ s.remove(); }, 980);
+  }catch(e){}
 }
 
 /* ===== confetti ===== */
-let confBits=[], confRAF=null;
+var confBits = [], confRAF = null;
 function spawnConfetti(n){
   if(reduced()) return;
-  const cv=$("#confetti"); if(!cv) return;
-  cv.width=innerWidth; cv.height=innerHeight;
-  const colors=["#C96F4A","#3E8E8C","#E0A437","#8E6C8A","#4E8A57","#FFFBF2"];
-  for(let i=0;i<n;i++){
-    confBits.push({ x:Math.random()*cv.width, y:-20-Math.random()*cv.height*0.3,
-      vx:(Math.random()-.5)*2.4, vy:2+Math.random()*3, s:5+Math.random()*7,
-      c:colors[i%colors.length], r:Math.random()*Math.PI, vr:(Math.random()-.5)*0.22 });
-  }
-  if(!confRAF) confLoop();
+  try{
+    var cv = $("#confetti"); if(!cv) return;
+    cv.width = window.innerWidth; cv.height = window.innerHeight;
+    var colors = ["#C96F4A","#3E8E8C","#E0A437","#8E6C8A","#4E8A57","#FFFBF2"];
+    for(var i=0;i<n;i++){
+      confBits.push({
+        x: Math.random()*cv.width, y: -20 - Math.random()*cv.height*0.3,
+        vx: (Math.random()-0.5)*2.4, vy: 2 + Math.random()*3,
+        s: 5 + Math.random()*7, c: colors[i % colors.length],
+        r: Math.random()*Math.PI, vr: (Math.random()-0.5)*0.22
+      });
+    }
+    if(!confRAF) confLoop();
+  }catch(e){}
 }
 function confLoop(){
-  const cv=$("#confetti"), ctx=cv.getContext("2d");
+  var cv = $("#confetti"), ctx = cv.getContext("2d");
   ctx.clearRect(0,0,cv.width,cv.height);
-  confBits=confBits.filter(p=>p.y<cv.height+40);
-  confBits.forEach(p=>{
-    p.x+=p.vx; p.y+=p.vy; p.vy+=0.035; p.r+=p.vr;
-    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
-    ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62); ctx.restore();
+  confBits = confBits.filter(function(p){ return p.y < cv.height + 40; });
+  confBits.forEach(function(p){
+    p.x += p.vx; p.y += p.vy; p.vy += 0.035; p.r += p.vr;
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+    ctx.fillStyle = p.c; ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s*0.62); ctx.restore();
   });
-  if(confBits.length){ confRAF=requestAnimationFrame(confLoop); }
-  else { confRAF=null; ctx.clearRect(0,0,cv.width,cv.height); }
+  if(confBits.length){ confRAF = requestAnimationFrame(confLoop); }
+  else { confRAF = null; ctx.clearRect(0,0,cv.width,cv.height); }
 }
 
 /* ===== audio (all synthesized, Web Audio API) ===== */
-let actx=null;
+var actx = null;
 function ensureAudio(){
   try{
-    if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
-    if(actx && actx.state==="suspended") actx.resume();
+    if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if(actx && actx.state === "suspended") actx.resume();
   }catch(e){}
 }
 function tone(freq, dur, type, vol, when){
   if(!actx || progress.muted) return;
-  type=type||"sine"; vol=vol==null?0.2:vol; when=when||0;
-  const t0=actx.currentTime+when;
-  const o=actx.createOscillator(), g=actx.createGain();
-  o.type=type; o.frequency.setValueAtTime(freq,t0);
-  g.gain.setValueAtTime(0.0001,t0);
-  g.gain.exponentialRampToValueAtTime(Math.max(vol,0.001), t0+0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
-  o.connect(g).connect(actx.destination);
-  o.start(t0); o.stop(t0+dur+0.06);
+  type = type || "sine"; vol = (vol == null) ? 0.2 : vol; when = when || 0;
+  try{
+    var t0 = actx.currentTime + when;
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(vol, 0.001), t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t0); o.stop(t0 + dur + 0.06);
+  }catch(e){}
 }
 function noiseBurst(dur, vol){
   if(!actx || progress.muted) return;
-  dur=dur||0.4; vol=vol==null?0.22:vol;
-  const rate=actx.sampleRate, buf=actx.createBuffer(1, Math.floor(rate*dur), rate);
-  const d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-  const src=actx.createBufferSource(); src.buffer=buf;
-  const f=actx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=1400;
-  const g=actx.createGain();
-  const t0=actx.currentTime;
-  g.gain.setValueAtTime(vol,t0);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
-  src.connect(f).connect(g).connect(actx.destination);
-  src.start(t0);
+  dur = dur || 0.4; vol = (vol == null) ? 0.22 : vol;
+  try{
+    var rate = actx.sampleRate;
+    var buf = actx.createBuffer(1, Math.floor(rate * dur), rate);
+    var d = buf.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i] = Math.random()*2 - 1;
+    var src = actx.createBufferSource(); src.buffer = buf;
+    var f = actx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1400;
+    var g = actx.createGain();
+    var t0 = actx.currentTime;
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f); f.connect(g); g.connect(actx.destination);
+    src.start(t0);
+  }catch(e){}
 }
-const SFX={
-  click(){ tone(660,0.06,"square",0.13); },
-  flip(){ tone(440,0.05,"triangle",0.16); tone(560,0.07,"triangle",0.16,0.05); },
-  correct(){ tone(659,0.09,"triangle",0.22); tone(880,0.15,"triangle",0.22,0.09); },
-  wrong(){ tone(196,0.2,"sawtooth",0.18); tone(147,0.28,"sawtooth",0.16,0.06); },
-  match(){ tone(523,0.08,"sine",0.2); tone(659,0.08,"sine",0.2,0.07); tone(784,0.14,"sine",0.2,0.14); },
-  fanfare(){ [523,659,784,1047].forEach((f,i)=>tone(f,0.16,"triangle",0.22,i*0.11)); noiseBurst(0.5,0.16); },
-  tick(){ tone(1250,0.03,"square",0.07); },
-  cheer(){ noiseBurst(0.9,0.26); tone(784,0.2,"triangle",0.18,0.05); tone(1047,0.3,"triangle",0.18,0.2); }
+var SFX = {
+  click:  function(){ tone(660, 0.06, "square", 0.13); },
+  flip:   function(){ tone(440, 0.05, "triangle", 0.16); tone(560, 0.07, "triangle", 0.16, 0.05); },
+  correct:function(){ tone(659, 0.09, "triangle", 0.22); tone(880, 0.15, "triangle", 0.22, 0.09); },
+  wrong:  function(){ tone(196, 0.20, "sawtooth", 0.18); tone(147, 0.28, "sawtooth", 0.16, 0.06); },
+  match:  function(){ tone(523, 0.08, "sine", 0.2); tone(659, 0.08, "sine", 0.2, 0.07); tone(784, 0.14, "sine", 0.2, 0.14); },
+  fanfare:function(){ [523,659,784,1047].forEach(function(f,i){ tone(f, 0.16, "triangle", 0.22, i*0.11); }); noiseBurst(0.5, 0.16); },
+  tick:   function(){ tone(1250, 0.03, "square", 0.07); },
+  cheer:  function(){ noiseBurst(0.9, 0.26); tone(784, 0.2, "triangle", 0.18, 0.05); tone(1047, 0.3, "triangle", 0.18, 0.2); }
 };
 document.addEventListener("pointerdown", ensureAudio, {passive:true});
 
 /* ===== static data ===== */
-const IMG="https://item1000-collab.github.io/ai/engoo/20261015-friends-223/";
+var IMG = "https://item1000-collab.github.io/ai/engoo/20261015-friends-223/";
 
 /* SCENES: level definitions (free order, no locks) */
-const SCENES=[
+var SCENES = [
   { id:"l1", num:1, title:"The Itchy Romance", char:"PHOEBE", color:"#C96F4A",
     slide:"slide-003.jpg", type:"fill", tag:"FILL THE BLANKS",
     obj:"Tap a blank, then tap the matching word in the bank. Words that bounce back cost \u221225 points each.",
-    tip:"Read the full sentence out loud first — idioms hate lonely prepositions.",
+    tip:"Read the full sentence out loud first \u2014 idioms hate lonely prepositions.",
     flavor:"Two weeks of love, one pair of oven mitts." },
   { id:"l2", num:2, title:"Real or Delusion?", char:"CHANDLER", color:"#3E8E8C",
     slide:"slide-012.jpg", type:"tf", tag:"TRUE / FALSE",
@@ -591,18 +704,18 @@ const SCENES=[
   { id:"l4", num:4, title:"Psychological Evaluation", char:"MONICA", color:"#8E6C8A",
     slide:"slide-009.jpg", type:"match", tag:"MATCH THE MEANING",
     obj:"Match 6 words with their meanings. Locked pairs turn green; every slip costs \u221225 points.",
-    tip:"Start with the pairs you know — the rest eliminate themselves.",
+    tip:"Start with the pairs you know \u2014 the rest eliminate themselves.",
     flavor:"The duvet tag goes bottom right. Always." },
   { id:"l5", num:5, title:"Prime Time Bonus", char:"GUNTHER", color:"#4E8A57",
     slide:"slide-011.jpg", type:"bonus", tag:"BONUS ROUND",
     obj:"750 seconds of rapid questions from every reel. Streaks multiply your score up to \u00D74.",
-    tip:"Wrong answers reset the multiplier — protect the streak like it is the last muffin.",
+    tip:"Wrong answers reset the multiplier \u2014 protect the streak like it is the last muffin.",
     flavor:"One more coffee before the credits roll." }
 ];
-const byId = id => SCENES.find(s=>s.id===id);
+function byId(id){ for(var i=0;i<SCENES.length;i++){ if(SCENES[i].id===id) return SCENES[i]; } return null; }
 
 /* Level 1 question set — fill in the blanks */
-const L1_FILL=[
+var L1_FILL = [
   { q:"My boss was really angry because I ___ the ball on the Lender project.", a:"DROPPED" },
   { q:"You need to cut the new guy some ___ \u2014 it's only his first day!", a:"SLACK" },
   { q:"Her strange ___ is that she always separates her socks by color.", a:"QUIRK" },
@@ -614,12 +727,12 @@ const L1_FILL=[
   { q:"To make some money, Joey gets a ___ job at Chandler's company.", a:"TEMPORARY" },
   { q:"Chandler offers Joey an ___ processing job at the bottom of the ladder.", a:"ENTRY-LEVEL" }
 ];
-const L1_EXTRA=["NEUROTIC","SCAR"];
+var L1_EXTRA = ["NEUROTIC","SCAR"];
 
 /* Level 2 question set — real or delusion */
-const L2_TF=[
+var L2_TF = [
   { t:"Ryan leaves his submarine every single month to visit Phoebe in New York.", real:false,
-    why:"He resurfaces every couple of years — the guide says so, not every month." },
+    why:"He resurfaces every couple of years \u2014 the guide says so, not every month." },
   { t:"Joey actually has a wife named Karen and two daughters.", real:false,
     why:"Karen, Ashley and Brittany belong to the imaginary life of \u201CJoseph\u201D, not to Joey." },
   { t:"Monica is upset because Richard doesn't have any strange, obsessive habits.", real:true,
@@ -627,7 +740,7 @@ const L2_TF=[
   { t:"Phoebe caught the chicken pox from baby Ben.", real:true,
     why:"The guide is explicit: Phoebe just caught the chicken pox from baby Ben." },
   { t:"Phoebe and Ryan tape oven mitts to their hands so they don't scratch.", real:true,
-    why:"Taping oven mitts to their hands stops the scratching — and the scarring." },
+    why:"Taping oven mitts to their hands stops the scratching \u2014 and the scarring." },
   { t:"\u201CJoseph\u201D stays humble and quiet until his last day at the office.", real:false,
     why:"Joseph becomes arrogant, demands final numbers and clashes with the boss." },
   { t:"Chandler takes revenge by pretending to have an affair with the fictional Karen.", real:true,
@@ -635,13 +748,13 @@ const L2_TF=[
   { t:"Richard's real quirk is folding the toilet paper into a point.", real:false,
     why:"Folding toilet paper into a point is Monica's move. Richard claims he separates sweat socks from dress socks." },
   { t:"Monica lines her duvet tag up with the bottom right corner.", real:true,
-    why:"Monica ensures her duvet tag is at the bottom right — rules are rules." },
+    why:"Monica ensures her duvet tag is at the bottom right \u2014 rules are rules." },
   { t:"Ryan says: \u201CIf I had one wish, it would be to build a time machine and go back to when I was 7.\u201D", real:true,
-    why:"A direct quote — and a perfect example of the 2nd Conditional." }
+    why:"A direct quote \u2014 and a perfect example of the 2nd Conditional." }
 ];
 
 /* Level 3 question set — multiple choice (correct option is listed first, shuffled at render) */
-const L3_MC=[
+var L3_MC = [
   { q:"Why does Joey take a job at Chandler's company?",
     ok:"To make some money", wrong:["To find a wife named Karen","To spy on Chandler's emails"],
     why:"The guide is clear: to make some money, Joey gets a temporary job putting numbers from one column into another." },
@@ -656,7 +769,7 @@ const L3_MC=[
     why:"The escalation reel: suddenly has a wife (Karen) and two daughters (Ashley & Brittany)." },
   { q:"What does Mr. Douglas suspect?",
     ok:"That Chandler dropped the ball on the Lender project", wrong:["That Chandler is secretly an actor","That the coffee machine is broken"],
-    why:"Mr. Douglas suspects Chandler dropped the ball on the Lender project — thanks, \u2018Joseph\u2019." },
+    why:"Mr. Douglas suspects Chandler dropped the ball on the Lender project \u2014 thanks, \u2018Joseph\u2019." },
   { q:"How does Chandler take revenge on \u201CJoseph\u201D?",
     ok:"By pretending to have an affair with the fictional Karen", wrong:["By deleting Joseph's spreadsheets","By quitting the company"],
     why:"Chandler fights imagination with imagination: he pretends to have an affair with the fictional Karen." },
@@ -667,11 +780,21 @@ const L3_MC=[
     ok:"A time machine", wrong:["A bigger submarine","A diner in Montana"],
     why:"\u201CIf I had one wish, it would be to build a time machine and go back to when I was 7.\u201D" }
 ];
-const MC_OK=["Could I BE any more right?","How you doin' — nailed it!","JOSEPH would high-five you. He can't. He's imaginary.","The boss nods approvingly. Nice."];
-const MC_NO=["Ehh... Joseph made that part up too.","That answer just dropped the ball.","My brain clocked out early. Sorry.","Delusion-level answer, my friend."];
+var MC_OK = [
+  "Could I BE any more right?",
+  "How you doin' \u2014 nailed it!",
+  "JOSEPH would high-five you. He can't. He's imaginary.",
+  "The boss nods approvingly. Nice."
+];
+var MC_NO = [
+  "Ehh... Joseph made that part up too.",
+  "That answer just dropped the ball.",
+  "My brain clocked out early. Sorry.",
+  "Delusion-level answer, my friend."
+];
 
 /* Level 4 question set — match the meaning */
-const L4_PAIRS=[
+var L4_PAIRS = [
   ["OLD FLAME","a former romantic partner"],
   ["RESURFACE","to appear again after being hidden"],
   ["DROP THE BALL","to make a mistake or fail to do your job"],
@@ -681,7 +804,7 @@ const L4_PAIRS=[
 ];
 
 /* Level 5 question set — bonus round (correct option first, shuffled at render) */
-const L5_BONUS=[
+var L5_BONUS = [
   { q:"\u201COld flame\u201D means\u2026", ok:"a former romantic partner", wrong:["a burnt breakfast","a cold cup of coffee"] },
   { q:"Ryan shows up in New York\u2026", ok:"every couple of years", wrong:["every single month","twice a week"] },
   { q:"Phoebe caught the chicken pox from\u2026", ok:"baby Ben", wrong:["Chandler","Gunther"] },
@@ -696,414 +819,461 @@ const L5_BONUS=[
   { q:"Phoebe and Ryan tape ___ to their hands.", ok:"oven mitts", wrong:["postage stamps","bananas"] },
   { q:"With one wish, Ryan would build\u2026", ok:"a time machine", wrong:["a pizza oven","a yacht"] },
   { q:"Monica folds the toilet paper into\u2026", ok:"a point", wrong:["a paper crane","two halves"] },
-  { q:"\u201CIf I had one wish\u201D — why \u201Chad\u201D?", ok:"2nd Conditional: an imaginary present", wrong:["He is describing the past","It is a typo"] }
+  { q:"\u201CIf I had one wish\u201D \u2014 why \u201Chad\u201D?", ok:"2nd Conditional: an imaginary present", wrong:["He is describing the past","It is a typo"] }
 ];
 
 /* Ranks depend on the total banked score */
-const RANKS=[
-  { min:7500, name:"SITCOM LEGEND",        icon:"trophy",       color:"#E0A437" },
-  { min:5500, name:"SENIOR DATA PROCESSOR",icon:"award",        color:"#3E8E8C" },
-  { min:3600, name:"CENTRAL PERK REGULAR", icon:"coffee",       color:"#C96F4A" },
-  { min:1800, name:"ENTRY-LEVEL VIEWER",   icon:"clapperboard", color:"#8E6C8A" },
-  { min:0,    name:"TEMP WITH DREAMS",     icon:"zap",          color:"#5C4A3A" }
+var RANKS = [
+  { min:7500, name:"SITCOM LEGEND",         ic:"trophy",   color:"#E0A437" },
+  { min:5500, name:"SENIOR DATA PROCESSOR", ic:"award",    color:"#3E8E8C" },
+  { min:3600, name:"CENTRAL PERK REGULAR",  ic:"coffee",   color:"#C96F4A" },
+  { min:1800, name:"ENTRY-LEVEL VIEWER",    ic:"clapper",  color:"#8E6C8A" },
+  { min:0,    name:"TEMP WITH DREAMS",      ic:"zap",      color:"#5C4A3A" }
 ];
 
 /* ===== persistence (localStorage, versioned, private-mode safe) ===== */
-const SAVE_KEY="friends_vocab_arcade_v1";
+var SAVE_KEY = "friends_vocab_arcade_v2";
 function loadProgress(){
   try{
-    const raw=localStorage.getItem(SAVE_KEY);
-    if(raw){ const p=JSON.parse(raw); if(p && p.v===1) return p; }
+    var raw = localStorage.getItem(SAVE_KEY);
+    if(raw){
+      var p = JSON.parse(raw);
+      if(p && p.v === 2){
+        if(!p.lv || typeof p.lv !== "object") p.lv = {};   /* schema guard */
+        return p;
+      }
+    }
   }catch(e){}
-  return { v:1, muted:false, lv:{} };
+  return { v:2, muted:false, lv:{} };
 }
 function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
-let progress=loadProgress();
-const lvRec   = id => progress.lv[id] || { best:0, stars:0 };
-const career  = () => SCENES.reduce((s,sc)=>s+lvRec(sc.id).best, 0);
-const totalStars = () => SCENES.reduce((s,sc)=>s+lvRec(sc.id).stars, 0);
-const allDone = () => SCENES.every(sc=>lvRec(sc.id).stars>0);
+var progress = loadProgress();
+function lvRec(id){
+  var r = progress.lv[id];
+  if(!r || typeof r !== "object") r = { best:0, stars:0 };
+  return r;
+}
+function career(){ var s=0; SCENES.forEach(function(sc){ s += lvRec(sc.id).best; }); return s; }
+function totalStars(){ var s=0; SCENES.forEach(function(sc){ s += lvRec(sc.id).stars; }); return s; }
+function allDone(){ return SCENES.every(function(sc){ return lvRec(sc.id).stars > 0; }); }
 
 /* ===== session + cleanup ===== */
-let session=null, cleanups=[];
+var session = null, cleanups = [];
 function setCleanup(fn){ cleanups.push(fn); }
-function callCleanup(){ cleanups.forEach(f=>{ try{f();}catch(e){} }); cleanups=[]; }
-function later(fn, ms){ const t=setTimeout(fn,ms); setCleanup(()=>clearTimeout(t)); return t; }
-function every(fn, ms){ const t=setInterval(fn,ms); setCleanup(()=>clearInterval(t)); return t; }
+function callCleanup(){ cleanups.forEach(function(f){ try{ f(); }catch(e){} }); cleanups = []; }
+function later(fn, ms){ var t = setTimeout(fn, ms); setCleanup(function(){ clearTimeout(t); }); return t; }
+function every(fn, ms){ var t = setInterval(fn, ms); setCleanup(function(){ clearInterval(t); }); return t; }
 
 /* ===== HUD ===== */
 function updateHUD(){
-  const c=$("#hud-career"); if(c) c.textContent=career();
-  $$("#dots .dot").forEach((d,i)=>{
-    const sc=SCENES[i], on=lvRec(sc.id).stars>0;
-    d.classList.toggle("on",on);
-    d.style.background=on?sc.color:"";
+  var c = $("#hud-career"); if(c) c.textContent = career();
+  $$("#dots .dot").forEach(function(d, i){
+    var sc = SCENES[i]; if(!sc) return;
+    var on = lvRec(sc.id).stars > 0;
+    d.classList.toggle("on", on);
+    d.style.background = on ? sc.color : "";
   });
 }
 function renderSound(){
-  const b=$("#btn-sound");
+  var b = $("#btn-sound"); if(!b) return;
   b.classList.toggle("muted", progress.muted);
   b.setAttribute("aria-pressed", String(!progress.muted));
-  b.setAttribute("aria-label", progress.muted?"Turn sound on":"Turn sound off");
+  b.setAttribute("aria-label", progress.muted ? "Turn sound on" : "Turn sound off");
 }
 
 /* ===== screens ===== */
 function showScreen(name){
-  $$(".screen").forEach(s=>s.classList.toggle("active", s.id==="screen-"+name));
+  $$(".screen").forEach(function(s){
+    s.classList.toggle("active", s.id === "screen-" + name);
+  });
   window.scrollTo(0,0);
   refreshIcons();
 }
 
 /* ===== image fallback (offline-safe placeholders) ===== */
 function guardImages(scope){
-  $$("img.slide-img", scope).forEach(img=>{
-    const kill=()=>{
-      if(img.dataset.dead) return;
-      img.dataset.dead="1";
-      const d=document.createElement("div");
-      d.className="img-fallback";
-      const host=img.closest("[data-c]");
-      const c=(host&&host.dataset.c)||"#C96F4A";
-      d.style.background="linear-gradient(135deg, "+c+", #33261C)";
-      d.textContent=img.dataset.initial||"\uD83D\uDCFA";
-      img.replaceWith(d);
+  $$("img.slide-img", scope).forEach(function(img){
+    if(img.dataset.dead) return;
+    var killed = false;
+    var kill = function(){
+      if(killed) return;
+      killed = true;
+      try{
+        var host = closest(img, "[data-c]");
+        var col = (host && host.getAttribute("data-c")) || "#C96F4A";
+        var d = document.createElement("div");
+        d.className = "img-fallback";
+        d.style.background = "linear-gradient(135deg, " + col + ", #33261C)";
+        d.textContent = img.getAttribute("data-initial") || "\uD83D\uDCFA";
+        if(img.parentNode) img.parentNode.replaceChild(d, img);
+      }catch(e){}
     };
-    img.addEventListener("error", kill, {once:true});
-    if(img.complete && img.naturalWidth===0) kill();
+    img.addEventListener("error", kill);
+    if(img.complete && img.naturalWidth === 0) kill();
   });
 }
 
 /* ===== modal system ===== */
-const modalRoot=$("#modal-root");
+var modalRoot = $("#modal-root");
 function modalOpen(){ return !!modalRoot.firstChild; }
-function closeModal(){ modalRoot.innerHTML=""; }
+function closeModal(){ modalRoot.innerHTML = ""; }
 function openModal(html){
   closeModal();
-  const back=document.createElement("div");
-  back.className="mback";
-  back.innerHTML='<div class="modal" role="dialog" aria-modal="true">'+html+"</div>";
-  back.addEventListener("click", e=>{ if(e.target===back) closeModal(); });
+  var back = document.createElement("div");
+  back.className = "mback";
+  back.innerHTML = '<div class="modal" role="dialog" aria-modal="true">' + html + "</div>";
+  back.addEventListener("click", function(e){ if(e.target === back) closeModal(); });
   modalRoot.appendChild(back);
-  refreshIcons();
+  refreshIcons(back);
   guardImages(back);
-  const prim=$(".primary", back);
-  if(prim) setTimeout(()=>prim.focus(), 60);
+  var prim = $(".primary", back);
+  if(prim) setTimeout(function(){ try{ prim.focus(); }catch(e){} }, 60);
   return back;
 }
 
 /* ===== preloader ===== */
- $("#btn-play").addEventListener("click", ()=>{
+ $("#btn-play").addEventListener("click", function(){
   ensureAudio(); SFX.click();
-  const p=$("#preloader");
-  p.classList.add("away");
-  setTimeout(()=>p.remove(), 900);
+  var p = $("#preloader");
+  if(p){ p.classList.add("away"); setTimeout(function(){ if(p.parentNode) p.remove(); }, 900); }
 });
 
 /* ===== level map ===== */
 function starRow(n, extra){
-  let h="";
-  for(let i=0;i<3;i++) h+='<i data-lucide="star" class="star '+(i<n?"on":"")+" "+(extra||"")+'"></i>';
+  var h = "";
+  for(var i=0;i<3;i++) h += icon("star", "star " + (i<n ? "on" : "") + " " + (extra || ""));
   return h;
 }
+function reelCardHTML(sc, p){
+  return '<article class="reel" tabindex="0" role="button" data-action="open-level" data-level="' + sc.id + '" ' +
+    'style="--c:' + sc.color + '" aria-label="Open level ' + sc.num + ': ' + esc(sc.title) + '">' +
+    '<div class="reel-media" data-c="' + sc.color + '">' +
+      '<img class="slide-img" src="' + IMG + sc.slide + '" data-initial="' + sc.char.charAt(0) + '" alt="' + esc(sc.title) + ' preview">' +
+      '<span class="reel-num">' + sc.num + "</span>" +
+      '<span class="reel-tag">' + sc.tag + "</span>" +
+    "</div>" +
+    '<div class="reel-body">' +
+      "<h3>" + esc(sc.title) + "</h3>" +
+      '<div class="reel-meta">' +
+        '<span class="chip">' + icon("user") + sc.char + "</span>" +
+        '<span class="chip best mono">' + icon("coins") + p.best + "</span>" +
+      "</div>" +
+      '<div class="reel-stars">' + starRow(p.stars) + "</div>" +
+      '<p class="flavor">\u201C' + esc(sc.flavor) + '\u201D</p>' +
+    "</div>" +
+  "</article>";
+}
+/* minimal text card — guaranteed fallback if anything in the rich card fails */
+function fallbackCardHTML(sc){
+  return '<article class="reel" tabindex="0" role="button" data-action="open-level" data-level="' + sc.id + '" ' +
+    'aria-label="Open level ' + sc.num + ': ' + esc(sc.title) + '">' +
+    '<div class="reel-body"><h3>' + sc.num + ". " + esc(sc.title) + "</h3>" +
+    '<p><b>' + sc.char + "</b> \u00B7 " + sc.tag + "</p></div></article>";
+}
 function renderMap(){
-  const grid=$("#map-grid");
-  let html="";
-  SCENES.forEach(sc=>{
-    const p=lvRec(sc.id);
-    html+=
-    '<article class="reel" tabindex="0" role="button" data-action="open-level" data-level="'+sc.id+'" '+
-      'style="--c:'+sc.color+'" aria-label="Open level '+sc.num+': '+esc(sc.title)+'">'+
-      '<div class="reel-media" data-c="'+sc.color+'">'+
-        '<img class="slide-img" src="'+IMG+sc.slide+'" data-initial="'+sc.char[0]+'" alt="'+esc(sc.title)+' preview">'+
-        '<span class="reel-num">'+sc.num+"</span>"+
-        '<span class="reel-tag">'+sc.tag+"</span>"+
-      "</div>"+
-      '<div class="reel-body">'+
-        "<h3>"+esc(sc.title)+"</h3>"+
-        '<div class="reel-meta">'+
-          '<span class="chip"><i data-lucide="user"></i>'+sc.char+"</span>"+
-          '<span class="chip best mono"><i data-lucide="coins"></i>'+p.best+"</span>"+
-        "</div>"+
-        '<div class="reel-stars">'+starRow(p.stars)+"</div>"+
-        '<p class="flavor">\u201C'+esc(sc.flavor)+'\u201D</p>'+
-      "</div>"+
-    "</article>";
+  var grid = $("#map-grid");
+  if(!grid){ fail("renderMap", new Error("#map-grid missing")); return; }
+  var html = "";
+  SCENES.forEach(function(sc){
+    try{ html += reelCardHTML(sc, lvRec(sc.id)); }
+    catch(err){ fail("reel " + sc.id, err); html += fallbackCardHTML(sc); }
   });
-  grid.innerHTML=html;
-  $("#final-card").classList.toggle("hidden", !allDone());
-  refreshIcons();
+  grid.innerHTML = html;
+  var fc = $("#final-card");
+  if(fc) fc.classList.toggle("hidden", !allDone());
+  refreshIcons(grid);
   guardImages(grid);
 }
 
 /* ===== level shell ===== */
 function renderLevelHead(sc){
-  $("#lvl-tag").textContent="REEL "+sc.num+" · "+sc.tag;
-  $("#lvl-title").textContent=sc.title;
-  $("#lvl-char").innerHTML='<i data-lucide="user"></i>'+sc.char;
-  const box=$("#scene-imgbox");
-  box.dataset.c=sc.color;
-  box.style.background=sc.color;
-  const img=$("#scene-img");
-  img.src=IMG+sc.slide; img.dataset.initial=sc.char[0]; img.dataset.dead="";
-  img.onerror=()=>{ /* handled by guardImages below */ };
-  $("#scene-obj").textContent=sc.obj;
-  $("#scene-tip").textContent=sc.tip;
-  $("#scene-flavor").textContent="\u201C"+sc.flavor+"\u201D";
-  refreshIcons();
+  $("#lvl-tag").textContent = "REEL " + sc.num + " \u00B7 " + sc.tag;
+  $("#lvl-title").textContent = sc.title;
+  $("#lvl-char").innerHTML = icon("user") + sc.char;
+  var box = $("#scene-imgbox");
+  box.setAttribute("data-c", sc.color);
+  box.style.background = sc.color;
+  var img = $("#scene-img");
+  img.setAttribute("src", IMG + sc.slide);
+  img.setAttribute("data-initial", sc.char.charAt(0));
+  img.removeAttribute("data-dead");
+  $("#scene-obj").textContent = sc.obj;
+  $("#scene-tip").textContent = sc.tip;
+  $("#scene-flavor").textContent = "\u201C" + sc.flavor + "\u201D";
+  refreshIcons($("#screen-level"));
   guardImages($("#screen-level"));
 }
 function updateLevelHUD(){
   if(!session) return;
-  const sc=$("#hud-score"), st=$("#hud-streak"), sl=$("#hud-slips");
-  sc.textContent=session.score;
-  st.textContent=session.streak>0 ? "\u00D7"+(1+0.25*Math.min(session.streak,12)).toFixed(2) : "0";
-  sl.textContent=session.mistakes;
+  var sc = $("#hud-score"), st = $("#hud-streak"), sl = $("#hud-slips");
+  if(sc) sc.textContent = session.score;
+  if(st) st.textContent = session.streak > 0 ? "\u00D7" + (1 + 0.25*Math.min(session.streak,12)).toFixed(2) : "0";
+  if(sl) sl.textContent = session.mistakes;
 }
 function addScore(pts){
-  session.score+=pts;
-  const el=$("#hud-score");
-  el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+  session.score += pts;
+  var el = $("#hud-score");
+  if(el){ el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
   updateLevelHUD();
 }
 function subScore(pts){
-  session.score=Math.max(0, session.score-pts);
+  session.score = Math.max(0, session.score - pts);
   updateLevelHUD();
 }
 function startLevel(id){
   callCleanup(); closeModal();
-  const sc=byId(id); if(!sc) return;
-  session={ id:id, mistakes:0, streak:0, score:0, done:false };
+  var sc = byId(id); if(!sc) return;
+  session = { id:sc.id, mistakes:0, streak:0, score:0, done:false };
   renderLevelHead(sc);
   showScreen("level");
   updateLevelHUD();
-  RUNNERS[sc.type]($("#game-root"), sc);
+  var runner = RUNNERS[sc.type];
+  if(runner) runner($("#game-root"), sc);
+  else fail("runner " + sc.type, new Error("Unknown game type"));
 }
 function toMap(){
   callCleanup(); closeModal();
-  session=null;
+  session = null;
+  $("#game-root").innerHTML = "";
   showScreen("map");
 }
 function openLevel(id){
-  const sc=byId(id); if(!sc) return;
+  var sc = byId(id); if(!sc) return;
   openModal(
-    '<p class="m-title mono">REEL '+sc.num+" OF 5 · "+sc.tag+"</p>"+
-    '<h2 class="m-big" style="color:'+sc.color+'">'+esc(sc.title)+"</h2>"+
-    '<div class="brief-img" data-c="'+sc.color+'">'+
-      '<img class="slide-img" src="'+IMG+sc.slide+'" data-initial="'+sc.char[0]+'" alt="'+esc(sc.title)+' scene">'+
-    "</div>"+
-    "<p><b>Character:</b> "+sc.char+"</p>"+
-    "<p><b>Objective:</b> "+esc(sc.obj)+"</p>"+
-    "<p><b>Tip:</b> "+esc(sc.tip)+"</p>"+
-    '<p class="flavor">\u201C'+esc(sc.flavor)+'\u201D</p>'+
-    '<div class="m-actions">'+
-      '<button class="btn" data-action="to-map">BACK TO MAP</button>'+
-      '<button class="btn btn-primary primary" data-action="start-level" data-level="'+sc.id+'">START \u25B6</button>'+
+    '<p class="m-title mono">REEL ' + sc.num + " OF 5 \u00B7 " + sc.tag + "</p>" +
+    '<h2 class="m-big" style="color:' + sc.color + '">' + esc(sc.title) + "</h2>" +
+    '<div class="brief-img" data-c="' + sc.color + '">' +
+      '<img class="slide-img" src="' + IMG + sc.slide + '" data-initial="' + sc.char.charAt(0) + '" alt="' + esc(sc.title) + ' scene">' +
+    "</div>" +
+    "<p><b>Character:</b> " + sc.char + "</p>" +
+    "<p><b>Objective:</b> " + esc(sc.obj) + "</p>" +
+    "<p><b>Tip:</b> " + esc(sc.tip) + "</p>" +
+    '<p class="flavor">\u201C' + esc(sc.flavor) + '\u201D</p>' +
+    '<div class="m-actions">' +
+      '<button class="btn" type="button" data-action="to-map">BACK TO MAP</button>' +
+      '<button class="btn btn-primary primary" type="button" data-action="start-level" data-level="' + sc.id + '">START \u25B6</button>' +
     "</div>"
   );
 }
 function endLevel(){
   if(!session || session.done) return;
-  session.done=true;
+  session.done = true;
   callCleanup();
-  const sc=byId(session.id);
-  const st = session.mistakes===0 ? 3 : (session.mistakes<=2 ? 2 : 1);
-  const prev=lvRec(sc.id);
-  const newBest=session.score>prev.best;
-  progress.lv[sc.id]={ best:Math.max(prev.best, session.score), stars:Math.max(prev.stars, st) };
+  var sc = byId(session.id);
+  var st = session.mistakes === 0 ? 3 : (session.mistakes <= 2 ? 2 : 1);
+  var prev = lvRec(sc.id);
+  var newBest = session.score > prev.best;
+  progress.lv[sc.id] = { best: Math.max(prev.best, session.score), stars: Math.max(prev.stars, st) };
   saveProgress(); updateHUD();
-  if(st===3){ SFX.fanfare(); spawnConfetti(160); }
-  else { SFX.cheer(); if(st===2) spawnConfetti(80); }
-  if(newBest && prev.best>0) toast("NEW BEST SCORE!","trophy");
-  const wasLast=allDone();
-  if(wasLast) setTimeout(()=>toast("ALL REELS COMPLETE — THE FINALE IS OPEN!","party-popper"), 700);
-  const starHtml=[0,1,2].map(i=>
-    '<i data-lucide="star" class="rstar '+(i<st?"on":"")+'" style="animation-delay:'+(i*0.16)+'s"></i>').join("");
-  const msg = st===3 ? "Flawless reel! Direct-to-series material."
-            : st===2 ? "Nice take! A couple of bloopers in the cut."
-            : "It's in the can — barely. Rewatch the guide and try again.";
-  const finBtn = wasLast
-    ? '<button class="btn btn-mustard primary" data-action="goto-finale"><i data-lucide="trophy"></i>FINALE \u25B6</button>'
-    : '<button class="btn btn-primary primary" data-action="close-modal">CONTINUE</button>';
+  if(st === 3){ SFX.fanfare(); spawnConfetti(160); }
+  else { SFX.cheer(); if(st === 2) spawnConfetti(80); }
+  if(newBest && prev.best > 0) toast("NEW BEST SCORE!", "trophy");
+  var wasLast = allDone();
+  if(wasLast) setTimeout(function(){ toast("ALL REELS COMPLETE \u2014 THE FINALE IS OPEN!", "party"); }, 700);
+  var starHtml = "";
+  [0,1,2].forEach(function(i){
+    starHtml += icon("star", "rstar " + (i < st ? "on" : "")) ;
+  });
+  var msg = st === 3 ? "Flawless reel! Direct-to-series material."
+          : st === 2 ? "Nice take! A couple of bloopers in the cut."
+          : "It's in the can \u2014 barely. Rewatch the guide and try again.";
+  var finBtn = wasLast
+    ? '<button class="btn btn-mustard primary" type="button" data-action="goto-finale">' + icon("trophy") + 'FINALE \u25B6</button>'
+    : '<button class="btn btn-primary primary" type="button" data-action="close-modal">CONTINUE</button>';
   openModal(
-    '<h3 class="m-title">'+esc(sc.title).toUpperCase()+" — COMPLETE</h3>"+
-    '<div class="rstars">'+starHtml+"</div>"+
-    '<p class="r-msg">'+msg+"</p>"+
-    '<div class="r-grid mono">'+
-      '<div class="r-cell"><span>SCORE</span><b>'+session.score+"</b></div>"+
-      '<div class="r-cell"><span>BEST</span><b>'+progress.lv[sc.id].best+"</b></div>"+
-      '<div class="r-cell"><span>SLIPS</span><b>'+session.mistakes+"</b></div>"+
-    "</div>"+
-    '<div class="m-actions">'+
-      '<button class="btn" data-action="to-map">MAP</button>'+
-      '<button class="btn btn-teal" data-action="start-level" data-level="'+sc.id+'"><i data-lucide="rotate-ccw"></i>REPLAY</button>'+
-      finBtn+
+    '<h3 class="m-title">' + esc(sc.title).toUpperCase() + " \u2014 COMPLETE</h3>" +
+    '<div class="rstars">' + starHtml + "</div>" +
+    '<p class="r-msg">' + msg + "</p>" +
+    '<div class="r-grid mono">' +
+      '<div class="r-cell"><span>SCORE</span><b>' + session.score + "</b></div>" +
+      '<div class="r-cell"><span>BEST</span><b>' + progress.lv[sc.id].best + "</b></div>" +
+      '<div class="r-cell"><span>SLIPS</span><b>' + session.mistakes + "</b></div>" +
+    "</div>" +
+    '<div class="m-actions">' +
+      '<button class="btn" type="button" data-action="to-map">MAP</button>' +
+      '<button class="btn btn-teal" type="button" data-action="start-level" data-level="' + sc.id + '">' + icon("rotateccw") + 'REPLAY</button>' +
+      finBtn +
     "</div>"
   );
 }
 
 /* ===== timer helper (per-card and global timers) ===== */
 function makeTimer(scope, secs, onEnd){
-  const bar=$(".timer", scope), fill=$(".timer-fill", scope), num=$(".timer-num", scope);
-  let rem=secs;
+  var bar = $(".timer", scope), fill = $(".timer-fill", scope), num = $(".timer-num", scope);
+  var rem = secs;
   function paint(){
-    fill.style.width=clamp(rem/secs*100,0,100)+"%";
-    bar.classList.toggle("crit", rem/secs<=0.1 && rem>0);
-    num.textContent=Math.floor(rem/60)+":"+String(rem%60).padStart(2,"0");
+    if(!fill || !bar || !num) return;
+    fill.style.width = clamp(rem/secs*100, 0, 100) + "%";
+    bar.classList.toggle("crit", rem/secs <= 0.1 && rem > 0);
+    num.textContent = Math.floor(rem/60) + ":" + String(rem % 60).padStart(2, "0");
   }
   paint();
-  const iv=every(()=>{
+  var iv = every(function(){
     rem--;
     paint();
-    if(rem<=60 && rem>0) SFX.tick();
-    if(rem<=0){ clearInterval(iv); onEnd && onEnd(); }
+    if(rem <= 60 && rem > 0) SFX.tick();
+    if(rem <= 0){ clearInterval(iv); if(onEnd) onEnd(); }
   }, 1000);
-  return { stop(){ clearInterval(iv); }, get remaining(){ return rem; } };
+  return { stop:function(){ clearInterval(iv); }, remaining:function(){ return rem; } };
 }
 
 /* ============================================================
    MINI-GAME 1 — FILL IN THE BLANKS
    ============================================================ */
 function runFill(root, sc){
-  let sel=-1, done=0;
-  const bank=shuffle(L1_FILL.map(it=>it.a).concat(L1_EXTRA));
-  const listHtml=L1_FILL.map((it,i)=>{
-    const parts=it.q.split("___");
-    return '<li class="fill-line"><span>'+parts[0]+"</span>"+
-      '<button class="blank" data-blank="'+i+'" aria-label="Blank '+(i+1)+'">&nbsp;?&nbsp;</button>'+
-      "<span>"+parts[1]+"</span></li>";
+  var sel = -1, done = 0;
+  var bank = shuffle(L1_FILL.map(function(it){ return it.a; }).concat(L1_EXTRA));
+  var listHtml = L1_FILL.map(function(it, i){
+    var parts = it.q.split("___");
+    return '<li class="fill-line"><span>' + parts[0] + "</span>" +
+      '<button type="button" class="blank" data-blank="' + i + '" aria-label="Blank ' + (i+1) + '">&nbsp;?&nbsp;</button>' +
+      "<span>" + parts[1] + "</span></li>";
   }).join("");
-  const bankHtml=bank.map(w=>'<button class="chip-word" data-word="'+esc(w)+'">'+esc(w)+"</button>").join("");
-  root.innerHTML=
-    '<ul class="fill-list">'+listHtml+"</ul>"+
-    '<div class="bank" aria-label="Word bank">'+bankHtml+"</div>";
-  const handler=e=>{
-    const b=e.target.closest(".blank");
+  var bankHtml = bank.map(function(w){
+    return '<button type="button" class="chip-word" data-word="' + esc(w) + '">' + esc(w) + "</button>";
+  }).join("");
+  root.innerHTML =
+    '<ul class="fill-list">' + listHtml + "</ul>" +
+    '<div class="bank" aria-label="Word bank">' + bankHtml + "</div>";
+  function handler(e){
+    var b = closest(e.target, ".blank");
     if(b){
       if(b.classList.contains("filled")) return;
-      $$(".blank", root).forEach(x=>x.classList.remove("sel"));
-      b.classList.add("sel"); sel=+b.dataset.blank; SFX.click();
+      $$(".blank", root).forEach(function(x){ x.classList.remove("sel"); });
+      b.classList.add("sel"); sel = +b.getAttribute("data-blank"); SFX.click();
       return;
     }
-    const c=e.target.closest(".chip-word");
+    var c = closest(e.target, ".chip-word");
     if(!c) return;
-    const w=c.dataset.word;
-    if(sel<0){
-      toast("Pick a blank first!","pencil");
-      $$(".blank:not(.filled)", root).forEach(x=>{
-        x.classList.add("pulse"); later(()=>x.classList.remove("pulse"),520);
+    var w = c.getAttribute("data-word");
+    if(sel < 0){
+      toast("Pick a blank first!", "pencil");
+      $$(".blank", root).forEach(function(x){
+        if(!x.classList.contains("filled")){
+          x.classList.add("pulse");
+          later(function(){ x.classList.remove("pulse"); }, 520);
+        }
       });
       return;
     }
-    const blank=$$('.blank', root)[sel];
-    if(L1_FILL[sel].a===w){
-      blank.textContent="\u00A0"+w+"\u00A0";
+    var blank = $$(".blank", root)[sel];
+    if(L1_FILL[sel].a === w){
+      blank.textContent = "\u00A0" + w + "\u00A0";
       blank.classList.add("filled"); blank.classList.remove("sel");
-      c.remove(); sel=-1; done++;
+      if(c.parentNode) c.parentNode.removeChild(c);
+      sel = -1; done++;
       session.streak++;
-      const pts=100+10*Math.min(session.streak-1,10);
+      var pts = 100 + 10*Math.min(session.streak - 1, 10);
       addScore(pts); SFX.correct();
-      const r=blank.getBoundingClientRect();
-      popFloat(r.left+r.width/2, r.top, "+"+pts, true);
-      if(done===L1_FILL.length) later(()=>endLevel(), 500);
+      var r = blank.getBoundingClientRect();
+      popFloat(r.left + r.width/2, r.top, "+" + pts, true);
+      if(done === L1_FILL.length) later(endLevel, 500);
     }else{
       SFX.wrong();
-      c.classList.add("shake"); later(()=>c.classList.remove("shake"),500);
-      session.streak=0; session.mistakes++;
+      c.classList.add("shake"); later(function(){ c.classList.remove("shake"); }, 500);
+      session.streak = 0; session.mistakes++;
       subScore(25);
-      const r=c.getBoundingClientRect();
-      popFloat(r.left+r.width/2, r.top, "\u221225", false);
+      var r2 = c.getBoundingClientRect();
+      popFloat(r2.left + r2.width/2, r2.top, "\u221225", false);
     }
-  };
+  }
   root.addEventListener("click", handler);
-  setCleanup(()=>root.removeEventListener("click", handler));
+  setCleanup(function(){ root.removeEventListener("click", handler); });
 }
 
 /* ============================================================
    MINI-GAME 2 — REAL OR DELUSION (True/False with NEXT gate)
+   The game never auto-advances: the explanation stays on screen
+   until the player presses NEXT (or Enter). The timer stops while
+   the explanation is visible and restarts for the next card.
    ============================================================ */
 function runTF(root, sc){
-  let idx=0, answered=false, tmr=null;
-  const total=L2_TF.length;
+  var idx = 0, answered = false, tmr = null;
+  var total = L2_TF.length;
   function card(){
-    answered=false;
-    const st=L2_TF[idx];
-    root.innerHTML=
-      '<div class="timer-row"><div class="timer"><div class="timer-fill"></div></div><span class="timer-num mono">10:00</span></div>'+
-      '<div class="tf-top"><span class="chip mono">CARD '+(idx+1)+"/"+total+'</span>'+
-      '<span class="chip mono">STREAK '+session.streak+"</span></div>"+
-      '<div class="tf-card">'+
-        '<p class="kicker">REAL OR DELUSION?</p>'+
-        '<p class="tf-q">'+st.t+"</p>"+
-        '<div class="tf-btns">'+
-          '<button class="tf-btn real" data-tf="1" aria-label="Answer real"><i data-lucide="check"></i>REAL</button>'+
-          '<button class="tf-btn delu" data-tf="0" aria-label="Answer delusion"><i data-lucide="x"></i>DELUSION</button>'+
-        "</div>"+
-        '<div class="explain" role="status" hidden></div>'+
-        '<div class="next-row" hidden><button class="btn btn-primary next">NEXT STATEMENT</button></div>'+
+    answered = false;
+    var st = L2_TF[idx];
+    root.innerHTML =
+      '<div class="timer-row"><div class="timer"><div class="timer-fill"></div></div><span class="timer-num mono">10:00</span></div>' +
+      '<div class="tf-top"><span class="chip mono">CARD ' + (idx+1) + "/" + total + '</span>' +
+      '<span class="chip mono">STREAK ' + session.streak + "</span></div>" +
+      '<div class="tf-card">' +
+        '<p class="kicker">REAL OR DELUSION?</p>' +
+        '<p class="tf-q">' + st.t + "</p>" +
+        '<div class="tf-btns">' +
+          '<button type="button" class="tf-btn real" data-tf="1" aria-label="Answer real">' + icon("check") + 'REAL</button>' +
+          '<button type="button" class="tf-btn delu" data-tf="0" aria-label="Answer delusion">' + icon("x") + 'DELUSION</button>' +
+        "</div>" +
+        '<div class="explain" role="status" hidden></div>' +
+        '<div class="next-row" hidden><button type="button" class="btn btn-primary next">NEXT STATEMENT</button></div>' +
       "</div>";
-    refreshIcons();
-    tmr=makeTimer(root, 600, ()=>answer(null));
+    refreshIcons(root);
+    tmr = makeTimer(root, 600, function(){ answer(null); });
   }
   function answer(choice){
     if(answered) return;
-    answered=true;
-    if(tmr) tmr.stop();
-    const st=L2_TF[idx];
-    const ok = choice!==null && choice===st.real;
-    const realBtn=$(".tf-btn.real", root), deluBtn=$(".tf-btn.delu", root);
-    realBtn.classList.add(st.real?"good":"dim");
-    deluBtn.classList.add(!st.real?"good":"dim");
-    realBtn.disabled=deluBtn.disabled=true;
-    if(choice!==null){
-      const chosen=choice?realBtn:deluBtn;
-      if(!ok){ chosen.classList.add("bad","shake"); later(()=>chosen.classList.remove("shake"),500); }
-      const r=chosen.getBoundingClientRect();
+    answered = true;
+    if(tmr) tmr.stop();               /* timer pauses while the explanation is on screen */
+    var st = L2_TF[idx];
+    var ok = choice !== null && choice === st.real;
+    var realBtn = $(".tf-btn.real", root), deluBtn = $(".tf-btn.delu", root);
+    realBtn.classList.add(st.real ? "good" : "dim");
+    deluBtn.classList.add(!st.real ? "good" : "dim");
+    realBtn.disabled = deluBtn.disabled = true;
+    if(choice !== null){
+      var chosen = choice ? realBtn : deluBtn;
+      if(!ok){ chosen.classList.add("bad", "shake"); later(function(){ chosen.classList.remove("shake"); }, 500); }
+      var r = chosen.getBoundingClientRect();
       if(ok){
         session.streak++;
-        const pts=100+25*Math.min(session.streak-1,8);
+        var pts = 100 + 25*Math.min(session.streak - 1, 8);
         addScore(pts); SFX.correct();
-        popFloat(r.left+r.width/2, r.top, "+"+pts, true);
+        popFloat(r.left + r.width/2, r.top, "+" + pts, true);
       }else{
-        session.mistakes++; session.streak=0; SFX.wrong();
-        popFloat(r.left+r.width/2, r.top, "SLIP", false);
+        session.mistakes++; session.streak = 0; SFX.wrong();
+        popFloat(r.left + r.width/2, r.top, "SLIP", false);
       }
     }else{
-      session.mistakes++; session.streak=0; SFX.wrong();
+      session.mistakes++; session.streak = 0; SFX.wrong();
     }
-    const ex=$(".explain", root);
-    ex.hidden=false;
-    ex.innerHTML="<b>"+(choice===null ? "TIME'S UP!" : ok ? "CORRECT!" : "NOPE — DELUSION DETECTED.")+"</b> "+st.why;
-    const nr=$(".next-row", root);
-    nr.hidden=false;
-    $(".next", root).textContent = idx===total-1 ? "SEE RESULTS" : "NEXT STATEMENT";
+    var ex = $(".explain", root);
+    ex.hidden = false;
+    ex.innerHTML = "<b>" + (choice === null ? "TIME'S UP!" : ok ? "CORRECT!" : "NOPE \u2014 DELUSION DETECTED.") + "</b> " + st.why;
+    var nr = $(".next-row", root);
+    nr.hidden = false;
+    $(".next", root).textContent = idx === total - 1 ? "SEE RESULTS" : "NEXT STATEMENT";
     updateLevelHUD();
     $(".next", root).focus();
   }
   function next(){
     idx++;
-    if(idx>=total){ endLevel(); return; }
-    card();
+    if(idx >= total){ endLevel(); return; }
+    card();                            /* timer restarts with the new card */
   }
-  const click=e=>{
-    const b=e.target.closest(".tf-btn");
-    if(b && !answered){ answer(b.dataset.tf==="1"); return; }
-    if(e.target.closest(".next")) next();
-  };
-  const key=e=>{
-    if(answered && e.key==="Enter"){
-      const nb=$(".next", root);
-      if(document.activeElement===nb) return; /* native click handles it */
-      e.preventDefault(); nb && nb.click();
+  function click(e){
+    var b = closest(e.target, ".tf-btn");
+    if(b && !answered){ answer(b.getAttribute("data-tf") === "1"); return; }
+    if(closest(e.target, ".next")) next();
+  }
+  function key(e){
+    if(answered && e.key === "Enter"){
+      var nb = $(".next", root);
+      if(document.activeElement === nb) return;  /* native click handles it */
+      e.preventDefault(); if(nb) nb.click();
       return;
     }
     if(!answered){
-      if(e.key==="ArrowLeft"){ e.preventDefault(); answer(true); }
-      if(e.key==="ArrowRight"){ e.preventDefault(); answer(false); }
+      if(e.key === "ArrowLeft"){ e.preventDefault(); answer(true); }
+      if(e.key === "ArrowRight"){ e.preventDefault(); answer(false); }
     }
-  };
+  }
   root.addEventListener("click", click);
   document.addEventListener("keydown", key);
-  setCleanup(()=>{ root.removeEventListener("click", click); document.removeEventListener("keydown", key); if(tmr)tmr.stop(); });
+  setCleanup(function(){
+    root.removeEventListener("click", click);
+    document.removeEventListener("keydown", key);
+    if(tmr) tmr.stop();
+  });
   card();
 }
 
@@ -1111,83 +1281,88 @@ function runTF(root, sc){
    MINI-GAME 3 — MULTIPLE CHOICE (one attempt, character reaction)
    ============================================================ */
 function runMC(root, sc){
-  let idx=0, answered=false;
-  const total=L3_MC.length;
+  var idx = 0, answered = false;
+  var total = L3_MC.length;
   function card(){
-    answered=false;
-    const it=L3_MC[idx];
-    const opts=shuffle([it.ok].concat(it.wrong));
-    root.innerHTML=
-      '<div class="tf-card">'+
-        '<div class="tf-top"><span class="chip mono">Q '+(idx+1)+"/"+total+'</span>'+
-        '<span class="chip mono">STREAK '+session.streak+"</span></div>"+
-        '<p class="tf-q">'+it.q+"</p>"+
-        '<div class="opts">'+opts.map((o,i)=>
-          '<button class="opt" data-ok="'+(o===it.ok)+'"><span class="letter mono">'+(i+1)+"</span><span>"+esc(o)+"</span></button>"
-        ).join("")+"</div>"+
-        '<div class="react" hidden></div>'+
-        '<div class="explain" role="status" hidden></div>'+
-        '<div class="next-row" hidden><button class="btn btn-primary next">'+(idx===total-1?"SEE RESULTS":"NEXT QUESTION")+"</button></div>"+
+    answered = false;
+    var it = L3_MC[idx];
+    var opts = shuffle([it.ok].concat(it.wrong));
+    root.innerHTML =
+      '<div class="tf-card">' +
+        '<div class="tf-top"><span class="chip mono">Q ' + (idx+1) + "/" + total + '</span>' +
+        '<span class="chip mono">STREAK ' + session.streak + "</span></div>" +
+        '<p class="tf-q">' + it.q + "</p>" +
+        '<div class="opts">' +
+          opts.map(function(o, i){
+            return '<button type="button" class="opt" data-ok="' + (o === it.ok) + '"><span class="letter mono">' + (i+1) + "</span><span>" + esc(o) + "</span></button>";
+          }).join("") +
+        "</div>" +
+        '<div class="react" hidden></div>' +
+        '<div class="explain" role="status" hidden></div>' +
+        '<div class="next-row" hidden><button type="button" class="btn btn-primary next">' + (idx === total-1 ? "SEE RESULTS" : "NEXT QUESTION") + "</button></div>" +
       "</div>";
-    refreshIcons();
+    refreshIcons(root);
   }
   function answer(btn){
     if(answered) return;
-    answered=true;
-    const it=L3_MC[idx];
-    const ok=btn.dataset.ok==="true";
-    $$(".opt", root).forEach(b=>{
-      b.disabled=true;
-      if(b.dataset.ok==="true") b.classList.add("good");
-      else if(b!==btn) b.classList.add("dim");
+    answered = true;
+    var it = L3_MC[idx];
+    var ok = btn.getAttribute("data-ok") === "true";
+    $$(".opt", root).forEach(function(b){
+      b.disabled = true;
+      if(b.getAttribute("data-ok") === "true") b.classList.add("good");
+      else if(b !== btn) b.classList.add("dim");
     });
     if(ok){
       session.streak++;
-      const pts=100+15*Math.min(session.streak-1,10);
+      var pts = 100 + 15*Math.min(session.streak - 1, 10);
       addScore(pts); SFX.correct();
-      const r=btn.getBoundingClientRect();
-      popFloat(r.left+r.width/2, r.top, "+"+pts, true);
+      var r = btn.getBoundingClientRect();
+      popFloat(r.left + r.width/2, r.top, "+" + pts, true);
     }else{
       btn.classList.remove("dim");
-      btn.classList.add("bad","shake");
-      later(()=>btn.classList.remove("shake"),500);
-      session.mistakes++; session.streak=0; SFX.wrong();
+      btn.classList.add("bad", "shake");
+      later(function(){ btn.classList.remove("shake"); }, 500);
+      session.mistakes++; session.streak = 0; SFX.wrong();
     }
-    const rc=$(".react", root);
-    rc.hidden=false;
-    rc.innerHTML='<span class="avatar">JO</span><span><b>JOEY:</b> '+esc(ok?pick(MC_OK):pick(MC_NO))+"</span>";
-    const ex=$(".explain", root);
-    ex.hidden=false;
-    ex.innerHTML=it.why;
-    $(".next-row", root).hidden=false;
+    var rc = $(".react", root);
+    rc.hidden = false;
+    rc.innerHTML = '<span class="avatar">JO</span><span><b>JOEY:</b> ' + esc(ok ? pick(MC_OK) : pick(MC_NO)) + "</span>";
+    var ex = $(".explain", root);
+    ex.hidden = false;
+    ex.textContent = it.why;
+    $(".next-row", root).hidden = false;
     updateLevelHUD();
     $(".next", root).focus();
   }
   function next(){
     idx++;
-    if(idx>=total){ endLevel(); return; }
+    if(idx >= total){ endLevel(); return; }
     card();
   }
-  const click=e=>{
-    const o=e.target.closest(".opt");
+  function click(e){
+    var o = closest(e.target, ".opt");
     if(o && !answered){ answer(o); return; }
-    if(e.target.closest(".next")) next();
-  };
-  const key=e=>{
-    if(answered && e.key==="Enter"){
-      const nb=$(".next", root);
-      if(document.activeElement===nb) return;
-      e.preventDefault(); nb && nb.click();
+    if(closest(e.target, ".next")) next();
+  }
+  function key(e){
+    if(answered && e.key === "Enter"){
+      var nb = $(".next", root);
+      if(document.activeElement === nb) return;
+      e.preventDefault(); if(nb) nb.click();
       return;
     }
     if(!answered && /^[1-3]$/.test(e.key)){
-      const o=$$(".opt", root)[+e.key-1];
+      var o = $$(".opt", root)[+e.key - 1];
       if(o) o.click();
     }
-  };
+  }
   root.addEventListener("click", click);
   document.addEventListener("keydown", key);
-  setCleanup(()=>{ root.removeEventListener("click", click); document.removeEventListener("keydown", key); });
+  setCleanup(function(){
+    root.removeEventListener("click", click);
+    document.removeEventListener("keydown", key);
+  });
   card();
 }
 
@@ -1195,241 +1370,265 @@ function runMC(root, sc){
    MINI-GAME 4 — MATCH THE MEANING (click word → click meaning)
    ============================================================ */
 function runMatch(root, sc){
-  const words=L4_PAIRS.map(p=>p[0]);
-  const meanings=shuffle(L4_PAIRS.map(p=>p[1]));
-  let selW=null, pairs=0, att=0;
-  root.innerHTML=
-    '<div class="match-example mono">HOW TO PLAY — WORD \u00B7 old flame \u2192 MEANING \u00B7 a former romantic partner</div>'+
-    '<div class="tf-top"><span class="chip mono" id="m-pairs">PAIRS 0/6</span><span class="chip mono" id="m-att">ATTEMPTS 0</span></div>'+
-    '<div class="match-wrap">'+
-      '<div class="m-col">'+words.map(w=>
-        '<button class="m-item" data-w="'+esc(w)+'"><i data-lucide="puzzle"></i><span>'+esc(w)+"</span></button>").join("")+"</div>"+
-      '<div class="m-col">'+meanings.map(m=>
-        '<button class="m-item" data-m="'+esc(m)+'"><span>'+esc(m)+"</span></button>").join("")+"</div>"+
+  var words = L4_PAIRS.map(function(p){ return p[0]; });
+  var meanings = shuffle(L4_PAIRS.map(function(p){ return p[1]; }));
+  var selW = null, pairs = 0, att = 0;
+  root.innerHTML =
+    '<div class="match-example mono">HOW TO PLAY \u2014 WORD \u00B7 old flame \u2192 MEANING \u00B7 a former romantic partner</div>' +
+    '<div class="tf-top"><span class="chip mono" id="m-pairs">PAIRS 0/6</span><span class="chip mono" id="m-att">ATTEMPTS 0</span></div>' +
+    '<div class="match-wrap">' +
+      '<div class="m-col">' + words.map(function(w){
+        return '<button type="button" class="m-item" data-w="' + esc(w) + '">' + icon("link") + "<span>" + esc(w) + "</span></button>";
+      }).join("") + "</div>" +
+      '<div class="m-col">' + meanings.map(function(m){
+        return '<button type="button" class="m-item" data-m="' + esc(m) + '"><span>' + esc(m) + "</span></button>";
+      }).join("") + "</div>" +
     "</div>";
-  const meaningOf=w=>{ const p=L4_PAIRS.find(pr=>pr[0]===w); return p?p[1]:null; };
-  const counters=()=>{
-    $("#m-pairs", root).textContent="PAIRS "+pairs+"/"+L4_PAIRS.length;
-    $("#m-att", root).textContent="ATTEMPTS "+att;
-  };
-  const handler=e=>{
-    const w=e.target.closest(".m-item[data-w]");
-    const m=e.target.closest(".m-item[data-m]");
+  function meaningOf(w){
+    for(var i=0;i<L4_PAIRS.length;i++){ if(L4_PAIRS[i][0] === w) return L4_PAIRS[i][1]; }
+    return null;
+  }
+  function counters(){
+    $("#m-pairs", root).textContent = "PAIRS " + pairs + "/" + L4_PAIRS.length;
+    $("#m-att", root).textContent = "ATTEMPTS " + att;
+  }
+  function handler(e){
+    var w = closest(e.target, ".m-item[data-w]");
+    var m = closest(e.target, ".m-item[data-m]");
     if(w){
       if(w.classList.contains("locked")) return;
-      $$(".m-item", root).forEach(x=>{ if(!x.classList.contains("locked")) x.classList.remove("sel"); });
-      w.classList.add("sel"); selW=w.dataset.w; SFX.click();
+      $$(".m-item", root).forEach(function(x){
+        if(!x.classList.contains("locked")) x.classList.remove("sel");
+      });
+      w.classList.add("sel"); selW = w.getAttribute("data-w"); SFX.click();
       return;
     }
     if(m){
       if(m.classList.contains("locked")) return;
-      if(!selW){ toast("Pick a word on the left first!","puzzle"); return; }
+      if(!selW){ toast("Pick a word on the left first!", "link"); return; }
       att++;
-      const wordBtn=$$(".m-item", root).find(b=>b.dataset.w===selW);
-      if(m.dataset.m===meaningOf(selW)){
+      var wordBtn = null;
+      $$(".m-item", root).forEach(function(b){ if(b.getAttribute("data-w") === selW) wordBtn = b; });
+      if(m.getAttribute("data-m") === meaningOf(selW)){
         wordBtn.classList.add("locked"); wordBtn.classList.remove("sel");
         m.classList.add("locked");
         pairs++;
         addScore(150); SFX.match();
-        const r=m.getBoundingClientRect();
-        popFloat(r.left+r.width/2, r.top, "+150", true);
-        selW=null; counters();
-        if(pairs===L4_PAIRS.length) later(()=>endLevel(), 500);
+        var r = m.getBoundingClientRect();
+        popFloat(r.left + r.width/2, r.top, "+150", true);
+        selW = null; counters();
+        if(pairs === L4_PAIRS.length) later(endLevel, 500);
       }else{
-        session.mistakes++; session.streak=0;
+        session.mistakes++; session.streak = 0;
         subScore(25); SFX.wrong();
         wordBtn.classList.add("shake"); m.classList.add("shake");
-        later(()=>{ wordBtn.classList.remove("shake","sel"); m.classList.remove("shake"); }, 500);
-        selW=null; counters(); updateLevelHUD();
+        later(function(){
+          wordBtn.classList.remove("shake", "sel");
+          m.classList.remove("shake");
+        }, 500);
+        selW = null; counters(); updateLevelHUD();
       }
     }
-  };
+  }
   root.addEventListener("click", handler);
-  setCleanup(()=>root.removeEventListener("click", handler));
-  refreshIcons();
+  setCleanup(function(){ root.removeEventListener("click", handler); });
+  refreshIcons(root);
 }
 
 /* ============================================================
    MINI-GAME 5 — TIMED BONUS ROUND (750s, streak multiplier)
    ============================================================ */
 function runBonus(root, sc){
-  const qs=shuffle(L5_BONUS);
-  let idx=0, answered=false, tmr=null, finished=false;
-  root.innerHTML=
-    '<div class="timer-row"><div class="timer"><div class="timer-fill"></div></div><span class="timer-num mono">12:30</span></div>'+
-    '<div class="tf-top"><span class="chip mono" id="b-count">0/'+qs.length+'</span>'+
-    '<span class="chip mono mult-chip">MULT \u00D71.00</span></div>'+
-    '<div class="tf-card">'+
-      '<p class="kicker">PRIME TIME BONUS — STREAK MULTIPLIER ACTIVE</p>'+
-      '<p class="tf-q" id="b-q"></p>'+
-      '<div class="opts" id="b-opts"></div>'+
+  var qs = shuffle(L5_BONUS);
+  var idx = 0, answered = false, tmr = null, finished = false;
+  root.innerHTML =
+    '<div class="timer-row"><div class="timer"><div class="timer-fill"></div></div><span class="timer-num mono">12:30</span></div>' +
+    '<div class="tf-top"><span class="chip mono" id="b-count">0/' + qs.length + '</span>' +
+    '<span class="chip mono mult-chip">MULT \u00D71.00</span></div>' +
+    '<div class="tf-card">' +
+      '<p class="kicker">PRIME TIME BONUS \u2014 STREAK MULTIPLIER ACTIVE</p>' +
+      '<p class="tf-q" id="b-q"></p>' +
+      '<div class="opts" id="b-opts"></div>' +
     "</div>";
-  const mult=()=>Math.min(1+0.25*Math.min(session.streak,12), 4);
+  function mult(){ return Math.min(1 + 0.25*Math.min(session.streak, 12), 4); }
   function card(){
-    answered=false;
-    const it=qs[idx];
-    $("#b-count", root).textContent=idx+"/"+qs.length+" ANSWERED";
-    $(".mult-chip", root).textContent="MULT \u00D7"+mult().toFixed(2);
-    $("#b-q", root).textContent=it.q;
-    $("#b-opts", root).innerHTML=shuffle([it.ok].concat(it.wrong)).map((o,i)=>
-      '<button class="opt" data-ok="'+(o===it.ok)+'"><span class="letter mono">'+(i+1)+"</span><span>"+esc(o)+"</span></button>"
-    ).join("");
-    refreshIcons();
+    answered = false;
+    var it = qs[idx];
+    $("#b-count", root).textContent = idx + "/" + qs.length + " ANSWERED";
+    $(".mult-chip", root).textContent = "MULT \u00D7" + mult().toFixed(2);
+    $("#b-q", root).textContent = it.q;
+    $("#b-opts", root).innerHTML = shuffle([it.ok].concat(it.wrong)).map(function(o, i){
+      return '<button type="button" class="opt" data-ok="' + (o === it.ok) + '"><span class="letter mono">' + (i+1) + "</span><span>" + esc(o) + "</span></button>";
+    }).join("");
+    refreshIcons(root);
   }
   function finish(timeUp){
     if(finished) return;
-    finished=true;
+    finished = true;
     if(tmr) tmr.stop();
     if(!timeUp){
-      const bonus=tmr.remaining*2;
-      if(bonus>0){ addScore(bonus); toast("TIME BONUS +"+bonus,"timer"); }
+      var bonus = tmr.remaining() * 2;
+      if(bonus > 0){ addScore(bonus); toast("TIME BONUS +" + bonus, "timer"); }
     }
     endLevel();
   }
   function answer(btn){
     if(answered) return;
-    answered=true;
-    const ok=btn.dataset.ok==="true";
-    $$(".opt", root).forEach(b=>{
-      b.disabled=true;
-      if(b.dataset.ok==="true") b.classList.add("good");
-      else if(b!==btn) b.classList.add("dim");
+    answered = true;
+    var ok = btn.getAttribute("data-ok") === "true";
+    $$(".opt", root).forEach(function(b){
+      b.disabled = true;
+      if(b.getAttribute("data-ok") === "true") b.classList.add("good");
+      else if(b !== btn) b.classList.add("dim");
     });
     if(ok){
-      const m=mult();
+      var m = mult();
       session.streak++;
-      const pts=Math.round(120*m);
+      var pts = Math.round(120 * m);
       addScore(pts); SFX.correct();
-      const r=btn.getBoundingClientRect();
-      popFloat(r.left+r.width/2, r.top, "+"+pts, true);
+      var r = btn.getBoundingClientRect();
+      popFloat(r.left + r.width/2, r.top, "+" + pts, true);
     }else{
       btn.classList.remove("dim");
-      btn.classList.add("bad","shake");
-      later(()=>btn.classList.remove("shake"),500);
-      session.mistakes++; session.streak=0; SFX.wrong();
+      btn.classList.add("bad", "shake");
+      later(function(){ btn.classList.remove("shake"); }, 500);
+      session.mistakes++; session.streak = 0; SFX.wrong();
     }
-    $(".mult-chip", root).textContent="MULT \u00D7"+mult().toFixed(2);
+    $(".mult-chip", root).textContent = "MULT \u00D7" + mult().toFixed(2);
     updateLevelHUD();
-    later(()=>{
+    later(function(){
       idx++;
-      if(idx>=qs.length) finish(false);
+      if(idx >= qs.length) finish(false);
       else card();
-    }, ok?600:950);
+    }, ok ? 600 : 950);
   }
-  const click=e=>{
-    const o=e.target.closest(".opt");
+  function click(e){
+    var o = closest(e.target, ".opt");
     if(o) answer(o);
-  };
-  const key=e=>{
+  }
+  function key(e){
     if(/^[1-3]$/.test(e.key)){
-      const o=$$("#b-opts .opt", root)[+e.key-1];
+      var o = $$("#b-opts .opt", root)[+e.key - 1];
       if(o) o.click();
     }
-  };
+  }
   root.addEventListener("click", click);
   document.addEventListener("keydown", key);
-  setCleanup(()=>{ root.removeEventListener("click", click); document.removeEventListener("keydown", key); if(tmr)tmr.stop(); });
-  tmr=makeTimer(root, 750, ()=>finish(true));
+  setCleanup(function(){
+    root.removeEventListener("click", click);
+    document.removeEventListener("keydown", key);
+    if(tmr) tmr.stop();
+  });
+  tmr = makeTimer(root, 750, function(){ finish(true); });
   card();
 }
 
 /* ===== runners registry ===== */
-const RUNNERS={ fill:runFill, tf:runTF, mc:runMC, match:runMatch, bonus:runBonus };
+var RUNNERS = { fill:runFill, tf:runTF, mc:runMC, match:runMatch, bonus:runBonus };
 
 /* ===== finale ===== */
 function renderFinale(){
-  const total=career(), stars=totalStars();
-  const rank=RANKS.find(r=>total>=r.min)||RANKS[RANKS.length-1];
-  $("#fin-body").innerHTML=
-    '<div class="fin-top" data-c="#33261C">'+
-      '<img class="slide-img" src="'+IMG+'slide-015.jpg" data-initial="\u2605" alt="Great job — neon coffee slide">'+
-    "</div>"+
-    '<blockquote class="fin-quote">\u201CYou\u2019ve successfully processed this lesson. Next time you\u2019re watching TV, '+
-    'listen closely \u2014 you might just catch an old flame resurfacing, or someone dropping the ball. See you next episode.\u201D</blockquote>'+
-    '<div class="fin-grid">'+
-      '<div class="fin-card"><span class="mono">TOTAL SCORE</span><b class="fin-big">'+total+'</b><span class="mono">'+stars+"/15 \u2605</span></div>"+
-      '<div class="fin-card rank-card" style="--c:'+rank.color+'"><i data-lucide="'+rank.icon+'"></i>'+
-        '<div><span class="mono">YOUR RANK</span><b>'+rank.name+"</b></div></div>"+
-    "</div>"+
-    '<div class="fin-table mono" role="table" aria-label="Results by level">'+
-      '<div class="ft-row ft-head" role="row"><span>\u2116</span><span>REEL</span><span>STARS</span><span>BEST</span></div>'+
-      SCENES.map(scr=>{
-        const p=lvRec(scr.id);
-        return '<div class="ft-row" role="row"><span>'+scr.num+"</span><span>"+esc(scr.title)+
-          '</span><span class="ft-stars">'+starRow(p.stars)+"</span><span>"+p.best+"</span></div>";
-      }).join("")+
-    "</div>"+
-    '<div class="m-actions center">'+
-      '<button class="btn btn-danger" data-action="rewind-open"><i data-lucide="rewind"></i>REWIND THE TAPE</button>'+
-      '<button class="btn" data-action="to-map">BACK TO MAP</button>'+
+  var total = career(), stars = totalStars();
+  var rank = RANKS[RANKS.length - 1];
+  for(var i=0;i<RANKS.length;i++){ if(total >= RANKS[i].min){ rank = RANKS[i]; break; } }
+  var rows = "";
+  SCENES.forEach(function(scr){
+    var p = lvRec(scr.id);
+    rows += '<div class="ft-row" role="row"><span>' + scr.num + "</span><span>" + esc(scr.title) +
+      '</span><span class="ft-stars">' + starRow(p.stars) + "</span><span>" + p.best + "</span></div>";
+  });
+  $("#fin-body").innerHTML =
+    '<div class="fin-top" data-c="#33261C">' +
+      '<img class="slide-img" src="' + IMG + 'slide-015.jpg" data-initial="\u2605" alt="Great job — neon coffee slide">' +
+    "</div>" +
+    '<blockquote class="fin-quote">\u201CYou\u2019ve successfully processed this lesson. Next time you\u2019re watching TV, ' +
+    'listen closely \u2014 you might just catch an old flame resurfacing, or someone dropping the ball. See you next episode.\u201D</blockquote>' +
+    '<div class="fin-grid">' +
+      '<div class="fin-card"><span class="mono">TOTAL SCORE</span><b class="fin-big">' + total + '</b><span class="mono">' + stars + "/15 \u2605</span></div>" +
+      '<div class="fin-card rank-card" style="--c:' + rank.color + '">' + icon(rank.ic) +
+        '<div><span class="mono">YOUR RANK</span><b>' + rank.name + "</b></div></div>" +
+    "</div>" +
+    '<div class="fin-table mono" role="table" aria-label="Results by level">' +
+      '<div class="ft-row ft-head" role="row"><span>\u2116</span><span>REEL</span><span>STARS</span><span>BEST</span></div>' +
+      rows +
+    "</div>" +
+    '<div class="m-actions center">' +
+      '<button class="btn btn-danger" type="button" data-action="rewind-open">' + icon("rewind") + 'REWIND THE TAPE</button>' +
+      '<button class="btn" type="button" data-action="to-map">BACK TO MAP</button>' +
     "</div>";
-  refreshIcons();
+  refreshIcons($("#screen-finale"));
   guardImages($("#screen-finale"));
   SFX.cheer();
   spawnConfetti(180);
 }
 
 /* ===== global action dispatcher (event delegation) ===== */
-document.addEventListener("click", e=>{
-  const el=e.target.closest("[data-action]");
+document.addEventListener("click", function(e){
+  var el = closest(e.target, "[data-action]");
   if(!el) return;
-  const a=el.dataset.action;
+  var a = el.getAttribute("data-action");
   switch(a){
-    case "play":          SFX.flip(); showScreen("map"); break;
-    case "to-map":        SFX.click(); toMap(); break;
-    case "open-level":    SFX.click(); openLevel(el.dataset.level); break;
-    case "start-level":   SFX.flip(); startLevel(el.dataset.level); break;
-    case "close-modal":   SFX.click(); closeModal(); break;
+    case "play":        SFX.flip(); showScreen("map"); break;
+    case "to-map":      SFX.click(); toMap(); break;
+    case "open-level":  SFX.click(); openLevel(el.getAttribute("data-level")); break;
+    case "start-level": SFX.flip(); startLevel(el.getAttribute("data-level")); break;
+    case "close-modal": SFX.click(); closeModal(); break;
     case "sound":
-      progress.muted=!progress.muted; saveProgress(); renderSound(); SFX.click();
-      toast(progress.muted?"Sound off":"Sound on", progress.muted?"volume-x":"volume-2");
+      progress.muted = !progress.muted; saveProgress(); renderSound(); SFX.click();
+      toast(progress.muted ? "Sound off" : "Sound on", progress.muted ? "volumex" : "volume2");
       break;
-    case "final":         SFX.flip(); renderFinale(); showScreen("finale"); break;
-    case "goto-finale":   SFX.flip(); closeModal(); renderFinale(); showScreen("finale"); break;
+    case "final":       SFX.flip(); renderFinale(); showScreen("finale"); break;
+    case "goto-finale": SFX.flip(); closeModal(); renderFinale(); showScreen("finale"); break;
     case "rewind-open":
       SFX.click();
       openModal(
-        '<h3 class="m-title mono">REWIND THE TAPE?</h3>'+
-        '<h2 class="m-big">Fresh start</h2>'+
-        "<p>This erases <b>all stars, best scores and your rank</b>. The pilot goes back in the box.</p>"+
-        '<div class="m-actions">'+
-          '<button class="btn" data-action="close-modal">CANCEL</button>'+
-          '<button class="btn btn-danger primary" data-action="rewind-confirm"><i data-lucide="rewind"></i>REWIND</button>'+
+        '<h3 class="m-title mono">REWIND THE TAPE?</h3>' +
+        '<h2 class="m-big">Fresh start</h2>' +
+        "<p>This erases <b>all stars, best scores and your rank</b>. The pilot goes back in the box.</p>" +
+        '<div class="m-actions">' +
+          '<button class="btn" type="button" data-action="close-modal">CANCEL</button>' +
+          '<button class="btn btn-danger primary" type="button" data-action="rewind-confirm">' + icon("rewind") + 'REWIND</button>' +
         "</div>"
       );
       break;
     case "rewind-confirm":
-      progress.lv={}; saveProgress();
+      progress.lv = {}; saveProgress();
       updateHUD(); renderMap(); closeModal();
-      SFX.flip(); toast("Tape rewound — fresh start!","rewind");
+      SFX.flip(); toast("Tape rewound \u2014 fresh start!", "rewind");
       showScreen("map");
       break;
   }
 });
 
 /* ===== keyboard: Enter/Space on map cards, Escape, modal Enter ===== */
-document.addEventListener("keydown", e=>{
-  const t=e.target;
-  if((e.key==="Enter"||e.key===" ") && t && t.classList && t.classList.contains("reel")){
+document.addEventListener("keydown", function(e){
+  var t = e.target;
+  if((e.key === "Enter" || e.key === " ") && t && t.classList && t.classList.contains("reel")){
     e.preventDefault(); t.click(); return;
   }
-  if(e.key==="Escape"){
+  if(e.key === "Escape"){
     if(modalOpen()){ closeModal(); return; }
     if($("#screen-level").classList.contains("active")){ toMap(); return; }
     return;
   }
-  if(e.key==="Enter" && modalOpen()){
-    if(document.activeElement && document.activeElement.tagName==="BUTTON") return;
-    const prim=$(".modal .primary");
+  if(e.key === "Enter" && modalOpen()){
+    if(document.activeElement && document.activeElement.tagName === "BUTTON") return;
+    var prim = $(".modal .primary");
     if(prim){ e.preventDefault(); prim.click(); }
   }
 });
 
-/* ===== init ===== */
-updateHUD();
-renderMap();
-renderSound();
-refreshIcons();
+/* ============================================================
+   INIT — every step is isolated: one failure can no longer
+   blank out the level map silently.
+   ============================================================ */
+safe("paintHeaderIcons", function(){ refreshIcons(document); });
+safe("guardStaticImages", function(){ guardImages(document); });
+safe("updateHUD", updateHUD);
+safe("renderMap", renderMap);
+safe("renderSound", renderSound);
+safe("refreshIconsFinal", function(){ refreshIcons(document); });
+window.__ARCADE_READY = true;   /* tells the boot watchdog that the engine is alive */
 
 })();
 </script>
