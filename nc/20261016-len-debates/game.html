@@ -1,1 +1,2919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penthesilea · Arcade of Tragedy</title>
+<meta name="description" content="An interactive educational arcade based on the Penthesilea study deck — five mini-games exploring miasma, katharsis, aristeia, hubris, and metron.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+/* ===== TOKENS ===== */
+:root {
+  --bg: #1a1108;
+  --bg-2: #2a1f17;
+  --surface: #2a1f17;
+  --paper: #f5efe6;
+  --paper-2: #efe6d4;
+  --ink: #1a1108;
+  --ink-soft: #3d2a1c;
+  --crimson: #9b2c2c;
+  --crimson-deep: #74201f;
+  --gold: #b7791f;
+  --gold-light: #f0c674;
+  --teal: #2c7a7b;
+  --purple: #5b3a8a;
+  --success: #4ade80;
+  --error: #f87171;
+  --muted: rgba(245, 239, 230, 0.55);
+  --muted-strong: rgba(245, 239, 230, 0.78);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow-soft: 0 2px 8px rgba(45,36,25,0.08), 0 12px 32px rgba(45,36,25,0.10);
+  --shadow-hard: 0 2px 0 rgba(0,0,0,0.18), 0 12px 28px rgba(0,0,0,0.30);
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ===== RESET ===== */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 10% 0%, rgba(155, 44, 44, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(183, 121, 31, 0.14) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(91, 58, 138, 0.06) 0%, transparent 70%);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+button:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; border-radius: 6px; }
+[hidden] { display: none !important; }
+img { max-width: 100%; display: block; }
+
+/* Film grain over everything */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* ===== PRELOADER ===== */
+#preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background:
+    radial-gradient(ellipse at center, rgba(155, 44, 44, 0.20) 0%, transparent 60%),
+    var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  transition: transform 0.8s cubic-bezier(0.7,0,0.3,1), opacity 0.6s ease;
+  padding: 24px;
+}
+#preloader.exit { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+.pre-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  opacity: 0.8;
+  animation: blink 1.4s infinite;
+}
+@keyframes blink { 50% { opacity: 0.35; } }
+.pre-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(48px, 9vw, 96px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: var(--paper);
+  text-shadow: 0 0 40px rgba(155,44,44,0.4), 0 4px 0 rgba(0,0,0,0.4);
+}
+.pre-title .accent { color: var(--crimson); font-style: italic; }
+.pre-sub {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--muted-strong);
+  max-width: 480px;
+  text-align: center;
+  line-height: 1.45;
+}
+.pre-play {
+  margin-top: 16px;
+  padding: 16px 36px;
+  background: var(--gold);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 8px 24px rgba(183,121,31,0.4);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.pre-play:hover { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.4), 0 12px 32px rgba(183,121,31,0.5); }
+.pre-play:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.4); }
+.pre-loader-bar {
+  width: 200px;
+  height: 4px;
+  background: rgba(245,239,230,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 32px;
+}
+.pre-loader-bar > span {
+  display: block;
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, var(--crimson), var(--gold));
+  animation: loadSlide 2.2s ease-in-out infinite;
+}
+@keyframes loadSlide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+/* ===== HEADER CONSOLE ===== */
+header.console {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 18px;
+  background: rgba(26, 17, 8, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(245,239,230,0.08);
+  transition: transform 0.4s ease;
+}
+header.console::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--crimson) 70%, transparent);
+  opacity: 0.5;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--paper);
+}
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: var(--crimson);
+  color: var(--paper);
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(245,239,230,0.15);
+}
+.brand small {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+}
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+.hud-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(245,239,230,0.06);
+  border: 1px solid rgba(245,239,230,0.12);
+  border-radius: 999px;
+  font-weight: 600;
+}
+.hud-cell .lbl { color: var(--muted); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; }
+.hud-cell .val { color: var(--gold-light); font-size: 14px; }
+.hud-cell.stars .val { color: var(--gold); }
+.hud-actions { display: flex; gap: 6px; }
+.icon-btn {
+  width: 36px; height: 36px;
+  display: grid;
+  place-items: center;
+  background: rgba(245,239,230,0.06);
+  border: 1px solid rgba(245,239,230,0.12);
+  border-radius: 8px;
+  color: var(--paper);
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+.icon-btn:hover { background: rgba(245,239,230,0.12); transform: translateY(-1px); }
+.icon-btn:active { transform: translateY(1px); }
+.icon-btn[aria-pressed="true"] { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+.icon-btn svg { width: 16px; height: 16px; }
+
+/* ===== SCREENS ===== */
+main.app {
+  padding-top: 64px;
+  min-height: 100vh;
+}
+.screen {
+  display: none;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  padding: 32px 20px 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.screen.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== INTRO SCREEN ===== */
+.intro-hero {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 32px;
+  aspect-ratio: 16/9;
+  background: var(--bg-2);
+  box-shadow: var(--shadow-soft);
+}
+.intro-hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
+.intro-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(26,17,8,0.95) 100%);
+  pointer-events: none;
+}
+.intro-hero-text {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  z-index: 2;
+}
+.intro-eyebrow {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  padding: 5px 12px;
+  border: 1px solid rgba(240,198,116,0.4);
+  border-radius: 999px;
+  margin-bottom: 16px;
+  background: rgba(26,17,8,0.5);
+}
+.intro-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(36px, 5vw, 56px);
+  line-height: 1.05;
+  color: var(--paper);
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+.intro-title .accent { color: var(--crimson); font-style: italic; }
+.intro-lede {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 19px;
+  color: var(--muted-strong);
+  max-width: 620px;
+  line-height: 1.5;
+}
+.intro-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 32px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.intro-meta span { padding: 6px 12px; background: rgba(245,239,230,0.04); border: 1px solid rgba(245,239,230,0.1); border-radius: 6px; }
+.intro-meta span b { color: var(--gold-light); font-weight: 600; }
+
+.big-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  background: var(--gold);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.35), 0 8px 24px rgba(183,121,31,0.3);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.big-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.35), 0 12px 28px rgba(183,121,31,0.4); }
+.big-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+.big-btn.ghost { background: transparent; color: var(--paper); border: 1px solid rgba(245,239,230,0.25); box-shadow: none; }
+.big-btn.ghost:hover { background: rgba(245,239,230,0.06); }
+.big-btn.crimson { background: var(--crimson); color: var(--paper); box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 8px 24px rgba(155,44,44,0.4); }
+.big-btn.crimson:hover { background: var(--crimson-deep); }
+
+.intro-cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* ===== LEVEL MAP ===== */
+.map-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.map-title-block h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(28px, 4vw, 38px);
+  color: var(--paper);
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+.map-title-block h2 .accent { color: var(--gold); font-style: italic; }
+.map-title-block p { color: var(--muted); margin: 0; font-size: 15px; max-width: 540px; }
+.map-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.progress-dots { display: flex; gap: 6px; }
+.progress-dots .dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: rgba(245,239,230,0.12);
+  border: 1px solid rgba(245,239,230,0.18);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+.progress-dots .dot.done { background: var(--gold); border-color: var(--gold); transform: scale(1.1); }
+
+.reel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+}
+.reel-card {
+  position: relative;
+  background: var(--bg-2);
+  border: 1px solid rgba(245,239,230,0.08);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 0;
+}
+.reel-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-soft); border-color: rgba(240,198,116,0.35); }
+.reel-card:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+.reel-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--card-color, var(--gold));
+  z-index: 3;
+}
+.reel-card .thumb {
+  position: relative;
+  aspect-ratio: 16/10;
+  overflow: hidden;
+  background: var(--bg);
+}
+.reel-card .thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+.reel-card:hover .thumb img { transform: scale(1.05); }
+.reel-card .thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(26,17,8,0.85) 100%);
+}
+.reel-card .num {
+  position: absolute;
+  top: 10px; left: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--paper);
+  background: rgba(26,17,8,0.7);
+  padding: 4px 10px;
+  border-radius: 999px;
+  z-index: 2;
+  border: 1px solid rgba(245,239,230,0.15);
+}
+.reel-card .tag {
+  position: absolute;
+  top: 10px; right: 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--card-color, var(--gold));
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 2;
+  font-weight: 600;
+}
+.reel-card .body {
+  padding: 14px 16px 18px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.reel-card h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--paper);
+  margin: 0;
+  line-height: 1.25;
+}
+.reel-card .char {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--muted-strong);
+}
+.reel-card .footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(245,239,230,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.reel-stars { display: flex; gap: 2px; }
+.reel-stars .star {
+  font-size: 16px;
+  color: rgba(245,239,230,0.18);
+  line-height: 1;
+}
+.reel-stars .star.lit { color: var(--gold); text-shadow: 0 0 8px rgba(183,121,31,0.5); }
+.reel-score {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.reel-score b { color: var(--gold-light); font-weight: 600; }
+
+.map-finale-row {
+  margin-top: 28px;
+  display: flex;
+  justify-content: center;
+}
+#finaleButton {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+#finaleButton.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  animation: finalePulse 2.4s ease-in-out infinite;
+}
+@keyframes finalePulse {
+  0%, 100% { box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 8px 24px rgba(155,44,44,0.4); }
+  50% { box-shadow: 0 6px 0 rgba(0,0,0,0.4), 0 14px 36px rgba(155,44,44,0.7); }
+}
+
+/* ===== STAGE / LEVEL ===== */
+.stage-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.stage-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(245,239,230,0.06);
+  border: 1px solid rgba(245,239,230,0.12);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper);
+  transition: background 0.18s ease;
+}
+.stage-back:hover { background: rgba(245,239,230,0.12); }
+.stage-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.stage-head .num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+}
+.stage-head h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(24px, 3vw, 32px);
+  margin: 0;
+  color: var(--paper);
+  letter-spacing: -0.01em;
+}
+.stage-head .char {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--muted-strong);
+  font-size: 15px;
+}
+#stage {
+  background: var(--bg-2);
+  border: 1px solid rgba(245,239,230,0.08);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  min-height: 360px;
+  position: relative;
+}
+
+/* ===== MODALS ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(26,17,8,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.modal-backdrop.open { display: flex; opacity: 1; }
+.modal {
+  background: var(--bg-2);
+  border: 1px solid rgba(245,239,230,0.12);
+  border-radius: 18px;
+  max-width: 560px;
+  width: 100%;
+  padding: 28px 26px 24px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  transform: translateY(20px) scale(0.96);
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+  overflow: hidden;
+}
+.modal-backdrop.open .modal { transform: translateY(0) scale(1); }
+.modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--crimson), var(--gold));
+}
+.modal-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  margin-bottom: 10px;
+}
+.modal h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 26px;
+  color: var(--paper);
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.modal .modal-char {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--muted-strong);
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.modal .modal-rows {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 22px;
+}
+.modal .modal-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.modal .modal-row .lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 2px;
+}
+.modal .modal-row .val { color: var(--paper); }
+.modal .modal-row.tip .val { color: var(--muted-strong); font-style: italic; }
+.modal .modal-flavor {
+  margin: 16px 0 22px;
+  padding: 12px 14px;
+  background: rgba(155,44,44,0.08);
+  border-left: 3px solid var(--crimson);
+  border-radius: 0 8px 8px 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--paper);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.modal-results-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 8px 0 18px;
+}
+.modal-results-stars .star {
+  font-size: 36px;
+  color: rgba(245,239,230,0.18);
+  transform: scale(0.7);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease, color 0.3s ease;
+}
+.modal-results-stars .star.lit {
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(183,121,31,0.6);
+  opacity: 1;
+  transform: scale(1);
+}
+.modal-results-score {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.modal-results-score .num {
+  font-family: var(--font-display);
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.modal-results-score .lbl {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.modal-results-msg {
+  text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--paper);
+  font-size: 17px;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+/* ===== GAME 1: FILL IN THE BLANKS ===== */
+.fill-story {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.85;
+  color: var(--paper);
+  max-width: 720px;
+  margin: 0 auto 28px;
+}
+.fill-story .line { margin-bottom: 14px; }
+.fill-blank {
+  display: inline-block;
+  min-width: 90px;
+  padding: 2px 10px;
+  margin: 0 4px;
+  background: rgba(240,198,116,0.08);
+  border: 1px dashed rgba(240,198,116,0.5);
+  border-radius: 6px;
+  color: var(--gold-light);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  text-align: center;
+  vertical-align: baseline;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.fill-blank.selected { background: rgba(240,198,116,0.18); border-color: var(--gold-light); }
+.fill-blank.filled {
+  background: rgba(74,222,128,0.18);
+  border: 1px solid var(--success);
+  color: var(--success);
+  cursor: default;
+  border-style: solid;
+}
+.fill-blank.wrong { animation: shake 0.4s ease; background: rgba(248,113,113,0.18); border-color: var(--error); color: var(--error); }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.fill-bank-label {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.fill-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.fill-word {
+  padding: 10px 18px;
+  background: var(--bg);
+  border: 1px solid rgba(245,239,230,0.18);
+  border-radius: 999px;
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+.fill-word:hover { background: rgba(240,198,116,0.12); border-color: var(--gold-light); transform: translateY(-2px); }
+.fill-word.used { opacity: 0.3; pointer-events: none; text-decoration: line-through; }
+
+/* ===== GAME 2: REAL / DELUSION ===== */
+.tf-card {
+  background: var(--bg);
+  border: 1px solid rgba(245,239,230,0.1);
+  border-radius: var(--radius);
+  padding: 24px 22px;
+  max-width: 640px;
+  margin: 0 auto 18px;
+  position: relative;
+  overflow: hidden;
+}
+.tf-timer-row {
+  height: 4px;
+  background: rgba(245,239,230,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.tf-timer-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--crimson));
+  width: 100%;
+  transform-origin: left;
+  transition: transform 0.3s linear;
+}
+.tf-counter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tf-counter .streak { color: var(--gold-light); }
+.tf-statement {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.35;
+  color: var(--paper);
+  margin: 0 0 22px;
+  text-align: center;
+  font-style: italic;
+}
+.tf-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tf-btn {
+  padding: 16px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+.tf-btn:hover { transform: translateY(-2px); }
+.tf-btn:active { transform: translateY(1px); }
+.tf-btn.real { background: rgba(74,222,128,0.08); border-color: rgba(74,222,128,0.4); color: var(--success); }
+.tf-btn.real:hover { background: rgba(74,222,128,0.18); }
+.tf-btn.real.correct { background: var(--success); color: var(--ink); border-color: var(--success); }
+.tf-btn.real.wrong { background: rgba(248,113,113,0.18); border-color: var(--error); color: var(--error); animation: shake 0.4s ease; }
+.tf-btn.delusion { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.4); color: var(--error); }
+.tf-btn.delusion:hover { background: rgba(248,113,113,0.18); }
+.tf-btn.delusion.correct { background: var(--success); color: var(--ink); border-color: var(--success); }
+.tf-btn.delusion.wrong { background: rgba(248,113,113,0.18); border-color: var(--error); color: var(--error); animation: shake 0.4s ease; }
+.tf-btn:disabled { cursor: default; transform: none; }
+.tf-explanation {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: rgba(240,198,116,0.08);
+  border-left: 3px solid var(--gold-light);
+  border-radius: 0 8px 8px 0;
+  color: var(--paper);
+  font-size: 15px;
+  line-height: 1.55;
+  display: none;
+}
+.tf-explanation.visible { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.tf-next-row { display: flex; justify-content: center; margin-top: 18px; }
+
+/* ===== GAME 3: MULTIPLE CHOICE ===== */
+.mc-question {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 1.4;
+  color: var(--paper);
+  margin: 0 0 22px;
+  text-align: center;
+}
+.mc-options { display: grid; gap: 10px; max-width: 640px; margin: 0 auto 18px; }
+.mc-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid rgba(245,239,230,0.12);
+  border-radius: var(--radius-sm);
+  color: var(--paper);
+  font-size: 15px;
+  text-align: left;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+.mc-option:hover:not(:disabled) { background: rgba(240,198,116,0.06); border-color: rgba(240,198,116,0.4); transform: translateY(-1px); }
+.mc-option:disabled { cursor: default; }
+.mc-option .key {
+  width: 28px; height: 28px;
+  display: grid;
+  place-items: center;
+  background: rgba(240,198,116,0.12);
+  color: var(--gold-light);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.mc-option.correct { background: rgba(74,222,128,0.18); border-color: var(--success); }
+.mc-option.correct .key { background: var(--success); color: var(--ink); }
+.mc-option.wrong { background: rgba(248,113,113,0.18); border-color: var(--error); animation: shake 0.4s ease; }
+.mc-option.wrong .key { background: var(--error); color: var(--ink); }
+.mc-option.dimmed { opacity: 0.35; }
+.mc-reaction {
+  text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--paper);
+  margin: 8px auto 18px;
+  max-width: 580px;
+  line-height: 1.5;
+  display: none;
+}
+.mc-reaction.visible { display: block; animation: fadeIn 0.3s ease; }
+.mc-next-row { display: flex; justify-content: center; }
+.mc-counter {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.mc-counter .streak { color: var(--gold-light); }
+
+/* ===== GAME 4: MATCH THE MEANING ===== */
+.match-counter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.match-counter .val { color: var(--gold-light); font-weight: 600; font-size: 13px; }
+.match-example {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--muted-strong);
+  text-align: center;
+  margin: 0 auto 18px;
+  padding: 8px 14px;
+  background: rgba(245,239,230,0.04);
+  border-radius: 6px;
+  max-width: 580px;
+}
+.match-example .arrow { color: var(--gold-light); margin: 0 6px; }
+.match-grid {
+  display: grid;
+  grid-template-columns: 1fr 24px 1fr;
+  gap: 8px 14px;
+  align-items: stretch;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.match-col-head {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(245,239,230,0.1);
+  margin-bottom: 4px;
+}
+.match-cell {
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid rgba(245,239,230,0.12);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--paper);
+  text-align: center;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+}
+.match-cell:hover { background: rgba(240,198,116,0.08); border-color: rgba(240,198,116,0.4); }
+.match-cell.selected { background: rgba(240,198,116,0.18); border-color: var(--gold-light); transform: translateY(-1px); }
+.match-cell.word { font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+.match-cell.meaning { font-size: 14px; line-height: 1.4; }
+.match-cell.matched { background: rgba(74,222,128,0.15); border-color: var(--success); color: var(--success); cursor: default; }
+.match-cell.matched .check { margin-right: 6px; }
+.match-cell.shake { animation: shake 0.4s ease; }
+.match-spacer { display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+
+/* ===== GAME 5: TIMED BONUS ===== */
+.bonus-timer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.bonus-timer-bar-wrap {
+  flex: 1;
+  height: 10px;
+  background: rgba(245,239,230,0.08);
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+}
+.bonus-timer-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--crimson));
+  width: 100%;
+  transform-origin: left;
+  transition: transform 0.3s linear;
+}
+.bonus-timer-bar.danger {
+  background: var(--error);
+  animation: pulseRed 0.6s ease-in-out infinite;
+}
+@keyframes pulseRed { 50% { opacity: 0.5; } }
+.bonus-timer-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--gold-light);
+  min-width: 64px;
+  text-align: right;
+}
+.bonus-timer-label.danger { color: var(--error); }
+.bonus-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bonus-stats .val { color: var(--gold-light); font-weight: 600; font-size: 13px; }
+.bonus-stats .multiplier { color: var(--crimson); }
+.bonus-question {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.4;
+  color: var(--paper);
+  margin: 0 0 18px;
+  text-align: center;
+}
+.bonus-options { display: grid; gap: 8px; max-width: 580px; margin: 0 auto 14px; }
+.bonus-option {
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid rgba(245,239,230,0.12);
+  border-radius: var(--radius-sm);
+  color: var(--paper);
+  font-size: 14px;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.bonus-option:hover:not(:disabled) { background: rgba(240,198,116,0.06); border-color: rgba(240,198,116,0.4); }
+.bonus-option:disabled { cursor: default; }
+.bonus-option.correct { background: rgba(74,222,128,0.18); border-color: var(--success); }
+.bonus-option.wrong { background: rgba(248,113,113,0.18); border-color: var(--error); animation: shake 0.4s ease; }
+.bonus-option.dimmed { opacity: 0.35; }
+
+/* ===== FINALE ===== */
+.finale-screen { text-align: center; }
+.finale-hero {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(40px, 6vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--paper);
+  margin: 0 0 8px;
+}
+.finale-hero .accent { color: var(--gold); font-style: italic; }
+.finale-sub {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--muted-strong);
+  font-size: 18px;
+  margin: 0 auto 32px;
+  max-width: 580px;
+  line-height: 1.5;
+}
+.finale-rank-card {
+  display: inline-block;
+  padding: 28px 56px;
+  background: linear-gradient(135deg, rgba(183,121,31,0.15), rgba(155,44,44,0.15));
+  border: 1px solid rgba(240,198,116,0.3);
+  border-radius: 18px;
+  margin-bottom: 32px;
+}
+.finale-rank-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.finale-rank {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 48px;
+  letter-spacing: 0.1em;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+.finale-rank-desc {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--muted-strong);
+  font-size: 15px;
+  max-width: 360px;
+  margin: 0 auto;
+}
+.finale-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+.finale-stat {
+  padding: 18px 24px;
+  background: var(--bg-2);
+  border: 1px solid rgba(245,239,230,0.1);
+  border-radius: 12px;
+  min-width: 140px;
+}
+.finale-stat .num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 44px;
+  line-height: 1;
+  color: var(--gold-light);
+  margin-bottom: 4px;
+}
+.finale-stat .lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.finale-table {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto 32px;
+  border-collapse: collapse;
+}
+.finale-table th, .finale-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(245,239,230,0.08);
+  font-size: 14px;
+}
+.finale-table th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+}
+.finale-table td.stars { color: var(--gold); }
+.finale-table td.score { font-family: var(--font-mono); color: var(--gold-light); font-weight: 600; }
+.finale-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+/* ===== TOASTS / CONFETTI / FLOATS ===== */
+#toastContainer {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+}
+.toast {
+  padding: 10px 18px;
+  background: var(--bg-2);
+  border: 1px solid rgba(245,239,230,0.15);
+  border-radius: 999px;
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow-soft);
+  animation: toastIn 0.4s cubic-bezier(0.34,1.56,0.64,1), toastOut 0.4s ease 2.4s forwards;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.toast.success { border-color: var(--success); color: var(--success); }
+.toast.error { border-color: var(--error); color: var(--error); }
+.toast.info { border-color: var(--gold-light); color: var(--gold-light); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-12px); } }
+
+#confettiLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 95;
+  overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  width: 8px; height: 14px;
+  border-radius: 2px;
+  animation: confettiFall 2.5s ease-out forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--dx, 60px), 100vh) rotate(720deg); opacity: 0; }
+}
+.float-pop {
+  position: fixed;
+  z-index: 99;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  pointer-events: none;
+  animation: floatPop 1.2s ease-out forwards;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+@keyframes floatPop {
+  0% { transform: translateY(0) scale(0.7); opacity: 0; }
+  20% { transform: translateY(-10px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(-60px) scale(1); opacity: 0; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 720px) {
+  header.console { padding: 8px 12px; gap: 8px; }
+  .brand small { display: none; }
+  .brand { font-size: 16px; }
+  .hud-cell .lbl { display: none; }
+  .hud-cell { padding: 6px 10px; }
+  .screen { padding: 24px 14px 64px; }
+  .fill-story { font-size: 18px; line-height: 1.7; }
+  .tf-statement { font-size: 20px; }
+  .mc-question { font-size: 19px; }
+  .bonus-question { font-size: 18px; }
+  .match-grid { grid-template-columns: 1fr 16px 1fr; gap: 6px 8px; }
+  .match-cell { padding: 10px 8px; font-size: 13px; min-height: 50px; }
+  .match-cell.word { font-size: 15px; }
+  .modal { padding: 22px 18px 18px; }
+  .modal h3 { font-size: 22px; }
+  .modal .modal-row { grid-template-columns: 64px 1fr; gap: 8px; font-size: 13px; }
+  .finale-stats { gap: 12px; }
+  .finale-stat { padding: 14px 18px; min-width: 110px; }
+  .finale-stat .num { font-size: 32px; }
+  .finale-rank { font-size: 36px; }
+  .finale-table th, .finale-table td { padding: 8px 10px; font-size: 13px; }
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .pre-loader-bar > span, #finaleButton.visible { animation: none !important; }
+  .confetti-piece { display: none !important; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ===== PRELOADER ===== -->
+<div id="preloader" role="dialog" aria-label="Loading Penthesilea Arcade of Tragedy">
+  <div class="pre-eyebrow">Gemini Notebook · Arcade Cartridge</div>
+  <h1 class="pre-title">PENTHESILEA<br><span class="accent">Arcade of Tragedy</span></h1>
+  <p class="pre-sub">Five reels. Five mechanics. One cycle of blood, fire, and forgotten measure.</p>
+  <button id="prePlay" class="pre-play" type="button" aria-label="Press play to begin">PLAY ▶</button>
+  <div class="pre-loader-bar" aria-hidden="true"><span></span></div>
+</div>
+
+<!-- ===== HEADER CONSOLE ===== -->
+<header class="console" role="banner">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">P</div>
+    <div>
+      Arcade of Tragedy
+      <small>Penthesilea · Gemini Notebook</small>
+    </div>
+  </div>
+  <div class="hud" role="status" aria-live="polite">
+    <div class="hud-cell stars"><span class="lbl">Stars</span><span class="val" id="hudStars">0</span></div>
+    <div class="hud-cell"><span class="lbl">Score</span><span class="val" id="hudScore">0</span></div>
+  </div>
+  <div class="hud-actions">
+    <button class="icon-btn" id="soundToggle" type="button" aria-pressed="true" aria-label="Mute sound" title="Toggle sound"></button>
+    <button class="icon-btn" id="mapButton" type="button" aria-label="Return to level map" title="Level map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ===== MAIN APP ===== -->
+<main class="app">
+
+  <!-- ===== INTRO SCREEN ===== -->
+  <section class="screen active" id="screenIntro" aria-labelledby="introTitle">
+    <div class="intro-hero">
+      <img src="https://item1000-collab.github.io/ai/nc/20261016-len-debates/slide-001.jpg" alt="Title card of the Penthesilea study deck" loading="lazy" onerror="this.style.display='none'">
+      <div class="intro-hero-text">
+        <span class="intro-eyebrow">A tragic cycle in five reels</span>
+        <h1 id="introTitle" class="intro-title">Penthesilea:<br><span class="accent">Arcade of Tragedy</span></h1>
+        <p class="intro-lede">A close reading of the Gemini Notebook deck, rebuilt as a five-reel arcade. Fill the blanks. Judge the real from the delusion. Match the lexicon. Race the burning timer. Trace the cycle from miasma to the burning soul.</p>
+      </div>
+    </div>
+    <div class="intro-meta">
+      <span><b>5</b> reels</span>
+      <span><b>5</b> mechanics</span>
+      <span><b>15</b> stars to earn</span>
+      <span><b>1</b> cycle to break</span>
+    </div>
+    <div class="intro-cta-row">
+      <button id="introStart" class="big-btn" type="button">Choose your reel →</button>
+      <a class="big-btn ghost" href="https://item1000-collab.github.io/ai/nc/20261016-len-debates/the-tragedy-of-penthesilea.pdf" target="_blank" rel="noopener noreferrer">Read the deck</a>
+    </div>
+  </section>
+
+  <!-- ===== LEVEL MAP ===== -->
+  <section class="screen" id="screenMap" aria-labelledby="mapTitle">
+    <div class="map-head">
+      <div class="map-title-block">
+        <h2 id="mapTitle">Choose your <span class="accent">reel</span></h2>
+        <p>Five reels, all unlocked from the start. Enter them in any order. Replay any level freely to chase three stars.</p>
+      </div>
+      <div class="map-progress">
+        <span>Progress</span>
+        <div class="progress-dots" id="progressDots" aria-hidden="true">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+      </div>
+    </div>
+    <div class="reel-grid" id="reelGrid" role="list"></div>
+    <div class="map-finale-row">
+      <button id="finaleButton" class="big-btn crimson" type="button" aria-label="View final results">See the finale →</button>
+    </div>
+  </section>
+
+  <!-- ===== STAGE ===== -->
+  <section class="screen" id="screenStage" aria-labelledby="stageTitle">
+    <div class="stage-topbar">
+      <button class="stage-back" id="stageBack" type="button">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to map
+      </button>
+    </div>
+    <div class="stage-head">
+      <span class="num" id="stageNum">Reel 01</span>
+      <h2 id="stageTitle">The Refuge at Priam's Hearth</h2>
+      <span class="char" id="stageChar">Penthesilea, the Exile</span>
+    </div>
+    <div id="stage" role="region" aria-live="polite"></div>
+  </section>
+
+  <!-- ===== FINALE ===== -->
+  <section class="screen finale-screen" id="screenFinale" aria-labelledby="finaleHero">
+    <h1 class="finale-hero" id="finaleHero">Arcade <span class="accent">complete</span></h1>
+    <p class="finale-sub">The cycle has been traced from miasma to fire. The deck closes. The lesson opens.</p>
+    <div class="finale-rank-card">
+      <div class="finale-rank-label">Your rank</div>
+      <div class="finale-rank" id="finaleRank">SEEKER</div>
+      <div class="finale-rank-desc" id="finaleRankDesc">The hearth is lit. The work continues.</div>
+    </div>
+    <div class="finale-stats">
+      <div class="finale-stat">
+        <div class="num" id="finaleScore">0</div>
+        <div class="lbl">Total Score</div>
+      </div>
+      <div class="finale-stat">
+        <div class="num" id="finaleStars">0 / 15</div>
+        <div class="lbl">Total Stars</div>
+      </div>
+    </div>
+    <table class="finale-table">
+      <thead>
+        <tr><th>Reel</th><th>Title</th><th>Stars</th><th>Best Score</th></tr>
+      </thead>
+      <tbody id="finaleTableBody"></tbody>
+    </table>
+    <div class="finale-actions">
+      <button id="finaleReset" class="big-btn ghost" type="button">Rewind the tape</button>
+      <a class="big-btn" href="https://item1000-collab.github.io/ai/nc/20261016-len-debates/the-tragedy-of-penthesilea.pdf" target="_blank" rel="noopener noreferrer">Read the deck</a>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== BRIEFING MODAL ===== -->
+<div class="modal-backdrop" id="modalBriefing" role="dialog" aria-labelledby="briefingTitle" aria-modal="true">
+  <div class="modal">
+    <div class="modal-eyebrow" id="briefingEyebrow">Reel 01 · Fill in the Blanks</div>
+    <h3 id="briefingTitle">The Refuge at Priam's Hearth</h3>
+    <div class="modal-char" id="briefingChar">Penthesilea, the Exile</div>
+    <div class="modal-flavor" id="briefingFlavor">"She arrived as an exiled refugee."</div>
+    <div class="modal-rows">
+      <div class="modal-row"><div class="lbl">Objective</div><div class="val" id="briefingObj"></div></div>
+      <div class="modal-row tip"><div class="lbl">Tip</div><div class="val" id="briefingTip"></div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="big-btn ghost" id="briefingCancel" type="button">Cancel</button>
+      <button class="big-btn" id="briefingBegin" type="button">Begin reel →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESULTS MODAL ===== -->
+<div class="modal-backdrop" id="modalResults" role="dialog" aria-labelledby="resultsTitle" aria-modal="true">
+  <div class="modal">
+    <div class="modal-eyebrow" id="resultsEyebrow">Reel 01 · Complete</div>
+    <h3 id="resultsTitle">The Refuge at Priam's Hearth</h3>
+    <div class="modal-results-stars" id="resultsStars" aria-label="Stars earned"></div>
+    <div class="modal-results-score">
+      <div class="num" id="resultsScoreNum">0</div>
+      <div class="lbl">Points · <span id="resultsMistakes">0 mistakes</span></div>
+    </div>
+    <div class="modal-results-msg" id="resultsMsg"></div>
+    <div class="modal-actions">
+      <button class="big-btn ghost" id="resultsContinue" type="button">Back to map</button>
+      <button class="big-btn" id="resultsReplay" type="button">Replay reel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div id="toastContainer" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ===== CONFETTI LAYER ===== -->
+<div id="confettiLayer" aria-hidden="true"></div>
+
+<!-- ===== SCRIPT ===== -->
+<script>
+const SCENES = [
+  {
+    "id": "refuge",
+    "num": 1,
+    "title": "The Refuge at Priam's Hearth",
+    "char": "Penthesilea, the Exile",
+    "color": "#9b2c2c",
+    "slide": "https://item1000-collab.github.io/ai/nc/20261016-len-debates/slide-002.jpg",
+    "tag": "Fill in the Blanks",
+    "obj": "Restore five lines from the opening of the deck by placing the right word in each blank.",
+    "tip": "Click a blank, then click a word from the bank. Wrong words bounce back and cost points.",
+    "flavor": "\"She arrived as an exiled refugee.\""
+  },
+  {
+    "id": "metron",
+    "num": 2,
+    "title": "The Boundary of Metron",
+    "char": "The Chorus",
+    "color": "#b7791f",
+    "slide": "https://item1000-collab.github.io/ai/nc/20261016-len-debates/slide-010.jpg",
+    "tag": "REAL or DELUSION",
+    "obj": "Judge six statements about metron, hubris, and the cycle. Separate the real from the delusion.",
+    "tip": "Use \u2190 for REAL, \u2192 for DELUSION. Read the explanation, then press NEXT.",
+    "flavor": "\"Even the greatest human triumphs must remain within limits.\""
+  },
+  {
+    "id": "aristeia",
+    "num": 3,
+    "title": "The Field of Aristeia",
+    "char": "Ares, the War-God",
+    "color": "#2c7a7b",
+    "slide": "https://item1000-collab.github.io/ai/nc/20261016-len-debates/slide-009.jpg",
+    "tag": "Multiple Choice",
+    "obj": "Answer six questions about Penthesilea's peak moment of martial dominance.",
+    "tip": "Pick one of three options. One attempt per question. Streaks multiply your score.",
+    "flavor": "\"A magnificent aristeia upon the plains of Troy.\""
+  },
+  {
+    "id": "lexicon",
+    "num": 4,
+    "title": "The Lexicon of Tragedy",
+    "char": "The Scholar",
+    "color": "#5b3a8a",
+    "slide": "https://item1000-collab.github.io/ai/nc/20261016-len-debates/slide-014.jpg",
+    "tag": "Match the Meaning",
+    "obj": "Pair each Greek term with its meaning. Six pairs, locked green when matched.",
+    "tip": "Click a word, then click its meaning. Wrong picks shake and clear. Example: WORD \u00b7 boasts \u2192 MEANING \u00b7 proudly has.",
+    "flavor": "\"Miasma \u2192 Katharsis \u2192 Aristeia \u2192 Hubris.\""
+  },
+  {
+    "id": "cycle",
+    "num": 5,
+    "title": "The Cycle of Doom",
+    "char": "The Oracle",
+    "color": "#1f5859",
+    "slide": "https://item1000-collab.github.io/ai/nc/20261016-len-debates/slide-015.jpg",
+    "tag": "Timed Bonus Round",
+    "obj": "Answer as many rapid-fire questions as you can before the fire burns out.",
+    "tip": "Twelve questions. Streak \u00d7 multiplier. The timer flashes red at the end.",
+    "flavor": "\"A cured soul consumed entirely by its own fire.\""
+  }
+];
+const FILL_DATA = {
+  "story": [
+    {
+      "before": "Penthesilea did not march south to the city of Troy for political ",
+      "blank": "glory",
+      "after": " or conquest."
+    },
+    {
+      "before": "Weighed down by the unbearable burden of accidentally killing her own sister, she arrived as an exiled ",
+      "blank": "refugee",
+      "after": "."
+    },
+    {
+      "before": "A person carrying the blood pollution of miasma was completely ostracized and considered spiritually ",
+      "blank": "toxic",
+      "after": "."
+    },
+    {
+      "before": "The afflicted cannot cleanse themselves ",
+      "blank": "alone",
+      "after": " \u2014 they must travel to a foreign land."
+    },
+    {
+      "before": "Penthesilea sought out King Priam because he possessed the religious authority to perform ",
+      "blank": "katharsis",
+      "after": "."
+    }
+  ],
+  "bank": [
+    "glory",
+    "refugee",
+    "toxic",
+    "alone",
+    "katharsis",
+    "conquest",
+    "hearth",
+    "ritual"
+  ]
+};
+const TF_DATA = {
+  "statements": [
+    {
+      "text": "Metron is the boundary that separates heroic excellence from divine overreach.",
+      "answer": "real",
+      "explanation": "The deck defines metron as the critical boundary reminding unstoppable warriors of their own mortality."
+    },
+    {
+      "text": "Hubris is a permanent character trait that one is born with.",
+      "answer": "delusion",
+      "explanation": "The deck frames hubris as a state one falls into after losing metron \u2014 not a trait one is born with."
+    },
+    {
+      "text": "Penthesilea lost metron during her peak moment of military triumph.",
+      "answer": "real",
+      "explanation": "It was precisely during the moment of supreme triumph that she lost herself, swept away by success."
+    },
+    {
+      "text": "The purification ritual cured both the miasma and her susceptibility to hubris.",
+      "answer": "delusion",
+      "explanation": "Purification cured the spiritual infection but left her soul unprotected from the intoxication of martial glory."
+    },
+    {
+      "text": "Crossing metron in either direction turns a hero into a transgressor.",
+      "answer": "real",
+      "explanation": "Metron is the fragile median between blind arrogance and tragic mortality."
+    },
+    {
+      "text": "The cure for miasma can be performed alone by the afflicted person.",
+      "answer": "delusion",
+      "explanation": "The afflicted cannot cleanse themselves alone \u2014 they must seek out a pious ruler in a foreign land."
+    }
+  ]
+};
+const MC_DATA = {
+  "questions": [
+    {
+      "q": "What does \"aristeia\" mean in epic poetry?",
+      "options": [
+        "A royal decree issued before battle",
+        "A warrior's peak moment of unstoppable dominance on the field",
+        "A religious sacrifice performed at the hearth"
+      ],
+      "answer": 1,
+      "reaction": "Yes \u2014 aristeia is the apex, the moment a hero becomes briefly unstoppable."
+    },
+    {
+      "q": "Whose hearth did Penthesilea kneel at for purification?",
+      "options": [
+        "Achilles, on the battlefield",
+        "The Furies, after she surrendered",
+        "King Priam, the pious ruler of Troy"
+      ],
+      "answer": 2,
+      "reaction": "Correct \u2014 Priam was chosen specifically because of his religious authority."
+    },
+    {
+      "q": "What does the sacrificial blood act as, according to the deck?",
+      "options": [
+        "A symbol of forgiveness",
+        "A spiritual sponge that draws out corruption",
+        "A weapon against the Furies"
+      ],
+      "answer": 1,
+      "reaction": "Exactly \u2014 the blood is a poultice, not a symbol."
+    },
+    {
+      "q": "Penthesilea was the daughter of which Greek god?",
+      "options": [
+        "Zeus, king of the gods",
+        "Ares, god of war",
+        "Apollo, god of light"
+      ],
+      "answer": 1,
+      "reaction": "Yes \u2014 her martial power was her birthright as a daughter of Ares."
+    },
+    {
+      "q": "What did Penthesilea publicly vow that crossed metron?",
+      "options": [
+        "To single-handedly end the ten-year war",
+        "To surrender to Achilles",
+        "To return home to the Amazons"
+      ],
+      "answer": 0,
+      "reaction": "Correct \u2014 she swore to burn the fleet, slay the champions, and end the war alone."
+    },
+    {
+      "q": "What is the FIRST step of the purification ceremony?",
+      "options": [
+        "Pouring sacred blood over the hands",
+        "Sitting in absolute silence at the king's hearth",
+        "Washing with milk and water"
+      ],
+      "answer": 1,
+      "reaction": "Yes \u2014 silence at the hearth is the doorway of the ritual."
+    }
+  ]
+};
+const MATCH_DATA = {
+  "pairs": [
+    {
+      "word": "Miasma",
+      "meaning": "The spiritual infection caused by shedding kindred blood"
+    },
+    {
+      "word": "Katharsis",
+      "meaning": "Ritual purification through sacrifice and sacred blood"
+    },
+    {
+      "word": "Aristeia",
+      "meaning": "A warrior's peak moment of unstoppable dominance"
+    },
+    {
+      "word": "Hubris",
+      "meaning": "Fatal overconfidence beyond mortal limits"
+    },
+    {
+      "word": "Metron",
+      "meaning": "The boundary of proper human measure"
+    },
+    {
+      "word": "Furies",
+      "meaning": "Agents of vengeance who hunt the guilty"
+    }
+  ]
+};
+const BONUS_DATA = {
+  "questions": [
+    {
+      "q": "Who accidentally killed Penthesilea's sister?",
+      "options": [
+        "Penthesilea herself",
+        "Achilles",
+        "Priam"
+      ],
+      "answer": 0
+    },
+    {
+      "q": "The Furies are the agents of:",
+      "options": [
+        "Forgiveness",
+        "Miasma",
+        "Victory"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "Metron represents the awareness of:",
+      "options": [
+        "Mortality",
+        "Wealth",
+        "Lineage"
+      ],
+      "answer": 0
+    },
+    {
+      "q": "Aristeia is by definition a:",
+      "options": [
+        "Beginning",
+        "Peak",
+        "Ending"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "What did the sacrificial blood draw out of the soul?",
+      "options": [
+        "Miasma",
+        "Hubris",
+        "Aristeia"
+      ],
+      "answer": 0
+    },
+    {
+      "q": "Hubris is a state one falls into after losing:",
+      "options": [
+        "Memory",
+        "Metron",
+        "Faith"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "Penthesilea sought purification so she could:",
+      "options": [
+        "Conquer Troy",
+        "Die cleanly in battle",
+        "Return home"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "King Priam was chosen because he was:",
+      "options": [
+        "Wealthy",
+        "Pious",
+        "Powerful"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "The four-stage cycle ends with:",
+      "options": [
+        "Miasma",
+        "Katharsis",
+        "Hubris"
+      ],
+      "answer": 2
+    },
+    {
+      "q": "The deck's central thesis is that the cure:",
+      "options": [
+        "Failed",
+        "Was the engine of a new doom",
+        "Was unnecessary"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "Penthesilea's final state was:",
+      "options": [
+        "Restored",
+        "Burned to ashes",
+        "Forgiven"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "The purification ceremony has how many steps?",
+      "options": [
+        "Three",
+        "Four",
+        "Five"
+      ],
+      "answer": 1
+    }
+  ]
+};
+const PDF_URL = "https://item1000-collab.github.io/ai/nc/20261016-len-debates/the-tragedy-of-penthesilea.pdf";
+const IMG_BASE = "https://item1000-collab.github.io/ai/nc/20261016-len-debates/";
+
+
+(function(){
+  'use strict';
+
+  /* ===== DATA (injected from Python) ===== */
+  /* SCENES, FILL_DATA, TF_DATA, MC_DATA, MATCH_DATA, BONUS_DATA, PDF_URL, IMG_BASE */
+
+  /* ===== UTILITIES ===== */
+  const $ = (sel, ctx) => (ctx || document).querySelector(sel);
+  const $$ = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const shuffle = arr => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  /* ===== STORAGE ===== */
+  const STORAGE_KEY = 'penthesilea_arcade_v1';
+  const state = { progress: {}, totalScore: 0, sound: true };
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        state.progress = parsed.progress || {};
+        state.totalScore = parsed.totalScore || 0;
+        state.sound = parsed.sound !== false;
+      }
+    } catch(e) { /* private mode */ }
+  }
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        progress: state.progress,
+        totalScore: state.totalScore,
+        sound: state.sound,
+      }));
+    } catch(e) { /* private mode */ }
+  }
+
+  /* ===== AUDIO (Web Audio API) ===== */
+  let audioCtx = null;
+  function initAudio() {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) { audioCtx = null; }
+  }
+  function tone(freq, dur, type, vol, when) {
+    if (!state.sound || !audioCtx) return;
+    type = type || 'sine'; vol = vol == null ? 0.18 : vol; when = when || 0;
+    const t = audioCtx.currentTime + when;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(vol, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + dur);
+  }
+  function noiseBurst(dur, vol) {
+    if (!state.sound || !audioCtx) return;
+    dur = dur || 0.3; vol = vol == null ? 0.1 : vol;
+    const bufferSize = Math.floor(audioCtx.sampleRate * dur);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+    }
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const gain = audioCtx.createGain();
+    gain.gain.value = vol;
+    noise.connect(gain);
+    gain.connect(audioCtx.destination);
+    noise.start();
+  }
+  const sfx = {
+    click: () => tone(600, 0.08, 'square', 0.1),
+    flip: () => { tone(440, 0.1, 'sine', 0.15); tone(660, 0.08, 'sine', 0.1, 0.05); },
+    correct: () => { tone(523, 0.1, 'sine', 0.18); tone(659, 0.1, 'sine', 0.18, 0.1); tone(784, 0.18, 'sine', 0.18, 0.2); },
+    wrong: () => { tone(220, 0.15, 'sawtooth', 0.14); tone(180, 0.2, 'sawtooth', 0.14, 0.1); },
+    match: () => { tone(659, 0.08, 'sine', 0.16); tone(880, 0.15, 'sine', 0.16, 0.08); },
+    fanfare: () => {
+      [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.2, 'triangle', 0.2, i * 0.12));
+    },
+    tick: () => tone(1000, 0.03, 'square', 0.05),
+    cheer: () => { noiseBurst(0.5, 0.08); setTimeout(() => noiseBurst(0.3, 0.06), 100); },
+    bonus: () => { tone(880, 0.1, 'square', 0.15); tone(1175, 0.15, 'square', 0.15, 0.08); },
+  };
+
+  /* ===== CLEANUP REGISTRY ===== */
+  let cleanupFn = null;
+  function setCleanup(fn) { cleanupFn = fn; }
+  function runCleanup() {
+    if (cleanupFn) {
+      try { cleanupFn(); } catch(e) {}
+      cleanupFn = null;
+    }
+  }
+
+  /* ===== UI HELPERS ===== */
+  function toast(msg, type) {
+    type = type || 'info';
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    el.textContent = msg;
+    $('#toastContainer').appendChild(el);
+    setTimeout(() => el.remove(), 2900);
+  }
+  function popFloat(text, x, y, color) {
+    color = color || '#f0c674';
+    const el = document.createElement('div');
+    el.className = 'float-pop';
+    el.textContent = text;
+    el.style.color = color;
+    el.style.left = (x - 20) + 'px';
+    el.style.top = (y - 30) + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  }
+  function spawnConfetti(x, y, count) {
+    count = count || 28;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const layer = $('#confettiLayer');
+    const colors = ['#f0c674', '#9b2c2c', '#4ade80', '#5b3a8a', '#2c7a7b', '#fff5ee'];
+    const rect = layer.getBoundingClientRect();
+    const originX = x == null ? rect.width / 2 : x;
+    const originY = y == null ? rect.height / 3 : y;
+    for (let i = 0; i < count; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = originX + 'px';
+      piece.style.top = originY + 'px';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      const dx = (Math.random() - 0.5) * 320;
+      piece.style.setProperty('--dx', dx + 'px');
+      piece.style.animationDelay = (Math.random() * 0.2) + 's';
+      piece.style.animationDuration = (1.8 + Math.random() * 1.2) + 's';
+      layer.appendChild(piece);
+      setTimeout(() => piece.remove(), 3500);
+    }
+  }
+
+  /* ===== NAVIGATION ===== */
+  function showScreen(id) {
+    $$('.screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add('active');
+      el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+  }
+
+  /* ===== HUD ===== */
+  function updateHUD() {
+    const totalStars = Object.values(state.progress).reduce((s, p) => s + (p.stars || 0), 0);
+    const hudStars = $('#hudStars');
+    const hudScore = $('#hudScore');
+    if (hudStars) hudStars.textContent = totalStars;
+    if (hudScore) hudScore.textContent = state.totalScore;
+    const dots = $$('.progress-dots .dot');
+    dots.forEach((dot, i) => {
+      const scene = SCENES[i];
+      const done = scene && state.progress[scene.id] && state.progress[scene.id].completed;
+      dot.classList.toggle('done', !!done);
+    });
+  }
+
+  /* ===== MAP RENDER ===== */
+  function renderMap() {
+    const grid = $('#reelGrid');
+    const cardsHtml = SCENES.map(s => {
+      const prog = state.progress[s.id] || { stars: 0, bestScore: 0, completed: false };
+      const stars = [1, 2, 3].map(n => {
+        const lit = prog.stars >= n;
+        return '<span class="star ' + (lit ? 'lit' : '') + '">\u2605</span>';
+      }).join('');
+      const scoreText = prog.completed
+        ? '<b>' + prog.bestScore + '</b> pts'
+        : 'Not played';
+      return `
+        <button class="reel-card" data-scene="${s.id}" style="--card-color:${s.color}" aria-label="Reel ${s.num}: ${s.title}. ${s.tag}. ${prog.completed ? 'Stars: ' + prog.stars + ' of 3. Best score: ' + prog.bestScore + '.' : 'Not yet played.'} Press Enter to begin.">
+          <div class="thumb">
+            <span class="num">REEL ${String(s.num).padStart(2, '0')}</span>
+            <span class="tag">${s.tag}</span>
+            <img src="${s.slide}" alt="" loading="lazy" onerror="this.style.display='none'">
+          </div>
+          <div class="body">
+            <h3>${s.title}</h3>
+            <div class="char">${s.char}</div>
+            <div class="footer">
+              <div class="reel-stars" aria-hidden="true">${stars}</div>
+              <div class="reel-score">${scoreText}</div>
+            </div>
+          </div>
+        </button>
+      `;
+    }).join('');
+    grid.innerHTML = cardsHtml;
+    // Finale button visibility
+    const allDone = SCENES.every(s => state.progress[s.id] && state.progress[s.id].completed);
+    $('#finaleButton').classList.toggle('visible', allDone);
+    updateHUD();
+  }
+
+  /* ===== LEVEL LIFECYCLE ===== */
+  let currentScene = null;
+
+  function openBriefing(sceneId) {
+    const scene = SCENES.find(s => s.id === sceneId);
+    if (!scene) return;
+    currentScene = scene;
+    const modal = $('#modalBriefing');
+    $('#briefingEyebrow').textContent = 'Reel ' + String(scene.num).padStart(2, '0') + ' \u00b7 ' + scene.tag;
+    $('#briefingTitle').textContent = scene.title;
+    $('#briefingChar').textContent = scene.char;
+    $('#briefingObj').textContent = scene.obj;
+    $('#briefingTip').textContent = scene.tip;
+    $('#briefingFlavor').textContent = scene.flavor;
+    modal.classList.add('open');
+    $('#briefingBegin').focus();
+  }
+  function closeBriefing() { $('#modalBriefing').classList.remove('open'); }
+
+  function startLevel() {
+    closeBriefing();
+    if (!currentScene) return;
+    showScreen('screenStage');
+    $('#stageNum').textContent = 'Reel ' + String(currentScene.num).padStart(2, '0');
+    $('#stageTitle').textContent = currentScene.title;
+    $('#stageChar').textContent = currentScene.char;
+    runCleanup();
+    const stage = $('#stage');
+    stage.innerHTML = '';
+    // Dispatch to per-game renderer
+    switch (currentScene.id) {
+      case 'refuge':   renderFillBlanks(stage); break;
+      case 'metron':   renderTrueFalse(stage); break;
+      case 'aristeia': renderMultipleChoice(stage); break;
+      case 'lexicon':  renderMatch(stage); break;
+      case 'cycle':    renderBonus(stage); break;
+    }
+  }
+
+  function finishLevel(score, mistakes) {
+    runCleanup();
+    if (!currentScene) return;
+    const stars = mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1);
+    const prev = state.progress[currentScene.id] || { stars: 0, bestScore: 0, completed: false };
+    const newBest = Math.max(prev.bestScore, score);
+    const newStars = Math.max(prev.stars, stars);
+    const scoreDelta = newBest - prev.bestScore;
+    state.progress[currentScene.id] = { stars: newStars, bestScore: newBest, completed: true, mistakes: mistakes };
+    state.totalScore += scoreDelta;
+    saveState();
+    renderMap();
+    updateHUD();
+    showResults(currentScene, score, stars, newBest > prev.bestScore, mistakes);
+  }
+
+  function showResults(scene, score, stars, isBest, mistakes) {
+    const modal = $('#modalResults');
+    const maxStars = SCENES.reduce((s, sc) => s + 3, 0);
+    let msg;
+    if (stars === 3) msg = 'Flawless. The cycle holds no secrets from you.';
+    else if (stars === 2) msg = 'Strong reading. A joint in the argument still loosens.';
+    else msg = 'The hearth is lit. The work continues.';
+    $('#resultsEyebrow').textContent = 'Reel ' + String(scene.num).padStart(2, '0') + ' \u00b7 Complete';
+    $('#resultsTitle').textContent = scene.title;
+    $('#resultsScoreNum').textContent = score;
+    $('#resultsMistakes').textContent = mistakes + ' mistake' + (mistakes === 1 ? '' : 's');
+    $('#resultsMsg').textContent = msg + (isBest ? ' New personal best.' : '');
+    // Stars animation
+    const starsContainer = $('#resultsStars');
+    starsContainer.innerHTML = '';
+    [1, 2, 3].forEach(n => {
+      const s = document.createElement('span');
+      s.className = 'star' + (stars >= n ? ' lit' : '');
+      s.textContent = '\u2605';
+      starsContainer.appendChild(s);
+      if (stars >= n) {
+        setTimeout(() => { sfx.flip(); }, (n - 1) * 300 + 200);
+      }
+    });
+    modal.classList.add('open');
+    sfx.fanfare();
+    spawnConfetti(window.innerWidth / 2, window.innerHeight / 3, stars === 3 ? 40 : 20);
+    setTimeout(() => $('#resultsContinue').focus(), 400);
+  }
+
+  function exitToMap() {
+    runCleanup();
+    $('#modalResults').classList.remove('open');
+    showScreen('screenMap');
+  }
+
+  /* ===== GAME 1: FILL IN THE BLANKS ===== */
+  function renderFillBlanks(root) {
+    const data = FILL_DATA;
+    let selectedBlank = null;
+    let filledCount = 0;
+    let mistakes = 0;
+    let score = 0;
+    const totalBlanks = data.story.length;
+    const usedWords = new Set();
+
+    // Build story HTML
+    const storyHtml = data.story.map((line, i) => {
+      return `<div class="line">${escapeHtml(line.before)}<button class="fill-blank" data-blank="${i}" aria-label="Blank ${i + 1}, empty. Click to fill.">&nbsp;&nbsp;&nbsp;&nbsp;</button>${escapeHtml(line.after)}</div>`;
+    }).join('');
+    const bankHtml = data.bank.map((w, i) => {
+      return `<button class="fill-word" data-word="${escapeHtml(w)}" aria-label="Word: ${escapeHtml(w)}">${escapeHtml(w)}</button>`;
+    }).join('');
+    root.innerHTML = `
+      <div class="fill-counter mc-counter">
+        <span><span class="lbl">FILLED</span> <span class="val" id="fillCount">0/${totalBlanks}</span></span>
+        <span><span class="lbl">MISTAKES</span> <span class="val" id="fillMistakes">0</span></span>
+      </div>
+      <div class="fill-story">${storyHtml}</div>
+      <div class="fill-bank-label">Word Bank</div>
+      <div class="fill-bank" id="fillBank">${bankHtml}</div>
+    `;
+
+    function updateCounter() {
+      $('#fillCount', root).textContent = filledCount + '/' + totalBlanks;
+      $('#fillMistakes', root).textContent = mistakes;
+    }
+    function selectBlank(btn) {
+      if (btn.classList.contains('filled')) return;
+      $$('.fill-blank', root).forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedBlank = btn;
+      sfx.click();
+    }
+    function tryWord(wordBtn, e) {
+      if (!selectedBlank) {
+        toast('Pick a blank first', 'info');
+        return;
+      }
+      const word = wordBtn.getAttribute('data-word');
+      const blankIdx = parseInt(selectedBlank.getAttribute('data-blank'), 10);
+      const correct = data.story[blankIdx].blank;
+      if (word === correct) {
+        selectedBlank.classList.remove('selected');
+        selectedBlank.classList.add('filled');
+        selectedBlank.textContent = word;
+        selectedBlank.setAttribute('aria-label', 'Blank ' + (blankIdx + 1) + ': ' + word + '. Filled correctly.');
+        wordBtn.classList.add('used');
+        usedWords.add(word);
+        filledCount++;
+        score += 100;
+        sfx.correct();
+        if (e) popFloat('+100', e.clientX, e.clientY, '#4ade80');
+        selectedBlank = null;
+        updateCounter();
+        if (filledCount === totalBlanks) {
+          setTimeout(() => finishLevel(score, mistakes), 600);
+        }
+      } else {
+        selectedBlank.classList.add('wrong');
+        wordBtn.classList.add('wrong');
+        mistakes++;
+        score = Math.max(0, score - 25);
+        sfx.wrong();
+        if (e) popFloat('-25', e.clientX, e.clientY, '#f87171');
+        setTimeout(() => {
+          selectedBlank && selectedBlank.classList.remove('wrong');
+          wordBtn.classList.remove('wrong');
+        }, 450);
+        updateCounter();
+      }
+    }
+    root.addEventListener('click', (e) => {
+      const blank = e.target.closest('.fill-blank');
+      if (blank) { selectBlank(blank); return; }
+      const word = e.target.closest('.fill-word');
+      if (word) { tryWord(word, e); return; }
+    });
+    // Keyboard support: Tab through blanks/words, Enter to activate
+    root.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const t = e.target;
+        if (t.classList.contains('fill-blank')) { e.preventDefault(); selectBlank(t); }
+        else if (t.classList.contains('fill-word')) { e.preventDefault(); tryWord(t, e); }
+      }
+    });
+    setCleanup(() => {
+      selectedBlank = null;
+      root.innerHTML = '';
+    });
+  }
+
+  /* ===== GAME 2: REAL / DELUSION ===== */
+  function renderTrueFalse(root) {
+    const data = TF_DATA;
+    let idx = 0;
+    let score = 0;
+    let mistakes = 0;
+    let streak = 0;
+    let timerId = null;
+    let timerStart = 0;
+    const TIMER_MS = 600000; // 600 seconds = 10 minutes per card
+    let answered = false;
+
+    root.innerHTML = `
+      <div class="tf-card" id="tfCard">
+        <div class="tf-timer-row"><div class="tf-timer-bar" id="tfTimerBar"></div></div>
+        <div class="tf-counter">
+          <span><span class="lbl">CARD</span> <span id="tfIdx">1/${data.statements.length}</span></span>
+          <span class="streak">STREAK \u00d7<span id="tfStreak">0</span></span>
+        </div>
+        <p class="tf-statement" id="tfStatement"></p>
+        <div class="tf-buttons">
+          <button class="tf-btn real" id="tfReal" type="button" aria-label="Mark as real. Press left arrow.">REAL \u2190</button>
+          <button class="tf-btn delusion" id="tfDelusion" type="button" aria-label="Mark as delusion. Press right arrow.">DELUSION \u2192</button>
+        </div>
+        <div class="tf-explanation" id="tfExplanation"></div>
+        <div class="tf-next-row" id="tfNextRow" hidden>
+          <button class="big-btn" id="tfNext" type="button">NEXT \u2192</button>
+        </div>
+      </div>
+    `;
+
+    function renderCard() {
+      const stmt = data.statements[idx];
+      $('#tfStatement', root).textContent = stmt.text;
+      $('#tfIdx', root).textContent = (idx + 1) + '/' + data.statements.length;
+      $('#tfStreak', root).textContent = streak;
+      $('#tfExplanation', root).classList.remove('visible');
+      $('#tfExplanation', root).textContent = '';
+      $('#tfNextRow', root).hidden = true;
+      $('#tfReal', root).className = 'tf-btn real';
+      $('#tfDelusion', root).className = 'tf-btn delusion';
+      $('#tfReal', root).disabled = false;
+      $('#tfDelusion', root).disabled = false;
+      answered = false;
+      // Update next button label on last card
+      const nextBtn = $('#tfNext', root);
+      nextBtn.textContent = (idx === data.statements.length - 1) ? 'SEE RESULTS \u2192' : 'NEXT \u2192';
+      // Restart timer
+      startTimer();
+    }
+    function startTimer() {
+      stopTimer();
+      timerStart = Date.now();
+      const bar = $('#tfTimerBar', root);
+      bar.style.transform = 'scaleX(1)';
+      bar.style.transition = 'transform ' + TIMER_MS + 'ms linear';
+      // Force reflow then animate
+      void bar.offsetWidth;
+      timerId = setInterval(() => {
+        const elapsed = Date.now() - timerStart;
+        const remaining = Math.max(0, 1 - elapsed / TIMER_MS);
+        bar.style.transform = 'scaleX(' + remaining + ')';
+        if (remaining <= 0) {
+          stopTimer();
+          // Auto-fail: count as mistake, reveal explanation
+          handleAnswer(null);
+        }
+      }, 200);
+    }
+    function stopTimer() {
+      if (timerId) { clearInterval(timerId); timerId = null; }
+    }
+    function handleAnswer(choice) {
+      if (answered) return;
+      answered = true;
+      stopTimer();
+      const stmt = data.statements[idx];
+      const correct = (choice === stmt.answer);
+      const realBtn = $('#tfReal', root);
+      const deluBtn = $('#tfDelusion', root);
+      realBtn.disabled = true;
+      deluBtn.disabled = true;
+      if (choice === 'real') realBtn.classList.add(correct ? 'correct' : 'wrong');
+      if (choice === 'delusion') deluBtn.classList.add(correct ? 'correct' : 'wrong');
+      // If no choice (timeout), mark wrong on both
+      if (!choice) {
+        realBtn.classList.add('wrong');
+        deluBtn.classList.add('wrong');
+      }
+      if (correct) {
+        streak++;
+        const points = 100 + Math.min(streak * 25, 200);
+        score += points;
+        sfx.correct();
+        popFloat('+' + points, window.innerWidth / 2, 200, '#4ade80');
+      } else {
+        streak = 0;
+        mistakes++;
+        score = Math.max(0, score - 50);
+        sfx.wrong();
+        popFloat('-50', window.innerWidth / 2, 200, '#f87171');
+      }
+      // Reveal explanation
+      const expl = $('#tfExplanation', root);
+      expl.textContent = stmt.explanation;
+      expl.classList.add('visible');
+      $('#tfNextRow', root).hidden = false;
+      $('#tfStreak', root).textContent = streak;
+    }
+    function nextCard() {
+      if (idx < data.statements.length - 1) {
+        idx++;
+        renderCard();
+      } else {
+        finishLevel(score, mistakes);
+      }
+    }
+    // Wire up
+    $('#tfReal', root).addEventListener('click', () => handleAnswer('real'));
+    $('#tfDelusion', root).addEventListener('click', () => handleAnswer('delusion'));
+    $('#tfNext', root).addEventListener('click', nextCard);
+    // Keyboard arrows — listen on the card element itself, which has tabindex
+    const card = $('#tfCard', root);
+    card.setAttribute('tabindex', '0');
+    function keyHandler(e) {
+      if (answered) {
+        if (e.key === 'Enter') { e.preventDefault(); nextCard(); }
+        return;
+      }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); handleAnswer('real'); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); handleAnswer('delusion'); }
+    }
+    card.addEventListener('keydown', keyHandler);
+    // Auto-focus the card so keyboard works immediately
+    setTimeout(() => card.focus(), 50);
+    renderCard();
+    setCleanup(() => {
+      stopTimer();
+      card.removeEventListener('keydown', keyHandler);
+      root.innerHTML = '';
+    });
+  }
+
+  /* ===== GAME 3: MULTIPLE CHOICE ===== */
+  function renderMultipleChoice(root) {
+    const data = MC_DATA;
+    let idx = 0;
+    let score = 0;
+    let mistakes = 0;
+    let streak = 0;
+    let answered = false;
+
+    root.innerHTML = `
+      <div class="mc-counter">
+        <span><span class="lbl">QUESTION</span> <span class="val" id="mcIdx">1/${data.questions.length}</span></span>
+        <span class="streak">STREAK \u00d7<span id="mcStreak">0</span></span>
+      </div>
+      <p class="mc-question" id="mcQuestion"></p>
+      <ul class="mc-options" id="mcOptions" role="list"></ul>
+      <p class="mc-reaction" id="mcReaction"></p>
+      <div class="mc-next-row" id="mcNextRow" hidden>
+        <button class="big-btn" id="mcNext" type="button">NEXT \u2192</button>
+      </div>
+    `;
+
+    function renderQ() {
+      const q = data.questions[idx];
+      answered = false;
+      $('#mcQuestion', root).textContent = q.q;
+      $('#mcIdx', root).textContent = (idx + 1) + '/' + data.questions.length;
+      $('#mcStreak', root).textContent = streak;
+      $('#mcReaction', root).classList.remove('visible');
+      $('#mcReaction', root).textContent = '';
+      $('#mcNextRow', root).hidden = true;
+      const optsHtml = q.options.map((opt, i) => {
+        const key = String.fromCharCode(65 + i);
+        return `<li><button class="mc-option" data-opt="${i}" type="button" aria-label="Option ${key}: ${escapeHtml(opt)}"><span class="key">${key}</span><span>${escapeHtml(opt)}</span></button></li>`;
+      }).join('');
+      $('#mcOptions', root).innerHTML = optsHtml;
+      const nextBtn = $('#mcNext', root);
+      nextBtn.textContent = (idx === data.questions.length - 1) ? 'SEE RESULTS \u2192' : 'NEXT \u2192';
+    }
+    function handleAnswer(optIdx, btn, e) {
+      if (answered) return;
+      answered = true;
+      const q = data.questions[idx];
+      const correct = (optIdx === q.answer);
+      const opts = $$('.mc-option', root);
+      opts.forEach((b, i) => {
+        b.disabled = true;
+        if (i === q.answer) b.classList.add('correct');
+        else if (i === optIdx) b.classList.add('wrong');
+        else b.classList.add('dimmed');
+      });
+      if (correct) {
+        streak++;
+        const points = 100 + Math.min(streak * 25, 200);
+        score += points;
+        sfx.correct();
+        if (e) popFloat('+' + points, e.clientX, e.clientY, '#4ade80');
+      } else {
+        streak = 0;
+        mistakes++;
+        score = Math.max(0, score - 50);
+        sfx.wrong();
+        if (e) popFloat('-50', e.clientX, e.clientY, '#f87171');
+      }
+      $('#mcReaction', root).textContent = q.reaction;
+      $('#mcReaction', root).classList.add('visible');
+      $('#mcNextRow', root).hidden = false;
+      $('#mcStreak', root).textContent = streak;
+    }
+    function nextQ() {
+      if (idx < data.questions.length - 1) {
+        idx++;
+        renderQ();
+      } else {
+        finishLevel(score, mistakes);
+      }
+    }
+    root.addEventListener('click', (e) => {
+      const opt = e.target.closest('.mc-option');
+      if (opt && !opt.disabled) {
+        const optIdx = parseInt(opt.getAttribute('data-opt'), 10);
+        handleAnswer(optIdx, opt, e);
+      }
+      if (e.target.closest('#mcNext')) nextQ();
+    });
+    function keyHandler(e) {
+      if (answered) {
+        if (e.key === 'Enter') { e.preventDefault(); nextQ(); }
+        return;
+      }
+      // A/B/C select options
+      const map = { 'a': 0, 'b': 1, 'c': 2, '1': 0, '2': 1, '3': 2 };
+      const k = e.key.toLowerCase();
+      if (k in map) {
+        const opts = $$('.mc-option', root);
+        const opt = opts[map[k]];
+        if (opt && !opt.disabled) { e.preventDefault(); opt.focus(); handleAnswer(map[k], opt); }
+      }
+    }
+    root.setAttribute('tabindex', '0');
+    root.addEventListener('keydown', keyHandler);
+    setTimeout(() => root.focus(), 50);
+    renderQ();
+    setCleanup(() => {
+      root.removeEventListener('keydown', keyHandler);
+      root.innerHTML = '';
+    });
+  }
+
+  /* ===== GAME 4: MATCH THE MEANING ===== */
+  function renderMatch(root) {
+    const data = MATCH_DATA;
+    const words = shuffle(data.pairs.map(p => p.word));
+    const meanings = shuffle(data.pairs.map(p => ({ text: p.meaning, word: p.word })));
+    let selectedWord = null;
+    let selectedWordBtn = null;
+    let matched = 0;
+    let attempts = 0;
+    let mistakes = 0;
+    let score = 0;
+    const total = data.pairs.length;
+
+    const wordsHtml = '<div class="match-col-head">WORD</div>' + words.map(w =>
+      `<button class="match-cell word" data-word="${escapeHtml(w)}" type="button" aria-label="Word: ${escapeHtml(w)}">${escapeHtml(w)}</button>`
+    ).join('');
+    const spacerHtml = '<div class="match-col-head"></div>' + words.map(() => '<div class="match-spacer">\u2192</div>').join('');
+    const meaningsHtml = '<div class="match-col-head">MEANING</div>' + meanings.map((m, i) =>
+      `<button class="match-cell meaning" data-meaning-idx="${i}" data-word="${escapeHtml(m.word)}" type="button" aria-label="Meaning ${i + 1}: ${escapeHtml(m.text)}">${escapeHtml(m.text)}</button>`
+    ).join('');
+
+    root.innerHTML = `
+      <div class="match-counter">
+        <span><span class="lbl">PAIRS</span> <span class="val" id="matchCount">0/${total}</span></span>
+        <span><span class="lbl">ATTEMPTS</span> <span class="val" id="matchAttempts">0</span></span>
+        <span><span class="lbl">MISTAKES</span> <span class="val" id="matchMistakes">0</span></span>
+      </div>
+      <div class="match-example">WORD \u00b7 <em>boasts</em> <span class="arrow">\u2192</span> MEANING \u00b7 <em>proudly has</em></div>
+      <div class="match-grid">
+        ${wordsHtml}
+        ${spacerHtml}
+        ${meaningsHtml}
+      </div>
+    `;
+
+    function updateCounter() {
+      $('#matchCount', root).textContent = matched + '/' + total;
+      $('#matchAttempts', root).textContent = attempts;
+      $('#matchMistakes', root).textContent = mistakes;
+    }
+    function pickWord(btn) {
+      if (btn.classList.contains('matched')) return;
+      if (selectedWordBtn) selectedWordBtn.classList.remove('selected');
+      selectedWordBtn = btn;
+      selectedWord = btn.getAttribute('data-word');
+      btn.classList.add('selected');
+      sfx.click();
+    }
+    function tryMeaning(meaningBtn, e) {
+      if (meaningBtn.classList.contains('matched')) return;
+      if (!selectedWord) {
+        toast('Pick a word first', 'info');
+        return;
+      }
+      attempts++;
+      const wordForMeaning = meaningBtn.getAttribute('data-word');
+      if (selectedWord === wordForMeaning) {
+        // Correct match
+        selectedWordBtn.classList.remove('selected');
+        selectedWordBtn.classList.add('matched');
+        selectedWordBtn.innerHTML = '\u2713 ' + escapeHtml(selectedWord);
+        meaningBtn.classList.add('matched');
+        meaningBtn.innerHTML = '\u2713 ' + escapeHtml(meaningBtn.textContent);
+        matched++;
+        score += 100;
+        sfx.match();
+        if (e) popFloat('+100', e.clientX, e.clientY, '#4ade80');
+        selectedWord = null;
+        selectedWordBtn = null;
+        updateCounter();
+        if (matched === total) {
+          // Bonus for completion
+          score += 50;
+          setTimeout(() => finishLevel(score, mistakes), 600);
+        }
+      } else {
+        // Wrong
+        meaningBtn.classList.add('shake');
+        if (selectedWordBtn) selectedWordBtn.classList.add('shake');
+        mistakes++;
+        score = Math.max(0, score - 25);
+        sfx.wrong();
+        if (e) popFloat('-25', e.clientX, e.clientY, '#f87171');
+        setTimeout(() => {
+          meaningBtn.classList.remove('shake');
+          if (selectedWordBtn) selectedWordBtn.classList.remove('shake');
+          if (selectedWordBtn) selectedWordBtn.classList.remove('selected');
+          selectedWord = null;
+          selectedWordBtn = null;
+        }, 450);
+        updateCounter();
+      }
+    }
+    root.addEventListener('click', (e) => {
+      const wordBtn = e.target.closest('.match-cell.word');
+      if (wordBtn) { pickWord(wordBtn); return; }
+      const meanBtn = e.target.closest('.match-cell.meaning');
+      if (meanBtn) { tryMeaning(meanBtn, e); return; }
+    });
+    root.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const t = e.target;
+        if (t.classList.contains('match-cell')) {
+          e.preventDefault();
+          t.click();
+        }
+      }
+      if (e.key === 'Escape' && selectedWordBtn) {
+        selectedWordBtn.classList.remove('selected');
+        selectedWord = null;
+        selectedWordBtn = null;
+      }
+    });
+    setCleanup(() => {
+      selectedWord = null;
+      selectedWordBtn = null;
+      root.innerHTML = '';
+    });
+  }
+
+  /* ===== GAME 5: TIMED BONUS ===== */
+  function renderBonus(root) {
+    const data = BONUS_DATA;
+    const questions = shuffle(data.questions);
+    let idx = 0;
+    let score = 0;
+    let streak = 0;
+    let mistakes = 0;
+    let answered = 0;
+    let timerId = null;
+    let startMs = 0;
+    const TIMER_MS = 750000; // 750 seconds
+    let dangerMode = false;
+
+    root.innerHTML = `
+      <div class="bonus-stats">
+        <span><span class="lbl">ANSWERED</span> <span class="val" id="bonusAnswered">0/${questions.length}</span></span>
+        <span><span class="lbl">STREAK</span> <span class="val" id="bonusStreak">0</span></span>
+        <span><span class="lbl">MULTIPLIER</span> <span class="val multiplier" id="bonusMulti">x1</span></span>
+      </div>
+      <div class="bonus-timer-row">
+        <div class="bonus-timer-bar-wrap"><div class="bonus-timer-bar" id="bonusTimerBar"></div></div>
+        <span class="bonus-timer-label" id="bonusTimerLabel">12:30</span>
+      </div>
+      <p class="bonus-question" id="bonusQuestion"></p>
+      <ul class="bonus-options" id="bonusOptions" role="list"></ul>
+    `;
+
+    function fmtTime(ms) {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return m + ':' + String(sec).padStart(2, '0');
+    }
+    function renderQ() {
+      const q = questions[idx];
+      $('#bonusQuestion', root).textContent = q.q;
+      const optsHtml = q.options.map((opt, i) => {
+        const key = String.fromCharCode(65 + i);
+        return `<li><button class="bonus-option" data-opt="${i}" type="button" aria-label="Option ${key}: ${escapeHtml(opt)}"><b>${key}.</b> ${escapeHtml(opt)}</button></li>`;
+      }).join('');
+      $('#bonusOptions', root).innerHTML = optsHtml;
+      $('#bonusStreak', root).textContent = streak;
+      $('#bonusMulti', root).textContent = 'x' + (1 + Math.min(streak, 5));
+      $('#bonusAnswered', root).textContent = answered + '/' + questions.length;
+    }
+    function startTimer() {
+      startMs = Date.now();
+      const bar = $('#bonusTimerBar', root);
+      const label = $('#bonusTimerLabel', root);
+      bar.style.transform = 'scaleX(1)';
+      bar.style.transition = 'transform ' + TIMER_MS + 'ms linear';
+      void bar.offsetWidth;
+      timerId = setInterval(() => {
+        const elapsed = Date.now() - startMs;
+        const remaining = Math.max(0, TIMER_MS - elapsed);
+        const ratio = remaining / TIMER_MS;
+        bar.style.transform = 'scaleX(' + ratio + ')';
+        label.textContent = fmtTime(remaining);
+        // Danger mode in last 60 seconds
+        if (remaining < 60000 && !dangerMode) {
+          dangerMode = true;
+          bar.classList.add('danger');
+          label.classList.add('danger');
+          sfx.tick();
+        }
+        if (remaining <= 0) {
+          stopTimer();
+          finishLevel(score, mistakes);
+        }
+      }, 250);
+    }
+    function stopTimer() {
+      if (timerId) { clearInterval(timerId); timerId = null; }
+    }
+    function handleAnswer(optIdx, btn, e) {
+      const q = questions[idx];
+      const correct = (optIdx === q.answer);
+      const opts = $$('.bonus-option', root);
+      opts.forEach((b, i) => {
+        b.disabled = true;
+        if (i === q.answer) b.classList.add('correct');
+        else if (i === optIdx) b.classList.add('wrong');
+        else b.classList.add('dimmed');
+      });
+      if (correct) {
+        streak++;
+        const multiplier = 1 + Math.min(streak, 5);
+        const points = 50 * multiplier;
+        score += points;
+        sfx.bonus();
+        if (e) popFloat('+' + points, e.clientX, e.clientY, '#f0c674');
+      } else {
+        streak = 0;
+        mistakes++;
+        sfx.wrong();
+        if (e) popFloat('Miss!', e.clientX, e.clientY, '#f87171');
+      }
+      answered++;
+      $('#bonusStreak', root).textContent = streak;
+      $('#bonusMulti', root).textContent = 'x' + (1 + Math.min(streak, 5));
+      $('#bonusAnswered', root).textContent = answered + '/' + questions.length;
+      // Advance to next after 700ms
+      setTimeout(() => {
+        if (idx < questions.length - 1) {
+          idx++;
+          renderQ();
+        } else {
+          stopTimer();
+          finishLevel(score, mistakes);
+        }
+      }, 700);
+    }
+    root.addEventListener('click', (e) => {
+      const opt = e.target.closest('.bonus-option');
+      if (opt && !opt.disabled) {
+        const optIdx = parseInt(opt.getAttribute('data-opt'), 10);
+        handleAnswer(optIdx, opt, e);
+      }
+    });
+    function keyHandler(e) {
+      const map = { 'a': 0, 'b': 1, 'c': 2, '1': 0, '2': 1, '3': 2 };
+      const k = e.key.toLowerCase();
+      if (k in map) {
+        const opts = $$('.bonus-option', root);
+        const opt = opts[map[k]];
+        if (opt && !opt.disabled) { e.preventDefault(); opt.focus(); handleAnswer(map[k], opt); }
+      }
+    }
+    root.setAttribute('tabindex', '0');
+    root.addEventListener('keydown', keyHandler);
+    setTimeout(() => root.focus(), 50);
+    renderQ();
+    startTimer();
+    setCleanup(() => {
+      stopTimer();
+      root.removeEventListener('keydown', keyHandler);
+      root.innerHTML = '';
+    });
+  }
+
+  /* ===== FINALE ===== */
+  function showFinale() {
+    showScreen('screenFinale');
+    const totalStars = Object.values(state.progress).reduce((s, p) => s + (p.stars || 0), 0);
+    const totalScore = state.totalScore;
+    let rank, rankDesc;
+    if (totalStars === 15 && totalScore >= 3500) {
+      rank = 'DIVINE'; rankDesc = 'You have crossed metron \u2014 and returned to tell of it.';
+    } else if (totalStars >= 12) {
+      rank = 'ARISTEOS'; rankDesc = 'Peak dominance. The cycle holds no secrets from you.';
+    } else if (totalStars >= 8) {
+      rank = 'PURIFIED'; rankDesc = 'The miasma is lifted. The lesson endures.';
+    } else if (totalStars >= 4) {
+      rank = 'SEEKER'; rankDesc = 'The hearth is lit. The work continues.';
+    } else {
+      rank = 'EXILE'; rankDesc = 'You have knelt at the hearth. Now begin again.';
+    }
+    $('#finaleRank').textContent = rank;
+    $('#finaleRankDesc').textContent = rankDesc;
+    $('#finaleScore').textContent = totalScore;
+    $('#finaleStars').textContent = totalStars + ' / ' + (SCENES.length * 3);
+    // Table
+    const tbody = $('#finaleTableBody');
+    const rows = SCENES.map(s => {
+      const p = state.progress[s.id] || { stars: 0, bestScore: 0, completed: false };
+      const stars = p.stars || 0;
+      const starsHtml = stars === 0 ? '\u2014' : ('\u2605'.repeat(stars) + '<span style="color:rgba(245,239,230,0.18)">' + '\u2605'.repeat(3 - stars) + '</span>');
+      return `<tr>
+        <td>Reel ${String(s.num).padStart(2, '0')}</td>
+        <td>${escapeHtml(s.title)}</td>
+        <td class="stars">${starsHtml}</td>
+        <td class="score">${p.bestScore || 0}</td>
+      </tr>`;
+    }).join('');
+    tbody.innerHTML = rows;
+    sfx.cheer();
+    spawnConfetti(window.innerWidth / 2, 100, 60);
+  }
+
+  function resetProgress() {
+    if (!confirm('Rewind the tape? This will erase all stars and scores. This cannot be undone.')) return;
+    state.progress = {};
+    state.totalScore = 0;
+    saveState();
+    renderMap();
+    updateHUD();
+    showScreen('screenMap');
+    toast('Progress reset \u2014 the cycle begins anew', 'info');
+  }
+
+  /* ===== UTIL: ESCAPE HTML ===== */
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /* ===== SOUND TOGGLE ===== */
+  function refreshSound() {
+    const btn = $('#soundToggle');
+    if (!btn) return;
+    btn.setAttribute('aria-pressed', String(state.sound));
+    btn.setAttribute('aria-label', state.sound ? 'Mute sound' : 'Enable sound');
+    btn.innerHTML = state.sound
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+  }
+
+  /* ===== EVENT WIRING ===== */
+  function wireEvents() {
+    // Preloader
+    $('#prePlay').addEventListener('click', () => {
+      initAudio();
+      sfx.click();
+      const pre = $('#preloader');
+      pre.classList.add('exit');
+      setTimeout(() => { pre.style.display = 'none'; }, 800);
+    });
+    // Intro
+    $('#introStart').addEventListener('click', () => {
+      sfx.click();
+      showScreen('screenMap');
+    });
+    // Map: reel cards (delegated)
+    $('#reelGrid').addEventListener('click', (e) => {
+      const card = e.target.closest('.reel-card');
+      if (!card) return;
+      const sceneId = card.getAttribute('data-scene');
+      sfx.click();
+      openBriefing(sceneId);
+    });
+    $('#reelGrid').addEventListener('keydown', (e) => {
+      const card = e.target.closest('.reel-card');
+      if (card && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        const sceneId = card.getAttribute('data-scene');
+        sfx.click();
+        openBriefing(sceneId);
+      }
+    });
+    // Finale button
+    $('#finaleButton').addEventListener('click', () => {
+      sfx.click();
+      showFinale();
+    });
+    // Briefing modal
+    $('#briefingBegin').addEventListener('click', () => { sfx.click(); startLevel(); });
+    $('#briefingCancel').addEventListener('click', () => { sfx.click(); closeBriefing(); });
+    // Results modal
+    $('#resultsContinue').addEventListener('click', () => { sfx.click(); exitToMap(); });
+    $('#resultsReplay').addEventListener('click', () => {
+      sfx.click();
+      $('#modalResults').classList.remove('open');
+      if (currentScene) startLevel();
+    });
+    // Stage back button
+    $('#stageBack').addEventListener('click', () => {
+      sfx.click();
+      runCleanup();
+      showScreen('screenMap');
+    });
+    // Sound toggle
+    $('#soundToggle').addEventListener('click', () => {
+      state.sound = !state.sound;
+      saveState();
+      refreshSound();
+      if (state.sound) sfx.click();
+    });
+    // Map button
+    $('#mapButton').addEventListener('click', () => {
+      sfx.click();
+      runCleanup();
+      showScreen('screenMap');
+    });
+    // Finale: rewind
+    $('#finaleReset').addEventListener('click', resetProgress);
+    // Modal escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if ($('#modalBriefing').classList.contains('open')) closeBriefing();
+      }
+    });
+  }
+
+  /* ===== INIT ===== */
+  loadState();
+  wireEvents();
+  renderMap();
+  refreshSound();
+  updateHUD();
+  // Auto-show preloader on first load; user must press PLAY to enter
+
+})();
+
+</script>
+
+</body>
+</html>
 
