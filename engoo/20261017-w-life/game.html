@@ -1,1 +1,1582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Bedford Falls Vocab Arcade — a retro-cinema word game in five reels based on the lesson deck It’s a Wonderful Life: A Journey Through Bedford Falls.">
+<title>Bedford Falls Vocab Arcade — It’s a Wonderful Life</title>
 
+<!-- Google Fonts: vintage cinema typography -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Courier+Prime:wght@400;700&family=Caveat:wght@600;700&family=Nunito+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+<!-- Lucide icons (progressive enhancement; emoji fallbacks are baked in) -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+/* ===== Tokens ===== */
+:root{
+  --bg:#101A2E; --bg2:#16233E;
+  --card:#1B2A4A; --card2:#22335A;
+  --ink:#F5EBD8; --ink-dim:#C9BFA8;
+  --gold:#E0A94E; --gold2:#F2C879;
+  --red:#C65449; --green:#5FA97C; --blue:#7FB2C8; --pink:#C97BA0;
+  --line:rgba(224,169,78,.28);
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; color:var(--ink); background:var(--bg);
+  font-family:'Nunito Sans',system-ui,sans-serif; font-size:16px; line-height:1.6;
+  background-image:radial-gradient(1100px 600px at 50% -10%, #24385F 0%, var(--bg) 60%);
+  overflow-x:hidden;
+}
+body::after{ /* warm projector vignette */
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:79;
+  background:radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(4,8,18,.5) 100%);
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+img{max-width:100%;display:block}
+:focus-visible{outline:3px solid var(--gold2);outline-offset:2px;border-radius:8px}
+.mono{font-family:'Courier Prime',monospace}
+.hidden{display:none !important}
+
+/* ===== Ambient layers ===== */
+#snow{position:fixed;inset:0;z-index:0;pointer-events:none}
+.grain{
+  position:fixed;inset:0;z-index:80;pointer-events:none;opacity:.07;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+}
+#confetti{position:fixed;inset:0;z-index:88;pointer-events:none}
+
+/* ===== Preloader ===== */
+#preloader{
+  position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(900px 600px at 50% 35%, #1A2A4C, #0A1120 75%);
+  transition:transform .7s cubic-bezier(.65,0,.3,1);
+}
+#preloader.exit{transform:translateY(-102%)}
+.pl-inner{text-align:center;padding:20px}
+.pl-brand{font-family:'Playfair Display',serif;font-weight:900;letter-spacing:.28em;font-size:.8rem;color:var(--ink-dim);margin:26px 0 4px}
+.pl-sub{font-family:'Courier Prime',monospace;font-size:.78rem;letter-spacing:.14em;color:var(--gold);margin:0 0 26px;text-transform:uppercase}
+.pl-count{
+  position:relative;width:132px;height:132px;margin:0 auto;border-radius:50%;
+  border:3px dashed rgba(224,169,78,.55);display:flex;align-items:center;justify-content:center;
+  font-family:'Courier Prime',monospace;font-size:64px;font-weight:700;color:var(--gold);
+  text-shadow:0 0 22px rgba(224,169,78,.45); animation:leaderSpin 6s linear infinite;
+}
+@keyframes leaderSpin{to{transform:rotate(360deg)}}
+.pl-count.done{animation:none;border-style:solid;opacity:.35}
+.pl-count::before,.pl-count::after{content:'';position:absolute;background:rgba(224,169,78,.22)}
+.pl-count::before{left:-26px;right:-26px;top:50%;height:1px}
+.pl-count::after{top:-26px;bottom:-26px;left:50%;width:1px}
+#pl-play{
+  opacity:0;pointer-events:none;transform:scale(.85);transition:opacity .4s,transform .4s;
+  font-family:'Courier Prime',monospace;font-weight:700;font-size:1.15rem;letter-spacing:.2em;
+  color:#241B08;background:linear-gradient(180deg,var(--gold2),var(--gold));
+  border-radius:999px;padding:.8em 2.2em;box-shadow:0 6px 0 rgba(0,0,0,.4);
+}
+#pl-play.ready{opacity:1;pointer-events:auto;transform:none;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 6px 0 rgba(0,0,0,.4),0 0 34px rgba(224,169,78,.55)}}
+
+/* ===== HUD console ===== */
+#hud{
+  position:fixed;top:0;left:0;right:0;z-index:70;display:flex;align-items:center;gap:14px;
+  padding:10px 16px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(10,16,30,.96), rgba(10,16,30,.8));
+  backdrop-filter:blur(6px);
+}
+.hud-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.hud-brand .logo{font-size:1.4rem;filter:drop-shadow(0 0 8px rgba(224,169,78,.5))}
+.hud-brand b{font-family:'Playfair Display',serif;font-size:.95rem;letter-spacing:.08em;display:block;line-height:1.1;white-space:nowrap}
+.hud-brand small{font-family:'Courier Prime',monospace;font-size:.6rem;letter-spacing:.22em;color:var(--gold);display:block}
+.hud-progress{display:flex;gap:6px;align-items:center;margin:0 auto}
+.pdot{
+  width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:5px;background:rgba(0,0,0,.3);
+  font-family:'Courier Prime',monospace;font-size:.72rem;font-weight:700;color:var(--ink-dim);
+}
+.pdot.done{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#241B08;border-color:var(--gold)}
+.pdot.final{border-color:var(--line)}
+.pdot.final.reachable{border-color:var(--gold);box-shadow:0 0 12px rgba(224,169,78,.5);color:var(--gold)}
+.hud-right{display:flex;align-items:center;gap:8px}
+.hud-chip{
+  display:inline-flex;align-items:center;gap:6px;font-family:'Courier Prime',monospace;font-weight:700;font-size:.85rem;
+  border:1px solid var(--line);border-radius:10px;padding:5px 10px;background:rgba(0,0,0,.3);
+}
+.hud-chip b{color:var(--gold)}
+.hud-btn{
+  width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem;
+  border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.3);transition:background .2s,transform .1s;
+}
+.hud-btn:hover{background:rgba(224,169,78,.15)}
+.hud-btn:active{transform:translateY(2px)}
+
+/* ===== Screens ===== */
+main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:96px 18px 70px}
+.screen{display:none}
+.screen.active{display:block;animation:screenIn .5s ease both}
+@keyframes screenIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.kicker{font-family:'Courier Prime',monospace;font-size:.72rem;letter-spacing:.24em;color:var(--gold);text-transform:uppercase;margin:0 0 8px}
+
+/* ===== Buttons & chips ===== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-family:'Nunito Sans',sans-serif;font-weight:900;letter-spacing:.06em;font-size:.95rem;
+  border-radius:12px;padding:.75em 1.4em;box-shadow:0 4px 0 rgba(0,0,0,.4);
+  transition:transform .1s,box-shadow .1s,background .2s;user-select:none;
+}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.btn-gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#241B08}
+.btn-gold:hover{filter:brightness(1.06)}
+.btn-ghost{border:1.5px solid var(--line);color:var(--ink);background:rgba(0,0,0,.2)}
+.btn-ghost:hover{border-color:var(--gold)}
+.btn.big{font-size:1.1rem;padding:.9em 2em}
+.btn.danger{background:var(--red);color:#fff}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;font-family:'Courier Prime',monospace;
+  font-size:.78rem;letter-spacing:.08em;color:var(--ink-dim);
+  border:1px solid var(--line);border-radius:10px;padding:6px 12px;background:rgba(0,0,0,.28);
+}
+.chip b{color:var(--gold);font-size:.95rem}
+
+/* ===== Intro ===== */
+.intro{text-align:center;max-width:760px;margin:0 auto}
+.intro-title{font-family:'Playfair Display',serif;font-weight:900;font-size:clamp(2.3rem,6.5vw,3.8rem);line-height:1.05;margin:.2em 0 .2em;text-shadow:0 4px 24px rgba(0,0,0,.5)}
+.intro-title .gold{color:var(--gold);text-shadow:0 0 26px rgba(224,169,78,.45)}
+.intro-sub{font-size:.74rem;letter-spacing:.18em;color:var(--ink-dim);margin:0 0 22px}
+.intro-frame{margin:0 0 24px;border:1px solid var(--line);border-radius:18px;padding:10px;background:var(--card);box-shadow:var(--shadow)}
+.intro-frame img{border-radius:12px}
+.intro-story{font-size:1.05rem;color:var(--ink);margin:0 0 18px;text-align:left}
+.intro-list{text-align:left;list-style:none;padding:0;margin:0 0 26px;display:grid;gap:8px}
+.intro-list li{background:rgba(0,0,0,.22);border:1px solid rgba(224,169,78,.16);border-radius:12px;padding:10px 14px;font-size:.95rem}
+.intro-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.intro-credit{margin-top:26px;font-family:'Courier Prime',monospace;font-size:.7rem;letter-spacing:.1em;color:var(--ink-dim)}
+
+/* ===== Level map ===== */
+.map-head{text-align:center;margin-bottom:22px}
+.map-title{font-family:'Playfair Display',serif;font-weight:900;font-size:clamp(1.7rem,4.5vw,2.5rem);margin:.1em 0 .2em}
+.map-sub{color:var(--ink-dim);max-width:640px;margin:0 auto}
+.map-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.reel-card{
+  display:flex;flex-direction:column;text-align:left;border-radius:16px;overflow:hidden;
+  background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);
+  transition:transform .18s,box-shadow .18s,border-color .18s;
+}
+.reel-card:hover{transform:translateY(-5px);border-color:var(--gold);box-shadow:0 18px 40px rgba(0,0,0,.55)}
+.sprockets{
+  display:block;height:14px;background-color:#0D1526;flex:0 0 auto;
+  background-image:radial-gradient(circle, rgba(0,0,0,.65) 3px, transparent 3.6px);
+  background-size:15px 15px;background-position:center;
+}
+.reel-preview{position:relative;display:block}
+.reel-preview img{width:100%;height:132px;object-fit:cover;filter:saturate(.92) contrast(1.05)}
+.reel-num{
+  position:absolute;top:10px;left:10px;font-family:'Courier Prime',monospace;font-weight:700;font-size:.7rem;
+  letter-spacing:.14em;color:#241B08;background:var(--gold);border-radius:6px;padding:3px 8px;box-shadow:0 2px 0 rgba(0,0,0,.4);
+}
+.reel-stars{
+  position:absolute;bottom:8px;right:10px;font-size:1rem;letter-spacing:.1em;color:var(--gold2);
+  text-shadow:0 0 10px rgba(224,169,78,.6), 0 2px 3px rgba(0,0,0,.8);
+}
+.reel-body{display:flex;flex-direction:column;gap:4px;padding:12px 14px;flex:1}
+.reel-tag{font-family:'Courier Prime',monospace;font-size:.62rem;letter-spacing:.16em;color:var(--gold)}
+.reel-title{font-family:'Playfair Display',serif;font-weight:700;font-size:1.15rem;line-height:1.2}
+.reel-char{font-size:.8rem;color:var(--ink-dim)}
+.reel-meta{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:8px;font-family:'Courier Prime',monospace;font-size:.72rem;letter-spacing:.1em;color:var(--ink-dim)}
+.reel-meta .mini-stars{color:var(--gold);letter-spacing:.12em}
+.map-final{text-align:center;margin-top:26px}
+.map-hint{font-family:'Courier Prime',monospace;font-size:.72rem;letter-spacing:.12em;color:var(--ink-dim);margin-top:12px}
+
+/* ===== Scene ===== */
+.scene-head{
+  background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);
+  border-top:4px solid var(--c,var(--gold));border-radius:18px;padding:18px;box-shadow:var(--shadow);
+}
+.sh-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.sh-tag{font-size:.68rem;letter-spacing:.18em;color:var(--gold);border:1px dashed var(--line);border-radius:8px;padding:4px 10px}
+.sh-main{display:flex;gap:16px;align-items:flex-start}
+.sh-txt{flex:1;min-width:0}
+.sh-title{font-family:'Playfair Display',serif;font-weight:900;font-size:1.5rem;margin:0 0 2px}
+.sh-char{font-size:.72rem;letter-spacing:.14em;color:var(--ink-dim);margin:0 0 8px}
+.sh-obj{margin:0 0 6px;font-weight:600}
+.sh-tip{margin:0;font-size:.9rem;color:var(--ink-dim)}
+.sh-frame{margin:0;width:216px;flex:0 0 auto}
+.sh-frame img{border-radius:10px;border:1px solid var(--line)}
+.sh-frame figcaption{font-family:'Courier Prime',monospace;font-size:.6rem;letter-spacing:.16em;color:var(--ink-dim);text-align:center;margin-top:6px}
+.sh-flavor{font-family:'Caveat',cursive;font-size:1.35rem;color:var(--gold2);margin:12px 4px 0}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.scene-body{margin-top:18px}
+
+/* ===== Shared mini-game bits ===== */
+.mini-note{color:var(--ink-dim);font-size:.88rem;margin:12px 2px}
+.tbar{height:12px;background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .2s linear}
+.tbar.low i{background:var(--red);animation:flash .5s steps(2) infinite}
+@keyframes flash{50%{opacity:.3}}
+.card{
+  background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);
+  border-radius:16px;padding:20px;box-shadow:var(--shadow);margin-top:14px;
+}
+.expl{
+  background:rgba(0,0,0,.28);border-left:4px solid var(--gold);border-radius:0 10px 10px 0;
+  padding:12px 14px;margin:14px 0 0;font-size:.94rem;color:var(--ink);
+}
+.expl b.v-ok{color:var(--green)} .expl b.v-bad{color:var(--red)}
+.opts .opt{
+  display:block;width:100%;text-align:left;font-size:.98rem;color:var(--ink);
+  background:rgba(0,0,0,.25);border:1.5px solid var(--line);border-radius:12px;
+  padding:12px 14px;margin:9px 0;transition:border-color .15s,transform .15s;
+}
+.opts .opt:hover:enabled{border-color:var(--gold);transform:translateX(4px)}
+.opts .opt.ok{border-color:var(--green);background:rgba(95,169,124,.18);font-weight:800}
+.opts .opt.bad{border-color:var(--red);background:rgba(198,84,73,.18);font-weight:800;animation:shake .45s}
+.opts .opt.dim{opacity:.4}
+.opts .opt:disabled{cursor:default}
+.next-row{margin-top:16px;display:flex;justify-content:flex-end}
+.shake{animation:shake .45s}
+@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.reaction{display:flex;align-items:center;gap:10px;margin-top:14px}
+.react-line{font-family:'Caveat',cursive;font-size:1.25rem;color:var(--gold2)}
+
+/* ===== Reel 1: fill the blanks ===== */
+.bcard{background:rgba(0,0,0,.22);border:1px solid rgba(224,169,78,.14);border-radius:12px;padding:12px 16px;margin:10px 0;font-size:.98rem;line-height:2.1}
+.gap{
+  display:inline-block;min-width:120px;text-align:center;font-family:'Courier Prime',monospace;font-weight:700;
+  color:var(--gold);border-bottom:2px dashed var(--gold);margin:0 4px;padding:0 8px;border-radius:6px;
+  transition:background .15s;
+}
+.gap:hover{background:rgba(224,169,78,.12)}
+.gap.sel{background:rgba(224,169,78,.25);border-bottom-style:solid}
+.gap.filled{border-bottom-style:solid;background:rgba(95,169,124,.15);color:var(--green);cursor:default}
+.bank{display:flex;flex-wrap:wrap;gap:9px;margin-top:6px}
+.bank-chip{
+  font-family:'Courier Prime',monospace;font-weight:700;font-size:.92rem;color:var(--ink);
+  background:rgba(0,0,0,.3);border:1.5px solid var(--line);border-radius:999px;padding:.45em 1em;
+  transition:border-color .15s,transform .15s;
+}
+.bank-chip:hover:enabled{border-color:var(--gold);transform:translateY(-2px)}
+.bank-chip.used{opacity:.22;cursor:default;text-decoration:line-through}
+.bank-chip:disabled{cursor:default}
+
+/* ===== Reel 2: real or delusion ===== */
+.tf-statement{font-family:'Playfair Display',serif;font-style:italic;font-weight:700;font-size:1.3rem;line-height:1.45;margin:0 0 18px}
+.tf-btns{display:flex;gap:12px}
+.tf-btns .btn{flex:1;font-size:1.02rem;padding:1em}
+.tf-real{border:2px solid var(--green);color:var(--ink);background:rgba(95,169,124,.12)}
+.tf-del{border:2px solid var(--red);color:var(--ink);background:rgba(198,84,73,.12)}
+.tf-btns .btn:hover:enabled{filter:brightness(1.15)}
+
+/* ===== Reel 4: match the meaning ===== */
+.match-example{
+  font-size:.85rem;color:var(--ink-dim);border:1px dashed var(--line);border-radius:10px;
+  padding:8px 14px;display:inline-block;margin:4px 0 10px;background:rgba(0,0,0,.2);
+}
+.match-example b{color:var(--gold)}
+.match-bar{display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;letter-spacing:.12em;color:var(--gold);margin:6px 2px 12px}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mcol{display:flex;flex-direction:column;gap:9px}
+.mitem{
+  text-align:left;font-size:.95rem;color:var(--ink);background:rgba(0,0,0,.25);
+  border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;transition:border-color .15s,background .15s;
+}
+.mitem:hover:enabled{border-color:var(--gold)}
+.mitem.sel{border-color:var(--gold);background:rgba(224,169,78,.16)}
+.mitem.locked{border-color:var(--green);background:rgba(95,169,124,.16);color:var(--green);cursor:default;font-weight:800}
+.mcol-title{font-family:'Courier Prime',monospace;font-size:.66rem;letter-spacing:.18em;color:var(--ink-dim);margin-bottom:2px}
+
+/* ===== Finale ===== */
+.finale{text-align:center}
+.finale-title{font-family:'Playfair Display',serif;font-weight:900;font-size:clamp(1.9rem,5vw,2.8rem);margin:.15em 0 .1em}
+.finale-hero{margin:18px auto;border:1px solid var(--line);border-radius:18px;padding:10px;background:var(--card);max-width:620px;box-shadow:var(--shadow)}
+.finale-hero img{border-radius:12px}
+.rank-card{
+  display:inline-flex;flex-direction:column;align-items:center;gap:4px;margin:14px 0;
+  border:2px solid var(--gold);border-radius:18px;padding:18px 34px;background:rgba(224,169,78,.08);
+  box-shadow:0 0 40px rgba(224,169,78,.15);
+}
+.rank-icon{font-size:2.4rem}
+.rank-name{font-family:'Playfair Display',serif;font-weight:900;font-size:1.3rem;letter-spacing:.06em;color:var(--gold)}
+.rank-line{font-family:'Caveat',cursive;font-size:1.2rem;color:var(--ink-dim)}
+.totals{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:10px 0 6px}
+.totals .hud-chip{font-size:1rem;padding:9px 16px}
+.res-table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.95rem;text-align:left}
+.res-table th{font-family:'Courier Prime',monospace;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim);padding:8px 10px;border-bottom:1px solid var(--line)}
+.res-table td{padding:10px;border-bottom:1px dashed rgba(224,169,78,.16)}
+.res-table td.num{font-family:'Courier Prime',monospace;font-weight:700;color:var(--gold)}
+.stars-cell{color:var(--gold);letter-spacing:.12em}
+.finale-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.pdf-row{margin-top:20px}
+.pdf-row a{color:var(--gold2)}
+
+/* ===== Modal ===== */
+.modal-back{
+  position:fixed;inset:0;z-index:85;display:flex;align-items:center;justify-content:center;padding:18px;
+  background:rgba(6,10,20,.74);backdrop-filter:blur(4px);opacity:0;transition:opacity .25s;
+}
+.modal-back.on{opacity:1}
+.modal-card{
+  width:100%;max-width:560px;max-height:86vh;overflow:auto;
+  background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);
+  border-radius:18px;padding:26px;box-shadow:0 26px 60px rgba(0,0,0,.55);
+  transform:translateY(12px) scale(.98);transition:transform .25s;
+}
+.modal-back.on .modal-card{transform:none}
+.m-tag{font-size:.68rem;letter-spacing:.18em;color:var(--gold);margin:0 0 6px}
+.m-title{font-family:'Playfair Display',serif;font-weight:900;font-size:1.5rem;margin:0 0 10px}
+.m-flavor{font-family:'Caveat',cursive;font-size:1.3rem;color:var(--gold2);margin:0 0 12px}
+.m-obj{font-weight:700;margin:0 0 8px}
+.m-tip{color:var(--ink-dim);font-size:.93rem;margin:0 0 18px}
+.m-score{font-size:1.05rem;letter-spacing:.1em;color:var(--gold);margin:8px 0 2px}
+.m-msg{color:var(--ink-dim);margin:6px 0 16px}
+.m-btns{display:flex;gap:10px;flex-wrap:wrap}
+.stars-row{display:flex;gap:10px;justify-content:center;margin:10px 0 6px;min-height:52px}
+.big-star{font-size:2.5rem;color:rgba(224,169,78,.25)}
+.big-star.lit{color:var(--gold);text-shadow:0 0 24px rgba(224,169,78,.6)}
+.star-pop{animation:starPop .55s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes starPop{from{transform:scale(0) rotate(-40deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+
+/* ===== Toast & pop floats ===== */
+#toast-root{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.toast{
+  background:#141F38;border:1px solid var(--gold);color:var(--ink);border-radius:999px;
+  font-family:'Courier Prime',monospace;font-size:.82rem;letter-spacing:.06em;
+  padding:.6em 1.3em;box-shadow:0 10px 26px rgba(0,0,0,.5);animation:toastIn .3s ease both;
+}
+.toast.out{opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.popfloat{
+  position:fixed;z-index:95;pointer-events:none;font-family:'Courier Prime',monospace;font-weight:700;
+  font-size:1.15rem;text-shadow:0 2px 4px rgba(0,0,0,.7);animation:popUp .9s ease-out forwards;
+}
+.popfloat.plus{color:var(--gold2)} .popfloat.minus{color:var(--red)}
+@keyframes popUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-48px)}}
+
+/* ===== Responsive ===== */
+@media (max-width:900px){ .map-grid{grid-template-columns:repeat(2,1fr)} }
+@media (max-width:760px){
+  .sh-main{flex-direction:column}
+  .sh-frame{width:100%}
+  .sh-frame img{max-height:170px;object-fit:cover;width:100%}
+  .match-grid{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  .map-grid{grid-template-columns:1fr}
+  .hud-brand small{display:none}
+  .hud-progress{gap:4px}
+  .pdot{width:20px;height:20px;font-size:.62rem}
+  .tf-btns{flex-direction:column}
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.001s !important}
+}
+</style>
+</head>
+<body>
+
+<canvas id="snow" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ===== Fixed header console ===== -->
+<header id="hud">
+  <div class="hud-brand">
+    <span class="logo" aria-hidden="true"><i data-lucide="bell">🔔</i></span>
+    <div><b>BEDFORD FALLS</b><small>VOCAB ARCADE</small></div>
+  </div>
+  <nav class="hud-progress" id="hud-progress" aria-label="Level progress"></nav>
+  <div class="hud-right">
+    <span class="hud-chip" title="Total best score across all reels"><span aria-hidden="true">🎬</span><b id="hud-score">0</b></span>
+    <span class="hud-chip" title="Total stars earned"><span aria-hidden="true">⭐</span><b id="hud-stars">0</b></span>
+    <button class="hud-btn" id="btn-sound" aria-label="Toggle sound"></button>
+    <button class="hud-btn" id="btn-map" aria-label="Back to level map"><i data-lucide="map">🗺️</i></button>
+  </div>
+</header>
+
+<main>
+  <!-- ===== Screen: intro ===== -->
+  <section id="screen-intro" class="screen active" tabindex="-1" aria-label="Introduction">
+    <div class="intro">
+      <p class="kicker">BEDFORD FALLS PICTURES · PROJECTION ROOM ONE · EST. 1946</p>
+      <h1 class="intro-title">IT’S A WONDERFUL <span class="gold">LIFE</span></h1>
+      <p class="intro-sub mono">A VOCAB ARCADE IN FIVE REELS · BASED ON THE LESSON DECK “A JOURNEY THROUGH BEDFORD FALLS”</p>
+      <figure class="intro-frame">
+        <img src="https://item1000-collab.github.io/ai/engoo/20261017-w-life/slide-001.jpg" alt="Title card of the lesson: It’s a Wonderful Life — A Journey Through Bedford Falls, over a starry winter night">
+      </figure>
+      <p class="intro-story">It is the dead of summer, 1946. Ninety degrees in the shade, and Frank Capra is pumping six thousand gallons of chemical snow over a town that does not exist. You are the newest projectionist at the Bedford Falls picture palace. Five reels are stacked by the projector, and every one of them is threaded and ready: Capra wants his production notes restored, Clarence needs a fact-checker upstairs, George is pacing by the bridge, Mary is sorting words in the parlor, and little Zuzu is holding the bell for the final blitz.</p>
+      <ul class="intro-list">
+        <li>🎞️ <b>Five reels, five mechanics</b> — fill the blanks, real-or-delusion, hard choices, meaning matching, and a timed bonus blitz.</li>
+        <li>🔓 <b>No locks, no waiting</b> — play any reel in any order, replay freely, leave mid-reel without losing a thing.</li>
+        <li>⭐ <b>Three stars per reel</b> — no mistakes earns 3, one or two slips earn 2, more than that earns 1. Best scores are kept on the shelf.</li>
+        <li>🔔 <b>Screen all five reels</b> — in any order — and the Wings Ceremony finale lights up.</li>
+      </ul>
+      <div class="intro-btns">
+        <button class="btn btn-gold big" id="btn-start">▶ START THE SHOW</button>
+        <a class="btn btn-ghost" href="https://item1000-collab.github.io/ai/engoo/20261017-w-life/is-a-wonderful-life.pdf" target="_blank" rel="noopener noreferrer">📎 LESSON PDF</a>
+      </div>
+      <p class="intro-credit">SOURCE: LESSON PRESENTATION “IT’S A WONDERFUL LIFE — A JOURNEY THROUGH BEDFORD FALLS” (13 SLIDES)</p>
+    </div>
+  </section>
+
+  <!-- ===== Screen: level map ===== -->
+  <section id="screen-map" class="screen" tabindex="-1" aria-label="Level map">
+    <div class="map-head">
+      <p class="kicker">PROJECTION ROOM · FIVE REELS · FREE ORDER</p>
+      <h2 class="map-title">PICK A REEL</h2>
+      <p class="map-sub">Every reel is unlocked from the very start. Enter any level in any order, replay completed ones for a better score, or step out mid-reel — the map never locks a door.</p>
+    </div>
+    <div class="map-grid" id="map-grid"></div>
+    <div class="map-final">
+      <button class="btn btn-gold big" id="btn-final" hidden>🔔 THE FINALE — WINGS CEREMONY</button>
+      <p class="map-hint" id="final-hint"></p>
+    </div>
+  </section>
+
+  <!-- ===== Screen: scene (mini-games mount here) ===== -->
+  <section id="screen-scene" class="screen" tabindex="-1" aria-label="Level scene">
+    <div class="scene-head" id="scene-head"></div>
+    <div class="scene-body" id="scene-body"></div>
+  </section>
+
+  <!-- ===== Screen: finale ===== -->
+  <section id="screen-finale" class="screen" tabindex="-1" aria-label="Finale">
+    <div id="finale-body"></div>
+  </section>
+</main>
+
+<div id="modal-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<!-- ===== Preloader ===== -->
+<div id="preloader">
+  <div class="pl-inner">
+    <div class="pl-count" id="pl-count" aria-hidden="true">3</div>
+    <p class="pl-brand">BEDFORD FALLS PICTURES</p>
+    <p class="pl-sub" id="pl-sub">threading the reel…</p>
+    <button id="pl-play" aria-label="Play — start the arcade">PLAY ▶</button>
+  </div>
+</div>
+
+<noscript><p style="text-align:center;padding:20px">This arcade needs JavaScript to roll the projector.</p></noscript>
+
+<script>
+(function(){ "use strict";
+
+/* ===== Utilities ===== */
+var $  = function(s, r){ return (r||document).querySelector(s); };
+var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+var shuffle = function(arr){
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+};
+var esc = function(s){
+  return String(s).replace(/[&<>"]/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+  });
+};
+var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function refreshIcons(){
+  if (window.lucide && window.lucide.createIcons){
+    try { window.lucide.createIcons(); } catch(e){ /* icons are optional */ }
+  }
+}
+
+/* ===== Storage (versioned key, safe in private mode) ===== */
+var KEY = 'bedford_falls_arcade_v1';
+function loadState(){
+  try {
+    var raw = localStorage.getItem(KEY);
+    var data = raw ? JSON.parse(raw) : {};
+    return Object.assign({ levels:{}, sound:true }, data);
+  } catch(e){ return { levels:{}, sound:true }; }
+}
+function saveState(){
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){ /* private mode */ }
+}
+var state = loadState();
+
+/* ===== Audio: Web Audio API, no files ===== */
+var actx = null;
+function ensureAudio(){
+  if (!actx){
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+  }
+  if (actx && actx.state === 'suspended'){ try { actx.resume(); } catch(e){} }
+}
+document.addEventListener('pointerdown', ensureAudio, { passive:true });
+
+function tone(freq, dur, type, vol, when){
+  if (!actx || !state.sound) return;
+  try {
+    var t = actx.currentTime + (when || 0);
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(vol || 0.15, 0.0002), t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + dur + 0.06);
+  } catch(e){}
+}
+function noiseBurst(dur, vol, when){
+  if (!actx || !state.sound) return;
+  try {
+    var t = actx.currentTime + (when || 0);
+    var n = Math.floor(actx.sampleRate * dur);
+    var buf = actx.createBuffer(1, n, actx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var src = actx.createBufferSource(); src.buffer = buf;
+    var f = actx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 900;
+    var g = actx.createGain(); g.gain.value = vol || 0.2;
+    src.connect(f); f.connect(g); g.connect(actx.destination);
+    src.start(t);
+  } catch(e){}
+}
+/* Ready-made presets */
+var SFX = {
+  click:   function(){ tone(640, 0.06, 'triangle', 0.12); },
+  flip:    function(){ tone(420, 0.07, 'sine', 0.12); tone(640, 0.08, 'sine', 0.10, 0.06); },
+  correct: function(){ tone(523, 0.09, 'triangle', 0.16); tone(659, 0.09, 'triangle', 0.16, 0.08); tone(784, 0.14, 'triangle', 0.16, 0.16); },
+  wrong:   function(){ tone(196, 0.22, 'sawtooth', 0.14); tone(147, 0.28, 'sawtooth', 0.12, 0.10); },
+  match:   function(){ tone(587, 0.08, 'sine', 0.15); tone(880, 0.12, 'sine', 0.14, 0.07); },
+  fanfare: function(){ [523, 659, 784, 1047].forEach(function(f, i){ tone(f, 0.16, 'triangle', 0.16, i * 0.11); }); },
+  tick:    function(){ tone(1250, 0.03, 'square', 0.05); },
+  cheer:   function(){ noiseBurst(0.6, 0.16); [659, 784, 988, 1319].forEach(function(f, i){ tone(f, 0.14, 'triangle', 0.13, i * 0.09); }); }
+};
+
+/* ===== Toast, pop floats, confetti ===== */
+function toast(msg){
+  var root = $('#toast-root');
+  var t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  root.appendChild(t);
+  setTimeout(function(){ t.classList.add('out'); setTimeout(function(){ t.remove(); }, 320); }, 2200);
+}
+function popFloatXY(x, y, text, cls){
+  var s = document.createElement('span');
+  s.className = 'popfloat ' + (cls || 'plus');
+  s.textContent = text;
+  s.style.left = x + 'px'; s.style.top = y + 'px';
+  document.body.appendChild(s);
+  setTimeout(function(){ s.remove(); }, 950);
+}
+function popFloat(el, text, cls){
+  var r = el.getBoundingClientRect();
+  popFloatXY(r.left + r.width / 2, r.top - 6, text, cls);
+}
+function spawnConfetti(n){
+  if (REDUCED) return;
+  var c = $('#confetti'), ctx = c.getContext('2d');
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  var colors = ['#E0A94E', '#F2C879', '#C65449', '#5FA97C', '#F5EBD8', '#7FB2C8'];
+  var parts = [];
+  for (var i = 0; i < (n || 140); i++){
+    parts.push({
+      x: Math.random() * c.width, y: -20 - Math.random() * c.height * 0.3,
+      w: 5 + Math.random() * 7, h: 8 + Math.random() * 10,
+      c: colors[(Math.random() * colors.length) | 0],
+      vx: (Math.random() - 0.5) * 2.4, vy: 2 + Math.random() * 3.2,
+      rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.25,
+      life: 120 + Math.random() * 80
+    });
+  }
+  (function step(){
+    ctx.clearRect(0, 0, c.width, c.height);
+    var alive = false;
+    parts.forEach(function(p){
+      if (p.life <= 0) return;
+      alive = true; p.life--;
+      p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.rot += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.globalAlpha = clamp(p.life / 60, 0, 1);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+    if (alive) requestAnimationFrame(step);
+    else ctx.clearRect(0, 0, c.width, c.height);
+  })();
+}
+
+/* ===== Ambient snow ===== */
+(function snow(){
+  var c = $('#snow'), ctx = c.getContext('2d');
+  var w, h, flakes = [], i;
+  function resize(){ w = c.width = window.innerWidth; h = c.height = window.innerHeight; }
+  window.addEventListener('resize', resize); resize();
+  var N = Math.min(90, Math.max(30, Math.floor(window.innerWidth / 14)));
+  for (i = 0; i < N; i++){
+    flakes.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*2.2 + 0.8,
+      s: Math.random()*0.6 + 0.25, o: Math.random()*0.5 + 0.2, ph: Math.random()*Math.PI*2 });
+  }
+  (function draw(){
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(245,235,216,0.85)';
+    flakes.forEach(function(f){
+      if (!REDUCED){
+        f.y += f.s; f.ph += 0.012; f.x += Math.sin(f.ph) * 0.3;
+        if (f.y > h + 4){ f.y = -4; f.x = Math.random() * w; }
+      }
+      ctx.globalAlpha = f.o;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    if (!REDUCED) requestAnimationFrame(draw);
+  })();
+})();
+
+/* ===== Scenes data ===== */
+var BASE_URL = 'https://item1000-collab.github.io/ai/engoo/20261017-w-life/';
+var PDF_URL  = BASE_URL + 'is-a-wonderful-life.pdf';
+function slide(n){ return BASE_URL + 'slide-0' + String(n).padStart(3, '0') + '.jpg'; }
+
+var SCENES = [
+  { id:'build', num:1, title:'Build the Set', char:'FRANK CAPRA — THE DIRECTOR', charShort:'FC', color:'#E0A94E',
+    slide: slide(2), tag:'FILL THE BLANKS',
+    obj:'Restore eight missing words in the director’s production notes.',
+    tip:'Click a gap, then click a word from the bank. A wrong word bounces back with a shake — and every return costs points.',
+    flavor:'Encino, California. Ninety degrees in the shade. Six thousand gallons of snow — and quiet, please. We are recording live.' },
+  { id:'reel', num:2, title:'Real or Delusion?', char:'CLARENCE — ANGEL, SECOND CLASS', charShort:'CL', color:'#7FB2C8',
+    slide: slide(9), tag:'REAL OR DELUSION',
+    obj:'Separate true film history from Pottersville fiction. Eight statements.',
+    tip:'Arrow keys work: ← REAL, → DELUSION. After each answer, read the note and press NEXT — the tape will not roll on without you.',
+    flavor:'Every time a bell rings up here, somebody on Earth learns a true fact. Help me keep the record straight.' },
+  { id:'bridge', num:3, title:'The Choice', char:'GEORGE BAILEY — THE DREAMER', charShort:'GB', color:'#B23A48',
+    slide: slide(8), tag:'MULTIPLE CHOICE',
+    obj:'Six decisions on the bridge. One attempt each — keys 1, 2, 3 pick an answer.',
+    tip:'No retries. Like George on the railing, you commit — and Mary is watching, so make her proud.',
+    flavor:'Strange, isn’t it? Each man’s life touches so many other lives…' },
+  { id:'match', num:4, title:'Meaning of Bedford Falls', char:'MARY HATCH — THE ANCHOR', charShort:'MH', color:'#3E7C59',
+    slide: slide(5), tag:'MATCH THE MEANING',
+    obj:'Pair six words from the lesson with their meanings.',
+    tip:'Click a word, then click its meaning. Correct pairs lock green and cannot be reused. Wrong picks shake and clear — every slip costs points.',
+    flavor:'A town is only as strong as its vocabulary. Anchor yours.' },
+  { id:'bell', num:5, title:'The Bell Rings', char:'ZUZU BAILEY — THE LITTLEST BELL', charShort:'ZB', color:'#C97BA0',
+    slide: slide(13), tag:'TIMED BONUS · 750 SECONDS',
+    obj:'Rapid questions from every reel. Build a streak, beat the clock.',
+    tip:'750 seconds on one clock, and it flashes red near the end. Streaks multiply every coin — and every mistake resets them.',
+    flavor:'Look, Daddy. Teacher says, every time a bell rings, an angel gets his wings.' }
+];
+
+/* ===== Question sets ===== */
+
+/* Reel 1 — fill in the blanks */
+var BLANKS = [
+  { a:'Traditional movie snow was made from untoasted ', b:' — so loud and crunchy underfoot that all dialogue had to be re-dubbed in post-production.', ans:'cornflakes' },
+  { a:'Capra’s silent recipe pumped 6,000 gallons through ', b:' machines — quiet enough to record the actors’ raw emotion live.', ans:'wind' },
+  { a:'Cats, dogs and pigeons roamed freely across the mammoth set to give the town a ', b:' feel.', ans:'lived-in' },
+  { a:'George Bailey is defined by his ', b:' dreams of world travel.', ans:'deferred' },
+  { a:'Mary’s unwavering love keeps George ', b:' to his community.', ans:'tethered' },
+  { a:'Wrapped inside the wrong newspaper, the $8,000 deposit pushed George to the ', b:' of ruin.', ans:'brink' },
+  { a:'A ', b:' error let the film’s copyright lapse, dropping it into the public domain.', ans:'clerical' },
+  { a:'Stewart’s genuine tears while praying in Martini’s bar were ', b:' — no script ever contained them.', ans:'unscripted' }
+];
+var BLANK_BANK = ['cornflakes','wind','lived-in','deferred','tethered','brink','clerical','unscripted','anchor','monopoly','heatwave','dread'];
+
+/* Reel 2 — real or delusion */
+var TF = [
+  { s:'Bedford Falls was built in California, in the dead of summer, during a brutal 90-degree heatwave.', real:true,
+    e:'REAL. The deck: “Shot during a brutal 90-degree summer heatwave in 1946. Capra had to give the crew a day off, for heat exhaustion.”' },
+  { s:'Traditional movie snow was quiet and gentle — sound engineers loved its soft crunch.', real:false,
+    e:'DELUSION. “Traditional movie snow was made from untoasted cornflakes. It was so loud and crunchy underfoot that all dialogue had to be re-dubbed in post-production.”' },
+  { s:'Capra’s silent chemical snow earned an Academy Award.', real:true,
+    e:'REAL. The Oscar-winning recipe let Capra record the audio live, “capturing the authentic, raw emotion of the actors’ performances.”' },
+  { s:'Donna Reed needed a stunt double and many takes to break the Granville house window.', real:false,
+    e:'DELUSION. The stunt double “standing by” was never needed — Mary “shattered the glass perfectly on her very first try,” thanks to an Iowa farm throwing arm.' },
+  { s:'Audiences entirely forgot that Lionel Barrymore used a wheelchair in real life.', real:true,
+    e:'REAL. He played Potter “so convincingly that audiences entirely forgot he was confined to a wheelchair in real life due to severe arthritis.”' },
+  { s:'Uncle Billy’s crash into the trash cans was scripted and rehearsed for weeks.', real:false,
+    e:'DELUSION. Thomas Mitchell stumbled off-camera by accident, and Capra “loved the unscripted, chaotic noise so much that he kept it in the final cut.”' },
+  { s:'In 1974 a clerical error dropped the film into the public domain — the deck calls it the Angel’s Intervention.', real:true,
+    e:'REAL. The bridge diagram: “1974 (The Angel’s Intervention)… A clerical error at Republic Pictures lets the film’s copyright lapse, dropping it into the public domain.”' },
+  { s:'Pottersville proves that one man’s life changes nothing in a town.', real:false,
+    e:'DELUSION. “Pottersville represents the ultimate failure of the American dream, proving that one man’s life changes the architecture of an entire town.”' }
+];
+
+/* Reel 3 — multiple choice */
+var MC = [
+  { q:'What was George Bailey’s deferred dream?',
+    opts:['To travel the world','To own Potter’s bank','To become a Hollywood actor'], ans:0,
+    e:'“George Bailey is defined by his deferred dreams of world travel.” The brochures for Paris, Tahiti and Egypt never got used.',
+    good:'Attaboy! You remembered the brochures.', bad:'Even Clarence needed a hint on that one…' },
+  { q:'On Christmas Eve, Uncle Billy absentmindedly wrapped the Building & Loan’s $8,000 deposit inside…',
+    opts:['a birthday card','Potter’s newspaper','his winter coat'], ans:1,
+    e:'“Uncle Billy absentmindedly wraps the Building & Loan’s $8,000 deposit inside Potter’s newspaper. The loss threatens George with scandal, jail, and ruin.”',
+    good:'Right — that newspaper cost a fortune.', bad:'Careful — in Bedford Falls, the wrong newspaper costs $8,000.' },
+  { q:'Who grants George’s wish that he had never been born?',
+    opts:['Mr. Potter','Mary','Clarence'], ans:2,
+    e:'“Guardian angel Clarence grants George’s wish that he had never been born, plunging him into Pottersville.”',
+    good:'Clarence appreciates the credit.', bad:'No wings for that answer — it was Clarence, Angel Second Class.' },
+  { q:'The sweat on Stewart’s face in the bridge scene was a mixture of…',
+    opts:['rain and makeup','the 90-degree heatwave and existential dread','melted snow and tears'], ans:1,
+    e:'“Heavy beads of sweat are visible on Stewart’s face—a mixture of the oppressive 90-degree California heatwave and the profound, agonizing weight of a man who believes he has failed everyone he loves.”',
+    good:'You read the frame like a director.', bad:'It was the heatwave and the dread — weather and soul in one shot.' },
+  { q:'Complete Clarence’s note: “Remember, no man is a ___ who has friends.”',
+    opts:['failure','banker','stranger'], ans:0,
+    e:'“Remember, no man is a failure who has friends. Thanks for the wings!” — Clarence',
+    good:'That one earns your wings.', bad:'Reread the note — it is carved into the finale.' },
+  { q:'According to the deck, the Pottersville sequence explores…',
+    opts:['a fun alternate theme park','the failure of the American dream, where the community loses its safety net','George’s childhood memories'], ans:1,
+    e:'“The Pottersville sequence is an asphyxiating, terrifying look at a life erased… a world where community loses its safety net.”',
+    good:'Exactly — a nightmare with neon signs.', bad:'Pottersville is no theme park — it is a life erased.' }
+];
+
+/* Reel 4 — match the meaning */
+var PAIRS = [
+  { w:'unwavering',   m:'steady and never doubting' },
+  { w:'suffocating',  m:'so tight it takes your breath away' },
+  { w:'impending',    m:'about to happen soon — usually unwelcome' },
+  { w:'dread',        m:'a deep, sinking fear of what is coming' },
+  { w:'rally',        m:'come together quickly to help' },
+  { w:'royalty-free', m:'free to use, with no fees to pay' }
+];
+
+/* Reel 5 — bonus blitz (mixed topics) */
+var BONUS = [
+  { q:'“In the dead of summer” means…', opts:['the hottest heart of summer','the last day of summer','a season with no events'], ans:0,
+    e:'“Dead” means total or absolute — the deepest point of the season, as in “in the dead of night”.' },
+  { q:'A “lived-in feel” means a place looks…', opts:['brand new','warm and truly inhabited','empty and cold'], ans:1,
+    e:'“Capra allowed cats, dogs, and pigeons to roam freely across the mammoth set to give the town a lived-in feel.”' },
+  { q:'How much did Uncle Billy lose?', opts:['$8,000','$800','$80,000'], ans:0,
+    e:'“…the Building & Loan’s $8,000 deposit inside Potter’s newspaper.”' },
+  { q:'At the box office, the film…', opts:['broke records','lost $525,000 and sank Liberty Films','never premiered'], ans:1,
+    e:'“The film is a box office flop, losing $525,000. Liberty Films goes bankrupt, and Capra’s career fades.”' },
+  { q:'“Clarence dives into the river” happens in…', opts:['1946','1974 — the Angel’s Intervention','the 1980s'], ans:1,
+    e:'The deck’s bridge diagram places the dive at the top of the arc: 1974, the intervention that turns both lives around.' },
+  { q:'Finish Zuzu’s line: “Every time a bell rings, …”', opts:['an angel gets his wings','a banker gets his due','snow starts to fall'], ans:0,
+    e:'“Look, Daddy. Teacher says, every time a bell rings, an angel gets his wings.” — Zuzu Bailey' },
+  { q:'An “ethos” is…', opts:['a Greek island','a guiding set of values','a type of loan'], ans:1,
+    e:'The lesson contrasts the Bailey Ethos (“people over profit”) with the Potter Ethos (“wealth over humanity”).' },
+  { q:'The Potter Ethos stands for…', opts:['wealth over humanity','people over profit','shared sacrifice'], ans:0,
+    e:'“Wealth over humanity; monopoly, isolation, and greed.” The Bailey side owns “people over profit”.' },
+  { q:'“Grapple with” means…', opts:['struggle to deal with','grab a rope','pack luggage'], ans:0,
+    e:'Stewart “was grappling with severe PTSD” — wrestling with an inner battle, not a rope.' },
+  { q:'Mary provides…', opts:['the film’s villain','the snow recipe','unwavering love and a grounding presence'], ans:2,
+    e:'“Mary provides the unwavering love and grounding presence that keeps George tethered to his community.”' },
+  { q:'“Public domain” means…', opts:['only studios may show it','anyone may copy or air it freely','it was filmed outdoors'], ans:1,
+    e:'After the copyright lapse, “TV stations air the royalty-free film endlessly.”' },
+  { q:'Capra kept the trash-can crash because…', opts:['the unscripted noise heightened the anxiety','the crew begged him','it saved money'], ans:0,
+    e:'“…he recognized magic in accidents… Capra loved the unscripted, chaotic noise so much that he kept it in the final cut.”' },
+  { q:'“On the brink of” means…', opts:['at the very edge of','underneath','far away from'], ans:0,
+    e:'A brink is the edge of a steep drop — “George stands on the brink of ruin.”' },
+  { q:'The American Film Institute named the film…', opts:['#1 Musical','#1 Western','#1 Most Inspirational American Film'], ans:2,
+    e:'“Because it requires George to face absolute darkness before he can see the light, the American Film Institute named It’s a Wonderful Life the #1 Most Inspirational American Film of all time.”' }
+];
+
+/* ===== Screens & modals ===== */
+var currentScreen = 'screen-intro';
+var modalKind = '';
+function showScreen(id){
+  currentScreen = id;
+  $$('.screen').forEach(function(s){ s.classList.toggle('active', s.id === id); });
+  window.scrollTo({ top:0, behavior: REDUCED ? 'auto' : 'smooth' });
+}
+function openModal(inner, kind, label){
+  closeModal();
+  modalKind = kind || '';
+  var root = document.createElement('div');
+  root.className = 'modal-back'; root.id = 'modal';
+  root.innerHTML = '<div class="modal-card" role="dialog" aria-modal="true" aria-label="' + esc(label || 'Dialog') + '">' + inner + '</div>';
+  document.body.appendChild(root);
+  requestAnimationFrame(function(){ root.classList.add('on'); });
+  var f = root.querySelector('button');
+  if (f) setTimeout(function(){ f.focus(); }, 60);
+  return root;
+}
+function closeModal(){
+  var m = $('#modal');
+  if (m) m.remove();
+  modalKind = '';
+}
+
+/* ===== Scene runner with cleanup ===== */
+var sceneId = null, levelDone = false, cleanups = [];
+function setCleanup(fn){ cleanups.push(fn); }
+function runCleanup(){
+  cleanups.forEach(function(f){ try { f(); } catch(e){} });
+  cleanups = [];
+}
+function later(fn, ms){
+  var t = setTimeout(fn, ms);
+  setCleanup(function(){ clearTimeout(t); });
+  return t;
+}
+function avatar(short, color, size, uid){
+  return '<svg viewBox="0 0 64 64" width="' + size + '" height="' + size + '" aria-hidden="true" style="flex:0 0 auto">'
+    + '<defs><radialGradient id="g' + uid + '" cx="35%" cy="30%">'
+    + '<stop offset="0%" stop-color="#FFFFFF" stop-opacity=".55"/><stop offset="100%" stop-color="' + color + '"/>'
+    + '</radialGradient></defs>'
+    + '<circle cx="32" cy="32" r="30" fill="url(#g' + uid + ')" stroke="rgba(0,0,0,.35)" stroke-width="2"/>'
+    + '<text x="32" y="40" text-anchor="middle" font-family="Courier Prime, monospace" font-weight="700" font-size="20" fill="#1A1408">' + short + '</text>'
+    + '</svg>';
+}
+function chipsHtml(){
+  return '<div class="chips">'
+    + '<span class="chip">SCORE <b id="g-score">0</b></span>'
+    + '<span class="chip">STREAK <b id="g-streak">0</b></span>'
+    + '<span class="chip">MISSES <b id="g-miss">0</b></span>'
+    + '</div>';
+}
+function setChips(o){
+  if (o.score !== undefined) $('#g-score').textContent = o.score;
+  if (o.streak !== undefined) $('#g-streak').textContent = o.streak;
+  if (o.miss !== undefined) $('#g-miss').textContent = o.miss;
+}
+
+/* ===== HUD ===== */
+function allDone(){ return SCENES.every(function(s){ return state.levels[s.id] && state.levels[s.id].done; }); }
+function renderProgress(){
+  var html = '';
+  SCENES.forEach(function(s){
+    var p = state.levels[s.id];
+    var done = p && p.done;
+    html += '<span class="pdot' + (done ? ' done' : '') + '" title="' + esc(s.title) + (done ? ' — ' + p.stars + '★' : '') + '">'
+      + (done ? '★' : s.num) + '</span>';
+  });
+  html += '<span class="pdot final' + (allDone() ? ' reachable' : '') + '" title="The Finale">🔔</span>';
+  $('#hud-progress').innerHTML = html;
+}
+function updateHUD(){
+  var sc = 0, st = 0;
+  SCENES.forEach(function(s){
+    var p = state.levels[s.id];
+    if (p){ sc += (p.best || 0); st += (p.stars || 0); }
+  });
+  $('#hud-score').textContent = sc;
+  $('#hud-stars').textContent = st;
+  renderProgress();
+}
+function renderSound(){
+  var b = $('#btn-sound');
+  b.innerHTML = state.sound ? '<i data-lucide="volume-2">🔊</i>' : '<i data-lucide="volume-x">🔇</i>';
+  b.setAttribute('aria-label', state.sound ? 'Mute sound' : 'Unmute sound');
+  b.setAttribute('aria-pressed', String(!state.sound));
+  refreshIcons();
+}
+
+/* ===== Level map ===== */
+function renderMap(){
+  var html = '';
+  SCENES.forEach(function(s){
+    var p = state.levels[s.id] || {};
+    var stars = p.stars || 0, best = p.best || 0;
+    var starStr = '';
+    for (var i = 0; i < 3; i++) starStr += (i < stars ? '★' : '☆');
+    html += '<button class="reel-card" data-level="' + s.id + '" aria-label="Reel ' + s.num + ': ' + esc(s.title) + '. '
+      + stars + ' of 3 stars. Best score ' + best + '.">'
+      + '<span class="sprockets"></span>'
+      + '<span class="reel-preview"><img src="' + s.slide + '" alt="Lesson slide preview for the reel ' + esc(s.title) + '" loading="lazy">'
+      + '<span class="reel-num">REEL ' + s.num + '</span>'
+      + (stars ? '<span class="reel-stars">' + starStr + '</span>' : '') + '</span>'
+      + '<span class="reel-body">'
+      + '<span class="reel-tag">' + esc(s.tag) + '</span>'
+      + '<span class="reel-title">' + esc(s.title) + '</span>'
+      + '<span class="reel-char">' + esc(s.char) + '</span>'
+      + '<span class="reel-meta"><span>' + (stars ? 'BEST ' + best : 'NOT SCREENED') + '</span>'
+      + (stars ? '<span class="mini-stars">' + '★'.repeat(stars) + '</span>' : '') + '</span>'
+      + '</span>'
+      + '<span class="sprockets"></span>'
+      + '</button>';
+  });
+  $('#map-grid').innerHTML = html;
+  var fin = $('#btn-final');
+  fin.hidden = !allDone();
+  $('#final-hint').textContent = allDone()
+    ? 'ALL FIVE REELS SCREENED — THE BELL IS WAITING FOR YOU.'
+    : 'THE FINALE UNLOCKS WHEN ALL FIVE REELS ARE SCREENED — ANY ORDER COUNTS.';
+  renderProgress();
+}
+
+/* ===== Level flow ===== */
+function renderSceneHead(s){
+  $('#scene-head').style.setProperty('--c', s.color);
+  $('#scene-head').innerHTML =
+    '<div class="sh-top">'
+    + '<button class="btn btn-ghost" id="sh-back">← BACK TO MAP</button>'
+    + '<span class="sh-tag mono">' + esc(s.tag) + '</span>'
+    + '</div>'
+    + '<div class="sh-main">'
+    + avatar(s.charShort, s.color, 72, s.id)
+    + '<div class="sh-txt">'
+    + '<h2 class="sh-title">REEL ' + s.num + ' · ' + esc(s.title) + '</h2>'
+    + '<p class="sh-char mono">' + esc(s.char) + '</p>'
+    + '<p class="sh-obj">🎯 ' + esc(s.obj) + '</p>'
+    + '<p class="sh-tip">💡 ' + esc(s.tip) + '</p>'
+    + '</div>'
+    + '<figure class="sh-frame"><img src="' + s.slide + '" alt="Reference frame from the lesson for ' + esc(s.title) + '"><figcaption>REFERENCE FRAME</figcaption></figure>'
+    + '</div>'
+    + '<p class="sh-flavor">“' + esc(s.flavor) + '”</p>'
+    + chipsHtml();
+  $('#sh-back').addEventListener('click', goMap);
+  setChips({ score:0, streak:0, miss:0 });
+}
+function openLevel(id){
+  SFX.flip();
+  runCleanup(); closeModal();
+  sceneId = id; levelDone = false;
+  var s = SCENES.find(function(x){ return x.id === id; });
+  renderSceneHead(s);
+  $('#scene-body').innerHTML = '';
+  showScreen('screen-scene');
+  renderProgress();
+  openModal(
+    '<p class="m-tag mono">REEL ' + s.num + ' · ' + esc(s.tag) + '</p>'
+    + '<h3 class="m-title">' + esc(s.title) + '</h3>'
+    + '<p class="m-flavor">“' + esc(s.flavor) + '” — <b>' + esc(s.char) + '</b></p>'
+    + '<p class="m-obj">🎯 ' + esc(s.obj) + '</p>'
+    + '<p class="m-tip">💡 ' + esc(s.tip) + '</p>'
+    + '<div class="m-btns">'
+    + '<button class="btn btn-gold" id="m-start">▶ START REEL</button>'
+    + '<button class="btn btn-ghost" id="m-back">🗺 BACK TO MAP</button>'
+    + '</div>', 'briefing', 'Briefing before the reel');
+  $('#m-start').addEventListener('click', function(){ SFX.click(); closeModal(); startGame(); });
+  $('#m-back').addEventListener('click', function(){ SFX.click(); goMap(); });
+}
+function startGame(){
+  levelDone = false;
+  setChips({ score:0, streak:0, miss:0 });
+  var body = $('#scene-body');
+  body.innerHTML = '';
+  GAMES[sceneId].mount(body);
+}
+function starsFor(mistakes){ return mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1); }
+function finishLevel(res){
+  if (levelDone) return;
+  levelDone = true;
+  runCleanup();
+  var s = SCENES.find(function(x){ return x.id === sceneId; });
+  var stars = starsFor(res.mistakes);
+  var prev = state.levels[sceneId] || {};
+  var best = Math.max(res.score, prev.best || 0);
+  var newBest = res.score > (prev.best || 0) && res.score > 0;
+  state.levels[sceneId] = { best: best, stars: Math.max(stars, prev.stars || 0), done: true };
+  saveState(); updateHUD();
+  var msg = stars === 3 ? 'Perfect reel — not a single frame out of place.'
+    : stars === 2 ? 'A fine screening with a couple of scratches.'
+    : 'The reel survived — Bedford Falls is proud anyway.';
+  var starHtml = '';
+  for (var i = 0; i < 3; i++){
+    starHtml += '<span class="big-star' + (i < stars ? ' lit' : '') + ' star-pop" style="animation-delay:' + (i * 0.25) + 's">'
+      + (i < stars ? '★' : '☆') + '</span>';
+  }
+  openModal(
+    '<p class="m-tag mono">' + esc(s.tag) + '</p>'
+    + '<h3 class="m-title">' + esc(s.title) + ' — CUT!</h3>'
+    + '<div class="stars-row" role="img" aria-label="' + stars + ' of 3 stars">' + starHtml + '</div>'
+    + '<p class="m-score mono">SCORE ' + res.score + (newBest ? ' · NEW BEST!' : ' · BEST ' + best) + '</p>'
+    + '<p class="m-msg">' + esc(msg) + '</p>'
+    + '<div class="m-btns">'
+    + '<button class="btn btn-gold" id="m-replay">↺ RUN IT AGAIN</button>'
+    + '<button class="btn btn-ghost" id="m-map">🗺 BACK TO MAP</button>'
+    + (allDone() ? '<button class="btn btn-gold" id="m-final">🔔 THE FINALE</button>' : '')
+    + '</div>', 'results', 'Level results');
+  if (stars === 3){ SFX.cheer(); spawnConfetti(); } else { SFX.fanfare(); }
+  toast('Progress saved to the shelf 🎞️');
+  $('#m-replay').addEventListener('click', function(){ SFX.click(); closeModal(); startGame(); });
+  $('#m-map').addEventListener('click', function(){ SFX.click(); goMap(); });
+  var fbtn = $('#m-final');
+  if (fbtn) fbtn.addEventListener('click', function(){ SFX.click(); openFinale(); });
+}
+function goMap(){
+  runCleanup(); closeModal();
+  showScreen('screen-map');
+  renderMap();
+}
+
+/* ============================================================
+   MINI-GAMES
+   ============================================================ */
+var GAMES = {};
+
+/* ----- Reel 1: fill in the blanks ----- */
+GAMES.build = { mount: function(root){
+  var box = document.createElement('div');
+  root.innerHTML = ''; root.appendChild(box);
+  var items = shuffle(BLANKS.map(function(b, i){ return { a:b.a, b:b.b, ans:b.ans, i:i }; }));
+  var bank = shuffle(BLANK_BANK);
+  var sel = null, score = 0, streak = 0, miss = 0, filled = 0;
+
+  var cardsHtml = '';
+  items.forEach(function(b, i){
+    cardsHtml += '<div class="bcard"><span>' + esc(b.a) + '</span>'
+      + '<button class="gap" data-gap="' + i + '" aria-label="Blank ' + (i + 1) + '">______</button>'
+      + '<span>' + esc(b.b) + '</span></div>';
+  });
+  var bankHtml = '';
+  bank.forEach(function(w){ bankHtml += '<button class="bank-chip" data-w="' + esc(w) + '">' + esc(w) + '</button>'; });
+  box.innerHTML = '<p class="mini-note">Eight production notes lost their key words. Click a gap, then click the word that belongs there.</p>'
+    + '<div id="blanks">' + cardsHtml + '</div>'
+    + '<p class="mini-note mono">WORD BANK — three words are studio decoys</p>'
+    + '<div class="bank" id="bank">' + bankHtml + '</div>';
+
+  box.addEventListener('click', function(e){
+    var gap = e.target.closest('.gap');
+    var chip = e.target.closest('.bank-chip');
+    if (gap){
+      if (gap.classList.contains('filled')) return;
+      if (sel === gap){ gap.classList.remove('sel'); sel = null; }
+      else {
+        if (sel) sel.classList.remove('sel');
+        sel = gap; gap.classList.add('sel');
+      }
+      SFX.click();
+      return;
+    }
+    if (chip){
+      if (chip.disabled) return;
+      if (!sel){ toast('Pick a gap first 🎬'); SFX.click(); return; }
+      var item = items[+sel.dataset.gap];
+      if (chip.dataset.w === item.ans){
+        sel.textContent = item.ans;
+        sel.classList.remove('sel'); sel.classList.add('filled'); sel.disabled = true;
+        chip.classList.add('used'); chip.disabled = true;
+        streak++;
+        var pts = Math.round(100 * (1 + 0.1 * Math.min(streak - 1, 10)));
+        score += pts;
+        SFX.correct(); popFloat(sel, '+' + pts);
+        sel = null; filled++;
+        setChips({ score:score, streak:streak, miss:miss });
+        if (filled === items.length) later(function(){ finishLevel({ score:score, mistakes:miss }); }, 700);
+      } else {
+        chip.classList.add('shake');
+        later(function(){ chip.classList.remove('shake'); }, 500);
+        miss++; streak = 0;
+        score = Math.max(0, score - 25);
+        SFX.wrong(); popFloat(chip, '−25', 'minus');
+        setChips({ score:score, streak:streak, miss:miss });
+      }
+    }
+  });
+}};
+
+/* ----- Reel 2: real or delusion (true/false with NEXT gate) ----- */
+var TF_TIME = 600, LOW_TIME = 60;
+GAMES.reel = { mount: function(root){
+  var box = document.createElement('div');
+  root.innerHTML = ''; root.appendChild(box);
+  var items = shuffle(TF);
+  var idx = 0, score = 0, streak = 0, miss = 0;
+  var answered = false, finished = false, remaining = TF_TIME, iv = null, lastTick = 999;
+
+  box.innerHTML =
+    '<div class="tbar" id="tf-bar" role="timer" aria-label="Time remaining for this statement"><i style="width:100%"></i></div>'
+    + '<p class="mini-note mono">STATEMENT <b id="tf-count">1/' + items.length + '</b> · keys: ← REAL · → DELUSION · ENTER = next</p>'
+    + '<div class="card">'
+    + '<p class="tf-statement" id="tf-text"></p>'
+    + '<div class="tf-btns">'
+    + '<button class="btn tf-real" id="tf-real">⬅ REAL</button>'
+    + '<button class="btn tf-del" id="tf-del">DELUSION ➡</button>'
+    + '</div>'
+    + '<div class="expl" id="tf-expl" hidden><p id="tf-verdict" style="margin:0 0 12px"></p>'
+    + '<button class="btn btn-gold" id="tf-next">NEXT ➡</button></div>'
+    + '</div>';
+
+  var bar = $('#tf-bar', box), fill = bar.querySelector('i'),
+      text = $('#tf-text', box), verdict = $('#tf-verdict', box),
+      expl = $('#tf-expl', box), nextBtn = $('#tf-next', box),
+      count = $('#tf-count', box), realB = $('#tf-real', box), delB = $('#tf-del', box);
+
+  function stopTimer(){ if (iv){ clearInterval(iv); iv = null; } }
+  function startTimer(){
+    stopTimer();
+    remaining = TF_TIME; lastTick = 999;
+    bar.classList.remove('low'); fill.style.width = '100%';
+    var t0 = Date.now();
+    iv = setInterval(function(){
+      remaining = TF_TIME - (Date.now() - t0) / 1000;
+      if (remaining <= 0){ remaining = 0; fill.style.width = '0%'; timeUp(); return; }
+      fill.style.width = (remaining / TF_TIME * 100) + '%';
+      bar.classList.toggle('low', remaining <= LOW_TIME);
+      var sec = Math.ceil(remaining);
+      if (sec !== lastTick && sec <= 10){ lastTick = sec; SFX.tick(); }
+    }, 200);
+  }
+  function render(){
+    text.textContent = '“' + items[idx].s + '”';
+    count.textContent = (idx + 1) + '/' + items.length;
+    answered = false;
+    expl.hidden = true;
+    realB.disabled = false; delB.disabled = false;
+    startTimer();
+  }
+  function finishCard(ok){
+    var item = items[idx];
+    verdict.innerHTML = '<b class="' + (ok ? 'v-ok' : 'v-bad') + '">'
+      + (ok ? 'CORRECT' : 'WRONG') + ' — it was ' + (item.real ? 'REAL' : 'DELUSION') + '.</b> ' + esc(item.e);
+    expl.hidden = false;
+    nextBtn.textContent = idx === items.length - 1 ? 'SEE RESULTS ✅' : 'NEXT ➡';
+    nextBtn.focus();
+  }
+  function answer(val){
+    if (answered || finished) return;
+    answered = true;
+    stopTimer();
+    var ok = val === items[idx].real;
+    realB.disabled = true; delB.disabled = true;
+    if (ok){
+      streak++;
+      var frac = clamp(remaining / TF_TIME, 0, 1);
+      var pts = Math.round((80 + 40 * frac) * (1 + 0.2 * Math.min(streak - 1, 5)));
+      score += pts;
+      SFX.correct();
+      popFloat(answered ? realB : realB, '+' + pts);
+    } else {
+      miss++; streak = 0;
+      score = Math.max(0, score - 25);
+      SFX.wrong(); popFloat(realB, '−25', 'minus');
+    }
+    setChips({ score:score, streak:streak, miss:miss });
+    finishCard(ok);
+  }
+  function timeUp(){
+    if (answered || finished) return;
+    answered = true;
+    stopTimer();
+    miss++; streak = 0;
+    score = Math.max(0, score - 25);
+    setChips({ score:score, streak:streak, miss:miss });
+    SFX.wrong();
+    verdict.innerHTML = '<b class="v-bad">TIME’S UP — the reel kept rolling without you.</b> ' + esc(items[idx].e);
+    expl.hidden = false;
+    nextBtn.textContent = idx === items.length - 1 ? 'SEE RESULTS ✅' : 'NEXT ➡';
+    nextBtn.focus();
+  }
+  function next(){
+    if (!answered || finished) return;
+    SFX.click();
+    if (idx === items.length - 1){ finished = true; finishLevel({ score:score, mistakes:miss }); return; }
+    idx++; render();
+  }
+  realB.addEventListener('click', function(){ answer(true); });
+  delB.addEventListener('click', function(){ answer(false); });
+  nextBtn.addEventListener('click', next);
+  var onKey = function(e){
+    if (finished) return;
+    if (answered){
+      if (e.key === 'Enter' && document.activeElement !== nextBtn){ e.preventDefault(); next(); }
+    } else {
+      if (e.key === 'ArrowLeft'){ e.preventDefault(); answer(true); }
+      if (e.key === 'ArrowRight'){ e.preventDefault(); answer(false); }
+    }
+  };
+  document.addEventListener('keydown', onKey);
+  setCleanup(function(){ stopTimer(); document.removeEventListener('keydown', onKey); });
+  render();
+}};
+
+/* ----- Reel 3: multiple choice with character reaction ----- */
+GAMES.bridge = { mount: function(root){
+  var box = document.createElement('div');
+  root.innerHTML = ''; root.appendChild(box);
+  var items = shuffle(MC);
+  var idx = 0, score = 0, streak = 0, miss = 0;
+  var answered = false, finished = false, t0 = 0;
+
+  box.innerHTML =
+    '<p class="mini-note mono">QUESTION <b id="mc-count">1/' + items.length + '</b> · keys 1–3 · ENTER = next</p>'
+    + '<div class="card">'
+    + '<p class="tf-statement" id="mc-q" style="font-size:1.15rem"></p>'
+    + '<div class="opts" id="mc-opts"></div>'
+    + '<div id="mc-react" hidden></div>'
+    + '<div class="expl" id="mc-expl" hidden><p id="mc-e" style="margin:0 0 12px"></p>'
+    + '<button class="btn btn-gold" id="mc-next">NEXT ➡</button></div>'
+    + '</div>';
+
+  var qEl = $('#mc-q', box), optsEl = $('#mc-opts', box), reactEl = $('#mc-react', box),
+      explEl = $('#mc-expl', box), eEl = $('#mc-e', box), nextBtn = $('#mc-next', box), countEl = $('#mc-count', box);
+
+  function render(){
+    var it = items[idx];
+    qEl.textContent = it.q;
+    countEl.textContent = (idx + 1) + '/' + items.length;
+    var html = '';
+    it.opts.forEach(function(o, j){
+      html += '<button class="opt" data-j="' + j + '"><span class="mono" style="color:var(--gold)">' + (j + 1) + '.</span> ' + esc(o) + '</button>';
+    });
+    optsEl.innerHTML = html;
+    reactEl.hidden = true; explEl.hidden = true;
+    answered = false; t0 = Date.now();
+  }
+  function pick(j, btn){
+    if (answered || finished) return;
+    answered = true;
+    var it = items[idx];
+    var ok = j === it.ans;
+    $$('.opt', optsEl).forEach(function(b, k){
+      b.disabled = true;
+      if (k === it.ans) b.classList.add('ok');
+      else if (b === btn) b.classList.add('bad');
+      else b.classList.add('dim');
+    });
+    if (ok){
+      streak++;
+      var elapsed = (Date.now() - t0) / 1000;
+      var pts = Math.round((100 + Math.max(0, 50 - 2 * elapsed)) * (1 + 0.2 * Math.min(streak - 1, 5)));
+      score += pts; SFX.correct(); popFloat(btn, '+' + pts);
+    } else {
+      miss++; streak = 0;
+      score = Math.max(0, score - 25);
+      SFX.wrong(); popFloat(btn, '−25', 'minus');
+    }
+    setChips({ score:score, streak:streak, miss:miss });
+    reactEl.hidden = false;
+    reactEl.innerHTML = '<div class="reaction">' + avatar('GB', '#B23A48', 40, 'rx' + idx)
+      + '<span class="react-line">“' + esc(ok ? it.good : it.bad) + '”</span></div>';
+    eEl.innerHTML = '<b class="' + (ok ? 'v-ok' : 'v-bad') + '">' + (ok ? 'RIGHT.' : 'NOT QUITE.') + '</b> ' + esc(it.e);
+    explEl.hidden = false;
+    nextBtn.textContent = idx === items.length - 1 ? 'SEE RESULTS ✅' : 'NEXT ➡';
+    nextBtn.focus();
+  }
+  function next(){
+    if (!answered || finished) return;
+    SFX.click();
+    if (idx === items.length - 1){ finished = true; finishLevel({ score:score, mistakes:miss }); return; }
+    idx++; render();
+  }
+  optsEl.addEventListener('click', function(e){
+    var b = e.target.closest('.opt');
+    if (b) pick(+b.dataset.j, b);
+  });
+  nextBtn.addEventListener('click', next);
+  var onKey = function(e){
+    if (finished) return;
+    if (!answered){
+      if (e.key >= '1' && e.key <= '3'){
+        var b = $$('.opt', optsEl)[+e.key - 1];
+        if (b && !b.disabled) pick(+e.key - 1, b);
+      }
+    } else if (e.key === 'Enter' && document.activeElement !== nextBtn){
+      e.preventDefault(); next();
+    }
+  };
+  document.addEventListener('keydown', onKey);
+  setCleanup(function(){ document.removeEventListener('keydown', onKey); });
+  render();
+}};
+
+/* ----- Reel 4: match the meaning ----- */
+GAMES.match = { mount: function(root){
+  var box = document.createElement('div');
+  root.innerHTML = ''; root.appendChild(box);
+  var pairs = shuffle(PAIRS);
+  var words = shuffle(pairs.map(function(p){ return p.w; }));
+  var meanings = shuffle(pairs.map(function(p){ return p.m; }));
+  var selW = null, found = 0, attempts = 0, score = 0, streak = 0, miss = 0;
+
+  var wHtml = '', mHtml = '';
+  words.forEach(function(w){ wHtml += '<button class="mitem" data-w="' + esc(w) + '">' + esc(w) + '</button>'; });
+  meanings.forEach(function(m){ mHtml += '<button class="mitem" data-m="' + esc(m) + '">' + esc(m) + '</button>'; });
+  box.innerHTML =
+    '<div><span class="match-example mono">WORD · <b>boasts</b> → MEANING · <b>proudly has</b></span></div>'
+    + '<div class="match-bar mono"><span id="m-found">PAIRS 0/6</span><span id="m-att">ATTEMPTS 0</span></div>'
+    + '<div class="match-grid">'
+    + '<div class="mcol"><span class="mcol-title">WORD</span>' + wHtml + '</div>'
+    + '<div class="mcol"><span class="mcol-title">MEANING</span>' + mHtml + '</div>'
+    + '</div>';
+
+  var foundEl = $('#m-found', box), attEl = $('#m-att', box);
+  function updBar(){
+    foundEl.textContent = 'PAIRS ' + found + '/6';
+    attEl.textContent = 'ATTEMPTS ' + attempts;
+  }
+  box.addEventListener('click', function(e){
+    var el = e.target.closest('.mitem');
+    if (!el || el.disabled) return;
+    if (el.dataset.w !== undefined){
+      if (selW === el){ el.classList.remove('sel'); selW = null; }
+      else {
+        if (selW) selW.classList.remove('sel');
+        selW = el; el.classList.add('sel');
+      }
+      SFX.click();
+      return;
+    }
+    /* a meaning was clicked */
+    if (!selW){ toast('Pick a word on the left first 🎬'); SFX.click(); return; }
+    attempts++;
+    var pair = null;
+    pairs.forEach(function(p){ if (p.w === selW.dataset.w) pair = p; });
+    if (pair.m === el.dataset.m){
+      var wBtn = selW;
+      wBtn.classList.remove('sel');
+      wBtn.classList.add('locked'); wBtn.disabled = true; wBtn.textContent = '✓ ' + wBtn.textContent;
+      el.classList.add('locked'); el.disabled = true; el.textContent = '✓ ' + el.textContent;
+      found++; streak++;
+      var pts = Math.round(100 * (1 + 0.1 * Math.min(streak - 1, 10)));
+      score += pts;
+      SFX.match(); popFloat(el, '+' + pts);
+      selW = null;
+      setChips({ score:score, streak:streak, miss:miss });
+      updBar();
+      if (found === pairs.length) later(function(){ finishLevel({ score:score, mistakes:miss }); }, 650);
+    } else {
+      miss++; streak = 0;
+      score = Math.max(0, score - 25);
+      attemptsEl_shake(el);
+      SFX.wrong(); popFloat(el, '−25', 'minus');
+      selW.classList.remove('sel'); selW = null;
+      setChips({ score:score, streak:streak, miss:miss });
+      updBar();
+    }
+  });
+  function attemptsEl_shake(el){
+    el.classList.add('shake');
+    if (selW) selW.classList.add('shake');
+    later(function(){
+      el.classList.remove('shake');
+      $$('.mitem.shake', box).forEach(function(b){ b.classList.remove('shake'); });
+    }, 500);
+  }
+  updBar();
+}};
+
+/* ----- Reel 5: timed bonus blitz ----- */
+var BONUS_TIME = 750;
+GAMES.bell = { mount: function(root){
+  var box = document.createElement('div');
+  root.innerHTML = ''; root.appendChild(box);
+  var items = shuffle(BONUS);
+  var idx = 0, score = 0, streak = 0, miss = 0;
+  var answered = false, finished = false, remaining = BONUS_TIME, iv = null, t0 = 0, lastTick = 999, nextT = null;
+
+  box.innerHTML =
+    '<div class="tbar" id="bb-bar" role="timer" aria-label="Bonus time remaining"><i style="width:100%"></i></div>'
+    + '<p class="mini-note mono">BONUS BLITZ · <b id="bb-count">1/' + items.length + '</b> · every bell multiplies the streak</p>'
+    + '<div class="card">'
+    + '<p class="tf-statement" id="bb-q" style="font-size:1.15rem"></p>'
+    + '<div class="opts" id="bb-opts"></div>'
+    + '<p class="expl" id="bb-e" hidden></p>'
+    + '</div>';
+
+  var bar = $('#bb-bar', box), fill = bar.querySelector('i'),
+      qEl = $('#bb-q', box), optsEl = $('#bb-opts', box),
+      eEl = $('#bb-e', box), countEl = $('#bb-count', box);
+
+  function stopTimer(){ if (iv){ clearInterval(iv); iv = null; } }
+  function startTimer(){
+    stopTimer();
+    remaining = BONUS_TIME; lastTick = 999;
+    bar.classList.remove('low'); fill.style.width = '100%';
+    var t0t = Date.now();
+    iv = setInterval(function(){
+      remaining = BONUS_TIME - (Date.now() - t0t) / 1000;
+      if (remaining <= 0){ remaining = 0; fill.style.width = '0%'; timeUp(); return; }
+      fill.style.width = (remaining / BONUS_TIME * 100) + '%';
+      bar.classList.toggle('low', remaining <= LOW_TIME);
+      var sec = Math.ceil(remaining);
+      if (sec !== lastTick && sec <= 10){ lastTick = sec; SFX.tick(); }
+    }, 200);
+  }
+  function renderQ(){
+    if (idx >= items.length){ stopTimer(); finishLevel({ score:score, mistakes:miss }); return; }
+    answered = false;
+    var it = items[idx];
+    qEl.textContent = it.q;
+    countEl.textContent = (idx + 1) + '/' + items.length;
+    var html = '';
+    it.opts.forEach(function(o, j){
+      html += '<button class="opt" data-j="' + j + '">' + esc(o) + '</button>';
+    });
+    optsEl.innerHTML = html;
+    eEl.hidden = true;
+    t0 = Date.now();
+  }
+  function timeUp(){
+    if (finished) return;
+    finished = true;
+    stopTimer();
+    if (nextT){ clearTimeout(nextT); nextT = null; }
+    toast('TIME! The bell has rung 🔔');
+    later(function(){ finishLevel({ score:score, mistakes:miss }); }, 300);
+  }
+  optsEl.addEventListener('click', function(e){
+    var b = e.target.closest('.opt');
+    if (!b || answered || finished) return;
+    answered = true;
+    var it = items[idx];
+    var ok = (+b.dataset.j) === it.ans;
+    $$('.opt', optsEl).forEach(function(btn, k){
+      btn.disabled = true;
+      if (k === it.ans) btn.classList.add('ok');
+      else if (btn === b) btn.classList.add('bad');
+      else btn.classList.add('dim');
+    });
+    if (ok){
+      streak++;
+      var frac = clamp(1 - (Date.now() - t0) / 10000, 0, 1);
+      var pts = Math.round((80 + 30 * frac) * (1 + 0.1 * Math.min(streak, 10)));
+      score += pts; SFX.correct(); popFloat(b, '+' + pts);
+    } else {
+      miss++; streak = 0;
+      score = Math.max(0, score - 25);
+      SFX.wrong(); popFloat(b, '−25', 'minus');
+    }
+    setChips({ score:score, streak:streak, miss:miss });
+    eEl.innerHTML = '<b class="' + (ok ? 'v-ok' : 'v-bad') + '">' + (ok ? 'DING!' : 'OFF BY THE BELL.') + '</b> ' + esc(it.e);
+    eEl.hidden = false;
+    if (idx === items.length - 1){
+      stopTimer();
+      nextT = setTimeout(function(){ finished = true; finishLevel({ score:score, mistakes:miss }); }, 1000);
+      setCleanup(function(){ if (nextT){ clearTimeout(nextT); nextT = null; } });
+    } else {
+      nextT = setTimeout(function(){ idx++; renderQ(); }, REDUCED ? 350 : 900);
+    }
+  });
+  setCleanup(function(){ stopTimer(); if (nextT){ clearTimeout(nextT); nextT = null; } });
+  renderQ(); startTimer();
+}};
+
+/* ===== Finale ===== */
+var rewindArmed = false, rewindTimer = null;
+function rankFor(t){
+  if (t >= 5400) return { icon:'🔔', name:'WINGS, FULLY EARNED', line:'Clarence himself could not have done better.' };
+  if (t >= 3600) return { icon:'👼', name:'ANGEL, SECOND CLASS', line:'Your wings are sprouting nicely.' };
+  if (t >= 1800) return { icon:'🏦', name:'CITIZEN OF BEDFORD FALLS', line:'The town would rally for you in a heartbeat.' };
+  return { icon:'🎞️', name:'FILM FAN IN TRAINING', line:'Every projectionist starts in the basement. Rewind and go again.' };
+}
+function openFinale(){
+  runCleanup(); closeModal();
+  showScreen('screen-finale');
+  renderFinale();
+  SFX.fanfare();
+  if (allDone()) spawnConfetti();
+}
+function renderFinale(){
+  if (rewindTimer){ clearTimeout(rewindTimer); rewindTimer = null; }
+  rewindArmed = false;
+  var total = 0, stars = 0, rows = '';
+  SCENES.forEach(function(s){
+    var p = state.levels[s.id] || {};
+    var b = p.best || 0, st = p.stars || 0;
+    total += b; stars += st;
+    var starStr = '';
+    for (var i = 0; i < 3; i++) starStr += (i < st ? '★' : '☆');
+    rows += '<tr><td class="num">' + s.num + '</td><td>' + esc(s.title) + '</td>'
+      + '<td class="num">' + (p.done ? b : '—') + '</td>'
+      + '<td class="stars-cell">' + (p.done ? starStr : '☆☆☆') + '</td></tr>';
+  });
+  var rank = rankFor(total);
+  $('#finale-body').innerHTML =
+    '<div class="finale">'
+    + '<p class="kicker">THE FINALE · WINGS CEREMONY</p>'
+    + '<h2 class="finale-title">THAT’S THE BELL 🔔</h2>'
+    + '<figure class="finale-hero"><img src="' + slide(12) + '" alt="Lesson slide: the wealth of Bedford Falls — Clarence’s note in an old copy of Tom Sawyer"></figure>'
+    + '<div class="rank-card"><span class="rank-icon">' + rank.icon + '</span>'
+    + '<span class="rank-name">' + rank.name + '</span>'
+    + '<span class="rank-line">“' + rank.line + '”</span></div>'
+    + '<div class="totals">'
+    + '<span class="hud-chip"><span aria-hidden="true">🎬</span> TOTAL <b>' + total + '</b></span>'
+    + '<span class="hud-chip"><span aria-hidden="true">⭐</span> STARS <b>' + stars + ' / 15</b></span>'
+    + '</div>'
+    + '<table class="res-table"><thead><tr><th>Reel</th><th>Title</th><th>Best</th><th>Stars</th></tr></thead>'
+    + '<tbody>' + rows + '</tbody></table>'
+    + '<p class="res-quote" style="font-style:italic;color:var(--ink-dim)">“Remember, no man is a failure who has friends. Thanks for the wings!” — Clarence</p>'
+    + '<div class="finale-btns">'
+    + '<button class="btn btn-ghost" id="fin-map">🗺 BACK TO MAP</button>'
+    + '<button class="btn btn-ghost" id="fin-rewind">⏪ REWIND THE TAPE</button>'
+    + '</div>'
+    + '<p class="pdf-row">📎 Study the source again: <a href="' + PDF_URL + '" target="_blank" rel="noopener noreferrer">is-a-wonderful-life.pdf</a></p>'
+    + '</div>';
+  $('#fin-map').addEventListener('click', function(){ SFX.click(); goMap(); });
+  $('#fin-rewind').addEventListener('click', function(){
+    var btn = $('#fin-rewind');
+    if (!rewindArmed){
+      rewindArmed = true;
+      btn.textContent = '⚠ PRESS AGAIN TO ERASE EVERYTHING';
+      btn.classList.add('danger');
+      rewindTimer = setTimeout(function(){
+        rewindArmed = false;
+        btn.textContent = '⏪ REWIND THE TAPE';
+        btn.classList.remove('danger');
+      }, 3000);
+    } else {
+      if (rewindTimer){ clearTimeout(rewindTimer); rewindTimer = null; }
+      state.levels = {};
+      saveState(); updateHUD(); renderFinale();
+      toast('Tape rewound — all reels blank again ⏪');
+    }
+  });
+}
+
+/* ===== Escape key: close modal / leave scene ===== */
+document.addEventListener('keydown', function(e){
+  if (e.key !== 'Escape') return;
+  if ($('#modal')){
+    var kind = modalKind;
+    closeModal();
+    if ((kind === 'briefing' || kind === 'results') && currentScreen === 'screen-scene') goMap();
+  } else if (currentScreen === 'screen-scene'){
+    goMap();
+  }
+});
+
+/* ===== Wiring ===== */
+ $('#btn-start').addEventListener('click', function(){ SFX.click(); showScreen('screen-map'); renderMap(); });
+ $('#btn-map').addEventListener('click', function(){ SFX.click(); goMap(); });
+ $('#btn-final').addEventListener('click', function(){ SFX.click(); openFinale(); });
+ $('#btn-sound').addEventListener('click', function(){
+  state.sound = !state.sound;
+  saveState(); renderSound();
+  if (state.sound){ ensureAudio(); SFX.click(); }
+  toast(state.sound ? 'Sound on 🔊' : 'Sound off 🔇');
+});
+/* Delegated clicks for the whole map grid */
+ $('#map-grid').addEventListener('click', function(e){
+  var card = e.target.closest('.reel-card');
+  if (card) openLevel(card.dataset.level);
+});
+
+/* ===== Preloader ===== */
+(function preload(){
+  var count = $('#pl-count'), play = $('#pl-play'), sub = $('#pl-sub');
+  var seq = ['3', '2', '1'];
+  if (REDUCED){
+    count.style.display = 'none';
+    sub.textContent = 'projector warmed up';
+    play.classList.add('ready');
+  } else {
+    var i = 0;
+    count.textContent = seq[0];
+    var iv = setInterval(function(){
+      i++;
+      if (i < seq.length){ count.textContent = seq[i]; }
+      else {
+        clearInterval(iv);
+        count.classList.add('done');
+        sub.textContent = 'reel threaded — the show awaits';
+        play.classList.add('ready');
+      }
+    }, 650);
+  }
+  play.addEventListener('click', function(){
+    ensureAudio(); SFX.click();
+    var pl = $('#preloader');
+    pl.classList.add('exit');
+    setTimeout(function(){ pl.remove(); }, REDUCED ? 50 : 750);
+    toast('Welcome to Bedford Falls ❄️');
+  });
+})();
+
+/* ===== Boot ===== */
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+</script>
+</body>
+</html>
