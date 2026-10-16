@@ -638,11 +638,36 @@ function spawnConfetti(n){
   })();
 })();
 
-/* ===== Scenes data ===== */
+/* ===== Slide URLs & image fallback ===== */
+/* FIX: filenames are slide-001.jpg … slide-013.jpg (three digits after "slide-"). */
 var BASE_URL = 'https://item1000-collab.github.io/ai/engoo/20261017-w-life/';
 var PDF_URL  = BASE_URL + 'is-a-wonderful-life.pdf';
-function slide(n){ return BASE_URL + 'slide-0' + String(n).padStart(3, '0') + '.jpg'; }
+function slide(n){ return BASE_URL + 'slide-' + String(n).padStart(3, '0') + '.jpg'; }
 
+/* If a slide image ever fails to load, swap in a generated SVG placeholder
+   (gradient + clapperboard) so no broken "?" icon is ever shown. */
+function makeFallback(label){
+  var txt = esc(String(label || 'Bedford Falls').toUpperCase().slice(0, 30));
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="270">'
+    + '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+    + '<stop offset="0" stop-color="#22335A"/><stop offset="1" stop-color="#101A2E"/></linearGradient></defs>'
+    + '<rect width="480" height="270" fill="url(#g)"/>'
+    + '<circle cx="240" cy="118" r="46" fill="none" stroke="#E0A94E" stroke-width="3"/>'
+    + '<text x="240" y="134" text-anchor="middle" font-family="monospace" font-size="36" fill="#E0A94E">\uD83C\uDF9E</text>'
+    + '<text x="240" y="212" text-anchor="middle" font-family="monospace" font-size="13" letter-spacing="3" fill="#F5EBD8">' + txt + '</text>'
+    + '</svg>';
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+/* Image "error" events do not bubble, so listen in the capture phase. */
+document.addEventListener('error', function(e){
+  var t = e.target;
+  if (t && t.tagName === 'IMG' && !t.dataset.fbk){
+    t.dataset.fbk = '1';
+    t.src = makeFallback(t.alt || 'Bedford Falls');
+  }
+}, true);
+
+/* ===== Scenes data ===== */
 var SCENES = [
   { id:'build', num:1, title:'Build the Set', char:'FRANK CAPRA — THE DIRECTOR', charShort:'FC', color:'#E0A94E',
     slide: slide(2), tag:'FILL THE BLANKS',
@@ -1125,6 +1150,7 @@ GAMES.reel = { mount: function(root){
     answered = true;
     stopTimer();
     var ok = val === items[idx].real;
+    var btn = val ? realB : delB;
     realB.disabled = true; delB.disabled = true;
     if (ok){
       streak++;
@@ -1132,11 +1158,11 @@ GAMES.reel = { mount: function(root){
       var pts = Math.round((80 + 40 * frac) * (1 + 0.2 * Math.min(streak - 1, 5)));
       score += pts;
       SFX.correct();
-      popFloat(answered ? realB : realB, '+' + pts);
+      popFloat(btn, '+' + pts);
     } else {
       miss++; streak = 0;
       score = Math.max(0, score - 25);
-      SFX.wrong(); popFloat(realB, '−25', 'minus');
+      SFX.wrong(); popFloat(btn, '−25', 'minus');
     }
     setChips({ score:score, streak:streak, miss:miss });
     finishCard(ok);
@@ -1292,6 +1318,9 @@ GAMES.match = { mount: function(root){
     foundEl.textContent = 'PAIRS ' + found + '/6';
     attEl.textContent = 'ATTEMPTS ' + attempts;
   }
+  function clearShakes(){
+    $$('.mitem.shake', box).forEach(function(b){ b.classList.remove('shake'); });
+  }
   box.addEventListener('click', function(e){
     var el = e.target.closest('.mitem');
     if (!el || el.disabled) return;
@@ -1325,21 +1354,15 @@ GAMES.match = { mount: function(root){
     } else {
       miss++; streak = 0;
       score = Math.max(0, score - 25);
-      attemptsEl_shake(el);
+      el.classList.add('shake');
+      if (selW) selW.classList.add('shake');
+      later(clearShakes, 500);
       SFX.wrong(); popFloat(el, '−25', 'minus');
       selW.classList.remove('sel'); selW = null;
       setChips({ score:score, streak:streak, miss:miss });
       updBar();
     }
   });
-  function attemptsEl_shake(el){
-    el.classList.add('shake');
-    if (selW) selW.classList.add('shake');
-    later(function(){
-      el.classList.remove('shake');
-      $$('.mitem.shake', box).forEach(function(b){ b.classList.remove('shake'); });
-    }, 500);
-  }
   updBar();
 }};
 
