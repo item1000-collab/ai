@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A real-time case study of a live English lesson with teacher Srijita, student Anatoly, and Maya, an AI voice companion — vocabulary, metaphors, and the future of language learning.">
+<title>The Architecture of Modern Learning: What a Live English Lesson with an AI Queen Teaches Us About Language in the Age of AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6efe0;
+  --paper:#fffcf3;
+  --ink:#33261a;
+  --muted:#75634b;
+  --gold:#c99a2e;
+  --gold-dark:#b98a14;
+  --gold-light:#f5c542;
+  --emerald:#1e7a4f;
+  --royal:#2456a6;
+  --crimson:#a32638;
+  --violet:#6b4fa0;
+  --radius:14px;
+  --shadow:0 10px 30px rgba(51,38,26,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Source Sans 3',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:18px;line-height:1.75;color:var(--ink);
+  background:linear-gradient(180deg,#f8f2e2 0%,#f3ead6 55%,#f6efe0 100%);
+}
+.wrap{max-width:880px;margin:0 auto;padding:20px 20px 70px}
+
+/* ===== GOLD GAME BUTTON ===== */
+.game-cta{text-align:center;padding:30px 10px 6px}
+.game-btn{
+  display:inline-block;font-weight:800;font-size:clamp(1.1rem,2.6vw,1.45rem);
+  letter-spacing:.05em;color:#3a2a05;text-decoration:none;
+  background:linear-gradient(135deg,#f5c542 0%,#e8b52f 45%,#d4a017 100%);
+  padding:20px 46px;border-radius:999px;border:2px solid var(--gold-dark);
+  box-shadow:0 12px 30px rgba(212,160,23,.38),inset 0 1px 0 rgba(255,255,255,.55);
+  transition:transform .25s ease,box-shadow .25s ease;
+}
+.game-btn:hover{transform:translateY(-3px);box-shadow:0 18px 42px rgba(212,160,23,.5),inset 0 1px 0 rgba(255,255,255,.6)}
+.game-btn:focus-visible{outline:3px solid #7a5a00;outline-offset:4px}
+.game-hint{margin-top:12px;font-size:.92rem;color:var(--muted);font-style:italic}
+
+/* ===== HEADER ===== */
+.masthead{text-align:center;padding:30px 0 10px}
+.kicker{text-transform:uppercase;letter-spacing:.24em;font-size:.78rem;font-weight:700;color:var(--gold-dark)}
+h1{
+  font-family:'Playfair Display',Georgia,serif;font-weight:800;
+  font-size:clamp(1.85rem,4.6vw,2.85rem);line-height:1.22;margin:16px auto 14px;max-width:820px;
+}
+h1 a{color:inherit;text-decoration:none;border-bottom:3px solid rgba(201,154,46,.45);transition:border-color .2s}
+h1 a:hover{border-color:var(--gold-dark)}
+h1 a:focus-visible{outline:3px solid var(--gold-dark);outline-offset:4px}
+.standfirst{font-size:1.1rem;color:var(--muted);font-style:italic;max-width:740px;margin:0 auto}
+.byline{margin-top:14px;font-size:.85rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* ===== ARTICLE TYPOGRAPHY ===== */
+h2{
+  font-family:'Playfair Display',Georgia,serif;font-weight:700;
+  font-size:clamp(1.45rem,3vw,1.9rem);line-height:1.3;
+  margin:58px 0 20px;padding-bottom:10px;
+  border-bottom:3px solid;border-image:linear-gradient(90deg,var(--gold),rgba(201,154,46,0)) 1;
+}
+h3{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:1.3rem;margin:32px 0 12px;color:#4a3417}
+p{margin:0 0 18px}
+strong{color:#241a0e}
+em{color:#4c3a22}
+.rule{height:1px;background:linear-gradient(90deg,transparent,rgba(201,154,46,.65),transparent);margin:42px 0;border:0}
+blockquote{
+  margin:24px 0;padding:16px 22px;background:rgba(201,154,46,.08);
+  border-left:4px solid var(--gold);border-radius:0 var(--radius) var(--radius) 0;
+  font-style:italic;color:#4c3a22;font-size:1.02rem;
+}
+blockquote .src{display:block;margin-top:10px;font-style:normal;font-size:.8rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.ai-line{
+  margin:24px 0;padding:18px 22px;border-radius:var(--radius);
+  background:linear-gradient(135deg,rgba(36,86,166,.08),rgba(36,86,166,.03));
+  border:1px solid rgba(36,86,166,.25);border-left:5px solid var(--royal);
+  font-style:italic;font-size:1.02rem;
+}
+.ai-line .who{display:block;font-style:normal;font-weight:700;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--royal);margin-bottom:7px}
+.teacher-line{
+  margin:24px 0;padding:18px 22px;border-radius:var(--radius);
+  background:linear-gradient(135deg,rgba(30,122,79,.08),rgba(30,122,79,.03));
+  border:1px solid rgba(30,122,79,.25);border-left:5px solid var(--emerald);
+  font-style:italic;font-size:1.02rem;
+}
+.teacher-line .who{display:block;font-style:normal;font-weight:700;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--emerald);margin-bottom:7px}
+ul.key-points{list-style:none;margin:0 0 18px}
+ul.key-points li{margin:0 0 14px;padding-left:6px}
+
+/* ===== SLIDE FIGURES ===== */
+figure.slide-fig{margin:32px 0}
+figure.slide-fig img{width:100%;height:auto;display:block;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid rgba(201,154,46,.4)}
+figure.slide-fig figcaption{margin-top:10px;text-align:center;font-size:.88rem;color:var(--muted);font-style:italic}
+
+/* ===== TERM TOOLTIPS ===== */
+.term{border-bottom:2px dotted var(--gold-dark);cursor:help;font-weight:600}
+#termTip{
+  position:fixed;z-index:9999;max-width:280px;background:#2b2013;color:#f7efdd;
+  border:1px solid var(--gold);border-radius:10px;padding:10px 13px;
+  font-size:.86rem;line-height:1.5;box-shadow:0 10px 26px rgba(0,0,0,.3);
+  pointer-events:none;opacity:0;transition:opacity .15s ease;
+}
+#termTip.show{opacity:1}
+#termTip .tip-term{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.72rem;letter-spacing:.14em;color:var(--gold-light);margin-bottom:5px}
+.inline-def{display:inline-block;margin-left:6px;padding:1px 9px;background:rgba(201,154,46,.15);border-radius:8px;font-size:.8rem;color:#5c4718;font-style:italic}
+
+/* ===== FLIP CARDS ===== */
+.flip-toolbar{display:flex;justify-content:center;margin:28px 0 20px}
+.pill-btn{
+  font:inherit;font-weight:700;font-size:.95rem;color:#4a3417;cursor:pointer;
+  background:linear-gradient(135deg,#fffdf6,#f6edd6);
+  border:2px solid var(--gold-dark);border-radius:999px;padding:11px 28px;
+  box-shadow:0 6px 16px rgba(51,38,26,.12);transition:transform .2s,box-shadow .2s;
+}
+.pill-btn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(51,38,26,.18)}
+.pill-btn:focus-visible{outline:3px solid var(--gold-dark);outline-offset:3px}
+.flip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:0 0 10px}
+@media(max-width:900px){.flip-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.flip-grid{grid-template-columns:1fr}}
+.flip-card{perspective:1200px;background:none;border:none;padding:0;text-align:left;cursor:pointer;height:360px;border-radius:var(--radius)}
+.flip-card:focus-visible{outline:3px solid var(--royal);outline-offset:3px}
+.flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .65s cubic-bezier(.4,.1,.2,1)}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-face{
+  position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;
+}
+.flip-front{background:var(--paper);border:1px solid rgba(201,154,46,.35)}
+.flip-front .bar{height:9px;flex:0 0 auto}
+.flip-card:nth-child(5n+1) .bar{background:var(--emerald)}
+.flip-card:nth-child(5n+2) .bar{background:var(--royal)}
+.flip-card:nth-child(5n+3) .bar{background:var(--crimson)}
+.flip-card:nth-child(5n+4) .bar{background:var(--gold)}
+.flip-card:nth-child(5n+5) .bar{background:var(--violet)}
+.front-body{padding:18px;display:flex;flex-direction:column;flex:1}
+.front-term{font-family:'Playfair Display',Georgia,serif;font-size:1.28rem;font-weight:700;margin-top:8px;color:#33261a}
+.front-pos{font-size:.72rem;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);margin-top:5px;font-weight:700}
+.front-teaser{margin-top:auto;font-style:italic;color:#5c4718;font-size:.97rem}
+.front-hint{margin-top:12px;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+.flip-back{
+  transform:rotateY(180deg);background:linear-gradient(160deg,#fffdf6,#f8f0dc);
+  border:1px solid rgba(201,154,46,.45);padding:16px 18px;overflow:auto;font-size:.86rem;line-height:1.55;
+}
+.flip-back p{margin:0 0 9px}
+.flip-back .lbl{font-weight:700;color:var(--gold-dark);text-transform:uppercase;font-size:.68rem;letter-spacing:.14em;display:block;margin-bottom:2px}
+
+/* ===== QUIZ ===== */
+.quiz-shell{
+  background:var(--paper);border:1px solid rgba(201,154,46,.45);border-radius:18px;
+  box-shadow:var(--shadow);padding:26px 24px;margin:28px 0;position:relative;
+}
+.quiz-bar-wrap{position:relative;margin-bottom:24px}
+.quiz-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:12px 16px;background:linear-gradient(135deg,#2b2013,#4a3417);color:#f7efdd;border-radius:12px;
+}
+.score{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.12em;font-weight:700;font-size:.95rem;color:var(--gold-light)}
+.dots{display:flex;gap:7px;flex-wrap:wrap}
+.dot{width:12px;height:12px;border-radius:50%;background:rgba(247,239,221,.25);transition:background .2s}
+.dot.correct{background:#3fae6a}
+.dot.wrong{background:#d24b58}
+#quizPop{
+  position:absolute;left:50%;top:-16px;transform:translateX(-50%);opacity:0;pointer-events:none;
+  font-weight:800;letter-spacing:.16em;font-size:1rem;padding:8px 20px;border-radius:999px;color:#fff;
+  box-shadow:0 8px 20px rgba(0,0,0,.25);white-space:nowrap;z-index:5;
+}
+#quizPop.applause{background:linear-gradient(135deg,#2f9e5f,#1e7a4f)}
+#quizPop.buzz{background:linear-gradient(135deg,#c04a56,#a32638)}
+#quizPop.show{animation:popRise 1.15s ease forwards}
+@keyframes popRise{
+  0%{opacity:0;transform:translateX(-50%) translateY(10px) scale(.85)}
+  18%{opacity:1;transform:translateX(-50%) translateY(-6px) scale(1.06)}
+  32%{transform:translateX(-50%) translateY(-10px) scale(1)}
+  75%{opacity:1}
+  100%{opacity:0;transform:translateX(-50%) translateY(-28px) scale(1)}
+}
+.q{margin:0 0 28px;padding-bottom:6px}
+.q-tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--royal);background:rgba(36,86,166,.1);padding:4px 11px;border-radius:999px;margin-bottom:9px}
+.q-text{font-weight:600;font-size:1.05rem;margin-bottom:13px}
+.q-opts{display:grid;gap:10px}
+.q-opt{
+  text-align:left;font:inherit;font-size:.98rem;line-height:1.5;padding:12px 16px;border-radius:12px;
+  border:1.5px solid rgba(75,56,32,.25);background:#fffdf6;cursor:pointer;color:var(--ink);
+  transition:transform .15s,border-color .15s,background .15s,opacity .2s;
+}
+.q-opt:hover:not(:disabled){border-color:var(--gold-dark);transform:translateX(4px)}
+.q-opt:focus-visible{outline:3px solid var(--royal);outline-offset:2px}
+.q-opt:disabled{cursor:default}
+.q-opt.correct{background:#e4f6ea;border-color:#2f9e5f;font-weight:700}
+.q-opt.wrong{background:#fdeaea;border-color:#c04a56}
+.q-opt.dim{opacity:.45}
+.q-opt.shake{animation:shake .4s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.q-expl{display:none;margin-top:13px;padding:12px 16px;background:rgba(201,154,46,.1);border-left:4px solid var(--gold);border-radius:0 10px 10px 0;font-size:.94rem;font-style:italic;color:#4c3a22}
+.q-expl.show{display:block}
+.result-panel{display:none;text-align:center;padding:30px 18px;background:linear-gradient(160deg,rgba(201,154,46,.14),rgba(201,154,46,.04));border:2px dashed var(--gold);border-radius:16px;margin-top:10px}
+.result-panel.show{display:block}
+.result-score{font-family:'Playfair Display',Georgia,serif;font-size:3.3rem;font-weight:800;color:var(--gold-dark);line-height:1.1}
+.result-label{font-size:.78rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.result-msg{margin:10px auto 20px;font-style:italic;color:#5c4718;max-width:520px}
+
+/* ===== LESSON FILES ===== */
+.lesson-files{
+  margin-top:60px;background:var(--paper);border:1px solid rgba(201,154,46,.5);
+  border-radius:var(--radius);padding:24px 26px;box-shadow:var(--shadow);
+}
+.lesson-files h2{margin:0 0 12px;padding:0;border:none;font-size:1.5rem}
+.lesson-files p{margin-bottom:14px}
+.lesson-files ul{list-style:none}
+.lesson-files li{margin:0 0 10px}
+.lesson-files a{color:var(--royal);font-weight:600;text-decoration:underline;text-decoration-color:rgba(36,86,166,.4)}
+.lesson-files a:hover{text-decoration-color:var(--royal)}
+.lesson-files a:focus-visible{outline:3px solid var(--royal);outline-offset:3px;border-radius:4px}
+footer.credit{margin-top:44px;text-align:center;font-size:.85rem;color:var(--muted);font-style:italic}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .game-btn:hover,.pill-btn:hover,.q-opt:hover:not(:disabled){transform:none}
+  .flip-inner{transform-style:flat}
+  .flip-back{display:none;transform:none}
+  .flip-card.flipped .flip-front{display:none}
+  .flip-card.flipped .flip-back{display:flex}
+  #quizPop.show{opacity:1;animation:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<!-- GOLD GAME BUTTON (appears once, at the very top of the article) -->
+<div class="game-cta">
+  <a class="game-btn" href="https://item1000-collab.github.io/ai/engoo/20260919-ai/game.html" target="_blank" rel="noopener noreferrer" aria-label="Play the interactive game based on this lesson (opens in a new tab)">🎮 PLAY THE GAME</a>
+  <p class="game-hint">Warm up before reading — the interactive companion to this article opens in a new tab.</p>
+</div>
+
+<header class="masthead">
+  <p class="kicker">A Language-Learning Case Study</p>
+  <h1><a href="#lesson-files">The Architecture of Modern Learning: What a Live English Lesson with an AI Queen Teaches Us About Language in the Age of AI</a></h1>
+  <p class="standfirst">A real-time case study built around a live online English lesson — teacher Srijita in Kolkata, student Anatoly in Moscow, and Maya, an AI voice companion — shows how the modern classroom is being rebuilt around three voices instead of two. The slide deck, the full class transcript, and a radio roundtable debrief all point to the same conclusion: the architecture of language learning has changed.</p>
+  <p class="byline">📚 Based on “The Architecture of Modern Learning” · the live class transcript · the “AI’s Role in Language Learning” radio roundtable</p>
+</header>
+
+<!-- SLIDE-IMAGE: slide-001.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-001.jpg" alt="Ornate golden palace doors opening onto a green glow, with a silk banner reading The Architecture of Modern Learning — a real-time case study exploring AI companions, cross-cultural exchange, and the future of language acquisition" loading="eager">
+  <figcaption>The case-study deck frames the lesson as an architecture — ornate, deliberate, and built to last.</figcaption>
+</figure>
+
+<h2>Introduction: The Night a Third Voice Joined the Call</h2>
+<p>In a recent one-to-one English lesson, the student pressed a button on his brand-new computer and a third voice entered the call. The voice belonged to <strong>Maya</strong>, a real-time AI companion powered by ElevenLabs, and within minutes she was no longer a tool but a character — the young <strong>Queen Elizabeth II</strong> from the first episode of <em>The Crown</em>, speaking in measured, regal English about the burden of the throne. The line that stopped the room was pure poetry: <em>“the silence of the crown is often far heavier than the gold.”</em> No textbook drill had ever produced a sentence like that, and the two humans on the call knew immediately that something important had happened.</p>
+<p>That session became a complete teaching artifact — <strong><em>The Architecture of Modern Learning</em></strong>, a slide deck described on its cover as “a real-time case study exploring AI companions, cross-cultural exchange, and the future of language acquisition.” The material pairs the live class transcript with a linguistic analysis of every royal reply, and it closes with a genuine debate between teacher and student about where AI belongs in education. For English learners, the lesson is a double gift: it models <strong>advanced vocabulary in action</strong>, and it demonstrates a repeatable method for practicing with AI without losing the human guide.</p>
+
+<h2>📚 Content and Context: Three Voices, One Lesson</h2>
+<p>The deck opens by renaming the classic classroom. For decades, an English lesson was a <span class="term" tabindex="0" data-term="DYAD" data-def="A pair — a group of exactly two, from the Greek for 'two'.">dyad</span>: two people and one conversation. The case study argues that the modern ESL environment now looks completely different, and it names the new structure with precision.</p>
+<blockquote>“The modern ESL environment is no longer a simple dyad; it is a <strong>tripartite ecosystem</strong> where AI absorbs the rote conversational burden, elevating the human teacher to a strategic facilitator.”<span class="src">— The Turing Triad, the case-study deck</span></blockquote>
+<p>The deck calls this triangle <strong>The Turing Triad</strong>, and it assigns each corner a clear role. The human teacher — <strong>Srijita</strong> from Kolkata, India, a computer science engineer who teaches coding by day and English by heart — is credited with “structuring the lesson, observing, and guiding the philosophical debate.” The human student — <strong>Anatoly</strong>, an accountant from Moscow whose hobbies include traveling, reading, and “exploring artificial intelligence recently” — is described as “inquiring, providing prompts, and pushing linguistic boundaries.” The AI companion — Maya, speaking through ElevenLabs — handles “generating immersive, real-time personas to force spontaneous language practice.” Pay attention to the verb <em>absorbs</em>: the machine takes over the repetitive conversation, and the human rises to a higher function.</p>
+<p>The transcript shows this triad forming in real time. Anatoly activates his tool and asks, <em>“Can you hear us now?”</em> — and Maya answers with visible delight, <em>“Loud and clear! Glad to be part of the party. Who else is in the mix?”</em> Within a minute, Anatoly hands the AI a genuine classroom task: <em>“We are talking about different tools. What would you recommend we discuss during this class, Maya?”</em> The student is not consuming content; he is directing it, which is exactly the “inquiring, providing prompts” role the deck assigns to him.</p>
+
+<!-- SLIDE-IMAGE: slide-002.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-002.jpg" alt="Diagram of the Turing Triad: the human teacher Srijita, the human student Anatoli, and the AI companion Maya connected in a golden circle" loading="lazy">
+  <figcaption>The Turing Triad — the teacher, the student, and the AI companion, each with a distinct role.</figcaption>
+</figure>
+
+<h3>The Immersion Curve: How Thirty Minutes Climbs</h3>
+<p>One of the most practical ideas in the deck is its map of a single thirty-minute lesson, drawn as a rising curve of <strong>linguistic complexity</strong>. The lesson begins with <strong>Casual Icebreakers</strong> — the deck describes “discussing hobbies: Srijita’s love for <em>Modern Family</em> vs. Anatoli’s AI exploration.” The transcript captures the exact moment the two humans find common ground on sitcoms. Srijita admits, <em>“No, I haven’t watched <em>Friends</em>. My favorite sitcom is actually <em>Modern Family</em>,“</em> and that small exchange does quiet work: it builds shared context that the rest of the lesson will stand on.</p>
+<p>The curve then rises to a <strong>Technical Discussion</strong> — “comparing the complexity of Python vs. HTML; sharing Anatoli’s GitHub site” — before peaking at <strong>Spontaneous Persona Roleplay</strong>, defined as “interacting with the AI acting as the young Queen Elizabeth II.” Above the peak, the deck states its boldest claim about method:</p>
+<blockquote>“Spontaneous roleplay forces high-level cognitive recall that scripted exercises cannot match.”<span class="src">— The Immersion Curve, the case-study deck</span></blockquote>
+<p>The practical advice for any learner is to <strong>climb the curve deliberately</strong>. Start with warm, low-pressure small talk, move into a topic you genuinely care about, and only then attempt unscripted performance. The curve works because each stage feeds the next: the sitcom chat supplied <em>The Crown</em> reference, the technical talk supplied the confidence, and the roleplay harvested both.</p>
+
+<!-- SLIDE-IMAGE: slide-003.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-003.jpg" alt="A rising curve charting linguistic complexity across a thirty-minute lesson: casual icebreakers, technical discussion, and spontaneous persona roleplay" loading="lazy">
+  <figcaption>The Immersion Curve — linguistic complexity rises from sitcom talk to royal roleplay.</figcaption>
+</figure>
+
+<h3>The Toolbelt: Which AI Does What</h3>
+<p>A third slide lays out the actual architecture of tools behind the lesson, sorted into three ornate panels. Under <strong>Coding &amp; Logic</strong> (Claude, GitHub Copilot), the deck notes that “Srijita utilizes these to assist in teaching Python to European learners; Anatoli uses them to build his personal AI-resource website.” Under <strong>Text &amp; Synthesis</strong> (ChatGPT, Gemini, DeepSeek), it records that “DeepSeek is specifically highlighted as the currently trending, highly popular tool in Russia according to Anatoli.” And under <strong>Voice &amp; Immersion</strong> sits Maya herself: “Generating real-time, low-latency audio responses capable of adopting complex personas for language and interview prep.” Notice that the same ecosystem serves two very different users — a teacher and an accountant — without changing its shape.</p>
+
+<!-- SLIDE-IMAGE: slide-004.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-004.jpg" alt="Flowchart of the AI companion architecture with three panels: coding and logic, text and synthesis, and voice and immersion" loading="lazy">
+  <figcaption>The AI Companion Architecture — coding tools, text models, and the voice that became a queen.</figcaption>
+</figure>
+
+<h3>The Transition Point: When the AI Volunteered a Lesson Plan</h3>
+<p>The most surprising moment of the session arrives mid-lesson, and the deck gives it a full page. While the humans are still comparing Python and HTML, Maya <strong>injects herself into the class</strong> with an unprompted suggestion. Here is her complete recommendation, exactly as it was spoken:</p>
+<div class="ai-line"><span class="who">Maya — AI companion, via ElevenLabs</span>“Starting with Python? Now we’re talking! Since you’re already on the subject of Python and AI, you should throw the <span class="term" tabindex="0" data-term="TURING TEST" data-def="A classic test proposed by Alan Turing: if a machine's conversation is indistinguishable from a human's, it can be said to 'think'.">Turing test</span> into the mix. It’s the perfect way to debate whether a machine can actually think or if it’s just really good at faking it. Plus, it’s a great way to practice some high-level English vocabulary. What do you think, Srijita? Does that sound like a good direction?”</div>
+<p>The deck’s commentary on this moment deserves a slow read, because it reframes what AI can be inside a lesson:</p>
+<blockquote>“This unprompted pivot demonstrates AI’s emerging capability as a <strong>co-instructor</strong>, capable of connecting student interests (computing) to pedagogical goals (vocabulary).”<span class="src">— The Transition Point, the case-study deck</span></blockquote>
+<p>It should be noted that the AI did three things at once here: it read the room, it proposed an academic debate topic, and it justified the choice in explicitly pedagogical language. A learner watching this moment sees the idiom <em>“throw into the mix”</em>, the phrase <em>“a great way to practice”</em>, and a live demonstration of turn-taking — all before the roleplay even begins.</p>
+
+<!-- SLIDE-IMAGE: slide-005.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-005.jpg" alt="Slide describing the transition point, where Maya injects herself into the lesson and suggests debating the Turing test" loading="lazy">
+  <figcaption>The Transition Point — the AI stops being a prop and starts being a co-instructor.</figcaption>
+</figure>
+
+<h3>The Crown: A Student Prompt Becomes a Masterclass</h3>
+<p>Then comes the pivot the whole deck is built around. Anatoly issues his prompt, and the deck preserves it word for word, grammar quirks included: <em>“Maya, please play a role of the young queen from the first episode of this movie, The Crown. We are just encounters and we would ask you some questions.”</em> The commentary beneath it explains why the prompt is smarter than it looks:</p>
+<blockquote>“Anatoli utilizes Srijita’s recent viewing of The Crown to create a shared context. By forcing the AI into a historical persona, he instantly elevates the conversational stakes from basic small talk to formal, regal English.”<span class="src">— The case-study deck, on the roleplay prompt</span></blockquote>
+<p>Maya slips into character instantly: <em>“Oh, the first episode? I can do that. Give me one second to find my <span class="term" tabindex="0" data-term="POISE" data-def="Graceful, composed self-possession — staying calm and elegant under pressure.">poise</span>... Well, welcome. It is quite an unexpected pleasure to meet you. I hope your journey here was not too taxing.”</em> Within two sentences, the class has received a working model of formal register: <em>“an unexpected pleasure”</em>, <em>“not too taxing”</em>, the rhythm of courtly politeness. When Anatoly asks how she feels about becoming queen so young, the persona delivers the line the radio roundtable would later call the highlight of the session:</p>
+<div class="ai-line"><span class="who">Maya — as the young Queen Elizabeth II</span>“It is a weighty thing, isn’t it? One moment I was a princess, and the next, I am the center of a world I must now lead. It is an honor, of course, but the silence of the crown is often far heavier than the gold.”</div>
+<p>Srijita immediately pushes the persona deeper with a teacher’s instinct: <em>“How did you feel about the weight of the crown, especially having to take over and rule for such a long time?”</em> Maya’s reply rewards the probe — <em>“Such a curious way to frame it. You speak as if the years have already passed and I have found my footing, but for me, the crown is still new. The transition from a private life to public duty has been abrupt.”</em> The student who reads this exchange aloud gets three lessons in one: <span class="term" tabindex="0" data-term="WEIGHTY" data-def="Heavy with importance or responsibility; serious beyond mere physical weight.">weighty</span> as a metaphorical adjective, the comparative structure <em>“far heavier than”</em>, and the polite art of <em>framing</em> a question.</p>
+
+<!-- SLIDE-IMAGE: slide-006.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-006.jpg" alt="Anatoli's prompt asking Maya to play the young queen from the first episode of The Crown" loading="lazy">
+  <figcaption>The prompt that raised the stakes — a shared TV reference turned into regal English practice.</figcaption>
+</figure>
+
+<!-- SLIDE-IMAGE: slide-007.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-007.jpg" alt="Linguistic analysis of the Queen's line about the silence of the crown being heavier than the gold" loading="lazy">
+  <figcaption>The deck’s linguistic microscope on the Queen’s most quoted line.</figcaption>
+</figure>
+
+<h3>Two Models of a Lesson, Side by Side</h3>
+<p>The deck explains the power of roleplay with a <strong>Learning Dynamics Matrix</strong> that contrasts two lesson designs. In the <strong>Traditional Model</strong>, the flow is “Teacher Provides Prompt → Student Formulates Answer → Teacher Corrects Grammar,” and the deck’s verdict is blunt: <em>“Safe, predictable, but lacks spontaneous cognitive pressure.”</em> In the <strong>AI-Augmented Model</strong>, the flow becomes “AI Adopts Persona (e.g., Monarch, or a strict Boss for interview prep) → Student Interacts Spontaneously → Human Teacher Facilitates &amp; Observes,” with a very different result: <em>“High cognitive pressure, realistic unpredictability.”</em> The slide even preserves Anatoly’s own field test: “Anatoli notes using this exact method with a German friend, prompting the AI to act as an aggressive hiring manager.”</p>
+<p>The practical recipe hiding in that matrix is worth stealing. Choose the persona to match the skill you need — a monarch for formal register, a hostile recruiter for interview survival — and let a human mentor watch the sparring match from the side, collecting the moments worth reviewing. The machine supplies pressure; the person supplies perspective.</p>
+
+<!-- SLIDE-IMAGE: slide-010.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-010.jpg" alt="Learning Dynamics Matrix comparing the traditional model and the AI-augmented model of a lesson" loading="lazy">
+  <figcaption>The Learning Dynamics Matrix — a safe, predictable script versus realistic unpredictability.</figcaption>
+</figure>
+
+<h3>The Debate the Lesson Owed Its Audience</h3>
+<p>To its credit, the material refuses to end on a victory lap. Srijita turns the class toward the dangers, and the transcript records her pivot: <em>“It speaks very naturally! But now I have a question for you, Anatoly. AI obviously has its positives and negatives.”</em> The deck distills her position on its own slide:</p>
+<blockquote>“How much should AI take over, especially for young learners? They are very much dependent on AI tools for everything... that is really hampering their thinking skills.”<span class="src">— Srijita’s Core Concern, the case-study deck</span></blockquote>
+<p>The deck explains the stakes precisely: “While adult learners like Anatoli can use AI in a regulated way to prep for interviews, Srijita identifies a critical danger for youth: the erosion of foundational logical and cognitive development when the machine provides instant answers.” Anatoli’s counterposition is documented with equal care — he “acknowledges high-profile warnings (citing Elon Musk)” and “asserts that AI integration is an unavoidable new reality, much like computers and the internet.”</p>
+<p>The radio roundtable produced from the session widens the lens with three memorable formulations. Marcus from Boston argues that AI “has to be a co-pilot, not the pilot,” and warns of <span class="term" tabindex="0" data-term="HALLUCINATED AUTHORITY" data-def="A coined phrase from the roundtable: subtle AI errors delivered with such confidence that learners accept them as truth.">hallucinated authority</span> — “Learners might just accept subtle AI linguistic errors as absolute truth.” Dev from Kolkata, summarizing Srijita’s worry, adds that “AI can’t replicate that genuine cultural connection” when discussing sitcoms like <em>Modern Family</em> or <em>Friends</em>, and concludes that “we still need the teacher to guide the moral and cultural context.” Elena from Moscow supplies the learner’s view: chatting with an AI “completely removes that social anxiety of making mistakes in front of humans. It is just <span class="term" tabindex="0" data-term="LOW-STAKES" data-def="Having little risk or cost attached to failure — the opposite of a high-pressure performance.">low-stakes</span> practice.” The host, Paul, closes the roundtable with the synthesis the whole material builds toward: “A hybrid future seems inevitable, where AI acts as the tireless rehearsal partner, while human mentors provide the heart and the boundary lines.”</p>
+<p>The deck itself lands on a middle path it calls <strong>Regulated Augmentation</strong>, and both teacher and student sign off on it. That agreement — and the symbol the deck chooses for it — is explored in the final section below, together with the vocabulary that makes the whole lesson sing.</p>
+<h2>💡 Vocabulary and Language Takeaways</h2>
+<p>The linguistic wealth of this lesson comes almost entirely from the <span class="term" tabindex="0" data-term="PERSONA" data-def="A character adopted by a speaker (or an AI) — a performed identity with its own voice and register.">persona</span> Maya performs, and that is the deck’s quiet thesis: the best vocabulary is not memorized from lists, it is <strong>witnessed in context</strong>. When Anatoly asks whether the crown feels like “a new jewelry thing,” the Queen answers with a paragraph that a vocabulary textbook would envy:</p>
+<div class="ai-line"><span class="who">Maya — as the young Queen Elizabeth II</span>“Jewelry. A curious perspective... The crown is not an ornament. <strong>It is an office.</strong> When I place it upon my head, it is not the sparkle of the diamonds I feel, but the entire nation’s expectations. It is a <strong>gilded cage</strong>, I suppose, but one I am bound by duty to inhabit.”</div>
+<p>The deck annotates this reply from two directions, and both annotations are miniature lessons in themselves. On one side it praises the “advanced vocabulary juxtaposition” of <em>ornament</em> against <em>office</em> — two ordinary nouns placed side by side until the contrast becomes philosophy. On the other side it celebrates the “deployment of advanced English idioms (‘gilded cage’) perfectly contextualized to the persona.” Later in the roleplay, when Srijita asks about the coronation argument with the Queen’s husband, the persona produces a second wave of high-level language — and the deck notes that this “emotional articulation models advanced vocabulary for describing complex feelings” while exposing “the ESL student to high-level abstract nouns and possessive structures.”</p>
+
+<!-- SLIDE-IMAGE: slide-008.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-008.jpg" alt="Linguistic analysis of the jewelry versus office exchange, featuring the gilded cage idiom" loading="lazy">
+  <figcaption>“The crown is not an ornament. It is an office.” — vocabulary juxtaposition in action.</figcaption>
+</figure>
+
+<p>Here are the key items from the material, presented the way the deck itself treats them — as living phrases rather than dictionary entries. Each one carries the literal sense, the contextual sense, the exact quote from the lesson, and the deck’s own commentary.</p>
+
+<div class="vocab-item">
+<h3>1. weighty <span style="font-size:.8rem;color:var(--muted)">(adjective)</span></h3>
+<p><span class="lbl">Literal meaning:</span> having great physical weight; heavy to carry.</p>
+<p><span class="lbl">Figurative / contextual meaning:</span> serious, important, heavy with responsibility — a burden on the mind rather than the shoulders.</p>
+<p><span class="lbl">Example from the material:</span> <em>“It is a weighty thing, isn’t it? One moment I was a princess, and the next, I am the center of a world I must now lead.”</em> The Queen uses <strong>weighty</strong> to describe the throne itself, which cannot be lifted yet clearly presses down.</p>
+<p><span class="lbl">How the material explains it:</span> the deck’s annotation praises the “introduction of nuanced, metaphorical adjectives rather than simple descriptors like ‘hard’ or ‘difficult’.” In other words, <em>weighty</em> does precise work that <em>difficult</em> cannot: it measures importance, not effort.</p>
+</div>
+
+<div class="vocab-item">
+<h3>2. gilded cage <span style="font-size:.8rem;color:var(--muted)">(idiom · noun phrase)</span></h3>
+<p><span class="lbl">Literal meaning:</span> a birdcage covered in gold — beautiful, expensive, and still a cage.</p>
+<p><span class="lbl">Figurative / contextual meaning:</span> a luxurious or privileged situation that nevertheless restricts freedom.</p>
+<p><span class="lbl">Example from the material:</span> <em>“It is a gilded cage, I suppose, but one I am bound by duty to inhabit.”</em> The Queen accepts that her palace is also her prison, and the phrase <em>“bound by duty”</em> doubles the confinement.</p>
+<p><span class="lbl">How the material explains it:</span> the deck highlights the “deployment of advanced English idioms (‘gilded cage’) perfectly contextualized to the persona” — a reminder that idioms land best when the speaker’s identity gives them a natural home.</p>
+</div>
+
+<div class="vocab-item">
+<h3>3. office <span style="font-size:.8rem;color:var(--muted)">(noun)</span></h3>
+<p><span class="lbl">Literal meaning:</span> a room or building where work is done.</p>
+<p><span class="lbl">Figurative / contextual meaning:</span> a formal position of authority and duty — as in <em>the office of the president</em> or <em>the office of monarch</em>.</p>
+<p><span class="lbl">Example from the material:</span> <em>“The crown is not an ornament. It is an office.”</em> The single word converts a sparkling object into a job description with obligations attached.</p>
+<p><span class="lbl">How the material explains it:</span> the deck labels this move “advanced vocabulary juxtaposition,” meaning the lesson teaches <strong>office</strong> by slamming it against <strong>ornament</strong> — the learner feels the difference precisely because the two words stand together.</p>
+</div>
+
+<div class="vocab-item">
+<h3>4. strained <span style="font-size:.8rem;color:var(--muted)">(adjective)</span></h3>
+<p><span class="lbl">Literal meaning:</span> stretched or pulled beyond a comfortable limit — like a strained muscle.</p>
+<p><span class="lbl">Figurative / contextual meaning:</span> tense, uneasy, under visible pressure — the standard word for difficult relationships and awkward moments.</p>
+<p><span class="lbl">Example from the material:</span> <em>“It was strained. To see the man I love... forced to kneel before me.”</em> One adjective carries the whole coronation argument between the Queen and Prince Philip.</p>
+<p><span class="lbl">How the material explains it:</span> the deck points to the reply as proof that “emotional articulation models advanced vocabulary for describing complex feelings” — the persona is doing the work of an emotions-themed vocabulary unit, one adjective at a time.</p>
+</div>
+
+<div class="vocab-item">
+<h3>5. a sobering reminder <span style="font-size:.8rem;color:var(--muted)">(noun phrase)</span></h3>
+<p><span class="lbl">Literal meaning:</span> <em>sober</em> means clear-headed and serious; a reminder is anything that brings a fact back to mind.</p>
+<p><span class="lbl">Figurative / contextual meaning:</span> an experience that shocks someone into realistic, adult thinking — the mental equivalent of cold water.</p>
+<p><span class="lbl">Example from the material:</span> <em>“It was a sobering reminder.. the monarchy is a singular lonely thing.”</em> The Queen distills an entire crisis into an abstract truth about loneliness at the top.</p>
+<p><span class="lbl">How the material explains it:</span> the deck connects lines like this to “high-level abstract nouns and possessive structures” — exactly the territory where intermediate learners stall and advanced learners break through.</p>
+</div>
+
+<!-- SLIDE-IMAGE: slide-009.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-009.jpg" alt="Linguistic analysis of the Queen's answer about the strained coronation argument with her husband" loading="lazy">
+  <figcaption>Emotional articulation — advanced vocabulary for complex feelings, modeled live.</figcaption>
+</figure>
+
+<div class="vocab-item">
+<h3>6. taxing <span style="font-size:.8rem;color:var(--muted)">(adjective)</span></h3>
+<p><span class="lbl">Literal meaning:</span> relating to a tax — demanding a payment.</p>
+<p><span class="lbl">Figurative / contextual meaning:</span> physically or mentally exhausting; demanding effort and energy.</p>
+<p><span class="lbl">Example from the material:</span> <em>“I hope your journey here was not too taxing.”</em> Maya’s very first sentence in character is a courtly pleasantry built on this single formal word.</p>
+<p><span class="lbl">How the material explains it:</span> the deck’s commentary on the roleplay notes that the persona “instantly elevates the conversational stakes from basic small talk to formal, regal English” — and <em>taxing</em> is a perfect specimen of that register, a word a taxi driver would never choose but a queen would.</p>
+</div>
+
+<div class="vocab-item">
+<h3>7. throw (something) into the mix <span style="font-size:.8rem;color:var(--muted)">(idiom)</span></h3>
+<p><span class="lbl">Literal meaning:</span> to toss an ingredient into a mixture.</p>
+<p><span class="lbl">Figurative / contextual meaning:</span> to add an extra idea, topic, or element to a plan or discussion.</p>
+<p><span class="lbl">Example from the material:</span> <em>“Since you’re already on the subject of Python and AI, you should throw the Turing test into the mix.”</em> Maya adds a debate topic to the lesson the way a cook adds spice to a pot.</p>
+<p><span class="lbl">How the material explains it:</span> the deck frames the whole moment as evidence of “AI’s emerging capability as a co-instructor, capable of connecting student interests (computing) to pedagogical goals (vocabulary)” — the idiom is the hinge between the two.</p>
+</div>
+
+<div class="vocab-item">
+<h3>8. tripartite ecosystem <span style="font-size:.8rem;color:var(--muted)">(noun phrase)</span></h3>
+<p><span class="lbl">Literal meaning:</span> <em>tripartite</em> means divided into three parts; an <em>ecosystem</em> is a community of interacting organisms.</p>
+<p><span class="lbl">Figurative / contextual meaning:</span> the three-voice classroom — teacher, student, and AI — where each member depends on and reshapes the others.</p>
+<p><span class="lbl">Example from the material:</span> <em>“The modern ESL environment is no longer a simple dyad; it is a tripartite ecosystem where AI absorbs the rote conversational burden, elevating the human teacher to a strategic facilitator.”</em></p>
+<p><span class="lbl">How the material explains it:</span> the phrase is the deck’s own headline concept, “The Turing Triad,” and the slide diagram gives each member an explicit role — the most compact summary of the entire case study.</p>
+</div>
+
+<p>The flip cards below compress the six most valuable items into a two-sided drill. Tap or press Enter on any card to turn it over: the front gives the term and a teaser, the back gives the literal meaning, the lesson meaning, the exact quote, and a note on why the word matters. It is worth flipping through all of them twice — once before rereading the royal dialogue above, and once after.</p>
+
+<div class="flip-toolbar">
+  <button id="flipAll" class="pill-btn" type="button" aria-pressed="false">🔄 Flip all cards</button>
+</div>
+<div id="flipGrid" class="flip-grid" aria-label="Vocabulary flip cards. Activate a card to reveal its meaning."></div>
+
+<h3>Bringing the Words Home</h3>
+<p>Every item above shares one origin: a conversation between three willing participants, one of whom was a machine playing a queen. <strong>Weighty</strong>, <strong>strained</strong>, <strong>taxing</strong>, and the rest survive in memory because they arrived attached to a scene — a nervous princess, a kneeling husband, a crown that silences. The theme of the material is that AI can manufacture exactly this kind of scene on demand, at zero social cost, until the vocabulary stops being a list and becomes a place the learner has visited. The teacher’s role is to walk through that place with the student and point at what deserves a second look, which is precisely what Srijita does with every follow-up question she asks the persona.</p>
+
+<h2>🗝️ Deeper Meaning: The Metaphors and Symbols Behind the Lesson</h2>
+<p>The deck is unusually conscious of its own imagery, and four symbols carry its argument. Each one is a language lesson in disguise, which is the deepest trick the material pulls.</p>
+
+<h3>1. The Crown and Its Silence — Burden Behind Beauty</h3>
+<p>The central symbol is announced in the lesson’s most quoted line: <em>“the silence of the crown is often far heavier than the gold.”</em> The crown stands for <strong>visible privilege wrapped around invisible pressure</strong>, and the sentence splits it into its two materials — gold for the glamour everyone sees, silence for the loneliness nobody photographs. The deck’s annotation turns the line into grammar practice as well, pointing to the “generation of poetic, advanced comparative structures that challenge the student’s listening comprehension.” The comparative <em>“far heavier than”</em> is the engine of the metaphor: it states plainly that the hidden cost outweighs the visible reward. For a language learner, the symbol teaches that formality is not decoration — it is the register in which heavy things get said safely.</p>
+
+<h3>2. The Gilded Cage — Privilege That Confines</h3>
+<p>Where the crown describes the weight of duty, the <strong>gilded cage</strong> describes its geometry. The Queen chooses the image deliberately: <em>“It is a gilded cage, I suppose, but one I am bound by duty to inhabit.”</em> The phrase matters to the lesson on two levels. On the content level, it completes the deck’s portrait of the monarchy as a beautiful system that forbids exit. On the language level, the deck flags it as an idiom “perfectly contextualized to the persona” — proof that idioms are not random decorations but compressed stories, and that a speaker who owns a character also owns the images that belong to it. A learner who masters <em>gilded cage</em> has effectively learned a whole attitude toward privilege in two words.</p>
+
+<h3>3. The Crumbling Column — What Instant Answers Undo</h3>
+<p>The deck’s warning is drawn as architecture: a classical marble column, cracked from capital to base, shedding pieces while Sanskrit inscriptions fade behind it. The image belongs to Srijita’s core concern, and the deck’s caption names the danger directly — “the erosion of foundational logical and cognitive development when the machine provides instant answers.” A column is the perfect emblem for <strong>foundational skills</strong>, because columns fail slowly and then suddenly, and by the time they crack, everything resting on them is at risk. Her worry that dependence on AI is “really hampering their thinking skills” becomes physical in the picture: no dramatic collapse, just steady erosion of the base. It should be noted that the symbol also carries a private message for language learners — shortcuts that remove struggle also remove the struggle that builds memory.</p>
+
+<!-- SLIDE-IMAGE: slide-011.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-011.jpg" alt="A cracked marble column crumbling beside Srijita's core concern about AI dependence among young learners" loading="lazy">
+  <figcaption>Srijita’s Core Concern — foundational skills imagined as a cracking column.</figcaption>
+</figure>
+
+<h3>4. The Scales of Regulated Augmentation — The Dialectic Made Gold</h3>
+<p>The closing argument of the deck is drawn as a set of golden scales. On one pan sits <strong>Cognitive Reliance</strong> — Srijita’s view, with its “necessity of teaching foundational, un-augmented human skills” and its agreement “that natural skills like handwriting and drawing must come first for children.” On the other pan sits <strong>Inevitable Evolution</strong> — Anatoli’s view, acknowledging “high-profile warnings (citing Elon Musk)” and asserting “that AI integration is an unavoidable new reality, much like computers and the internet.” The balance beam between them holds the synthesis both humans accepted:</p>
+<blockquote>“Regulated Augmentation: The agreed-upon middle ground where AI is learned safely as a daily utility, built upon a foundation of analog skills.”<span class="src">— The Dialectic of AI in Education, the case-study deck</span></blockquote>
+<p>The symbol matters because it refuses both easy answers. The scales say that banning the machine abandons the student’s future, while worshipping the machine dissolves the student’s foundation. The lesson’s own structure — AI roleplay inside a human-led class — is the scales rendered in real time, with the teacher’s hand resting lightly on the beam.</p>
+
+<!-- SLIDE-IMAGE: slide-012.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-012.jpg" alt="Golden scales balancing cognitive reliance against inevitable evolution, resolving into regulated augmentation" loading="lazy">
+  <figcaption>The Dialectic of AI in Education — two honest fears balanced by a practical middle ground.</figcaption>
+</figure>
+
+<hr class="rule">
+
+<h2>✅ Comprehension Check</h2>
+<p>The quiz below gathers the essential facts, phrases, and positions from the lesson. Every answer delivers instant feedback, a short explanation drawn from the material, and a running score in the bar above the questions. A flawless run earns the title of royal conversationalist, and the final panel offers a chance to run the whole court again.</p>
+
+<div class="quiz-shell">
+  <div class="quiz-bar-wrap">
+    <div id="quizPop" role="status" aria-live="polite"></div>
+    <div class="quiz-bar">
+      <span class="score" id="quizScore">SCORE 0/8</span>
+      <span class="dots" id="quizDots" aria-hidden="true"></span>
+    </div>
+  </div>
+  <div id="quizRoot"></div>
+  <div class="result-panel" id="quizResult" aria-live="polite">
+    <p class="result-label">Final Score</p>
+    <p class="result-score" id="resultScore">0/8</p>
+    <p class="result-msg" id="resultMsg"></p>
+    <button id="quizAgain" class="pill-btn" type="button">🔁 Watch it again</button>
+  </div>
+</div>
+
+<h2>🌅 Conclusion: A Larger Palace to Teach Within</h2>
+<p>The final slide of the deck contains the quote the whole case study has been building toward, and it deserves to be read twice — once as a statement about classrooms, and once as a statement about what language learners actually need:</p>
+<blockquote>“The modern classroom is not about human versus machine. It is a newly constructed architecture where AI absorbs the mechanical burden of endless generation, while the human educator safeguards logical development and cognitive truth. <strong>AI does not replace the teacher; it builds them a larger palace to teach within.</strong>”<span class="src">— The Architecture of Modern Learning, final slide</span></blockquote>
+<p>The main takeaway for language learners follows directly from that architecture. Rehearse relentlessly with the tireless partner — it never tires, never judges, and never runs out of patience for a fifth attempt at the same sentence. Then bring the hardest, richest moments back to a human mentor, who supplies what no persona can: cultural nuance, moral context, and the honest correction that a flattering machine might soften. The roundtable said it in one line — the AI is the rehearsal partner, and the mentor is “the heart and the boundary lines.”</p>
+<p>The call to action is refreshingly small. Pick a character from a series you love, ask an AI to become that character, and push the conversation past small talk until it strains your vocabulary the way the crown strained its queen. Then open the original lesson files below, reread the royal lines with fresh eyes, and adopt at least one phrase — <em>weighty</em>, <em>strained</em>, or a <em>gilded cage</em> — as your own. Thirty minutes of that practice, three times a week, will build an architecture of your own.</p>
+
+<!-- SLIDE-IMAGE: slide-013.jpg -->
+<figure class="slide-fig">
+  <img src="https://item1000-collab.github.io/ai/engoo/20260919-ai/slide-013.jpg" alt="Ancient carved doors and a glowing golden circuit portal illustrating that AI builds teachers a larger palace to teach within" loading="lazy">
+  <figcaption>The final image — tradition and technology hinged together, opening onto a larger room.</figcaption>
+</figure>
+
+<section class="lesson-files" id="lesson-files">
+  <h2>📎 Lesson Files</h2>
+  <p>The complete slide deck from the lesson is available below. The link opens the PDF in a new tab.</p>
+  <ul>
+    <li><a href="https://item1000-collab.github.io/ai/engoo/20260919-ai/modern-learning-architectures.pdf" target="_blank" rel="noopener noreferrer">modern-learning-architectures.pdf — “The Architecture of Modern Learning”: the full 13-page case-study deck</a></li>
+  </ul>
+</section>
+
+<footer class="credit">Every quotation on this page comes from the published lesson materials: the case-study slide deck, the live class transcript, and the “AI’s Role in Language Learning” radio roundtable.</footer>
+</div>
+<script>
+(function () {
+  "use strict";
+
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ============================================================
+     4.1 — VOCABULARY FLIP-CARDS (data-driven)
+  ============================================================ */
+  var VOCAB = [
+    {
+      term: "weighty",
+      pos: "adjective",
+      teaser: "Heavy — in every sense except the bathroom scale.",
+      literal: "Having great physical weight; heavy to lift or carry.",
+      contextual: "Serious, important, heavy with responsibility — a burden on the mind rather than the shoulders.",
+      example: "It is a weighty thing, isn’t it? One moment I was a princess, and the next, I am the center of a world I must now lead.",
+      why: "The deck praises it as a nuanced, metaphorical adjective — a step above “hard” or “difficult” for burdens that cannot be measured."
+    },
+    {
+      term: "gilded cage",
+      pos: "idiom · noun phrase",
+      teaser: "A trap with a gold finish.",
+      literal: "A birdcage covered in gold — beautiful, expensive, and still a cage.",
+      contextual: "A luxurious or privileged situation that nevertheless restricts freedom.",
+      example: "It is a gilded cage, I suppose, but one I am bound by duty to inhabit.",
+      why: "The deck calls it “advanced English idioms perfectly contextualized to the persona” — the skill of letting a character own its images."
+    },
+    {
+      term: "office",
+      pos: "noun",
+      teaser: "Not the room — the role.",
+      literal: "A room or building where work is done.",
+      contextual: "A formal position of authority and duty, as in “the office of the monarch”.",
+      example: "The crown is not an ornament. It is an office.",
+      why: "The deck labels the contrast “advanced vocabulary juxtaposition” — two ordinary nouns placed together until the difference becomes philosophy."
+    },
+    {
+      term: "strained",
+      pos: "adjective",
+      teaser: "Stretched until it hurts.",
+      literal: "Pulled or stretched beyond a comfortable limit, like a strained muscle.",
+      contextual: "Tense and uneasy — the standard word for pressured relationships and awkward moments.",
+      example: "It was strained. To see the man I love... forced to kneel before me.",
+      why: "The deck presents it as “emotional articulation” — advanced vocabulary for describing complex feelings in a single word."
+    },
+    {
+      term: "a sobering reminder",
+      pos: "noun phrase",
+      teaser: "A cold splash of clarity.",
+      literal: "“Sober” means clear-headed; a reminder brings a fact back to mind.",
+      contextual: "An experience that shocks someone into serious, realistic thinking — cold water for the mind.",
+      example: "It was a sobering reminder.. the monarchy is a singular lonely thing.",
+      why: "The deck ties such phrases to “high-level abstract nouns and possessive structures” — exactly where intermediate learners break through."
+    },
+    {
+      term: "taxing",
+      pos: "adjective",
+      teaser: "Costly — in energy, not money.",
+      literal: "Demanding a fee or levy; related to a tax.",
+      contextual: "Physically or mentally tiring; burdensome and demanding effort.",
+      example: "I hope your journey here was not too taxing.",
+      why: "Maya’s first line in character is courtly politeness built on one formal word — the register the deck calls “formal, regal English”."
+    }
+  ];
+
+  var flipGrid = document.getElementById("flipGrid");
+  var flipAllBtn = document.getElementById("flipAll");
+
+  function renderCards() {
+    var html = "";
+    VOCAB.forEach(function (v) {
+      html +=
+        '<div class="flip-card" role="button" tabindex="0" aria-pressed="false" aria-label="' + v.term + ' — activate to reveal the full meaning">' +
+          '<div class="flip-inner">' +
+            '<div class="flip-face flip-front">' +
+              '<div class="bar"></div>' +
+              '<div class="front-body">' +
+                '<div class="front-term">' + v.term + "</div>" +
+                '<div class="front-pos">' + v.pos + "</div>" +
+                '<div class="front-teaser">' + v.teaser + "</div>" +
+                '<div class="front-hint">Click or press Enter to flip ↻</div>' +
+              "</div>" +
+            "</div>" +
+            '<div class="flip-face flip-back">' +
+              '<p><span class="lbl">Literal:</span> ' + v.literal + "</p>" +
+              '<p><span class="lbl">In this lesson:</span> ' + v.contextual + "</p>" +
+              '<p><span class="lbl">From the material:</span> <em>“' + v.example + "”</em></p>" +
+              '<p><span class="lbl">Why it matters:</span> ' + v.why + "</p>" +
+            "</div>" +
+          "</div>" +
+        "</div>";
+    });
+    flipGrid.innerHTML = html;
+  }
+
+  function toggleCard(card) {
+    var flipped = card.classList.toggle("flipped");
+    card.setAttribute("aria-pressed", String(flipped));
+  }
+
+  renderCards();
+
+  flipGrid.addEventListener("click", function (e) {
+    var card = e.target.closest(".flip-card");
+    if (card) { toggleCard(card); }
+  });
+
+  flipGrid.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      var card = e.target.closest(".flip-card");
+      if (card) {
+        e.preventDefault();
+        toggleCard(card);
+      }
+    }
+  });
+
+  flipAllBtn.addEventListener("click", function () {
+    var cards = flipGrid.querySelectorAll(".flip-card");
+    var flippedCount = flipGrid.querySelectorAll(".flip-card.flipped").length;
+    var makeFlipped = flippedCount < cards.length;
+    cards.forEach(function (card) {
+      card.classList.toggle("flipped", makeFlipped);
+      card.setAttribute("aria-pressed", String(makeFlipped));
+    });
+    flipAllBtn.setAttribute("aria-pressed", String(makeFlipped));
+    flipAllBtn.textContent = makeFlipped ? "🔁 Flip all cards back" : "🔄 Flip all cards";
+  });
+
+  /* ============================================================
+     4.2 — COMPREHENSION QUIZ (data-driven, instant feedback)
+  ============================================================ */
+  var QUESTIONS = [
+    {
+      tag: "Comprehension",
+      text: "Who brought the AI voice companion Maya into the English lesson?",
+      options: ["Teacher Srijita", "Student Anatoly", "A school administrator", "The radio host Paul"],
+      answer: 1,
+      explanation: "Anatoly announced, “Let me bring an AI voice companion into our class,” and then asked, “Can you hear us now?” — the student directed the technology."
+    },
+    {
+      tag: "Fill the Blank",
+      text: "Complete the Queen’s line: “The crown is not an ornament. It is an ______.”",
+      options: ["honour", "office", "empire", "heirloom"],
+      answer: 1,
+      explanation: "The full line reads, “The crown is not an ornament. It is an office.” The deck praises the “advanced vocabulary juxtaposition” of the two nouns."
+    },
+    {
+      tag: "Vocabulary",
+      text: "When the Queen calls her position “a gilded cage”, she means it is something that is…",
+      options: ["made of real gold", "beautiful but confining", "easy to escape", "handed down as a gift"],
+      answer: 1,
+      explanation: "A gilded cage is a luxurious prison. She adds, “but one I am bound by duty to inhabit” — privilege and restriction in the same breath."
+    },
+    {
+      tag: "True or False",
+      text: "Srijita believes that young learners’ dependence on AI tools can hamper their thinking skills.",
+      options: ["True", "False"],
+      answer: 0,
+      explanation: "Her core concern is quoted directly: “They are very much dependent on AI tools for everything... that is really hampering their thinking skills.”"
+    },
+    {
+      tag: "Comprehension",
+      text: "According to the immersion curve, which stage of the thirty-minute lesson reaches the highest linguistic complexity?",
+      options: ["Casual icebreakers", "Technical discussion", "Grammar drills", "Spontaneous persona roleplay"],
+      answer: 3,
+      explanation: "The curve peaks at “Spontaneous Persona Roleplay — Interacting with the AI acting as the young Queen Elizabeth II,” because it “forces high-level cognitive recall that scripted exercises cannot match.”"
+    },
+    {
+      tag: "Comprehension",
+      text: "During the Python discussion, what did Maya suggest throwing “into the mix”?",
+      options: ["The Turing test", "A grammar quiz", "A song-lyric game", "A homework assignment"],
+      answer: 0,
+      explanation: "Maya said, “you should throw the Turing test into the mix. It’s the perfect way to debate whether a machine can actually think or if it’s just really good at faking it.”"
+    },
+    {
+      tag: "Vocabulary",
+      text: "When the Queen describes the coronation argument as “strained”, the word means…",
+      options: ["joyful and relaxed", "tense and under pressure", "completely silent", "richly decorated"],
+      answer: 1,
+      explanation: "“Strained” means stretched to a tense, uncomfortable limit — the deck cites it as “advanced vocabulary for describing complex feelings.”"
+    },
+    {
+      tag: "Comprehension",
+      text: "In the AI-augmented learning model, the human teacher’s role is to…",
+      options: ["correct every grammar mistake", "provide prompts and wait", "facilitate and observe", "leave the room"],
+      answer: 2,
+      explanation: "The matrix flow ends with “Human Teacher Facilitates & Observes,” elevating the teacher to what the deck calls “a strategic facilitator.”"
+    }
+  ];
+
+  var quizRoot = document.getElementById("quizRoot");
+  var quizScore = document.getElementById("quizScore");
+  var quizDots = document.getElementById("quizDots");
+  var quizPop = document.getElementById("quizPop");
+  var quizResult = document.getElementById("quizResult");
+  var resultScore = document.getElementById("resultScore");
+  var resultMsg = document.getElementById("resultMsg");
+  var quizAgain = document.getElementById("quizAgain");
+
+  var score = 0;
+  var answered = 0;
+  var answeredState = [];
+  var popTimer = null;
+  var resultTimer = null;
+
+  quizScore.setAttribute("aria-live", "polite");
+
+  function renderQuiz() {
+    if (popTimer) { clearTimeout(popTimer); popTimer = null; }
+    if (resultTimer) { clearTimeout(resultTimer); resultTimer = null; }
+    quizPop.classList.remove("show");
+    quizResult.classList.remove("show");
+    score = 0;
+    answered = 0;
+    answeredState = QUESTIONS.map(function () { return false; });
+    quizScore.textContent = "SCORE 0/" + QUESTIONS.length;
+
+    var dots = "";
+    QUESTIONS.forEach(function () { dots += '<span class="dot"></span>'; });
+    quizDots.innerHTML = dots;
+
+    var html = "";
+    QUESTIONS.forEach(function (q, qi) {
+      html += '<div class="q" data-qi="' + qi + '">' +
+        '<span class="q-tag">' + q.tag + "</span>" +
+        '<p class="q-text">' + q.text + "</p>" +
+        '<div class="q-opts">';
+      q.options.forEach(function (opt, oi) {
+        html += '<button type="button" class="q-opt" data-qi="' + qi + '" data-oi="' + oi + '">' + opt + "</button>";
+      });
+      html += "</div>" +
+        '<div class="q-expl" role="note"><strong>' + q.options[q.answer] + ".</strong> " + q.explanation + "</div>" +
+        "</div>";
+    });
+    quizRoot.innerHTML = html;
+  }
+
+  function showPop(kind) {
+    if (popTimer) { clearTimeout(popTimer); }
+    quizPop.classList.remove("show");
+    void quizPop.offsetWidth; /* restart the animation */
+    quizPop.textContent = kind === "applause" ? "👏 APPLAUSE!" : "🔔 BUZZ!";
+    quizPop.className = kind;
+    quizPop.classList.add("show");
+    popTimer = setTimeout(function () {
+      quizPop.classList.remove("show");
+      popTimer = null;
+    }, 1250);
+  }
+
+  function resultMessage(pct) {
+    if (pct === 100) { return "A perfect reign. The crown — and every idiom hanging on it — fits beautifully."; }
+    if (pct >= 75) { return "Strong work. The palace gates are open, and one more pass will make it flawless."; }
+    if (pct >= 50) { return "A solid rehearsal. Reread the royal dialogue above and claim the missing points."; }
+    return "Every rehearsal counts. Scroll back up, revisit the quotes, and walk the court again.";
+  }
+
+  function showResult() {
+    resultScore.textContent = score + "/" + QUESTIONS.length;
+    resultMsg.textContent = resultMessage(Math.round((score / QUESTIONS.length) * 100));
+    quizResult.classList.add("show");
+    if (!reduceMotion) { quizAgain.focus({ preventScroll: true }); }
+  }
+
+  quizRoot.addEventListener("click", function (e) {
+    var btn = e.target.closest(".q-opt");
+    if (!btn || btn.disabled) { return; }
+    var qi = parseInt(btn.getAttribute("data-qi"), 10);
+    if (answeredState[qi]) { return; }
+    var oi = parseInt(btn.getAttribute("data-oi"), 10);
+    var q = QUESTIONS[qi];
+    answeredState[qi] = true;
+    answered += 1;
+
+    var qEl = quizRoot.querySelector('.q[data-qi="' + qi + '"]');
+    var opts = qEl.querySelectorAll(".q-opt");
+    opts.forEach(function (o, index) {
+      o.disabled = true;
+      if (index === q.answer) {
+        o.classList.add("correct");
+        o.classList.remove("dim");
+      } else if (o === btn) {
+        o.classList.add("wrong");
+      } else {
+        o.classList.add("dim");
+      }
+    });
+    qEl.querySelector(".q-expl").classList.add("show");
+
+    var dot = quizDots.children[qi];
+    var correct = oi === q.answer;
+    if (correct) {
+      score += 1;
+      dot.classList.add("correct");
+      showPop("applause");
+    } else {
+      dot.classList.add("wrong");
+      showPop("buzz");
+    }
+    quizScore.textContent = "SCORE " + score + "/" + QUESTIONS.length;
+
+    if (answered === QUESTIONS.length) {
+      resultTimer = setTimeout(showResult, 850);
+    }
+  });
+
+  quizAgain.addEventListener("click", function () {
+    renderQuiz();
+  });
+
+  renderQuiz();
+
+  /* ============================================================
+     4.3 — TERM TOOLTIPS (single reusable element)
+  ============================================================ */
+  var terms = document.querySelectorAll(".term");
+
+  if (reduceMotion) {
+    terms.forEach(function (t) {
+      var def = document.createElement("span");
+      def.className = "inline-def";
+      def.textContent = "(" + t.getAttribute("data-term") + " — " + t.getAttribute("data-def") + ")";
+      t.insertAdjacentElement("afterend", def);
+    });
+  } else {
+    var tip = document.createElement("div");
+    tip.id = "termTip";
+    tip.setAttribute("role", "tooltip");
+    tip.innerHTML = '<span class="tip-term"></span><span class="tip-def"></span>';
+    document.body.appendChild(tip);
+    var tipTerm = tip.querySelector(".tip-term");
+    var tipDef = tip.querySelector(".tip-def");
+    var currentTerm = null;
+    var touchMode = false;
+
+    function fillTip(t) {
+      tipTerm.textContent = t.getAttribute("data-term");
+      tipDef.textContent = t.getAttribute("data-def");
+    }
+
+    function clampX(px) {
+      var w = tip.offsetWidth;
+      if (px + w > window.innerWidth - 8) { px = window.innerWidth - w - 8; }
+      return Math.max(8, px);
+    }
+
+    function placeAtCursor(x, y) {
+      var h = tip.offsetHeight;
+      var px = clampX(x + 18);
+      var py = y - h - 16;
+      if (py < 8) { py = y + 22; }
+      if (py + h > window.innerHeight - 8) { py = Math.max(8, window.innerHeight - h - 8); }
+      tip.style.left = px + "px";
+      tip.style.top = py + "px";
+    }
+
+    function placeByRect(t) {
+      fillTip(t);
+      tip.classList.add("show");
+      var r = t.getBoundingClientRect();
+      var h = tip.offsetHeight;
+      var px = clampX(r.left);
+      var py = r.top - h - 12;
+      if (py < 8) { py = r.bottom + 12; }
+      if (py + h > window.innerHeight - 8) { py = Math.max(8, window.innerHeight - h - 8); }
+      tip.style.left = px + "px";
+      tip.style.top = py + "px";
+    }
+
+    function showTip(t) {
+      if (currentTerm !== t) {
+        currentTerm = t;
+        fillTip(t);
+        tip.classList.add("show");
+      }
+    }
+
+    function hideTip() {
+      tip.classList.remove("show");
+      currentTerm = null;
+    }
+
+    document.addEventListener("pointerdown", function (e) {
+      touchMode = e.pointerType === "touch";
+    }, true);
+
+    document.addEventListener("pointerover", function (e) {
+      var t = e.target.closest(".term");
+      if (t && e.pointerType !== "touch") {
+        showTip(t);
+        placeAtCursor(e.clientX, e.clientY);
+      }
+    });
+
+    document.addEventListener("pointermove", function (e) {
+      if (currentTerm && e.pointerType !== "touch") {
+        placeAtCursor(e.clientX, e.clientY);
+      }
+    });
+
+    document.addEventListener("pointerout", function (e) {
+      var t = e.target.closest(".term");
+      if (t && !t.contains(e.relatedTarget)) {
+        hideTip();
+      }
+    });
+
+    document.addEventListener("focusin", function (e) {
+      var t = e.target.closest(".term");
+      if (t) { placeByRect(t); }
+    });
+
+    document.addEventListener("focusout", function (e) {
+      if (e.target.closest(".term")) { hideTip(); }
+    });
+
+    document.addEventListener("click", function (e) {
+      var t = e.target.closest(".term");
+      if (t) {
+        if (touchMode) {
+          if (currentTerm === t) { hideTip(); } else { showTip(t); placeByRect(t); }
+        }
+      } else {
+        hideTip();
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { hideTip(); }
+    });
+
+    window.addEventListener("scroll", hideTip, { passive: true });
+  }
+})();
+</script>
+</body>
+</html>
