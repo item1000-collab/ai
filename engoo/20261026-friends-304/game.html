@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friends Vocab Arcade — The One with the Metaphorical Tunnel</title>
+<meta name="description" content="A retro VHS-style vocabulary arcade built on the Friends S3 learning guide: five reels, five mini-games, synthesized sound, stars and streaks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Caveat:wght@600;700&family=Courier+Prime:wght@400;700&family=Nunito+Sans:ital,wght@0,400;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+/* ===== design tokens ===== */
+:root{
+  --bg:#2a1c26; --bg2:#372433; --deep:#1a1018;
+  --panel:#f7ecd9; --panel2:#eadbc0;
+  --ink:#33222e; --ink-soft:#7a5c68; --cream:#fff3e0;
+  --yellow:#f2b33d; --yellow-deep:#e0a92c;
+  --red:#d9433b; --teal:#3e8e8c; --green:#58b368;
+  --purple:#8e6aa5; --blue:#4f7ecb; --orange:#d95b2b;
+  --radius:18px; --hard:0 6px 0 rgba(0,0,0,.35);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--cream); min-height:100vh; overflow-x:hidden;
+  font-family:'Nunito Sans',system-ui,-apple-system,'Segoe UI',sans-serif; line-height:1.5;
+}
+body::before{ /* warm vignette */
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:radial-gradient(120% 90% at 50% 0%, rgba(242,179,61,.09), transparent 55%),
+             radial-gradient(140% 100% at 50% 110%, rgba(217,67,59,.10), transparent 60%);
+}
+.mono{font-family:'Courier Prime','Courier New',monospace}
+::selection{background:var(--yellow); color:#2a1c26}
+:focus-visible{outline:3px solid var(--yellow); outline-offset:2px; border-radius:6px}
+
+/* ===== film grain + scanlines (VHS mood) ===== */
+#grain{position:fixed; inset:0; pointer-events:none; z-index:4000; opacity:.07;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");}
+#scan{position:fixed; inset:0; pointer-events:none; z-index:4001; opacity:.22; mix-blend-mode:multiply;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px);}
+
+/* ===== preloader (VHS tape boot) ===== */
+#preloader{position:fixed; inset:0; z-index:3000; background:#140c12;
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  transition:transform .8s cubic-bezier(.65,0,.8,.4);}
+#preloader.exit{transform:translateY(-101%)}
+.vhs-box{max-width:480px; padding:20px; position:relative; z-index:1}
+.vhs-title{font-family:Righteous,'Arial Black',sans-serif; font-weight:400; font-size:clamp(26px,6vw,42px);
+  color:var(--cream); line-height:1.15; text-shadow:3px 3px 0 var(--red), 6px 6px 0 rgba(242,179,61,.28)}
+.vhs-sub{font-family:'Courier Prime',monospace; color:var(--yellow); letter-spacing:.28em; font-size:12.5px; margin-top:12px; text-transform:uppercase}
+.vhs-track{height:10px; max-width:340px; margin:26px auto 10px; background:#2c1b27; border-radius:99px;
+  overflow:hidden; border:1px solid rgba(255,243,224,.2)}
+.vhs-track i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--red),var(--yellow));
+  animation:load 1.5s ease-out forwards}
+@keyframes load{to{width:100%}}
+#btnPlay{opacity:0; pointer-events:none; transform:translateY(10px); transition:opacity .4s,transform .4s; margin-top:14px}
+#btnPlay.ready{opacity:1; pointer-events:auto; transform:none; animation:softBlink 1.8s 1s infinite}
+.vhs-rec{position:fixed; top:18px; left:22px; font-family:'Courier Prime',monospace; color:#ff5a4e;
+  font-size:14px; letter-spacing:.22em}
+.vhs-rec i{display:inline-block; width:10px; height:10px; background:#ff5a4e; border-radius:50%;
+  margin-right:7px; animation:softBlink 1s infinite}
+.vhs-osd{position:fixed; bottom:18px; right:22px; font-family:'Courier Prime',monospace;
+  color:var(--cream); opacity:.55; font-size:13px; letter-spacing:.18em}
+@keyframes softBlink{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ===== fixed header console ===== */
+#hud{position:fixed; top:0; left:0; right:0; z-index:500;
+  display:flex; align-items:center; gap:12px; padding:9px 16px;
+  background:rgba(26,16,24,.93); backdrop-filter:blur(6px);
+  border-bottom:2px solid rgba(242,179,61,.28)}
+.hud-logo{font-family:Righteous,sans-serif; font-size:17px; color:var(--cream); white-space:nowrap;
+  text-shadow:2px 2px 0 rgba(217,67,59,.55)}
+.hud-logo b{color:var(--yellow); font-weight:400}
+.hud-dots{display:flex; gap:8px; flex:1; justify-content:center}
+.dot{width:15px; height:15px; border-radius:50%; background:#4a3345;
+  border:2px solid rgba(255,243,224,.25); cursor:pointer; padding:0; transition:transform .15s}
+.dot:hover{transform:scale(1.25)}
+.dot.done{background:var(--teal); border-color:transparent}
+.dot.gold{background:var(--yellow); border-color:transparent; box-shadow:0 0 9px rgba(242,179,61,.75)}
+.hud-score{font-family:'Courier Prime',monospace; font-weight:700; color:var(--yellow);
+  background:#20141d; padding:6px 11px; border-radius:9px; border:1px solid rgba(242,179,61,.35); font-size:15px}
+.icon-btn{width:41px; height:41px; flex:none; border-radius:12px; border:none; cursor:pointer;
+  background:#4a3345; color:var(--cream); display:inline-flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 0 rgba(0,0,0,.4); transition:transform .12s, filter .15s}
+.icon-btn:hover{transform:translateY(-1px); filter:brightness(1.12)}
+.icon-btn:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.icon-btn svg{width:20px; height:20px}
+@media (max-width:600px){ .hud-logo{display:none} .hud-score{font-size:13px; padding:5px 8px} .hud-dots{gap:6px} }
+
+/* ===== screens ===== */
+.screen{display:none; max-width:1060px; margin:0 auto; padding:88px 18px 64px; position:relative; z-index:1}
+.screen.active{display:block; animation:screenIn .5s cubic-bezier(.2,.8,.3,1) both}
+@keyframes screenIn{
+  0%{opacity:0; transform:translateY(20px) scaleY(1.015); filter:saturate(.5)}
+  100%{opacity:1; transform:none; filter:none}}
+.screen-head{text-align:center; margin-bottom:22px}
+.screen-title{font-family:Righteous,sans-serif; font-weight:400; font-size:clamp(26px,5vw,36px);
+  color:var(--cream); text-shadow:2px 2px 0 rgba(217,67,59,.5)}
+.screen-sub{font-size:15.5px; opacity:.85; max-width:640px; margin:8px auto 0}
+
+/* ===== buttons ===== */
+.btn{display:inline-flex; align-items:center; gap:8px; justify-content:center; cursor:pointer;
+  font-family:'Nunito Sans',sans-serif; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+  border:none; border-radius:14px; padding:13px 22px; font-size:15px; color:#2a1c26; background:var(--panel);
+  box-shadow:0 5px 0 rgba(0,0,0,.4); transition:transform .12s, box-shadow .12s, filter .15s}
+.btn:hover{filter:brightness(1.06); transform:translateY(-1px)}
+.btn:active{transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.btn-gold{background:linear-gradient(180deg,#f7cf5f,#e0a92c); color:#3a2708}
+.btn-red{background:var(--red); color:#fff}
+.btn-teal{background:var(--teal); color:#fff}
+.btn-dark{background:#4a3345; color:var(--cream)}
+.btn-big{font-size:18px; padding:17px 36px; border-radius:18px}
+.btn-sm{padding:9px 14px; font-size:13px; border-radius:11px}
+[data-icon]{display:inline-flex}
+[data-icon] svg{width:1.05em; height:1.05em}
+
+/* ===== intro ===== */
+.intro-hero{text-align:center; padding-top:8px}
+.friends-logo{font-family:Righteous,sans-serif; font-weight:400; font-size:clamp(34px,7.5vw,60px);
+  color:var(--cream); letter-spacing:.02em; text-shadow:0 4px 0 rgba(0,0,0,.4); line-height:1.1}
+.fdot{font-style:normal}
+.fdot.r{color:#e0554d}.fdot.b{color:#4f7ecb}.fdot.y{color:var(--yellow)}
+.arcade-sub{font-family:Righteous,sans-serif; font-weight:400; color:var(--yellow); letter-spacing:.2em;
+  font-size:clamp(19px,4vw,28px); margin-top:4px; text-shadow:2px 2px 0 rgba(217,67,59,.55)}
+.intro-tag{font-size:16.5px; opacity:.9; max-width:560px; margin:14px auto 0}
+.howto{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px; max-width:820px; margin:28px auto 6px}
+.h-card{background:var(--panel); color:var(--ink); border-radius:16px; padding:15px 17px;
+  box-shadow:var(--hard); text-align:left; font-size:14px; line-height:1.45}
+.h-card b{display:block; font-family:Righteous,sans-serif; font-weight:400; font-size:15.5px; margin-bottom:5px}
+.g-note{font-size:13.5px; opacity:.75; text-align:center; margin-top:12px}
+.g-note.dim{opacity:.55}
+.handout{margin-top:16px; font-size:14.5px}
+.handout a{color:var(--yellow); font-weight:700; text-decoration:underline; text-underline-offset:3px}
+
+/* ===== character speech bubble ===== */
+.bubble{display:none; gap:12px; align-items:flex-start; max-width:560px; margin:20px auto}
+.bubble.show{display:flex; animation:popIn .35s both}
+.joey-intro{text-align:left}
+.avatar{width:47px; height:47px; flex:none; border-radius:50%; background:var(--teal); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-family:Righteous,sans-serif; font-size:21px;
+  box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.bubble-text{background:var(--panel); color:var(--ink); font-family:Caveat,cursive; font-weight:600;
+  font-size:22px; line-height:1.22; padding:10px 16px; border-radius:16px 16px 16px 4px}
+
+/* ===== level map ===== */
+.map-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:22px; margin-top:6px}
+.reel-card{position:relative; display:block; width:100%; text-align:left; padding:0; border:none; cursor:pointer;
+  background:var(--panel); color:var(--ink); border-radius:var(--radius); overflow:hidden;
+  box-shadow:var(--hard); transition:transform .16s, filter .16s; font-family:inherit}
+.reel-card:hover{transform:translateY(-5px)}
+.reel-preview{display:flex; align-items:center; justify-content:center; height:132px; position:relative;
+  background-size:cover; background-position:center 32%}
+.reel-initial{font-family:Righteous,sans-serif; font-size:46px; color:#fff; text-shadow:0 3px 0 rgba(0,0,0,.3)}
+.reel-preview.has-photo .reel-initial{display:none}
+.reel-preview.has-photo::after{content:''; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(26,16,24,.05), rgba(26,16,24,.45))}
+.reel-num{position:absolute; top:10px; left:10px; z-index:2; font-family:'Courier Prime',monospace;
+  font-weight:700; font-size:12px; letter-spacing:.14em; background:rgba(26,16,24,.85);
+  color:var(--yellow); padding:3px 9px; border-radius:7px}
+.reel-body{display:block; padding:13px 16px 16px}
+.reel-tag{display:block; font-size:10.5px; font-weight:800; letter-spacing:.16em; color:var(--ink-soft)}
+.reel-title{display:block; font-family:Righteous,sans-serif; font-weight:400; font-size:18.5px; margin:3px 0 2px}
+.reel-char{display:block; font-family:Caveat,cursive; font-weight:600; font-size:19px; color:#7a5c68}
+.reel-stats{display:flex; justify-content:space-between; align-items:center; margin-top:10px}
+.stars{font-size:15px; letter-spacing:2px; color:#c9b493}
+.stars .on{color:var(--yellow-deep); text-shadow:0 1px 0 rgba(0,0,0,.25)}
+.reel-best{font-family:'Courier Prime',monospace; font-size:13px; color:var(--ink-soft)}
+.final-card{outline:3px dashed var(--yellow); outline-offset:4px}
+.gold-bg{background:linear-gradient(120deg,var(--yellow),var(--red)) !important}
+
+/* ===== level screen ===== */
+.level-banner{height:118px; border-radius:var(--radius); box-shadow:var(--hard); margin-bottom:16px;
+  background-size:cover; background-position:center 30%; position:relative; overflow:hidden}
+.level-head{display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; margin-bottom:14px}
+.level-title{font-family:Righteous,sans-serif; font-weight:400; font-size:clamp(20px,4vw,27px); color:var(--cream)}
+.level-sub{font-family:Caveat,cursive; font-weight:600; font-size:21px; color:var(--yellow)}
+.level-tools{display:flex; align-items:center; gap:10px}
+.level-score{font-family:'Courier Prime',monospace; font-weight:700; background:#20141d;
+  border:1px solid rgba(242,179,61,.35); color:var(--yellow); padding:8px 14px; border-radius:10px; font-size:15px}
+
+/* ===== shared game bits ===== */
+.timer-wrap{height:14px; max-width:640px; margin:0 auto 16px; background:#20141d; border-radius:99px;
+  overflow:hidden; border:2px solid rgba(255,243,224,.18)}
+.timer-bar{height:100%; width:100%; border-radius:99px;
+  background:linear-gradient(90deg,var(--teal),var(--green)); transition:width 1s linear}
+.timer-bar.hot{background:linear-gradient(90deg,var(--yellow),var(--red))}
+.tf-top{display:flex; justify-content:space-between; align-items:center; gap:10px; max-width:720px; margin:0 auto 12px}
+.tf-count,.streak-chip{font-family:'Courier Prime',monospace; font-weight:700; font-size:14px}
+.tf-count{background:#20141d; color:var(--yellow); padding:6px 12px; border-radius:10px; border:1px solid rgba(242,179,61,.35)}
+.streak-chip{background:rgba(88,179,104,.16); color:#bfe8c6; padding:6px 12px; border-radius:10px;
+  border:1px solid rgba(88,179,104,.5)}
+.stage-card{background:var(--panel); color:var(--ink); border-radius:var(--radius); box-shadow:var(--hard);
+  padding:24px; max-width:760px; margin:0 auto; text-align:center}
+.tf-text{font-size:20px; font-weight:700; margin:14px auto 20px; max-width:580px; line-height:1.4}
+.tf-btns{display:flex; gap:16px; justify-content:center; flex-wrap:wrap}
+.tf-btns .btn{min-width:172px; font-size:16.5px; padding:15px 20px}
+.tf-btns .btn-real{background:var(--teal); color:#fff}
+.tf-btns .btn-del{background:var(--red); color:#fff}
+.stage-card.done .tf-btns{opacity:.4; pointer-events:none}
+.explain{display:none; margin-top:20px; background:var(--panel2); border-radius:13px; padding:14px 18px; text-align:left}
+.explain.show{display:block; animation:popIn .3s both}
+.verdict{font-weight:800; letter-spacing:.04em}
+.verdict.ok{color:#2c7a3d}
+.verdict.bad{color:var(--red)}
+.explain p+p{margin-top:6px}
+.btn-next{margin-top:14px}
+.opt{display:block; width:100%; max-width:560px; margin:10px auto; padding:13px 18px; cursor:pointer;
+  border-radius:14px; border:2px solid #d8c5a8; background:var(--panel); color:var(--ink);
+  font-family:inherit; font-weight:700; font-size:15.5px; text-align:left;
+  box-shadow:0 4px 0 rgba(0,0,0,.3); transition:transform .13s}
+.opt:hover:not(:disabled){transform:translateY(-2px)}
+.opt.correct{background:#d9efd2; border-color:var(--green)}
+.opt.wrong{background:#f6d5d2; border-color:var(--red); animation:shake .4s}
+.opt:disabled{cursor:default; opacity:.92}
+.opt.dim{opacity:.45}
+.bubble.mc-bubble{margin:18px auto 4px; max-width:560px}
+.mc-next{text-align:center; margin-top:14px}
+
+/* ===== mini-game 1: fill the blanks ===== */
+.sentence{background:var(--panel); color:var(--ink); border-radius:14px; padding:12px 18px; margin:10px auto;
+  max-width:720px; box-shadow:0 4px 0 rgba(0,0,0,.3); line-height:2.05; font-size:15.5px}
+.blank{display:inline-block; min-width:118px; border:none; border-bottom:3px dashed #b59a7d;
+  background:rgba(242,179,61,.16); color:var(--ink); font:inherit; font-weight:800; cursor:pointer;
+  border-radius:9px 9px 0 0; padding:2px 12px; text-align:center; vertical-align:baseline; transition:background .15s}
+.blank.sel{background:rgba(242,179,61,.45); border-bottom-color:var(--red)}
+.blank.filled{background:#d9efd2; border-bottom-style:solid; border-bottom-color:var(--green); cursor:default}
+.bank{display:flex; flex-wrap:wrap; gap:10px; margin:20px auto 16px; max-width:720px; justify-content:center}
+.chip{font-family:inherit; font-weight:800; font-size:14.5px; padding:9px 16px; border-radius:999px;
+  border:2px solid #d8c5a8; background:var(--panel2); color:var(--ink); cursor:pointer;
+  box-shadow:0 3px 0 rgba(0,0,0,.25); transition:transform .13s}
+.chip:hover:not(:disabled){transform:translateY(-2px)}
+.chip.used{opacity:0; transform:scale(.5); pointer-events:none}
+.g-status{min-height:56px; max-width:720px; margin:0 auto; background:rgba(0,0,0,.28); border-radius:12px;
+  padding:11px 16px; font-size:14.5px; border:1px dashed rgba(255,243,224,.3)}
+
+/* ===== mini-game 4: match ===== */
+.match-example{background:rgba(0,0,0,.28); border:1px dashed rgba(255,243,224,.35); border-radius:12px;
+  padding:10px 14px; margin:0 auto 16px; max-width:640px; font-family:'Courier Prime',monospace;
+  font-size:14px; text-align:center}
+.match-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:760px; margin:0 auto}
+.match-col{display:flex; flex-direction:column; gap:10px}
+.match-item{font-family:inherit; font-weight:700; font-size:15px; min-height:54px; padding:11px 14px;
+  border-radius:12px; border:2px solid #d8c5a8; background:var(--panel); color:var(--ink); cursor:pointer;
+  box-shadow:0 3px 0 rgba(0,0,0,.28); text-align:left; transition:transform .13s, background .15s}
+.match-item:hover:not(:disabled){transform:translateY(-2px)}
+.match-item.sel{outline:3px solid var(--yellow); background:#fdeec9}
+.match-item.locked{background:#d9efd2; border-color:var(--green); cursor:default}
+.match-count{text-align:center; font-family:'Courier Prime',monospace; font-weight:700; margin:16px 0 0;
+  font-size:15px; color:var(--cream)}
+
+/* ===== mini-game 5: bonus ===== */
+.bonus-top{display:flex; justify-content:space-between; align-items:center; gap:12px; max-width:720px; margin:0 auto 12px}
+.bonus-timer{font-family:'Courier Prime',monospace; font-weight:700; font-size:29px; background:#20141d;
+  color:var(--yellow); padding:6px 16px; border-radius:12px; border:1px solid rgba(242,179,61,.35)}
+.bonus-timer.flash{background:var(--red); color:#fff; border-color:#fff; animation:softBlink .8s infinite}
+
+/* ===== finale ===== */
+.finale-hero{text-align:center; background:linear-gradient(180deg, rgba(242,179,61,.15), transparent);
+  border:2px dashed rgba(242,179,61,.4); border-radius:22px; padding:30px 20px}
+.finale-title{font-family:Righteous,sans-serif; font-weight:400; font-size:clamp(30px,6vw,46px); margin:6px 0;
+  text-shadow:3px 3px 0 rgba(217,67,59,.5)}
+.finale-score{font-family:'Courier Prime',monospace; font-weight:700; font-size:clamp(42px,9vw,66px);
+  color:var(--yellow); text-shadow:3px 3px 0 rgba(217,67,59,.45); line-height:1.1}
+.finale-stars{font-size:22px; letter-spacing:5px; color:var(--yellow); margin-top:6px}
+.finale-stars-label{font-size:14px; opacity:.8; margin-top:2px}
+.rank-badge{display:inline-block; font-family:Righteous,sans-serif; font-weight:400; font-size:20px;
+  background:var(--red); color:#fff; padding:10px 24px; border-radius:999px; margin:14px 0 6px;
+  box-shadow:0 5px 0 rgba(0,0,0,.35)}
+.rank-line{font-family:Caveat,cursive; font-weight:600; font-size:22px; opacity:.92}
+table.results{width:100%; max-width:660px; margin:20px auto; border-collapse:separate; border-spacing:0 8px}
+table.results th{font-family:'Courier Prime',monospace; text-transform:uppercase; letter-spacing:.14em;
+  font-size:11.5px; color:var(--cream); opacity:.7; padding:0 14px 0; text-align:left}
+table.results th:last-child{text-align:right}
+table.results tr{background:var(--panel); color:var(--ink)}
+table.results td{padding:10px 14px; font-size:14.5px}
+table.results td:first-child{border-radius:12px 0 0 12px; font-family:'Courier Prime',monospace; font-weight:700}
+table.results td:nth-child(3){white-space:nowrap; color:var(--yellow-deep); letter-spacing:2px}
+table.results td:last-child{border-radius:0 12px 12px 0; text-align:right; font-family:'Courier Prime',monospace; font-weight:700}
+.finale-btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:10px}
+
+/* ===== modal ===== */
+#modalRoot{position:fixed; inset:0; z-index:1000; display:flex; align-items:center; justify-content:center;
+  padding:20px; background:rgba(15,9,14,.78); backdrop-filter:blur(4px)}
+#modalRoot[hidden]{display:none}
+.modal{background:var(--panel); color:var(--ink); border-radius:22px; box-shadow:0 10px 0 rgba(0,0,0,.4);
+  max-width:530px; width:100%; padding:26px; max-height:86vh; overflow:auto;
+  animation:modalIn .4s cubic-bezier(.2,.9,.3,1.15) both}
+.modal-tag{font-size:12px; font-weight:800; letter-spacing:.22em; color:#8a6b52; text-transform:uppercase}
+.modal h3{font-family:Righteous,sans-serif; font-weight:400; font-size:25px; margin:6px 0 8px}
+.modal-line{margin:8px 0; font-size:15.5px; line-height:1.5}
+.modal-line.tip{background:rgba(242,179,61,.2); border-radius:10px; padding:10px 13px}
+.modal .flavor{font-family:Caveat,cursive; font-weight:600; font-size:21.5px; color:#7a5c68; margin-top:12px}
+.modal-btns{display:flex; gap:12px; justify-content:center; margin-top:20px; flex-wrap:wrap}
+.result-stars{font-size:46px; text-align:center; margin:8px 0 6px; letter-spacing:9px; color:var(--yellow-deep)}
+.result-stars span{display:inline-block; animation:starPop .55s both}
+.modal-line .mono{font-weight:700}
+
+/* ===== toasts / pops / confetti ===== */
+#toasts{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:1500;
+  display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; width:max-content; max-width:92vw}
+.toast{background:var(--panel); color:var(--ink); font-weight:800; font-size:14.5px; padding:10px 18px;
+  border-radius:999px; box-shadow:0 5px 0 rgba(0,0,0,.35); animation:toastIn .3s both; text-align:center}
+.toast.out{opacity:0; transform:translateY(10px); transition:.3s}
+@keyframes toastIn{from{opacity:0; transform:translateY(14px) scale(.94)} to{opacity:1; transform:none}}
+.pop{position:fixed; z-index:1450; font-family:Righteous,sans-serif; font-size:22px; pointer-events:none;
+  animation:floatUp .95s ease-out both; text-shadow:0 2px 0 rgba(0,0,0,.35); transform:translate(-50%,0)}
+#confetti{position:fixed; inset:0; pointer-events:none; z-index:1400}
+
+/* ===== keyframes ===== */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@keyframes starPop{0%{transform:scale(0) rotate(-40deg); opacity:0}
+  70%{transform:scale(1.25) rotate(8deg)} 100%{transform:scale(1) rotate(0); opacity:1}}
+@keyframes popIn{from{opacity:0; transform:scale(.93) translateY(7px)} to{opacity:1; transform:none}}
+@keyframes modalIn{from{opacity:0; transform:scale(.86) translateY(22px)} to{opacity:1; transform:none}}
+@keyframes floatUp{0%{opacity:0; transform:translate(-50%,0) scale(.7)}
+  15%{opacity:1} 100%{opacity:0; transform:translate(-50%,-72px) scale(1.15)}}
+.shake{animation:shake .4s}
+
+/* ===== responsive ===== */
+@media (max-width:640px){
+  .screen{padding:82px 12px 48px}
+  .tf-text{font-size:17.5px}
+  .match-grid{gap:8px}
+  .match-item{font-size:13.5px; padding:9px 11px; min-height:46px}
+  .tf-btns .btn{min-width:132px; padding:13px 14px; font-size:15px}
+  .level-head{flex-direction:column; align-items:flex-start}
+  .level-tools{align-self:stretch; justify-content:space-between}
+  .bonus-timer{font-size:23px}
+  .stage-card{padding:18px 14px}
+  table.results td{padding:8px 9px; font-size:13px}
+  .sentence{font-size:14.5px}
+  .bubble-text{font-size:20px}
+}
+
+/* ===== reduced motion ===== */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:24px;text-align:center;font-weight:700">This arcade needs JavaScript. Please enable it and reload the tape.</p></noscript>
+<div id="grain" aria-hidden="true"></div>
+<div id="scan" aria-hidden="true"></div>
+
+<!-- ===== VHS PRELOADER ===== -->
+<div id="preloader" role="status" aria-label="Loading the game tape">
+  <p class="vhs-rec"><i></i>REC</p>
+  <p class="vhs-osd">SP 0:00:00</p>
+  <div class="vhs-box">
+    <h1 class="vhs-title">F•R•I•E•N•D•S<br>VOCAB ARCADE</h1>
+    <p class="vhs-sub">Lesson Tape 01 · The Metaphorical Tunnel</p>
+    <div class="vhs-track"><i></i></div>
+    <p class="vhs-sub" id="vhsLoad">TRACKING…</p>
+    <button type="button" class="btn btn-gold btn-big" id="btnPlay"><span data-icon="play"></span> PLAY ▶</button>
+  </div>
+</div>
+
+<!-- ===== HEADER CONSOLE ===== -->
+<header id="hud" hidden>
+  <span class="hud-logo">VOCAB <b>ARCADE</b></span>
+  <div class="hud-dots" id="hudDots"></div>
+  <span class="hud-score mono" id="hudScore" role="status" aria-label="Total score">00000</span>
+  <button type="button" class="icon-btn" id="btnSound" aria-label="Mute sounds"></button>
+  <button type="button" class="icon-btn" id="btnMap" aria-label="Open the level map" title="Level map"><span data-icon="map"></span></button>
+</header>
+
+<main>
+  <!-- ===== SCREEN: INTRO ===== -->
+  <section id="screen-intro" class="screen active">
+    <div class="intro-hero">
+      <p class="vhs-sub" style="margin:0 0 10px">SP · Lesson Tape 01 · Stereo</p>
+      <h2 class="friends-logo">F<span class="fdot r">•</span>R<span class="fdot b">•</span>I<span class="fdot y">•</span>E<span class="fdot r">•</span>N<span class="fdot b">•</span>D<span class="fdot y">•</span>S</h2>
+      <p class="arcade-sub">VOCAB ARCADE</p>
+      <p class="intro-tag">Five reels. Fourteen expressions from <em>The One with the Metaphorical Tunnel</em>. One coffeehouse couch that has seen everything. The theme of the night, straight from the guide’s corkboard: <strong>“Insecurities. How we act when we are afraid of what others think.”</strong></p>
+      <div class="bubble show joey-intro">
+        <div class="avatar" style="background:#4f7ecb">J</div>
+        <div class="bubble-text">How you doin’? I am Joey, I do not share food, and I WILL share vocabulary tips. Press start!</div>
+      </div>
+      <button type="button" class="btn btn-gold btn-big" id="btnStart"><span data-icon="play"></span> PRESS START</button>
+      <p class="g-note dim">🎧 Best with sound on — every beep is synthesized live, no files were harmed.</p>
+      <p class="handout"><span data-icon="book"></span> <a href="friends-304.pdf" target="_blank" rel="noopener noreferrer">Open the lesson handout (PDF)</a></p>
+    </div>
+    <div class="howto">
+      <div class="h-card"><b>🎞 5 reels, any order</b>Every reel is unlocked from second one. Hop around however you like — a MAP button inside each level lets you leave any time, and progress saves itself per reel.</div>
+      <div class="h-card"><b>⭐ Stars &amp; best scores</b>Finish a reel with zero mistakes for 3 stars. One or two mistakes earn 2 stars, and anything more still earns 1. Your best score sticks to the card on the map.</div>
+      <div class="h-card"><b>⚡ Streak multiplier</b>Chain correct answers to raise your multiplier: ×2 after three in a row, ×3 after six. One slip and it resets — Chandler knows the feeling.</div>
+      <div class="h-card"><b>🏆 The finale</b>Clear all five reels — in any order — and the finale screen opens with your total score, a rank, and a rewind button for a fresh start.</div>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN: LEVEL MAP ===== -->
+  <section id="screen-map" class="screen">
+    <div class="screen-head">
+      <h2 class="screen-title">PICK A REEL</h2>
+      <p class="screen-sub">Free order — every reel is unlocked. Leave any time with the MAP button; nothing is ever lost.</p>
+    </div>
+    <div id="mapGrid" class="map-grid"></div>
+  </section>
+
+  <!-- ===== SCREEN: LEVEL SCENE ===== -->
+  <section id="screen-level" class="screen">
+    <div class="level-banner" id="levelBanner"></div>
+    <div class="level-head">
+      <div>
+        <h2 class="level-title" id="levelTitle"></h2>
+        <p class="level-sub" id="levelChar"></p>
+      </div>
+      <div class="level-tools">
+        <span class="level-score mono" id="levelScore">SCORE 0</span>
+        <button type="button" class="btn btn-dark btn-sm" id="btnMap2"><span data-icon="map"></span> Map</button>
+      </div>
+    </div>
+    <div id="gameArea"></div>
+  </section>
+
+  <!-- ===== SCREEN: FINALE ===== -->
+  <section id="screen-finale" class="screen">
+    <div class="finale-hero">
+      <p class="vhs-sub" style="margin:0">◼ REWIND STOPPED HERE</p>
+      <h2 class="finale-title">THAT’S A WRAP!</h2>
+      <div class="bubble show joey-intro">
+        <div class="avatar" style="background:#f2b33d;color:#3a2708">J</div>
+        <div class="bubble-text">How you doin’? That is not a greeting this time — the scoreboard answers below.</div>
+      </div>
+      <p class="finale-score mono" id="finScore">00000</p>
+      <p class="finale-stars" id="finStars"></p>
+      <p class="finale-stars-label" id="finStarsLabel"></p>
+      <div><span class="rank-badge" id="rankName"></span></div>
+      <p class="rank-line" id="rankLine"></p>
+      <p class="g-note" style="max-width:560px;margin:14px auto 0">“Whether you are going through a metaphorical tunnel, facing a double standard, or just trying to work for scale — honesty is usually the best damage control.”</p>
+    </div>
+    <table class="results">
+      <thead><tr><th>Reel</th><th>Title</th><th>Stars</th><th>Best</th></tr></thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+    <div class="finale-btns">
+      <button type="button" class="btn btn-dark" id="btnMap3"><span data-icon="map"></span> Back to map</button>
+      <button type="button" class="btn btn-red" id="btnRewind"><span data-icon="replay"></span> Rewind the tape</button>
+    </div>
+  </section>
+</main>
+
+<!-- ===== MODAL / TOASTS / CONFETTI ===== -->
+<div id="modalRoot" hidden>
+  <div class="modal" role="dialog" aria-modal="true" id="modalBox"></div>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<script>
+(function(){ "use strict";
+
+/* ===== tiny dom utils ===== */
+var $  = function(s, r){ return (r||document).querySelector(s); };
+var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+function shuffle(arr){
+  var a = arr.slice();
+  for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ===== inline svg icons (self-contained, no CDN) ===== */
+var ICONS = {
+  play:  '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5 20 12 7 19.5z"/></svg>',
+  map:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V6l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  vol:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 5.2a9.5 9.5 0 0 1 0 13.6"/></svg>',
+  mute:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m16.5 9.5 5 5M21.5 9.5l-5 5"/></svg>',
+  replay:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4"/><path d="M3 4v5h5"/></svg>',
+  trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a2 2 0 0 0 2 4h1M17 6h3a2 2 0 0 1-2 4h-1"/></svg>',
+  book:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h7a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/></svg>'
+};
+function refreshIcons(root){
+  $$("[data-icon]", root).forEach(function(el){ el.innerHTML = ICONS[el.getAttribute("data-icon")] || ""; });
+}
+
+/* ===== persistent save (versioned key, private-mode safe) ===== */
+var SAVE_KEY = "fva_save_v1";
+function loadSave(){
+  try{ var raw = localStorage.getItem(SAVE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+var save = { levels:{}, muted:false };
+(function(){
+  var s = loadSave();
+  if(s && typeof s === "object"){
+    save.levels = (s.levels && typeof s.levels === "object") ? s.levels : {};
+    save.muted = !!s.muted;
+  }
+})();
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+function levelSave(i){ return save.levels[i] || null; }
+function allComplete(){
+  for(var i=0;i<SCENES.length;i++){ var r=save.levels[i]; if(!r || !r.completed) return false; }
+  return true;
+}
+function totalScore(){
+  var s=0; Object.keys(save.levels).forEach(function(k){ s += save.levels[k].score||0; }); return s;
+}
+function totalStars(){
+  var s=0; Object.keys(save.levels).forEach(function(k){ s += save.levels[k].stars||0; }); return s;
+}
+
+/* ===== web audio: all sounds synthesized, no files ===== */
+var AC = null;
+function initAudio(){
+  if(AC) return;
+  try{
+    var C = window.AudioContext || window.webkitAudioContext;
+    if(C) AC = new C();
+  }catch(e){ AC = null; }
+}
+function tone(freq, dur, type, vol, when){
+  if(!AC || save.muted) return;
+  try{
+    var t0 = AC.currentTime + (when||0);
+    var o = AC.createOscillator(), g = AC.createGain();
+    o.type = type||"square";
+    o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol||0.12, t0+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(t0); o.stop(t0+dur+0.05);
+  }catch(e){}
+}
+function noiseBurst(dur, vol){
+  if(!AC || save.muted) return;
+  try{
+    var n = Math.floor(AC.sampleRate*dur);
+    var buf = AC.createBuffer(1, n, AC.sampleRate);
+    var d = buf.getChannelData(0);
+    for(var i=0;i<n;i++) d[i] = (Math.random()*2-1)*(1-i/n);
+    var src = AC.createBufferSource(); src.buffer = buf;
+    var g = AC.createGain(); g.gain.value = vol||0.15;
+    src.connect(g); g.connect(AC.destination);
+    src.start();
+  }catch(e){}
+}
+var SFX = {
+  click:   function(){ tone(880, .06, "square", .07); },
+  flip:    function(){ tone(520, .07, "triangle", .10); tone(720, .08, "triangle", .09, .05); },
+  correct: function(){ tone(660, .09, "square", .10); tone(880, .10, "square", .10, .08); tone(1175, .14, "square", .10, .16); },
+  wrong:   function(){ tone(233, .16, "sawtooth", .12); tone(174, .20, "sawtooth", .11, .10); },
+  match:   function(){ tone(740, .07, "triangle", .10); tone(1109, .11, "triangle", .10, .07); },
+  fanfare: function(){ [523,659,784,1047].forEach(function(f,i){ tone(f,.16,"square",.11,i*.12); }); tone(1319,.30,"triangle",.12,.5); },
+  tick:    function(){ tone(1250, .03, "square", .05); },
+  cheer:   function(){ noiseBurst(.45,.16); [659,784,988].forEach(function(f,i){ tone(f,.18,"triangle",.09,.08*i); }); }
+};
+
+/* ===== toasts / floating points / confetti ===== */
+function toast(msg){
+  var box = $("#toasts"); if(!box) return;
+  var t = document.createElement("div");
+  t.className = "toast"; t.textContent = msg;
+  box.appendChild(t);
+  while(box.children.length > 3) box.removeChild(box.firstChild);
+  setTimeout(function(){ t.classList.add("out"); setTimeout(function(){ t.remove(); }, 320); }, 2400);
+}
+function popFloat(x, y, text, color){
+  if(REDUCED) return;
+  var p = document.createElement("div");
+  p.className = "pop"; p.textContent = text;
+  p.style.left = x+"px"; p.style.top = y+"px";
+  p.style.color = color || "#fff3e0";
+  document.body.appendChild(p);
+  setTimeout(function(){ p.remove(); }, 1000);
+}
+function shakeEl(el){
+  if(!el) return;
+  el.classList.remove("shake");
+  void el.offsetWidth;
+  el.classList.add("shake");
+}
+function spawnConfetti(count){
+  if(REDUCED) return;
+  var cv = $("#confetti"); if(!cv) return;
+  var ctx = cv.getContext("2d"); if(!ctx) return;
+  cv.width = window.innerWidth; cv.height = window.innerHeight;
+  count = count || 110;
+  var colors = ["#f2b33d","#d9433b","#3e8e8c","#58b368","#d96a9c","#fff3e0"];
+  var parts = [];
+  for(var i=0;i<count;i++){
+    parts.push({
+      x: Math.random()*cv.width, y: -20 - Math.random()*cv.height*0.4,
+      w: 6+Math.random()*7, h: 8+Math.random()*10,
+      vx: -1.6+Math.random()*3.2, vy: 2+Math.random()*3.4,
+      r: Math.random()*Math.PI, vr: -0.12+Math.random()*0.24,
+      c: colors[i%colors.length]
+    });
+  }
+  function step(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    var alive = false;
+    parts.forEach(function(p){
+      p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.r += p.vr;
+      if(p.y < cv.height+30) alive = true;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    if(alive) requestAnimationFrame(step);
+    else ctx.clearRect(0,0,cv.width,cv.height);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ======================================================================
+   GAME DATA — built on the visual learning guide for
+   Friends S3, "The One with the Metaphorical Tunnel" (friends-304.pdf)
+   ====================================================================== */
+
+/* scenes: five reels, free order, one mini-game mechanic each */
+var SCENES = [
+  { id:"blanks", num:1, title:"The One with the Panic Zone", char:"Chandler", color:"#d9433b",
+    slide:"slide-003.jpg", tag:"FILL THE BLANKS",
+    obj:"Tap a gap, then tap the correct word from the bank. Six gaps, straight from the spectrum board.",
+    tip:"Wrong words bounce straight back into the bank — every bounce costs 15 points.",
+    flavor:"I bought her a drawer. A DRAWER. Fill in the gaps, it is cheaper than therapy." },
+  { id:"tf", num:2, title:"The One with the Decoder Ring", char:"Phoebe", color:"#f2b33d",
+    slide:"slide-012.jpg", tag:"REAL OR DELUSION",
+    obj:"Read the statement about 90s sitcom slang. Decide: is it REAL, or pure DELUSION?",
+    tip:"Could this BE any more timed? The bar gives you ten minutes a card — the clock stops while you read the verdict. Arrow keys work: ← REAL, → DELUSION.",
+    flavor:"I impersonated an agent once, so trust me: I know fake things when I read them." },
+  { id:"mc", num:3, title:"The One Where Phoebe Tells the Truth", char:"Joey", color:"#4f7ecb",
+    slide:"slide-007.jpg", tag:"MULTIPLE CHOICE",
+    obj:"Three options. One attempt. Choose wisely — the clipboard remembers everything.",
+    tip:"One attempt per question, and Joey will comment on your performance either way.",
+    flavor:"How you doin’? Careful — in this business the honest answer is always ‘pretty but dumb’." },
+  { id:"match", num:4, title:"The One with the Toy Box Battle", char:"Ross", color:"#8e6aa5",
+    slide:"slide-009.jpg", tag:"MATCH THE MEANING",
+    obj:"Click a word on the left, then its meaning on the right. Six pairs, zero double standards.",
+    tip:"Correct pairs lock in green. A wrong pair shakes and clears the selection — Monica saw that.",
+    flavor:"I am NOT judging the doll. I am simply… running a full archaeological survey of the toy box." },
+  { id:"bonus", num:5, title:"The One with the Coffee-Stained Napkin", char:"Janice", color:"#d95b2b",
+    slide:"slide-013.jpg", tag:"BONUS ROUND",
+    obj:"750 seconds. Ten questions from every reel. Ride the streak multiplier, turkey.",
+    tip:"When the timer flashes red, the napkin is almost done soaking. Hurry.",
+    flavor:"Oh. My. GOD. Trivia night at Central Perk — and I brought my laugh." }
+];
+
+/* reel 1 — fill the blanks: the damage control spectrum board (verbatim wording) */
+var BLANKS_ITEMS = [
+  { text:["The Plan: “Pretend to be ", " by accidentally bumping into Janice.”"], answer:"aloof",
+    why:"The spectrum’s cold end: “Aloof — Acting cool, distant, not caring.” Chandler aimed for icy and hit catastrophic." },
+  { text:["The middle of the slider: “Needy — Asking for too much ", ".”"], answer:"attention",
+    why:"Four words from the board — “Asking for too much attention” — and the emotional economy of every relationship debate ever held." },
+  { text:["The hot end: “A Doof (Clingy) — Buying your girlfriend a dresser ", " and demanding a trip with her parents.”"], answer:"drawer",
+    why:"The dresser drawer is the guide’s perfect specimen of clinginess. Chandler bought one, panicked, and pushed too hard." },
+  { text:["The cold prescription: “Requires Low-Fat Soy Ice Cream for ", " heartbreak.”"], answer:"minor",
+    why:"Minor heartbreak gets dairy-free comfort. The spectrum measures feelings in fat content — an emotional thermometer with a punchline." },
+  { text:["The red end: “Requires Full-Fat Ice Cream for ", " heartbreak.”"], answer:"terminal",
+    why:"“Terminal case — a situation that cannot be saved (requires full-fat ice cream).” The medical metaphor is the joke, and the joke is the memory hook." },
+  { text:["Under the slider, in red marker: “Damage Control (noun): Actions taken to ", " a big mistake you just made.”"], answer:"fix",
+    why:"The official definition. Damage control is workplace English too: “We need some damage control after that email.”" }
+];
+var BLANKS_BANK = ["aloof","attention","drawer","minor","terminal","fix","metaphorical","speechless","barley"];
+
+/* reel 2 — real or delusion: the 90s slang translation guide (slide-012) */
+var TF_ITEMS = [
+  { text:"“Buy a vowel” means to be completely speechless, and it originally comes from a game show.", real:true,
+    why:"REAL. The guide defines it exactly: “Originally from a game show; used when you are completely speechless and don’t know what to say.” Chandler needed it the second Janice saw through the barley." },
+  { text:"“Aloof” describes someone who is warm, open, and eager for attention.", real:false,
+    why:"DELUSION. Aloof means the opposite — “acting cool, distant, not caring,” the icy blue end of the spectrum. Asking for too much attention is needy." },
+  { text:"“Flinging-flanging” is a real curse word that appears in formal dictionaries.", real:false,
+    why:"DELUSION. The translation guide is clear: “A made-up curse word Joey uses on TV to avoid real swearing.” It sits on the same shelf as frigging, darn, and shoot." },
+  { text:"A “security blanket” can be any object a child carries everywhere to feel safe and calm.", real:true,
+    why:"REAL. The board says it word for word: “An object a child carries everywhere to feel safe and calm.” Ben’s Barbie works exactly this way — and adults have them too: routines, phones, favorite mugs." },
+  { text:"“Weenie” is a compliment you give to a brave soldier.", real:false,
+    why:"DELUSION. “Weenie (slang): A weak or cowardly person.” It is the mild playground insult Ross fears the whole playground will aim at his son." },
+  { text:"The guide warns that a doof, weenie, and flinging-flanging are jokes between friends and will sound rude anywhere else.", real:true,
+    why:"REAL. That is the register warning: part of real fluency is knowing where a word is allowed to live — funny among friends, insulting to a stranger, absurd in an email." }
+];
+var TF_TIME = 600; /* ten minutes per card, per the arcade spec */
+
+/* reel 3 — multiple choice: the Hollywood storyline (slides 006–008) */
+var MC_ITEMS = [
+  { q:"The board defines “scale” as…",
+    opts:["The minimum legal pay for an actor","The outer plate of a reptile","A climb up a tall building"],
+    a:0,
+    ok:"Correct! “Scale (noun): The minimum legal pay for an actor.” Two words that open every conversation about creative work.",
+    no:"It is “the minimum legal pay for an actor” — straight from the How Hollywood Works board. How you doin’ now?" },
+  { q:"Phoebe saved Joey’s missed audition by…",
+    opts:["Impersonating his agent on her clunky retro car phone","Buying the casting director a muffin","Singing Smelly Cat outside the window"],
+    a:0,
+    ok:"Correct! “Phoebe impersonates an agent to save Joey’s missed audition” — and the retro car phone makes it art.",
+    no:"The red-string board says: “Phoebe impersonates an agent to save Joey’s missed audition, proving surprisingly effective on her clunky retro car phone.”" },
+  { q:"The casting directors’ real feedback included…",
+    opts:["“The worst Italian accent.”","“The worst French accent.”","“The worst German accent.”"],
+    a:0,
+    ok:"Correct! The Truth Hurts clipboard lists it beside “Not believable as a human being.” Ouch, but honest.",
+    no:"The clipboard is brutal but precise: “The worst Italian accent.” Honesty delivered without anesthesia." },
+  { q:"On the blackboard, the agent’s polite lie “They went another way.” actually means…",
+    opts:["“You are pretty but dumb.”","“You need new headshots.”","“The role was canceled.”"],
+    a:0,
+    ok:"Correct! Soft language protects the listener; the truth protects nobody’s feelings. Fluent listeners learn to hear both.",
+    no:"The chalk pairing is merciless: the lie is “They went another way.” and the translation is “You are pretty but dumb.”" },
+  { q:"The chalk conclusion says Joey prefers a lying agent because…",
+    opts:["Rejection is too painful to take personally","Liars work for scale","Estelle is his only friend"],
+    a:0,
+    ok:"Correct! “Joey decides he prefers a lying agent over a truthful one because rejection is too painful to take personally.”",
+    no:"The chalk says it word for word: rejection is “too painful to take personally.” The take it personally entry was written for this exact moment." }
+];
+
+/* reel 4 — match the meaning: the toy box storyline + core glossary (slides 009–010) */
+var MATCH_PAIRS = [
+  { w:"metaphorical",      m:"not literal; a symbol used to explain an idea" },
+  { w:"security blanket",  m:"an object a child carries everywhere to feel safe" },
+  { w:"weenie",            m:"a weak or cowardly person (slang)" },
+  { w:"double standard",   m:"a rule unfairly applied to different people" },
+  { w:"alter ego",         m:"a secret second self" },
+  { w:"take it personally",m:"to treat criticism as a judgment of who you are" }
+];
+
+/* reel 5 — bonus round: central perk trivia, answers straight from the napkin (slides 013–014) */
+var BONUS_ITEMS = [
+  { q:"The napkin’s verdict: Chandler buys Janice…", opts:["contact paper and a drawer","a metaphorical tunnel","a bag of premium barley"], a:0 },
+  { q:"Phoebe tells Joey he was rejected for having the worst ______ accent.", opts:["Italian","French","Spanish"], a:0 },
+  { q:"Ross’s childhood tea-party alter ego was named…", opts:["Bea","Rae","Dee"], a:0 },
+  { q:"Minor heartbreak requires, according to the spectrum…", opts:["low-fat soy ice cream","full-fat ice cream","double-chocolate fudge"], a:0 },
+  { q:"“Buy a vowel” is used when you…", opts:["are completely speechless","want to change the subject","lose a bet at a party"], a:0 },
+  { q:"“They went another way.” really means…", opts:["you are pretty but dumb","the role was canceled","you are too expensive"], a:0 },
+  { q:"The red-circled synthesis: all three men…", opts:["created their own panic by running from the truth","were simply unlucky in love","needed better agents"], a:0 },
+  { q:"At the supermarket, Chandler claims he is buying barley for…", opts:["a sophisticated party in Chelsea","his mother’s soup","a school project"], a:0 },
+  { q:"“Weenie (slang)” means…", opts:["a weak or cowardly person","a gourmet sausage only","a loyal friend"], a:0 },
+  { q:"The Final Takeaway: honesty is usually the best…", opts:["damage control","agent","security blanket"], a:0 }
+];
+var BONUS_TIME = 750;
+
+/* ======================================================================
+   LEVEL ENGINE — score, streaks, timers, cleanup
+   ====================================================================== */
+var currentLevel = -1, levelScore = 0, levelMistakes = 0, streak = 0;
+var cleanups = [], levelTimers = [];
+var pendingStart = null;
+var currentScreen = "intro";
+
+function setCleanup(fn){ cleanups.push(fn); }
+function clearTimers(){
+  levelTimers.forEach(function(o){ o.interval ? clearInterval(o.t) : clearTimeout(o.t); });
+  levelTimers = [];
+}
+function runCleanups(){
+  cleanups.forEach(function(fn){ try{ fn(); }catch(e){} });
+  cleanups = [];
+  clearTimers();
+}
+function tAfter(fn, ms){ var id = setTimeout(fn, ms); levelTimers.push({t:id, interval:false}); return id; }
+function tEvery(fn, ms){ var id = setInterval(fn, ms); levelTimers.push({t:id, interval:true}); return id; }
+
+function addScore(n){
+  levelScore = clamp(levelScore + n, 0, 99999);
+  var el = $("#levelScore"); if(el) el.textContent = "SCORE " + levelScore;
+}
+function streakMult(){ return 1 + Math.floor(streak/3); }
+
+function showScreen(name){
+  runCleanups();
+  pendingStart = null;
+  currentScreen = name;
+  $$(".screen").forEach(function(s){ s.classList.toggle("active", s.id === "screen-"+name); });
+  window.scrollTo(0,0);
+}
+function exitToMap(){ showScreen("map"); updateHUD(); }
+
+function startLevel(i, skipBriefing){
+  currentLevel = i;
+  levelScore = 0; levelMistakes = 0; streak = 0;
+  showScreen("level");
+  renderLevelHead();
+  GAMES[SCENES[i].id]();
+  if(!skipBriefing) showBriefing();
+  else beginLevel();
+}
+function beginLevel(){ if(pendingStart){ var f = pendingStart; pendingStart = null; f(); } }
+
+function finishLevel(){
+  clearTimers();
+  var stars = levelMistakes === 0 ? 3 : (levelMistakes <= 2 ? 2 : 1);
+  var prev = save.levels[currentLevel] || {score:0, stars:0, completed:false};
+  var isBest = levelScore > prev.score;
+  save.levels[currentLevel] = {
+    score: Math.max(prev.score, levelScore),
+    stars: Math.max(prev.stars, stars),
+    completed: true
+  };
+  persist(); updateHUD(); renderMap();
+  SFX.fanfare();
+  if(stars === 3){ spawnConfetti(150); toast("⭐⭐⭐ PERFECT REEL!"); }
+  else if(stars === 2){ spawnConfetti(80); toast("⭐⭐ Great run!"); }
+  else { spawnConfetti(40); toast("⭐ Reel cleared — replay for more stars"); }
+  showResultModal(stars, isBest);
+}
+
+/* ======================================================================
+   MINI-GAME 1: FILL THE BLANKS (reel 1 — Chandler, the spectrum board)
+   ====================================================================== */
+function renderBlanks(){
+  var area = $("#gameArea");
+  pendingStart = null;
+
+  var sents = BLANKS_ITEMS.map(function(it, i){
+    return '<div class="sentence"><span>'+it.text[0]+'</span>'+
+           '<button type="button" class="blank" data-blank="'+i+'" aria-label="Gap '+(i+1)+', empty">______</button>'+
+           '<span>'+it.text[1]+'</span></div>';
+  }).join("");
+  var chips = shuffle(BLANKS_BANK).map(function(w){
+    return '<button type="button" class="chip" data-word="'+w+'">'+w+'</button>';
+  }).join("");
+  area.innerHTML =
+    '<p class="g-note" style="margin:0 0 8px">Tap a gap to select it, then tap a word from the bank.</p>'+
+    sents+
+    '<div class="bank" id="bank">'+chips+'</div>'+
+    '<div class="g-status" id="blanksStatus" aria-live="polite">Filled <b>0/6</b>. Pick your first gap.</div>';
+
+  var selected = -1, filled = 0;
+
+  function status(html){ $("#blanksStatus").innerHTML = html; }
+
+  function onClick(e){
+    var b = e.target.closest(".blank");
+    var c = e.target.closest(".chip");
+    if(b){
+      if(b.classList.contains("filled")) return;
+      $$(".blank", area).forEach(function(x){ x.classList.remove("sel"); });
+      selected = +b.getAttribute("data-blank");
+      b.classList.add("sel");
+      SFX.flip();
+      status("Gap "+(selected+1)+" selected — now tap a word.");
+      return;
+    }
+    if(c){
+      if(selected < 0){
+        SFX.wrong(); shakeEl(c);
+        status("First tap a gap, then tap a word. The words are patient.");
+        return;
+      }
+      var w = c.getAttribute("data-word");
+      var item = BLANKS_ITEMS[selected];
+      if(w === item.answer){
+        var b2 = $('.blank[data-blank="'+selected+'"]', area);
+        b2.textContent = w;
+        b2.classList.add("filled"); b2.classList.remove("sel");
+        b2.setAttribute("aria-label", "Gap "+(selected+1)+", filled with: "+w);
+        c.classList.add("used"); c.disabled = true;
+        var gain = 100 + Math.min(streak,4)*25;
+        streak++; addScore(gain);
+        var r = b2.getBoundingClientRect();
+        popFloat(r.left + r.width/2, r.top, "+"+gain, "#bfe8c6");
+        SFX.correct();
+        status("✅ "+item.why);
+        selected = -1; filled++;
+        if(filled === BLANKS_ITEMS.length) tAfter(finishLevel, 750);
+      } else {
+        levelMistakes++; streak = 0; addScore(-15);
+        SFX.wrong(); shakeEl(c);
+        var rc = c.getBoundingClientRect();
+        popFloat(rc.left + rc.width/2, rc.top, "-15", "#ffb3ab");
+        status("❌ Not there. That word bounced back into the bank — 15 points jumped after it.");
+      }
+    }
+  }
+  area.addEventListener("click", onClick);
+  setCleanup(function(){ area.removeEventListener("click", onClick); });
+}
+
+/* ======================================================================
+   MINI-GAME 2: REAL OR DELUSION (reel 2 — Phoebe, the decoder ring)
+   Timer stops while the verdict is on screen; next card only on NEXT.
+   ====================================================================== */
+function renderTF(){
+  var area = $("#gameArea");
+  area.innerHTML =
+    '<div class="tf-top">'+
+      '<span class="tf-count" id="tfCount"></span>'+
+      '<span class="streak-chip" id="tfStreak">STREAK ×1</span>'+
+    '</div>'+
+    '<div class="timer-wrap" aria-hidden="true"><div class="timer-bar" id="tfBar"></div></div>'+
+    '<div class="stage-card" id="tfCard">'+
+      '<p class="tf-text" id="tfText"></p>'+
+      '<div class="tf-btns">'+
+        '<button type="button" class="btn btn-real" id="btnReal" aria-label="Answer REAL (left arrow)">⬅ REAL</button>'+
+        '<button type="button" class="btn btn-del" id="btnDel" aria-label="Answer DELUSION (right arrow)">DELUSION ➡</button>'+
+      '</div>'+
+      '<div class="explain" id="tfExplain" aria-live="polite"></div>'+
+    '</div>'+
+    '<p class="g-note">Keyboard: ← REAL · → DELUSION · Enter = next. The clock stops while you read the verdict.</p>';
+
+  var idx = 0, answered = false, remaining = TF_TIME, timerId = null;
+
+  function renderCard(){
+    answered = false; remaining = TF_TIME;
+    $("#tfCount").textContent = "STATEMENT "+(idx+1)+"/"+TF_ITEMS.length;
+    $("#tfText").textContent = TF_ITEMS[idx].text;
+    $("#tfCard").classList.remove("done");
+    var ex = $("#tfExplain");
+    ex.className = "explain"; ex.innerHTML = "";
+    $("#tfBar").style.width = "100%";
+    $("#tfStreak").textContent = "STREAK ×"+streakMult();
+  }
+  function stopTimer(){ if(timerId){ clearInterval(timerId); timerId = null; } }
+  function startTimer(){
+    stopTimer();
+    timerId = tEvery(function(){
+      remaining = Math.max(0, remaining-1);
+      var bar = $("#tfBar"); if(bar) bar.style.width = (remaining/TF_TIME*100)+"%";
+      if(remaining <= 10 && remaining > 0) SFX.tick();
+      if(remaining === 0){ stopTimer(); judge(null); }
+    }, 1000);
+  }
+  function judge(choice){ /* choice: true = REAL, false = DELUSION, null = timeout */
+    if(answered) return;
+    answered = true;
+    stopTimer();
+    var it = TF_ITEMS[idx];
+    var ok = choice !== null && choice === it.real;
+    var verdict = choice === null ? "TIME RAN OUT" : (it.real ? "REAL" : "DELUSION");
+    var cls, head;
+    if(ok){
+      var gain = 100 * streakMult();
+      streak++; addScore(gain); SFX.correct();
+      cls = "ok"; head = "✅ It is "+verdict+". +"+gain;
+    } else {
+      levelMistakes++; streak = 0; addScore(-25); SFX.wrong();
+      cls = "bad"; head = (choice === null ? "⏱ The answer was " : "❌ It is ") + verdict + ". −25";
+    }
+    $("#tfStreak").textContent = "STREAK ×"+streakMult();
+    $("#tfCard").classList.add("done");
+    var ex = $("#tfExplain");
+    ex.innerHTML =
+      '<p class="verdict '+cls+'">'+head+'</p>'+
+      '<p>'+it.why+'</p>'+
+      '<button type="button" class="btn btn-gold btn-next" id="btnNext">'+
+        (idx === TF_ITEMS.length-1 ? "SEE RESULTS" : "NEXT →")+
+      '</button>';
+    ex.classList.add("show");
+    $("#btnNext").addEventListener("click", next);
+    $("#btnNext").focus();
+  }
+  function next(){
+    if(!answered) return;
+    SFX.click();
+    if(idx === TF_ITEMS.length-1){ finishLevel(); return; }
+    idx++; renderCard(); startTimer();
+  }
+  function onKey(e){
+    if(!$("#modalRoot").hidden) return;
+    if(currentScreen !== "level") return;
+    if(!answered){
+      if(e.key === "ArrowLeft"){ e.preventDefault(); judge(true); }
+      else if(e.key === "ArrowRight"){ e.preventDefault(); judge(false); }
+    } else if(e.key === "Enter"){
+      e.preventDefault(); next();
+    }
+  }
+  $("#btnReal").addEventListener("click", function(){ judge(true); });
+  $("#btnDel").addEventListener("click", function(){ judge(false); });
+  document.addEventListener("keydown", onKey);
+  setCleanup(function(){
+    document.removeEventListener("keydown", onKey);
+    stopTimer();
+  });
+  renderCard();
+  pendingStart = startTimer;
+}
+
+/* ======================================================================
+   MINI-GAME 3: MULTIPLE CHOICE (reel 3 — Joey, the Hollywood board)
+   Three options, one attempt, character reaction after every answer.
+   ====================================================================== */
+function renderMC(){
+  var area = $("#gameArea");
+  area.innerHTML =
+    '<div class="tf-top">'+
+      '<span class="tf-count" id="mcCount"></span>'+
+      '<span class="streak-chip" id="mcStreak">STREAK ×1</span>'+
+    '</div>'+
+    '<div class="stage-card">'+
+      '<p class="tf-text" id="mcQ"></p>'+
+      '<div id="mcOpts"></div>'+
+      '<div class="bubble mc-bubble" id="mcBubble">'+
+        '<div class="avatar" id="mcAvatar">J</div>'+
+        '<div class="bubble-text" id="mcSay"></div>'+
+      '</div>'+
+      '<div class="mc-next" id="mcNextWrap"></div>'+
+    '</div>'+
+    '<p class="g-note">One attempt per question. The avatar speaks for Joey, with love.</p>';
+
+  var idx = 0, locked = false;
+
+  function renderQ(){
+    locked = false;
+    var it = MC_ITEMS[idx];
+    $("#mcCount").textContent = "QUESTION "+(idx+1)+"/"+MC_ITEMS.length;
+    $("#mcStreak").textContent = "STREAK ×"+streakMult();
+    $("#mcQ").textContent = it.q;
+    $("#mcBubble").className = "bubble mc-bubble";
+    $("#mcNextWrap").innerHTML = "";
+    /* options are shuffled at render time; data-opt keeps the original index */
+    $("#mcOpts").innerHTML = shuffle(it.opts.map(function(o,i){ return {o:o, i:i}; })).map(function(x){
+      return '<button type="button" class="opt" data-opt="'+x.i+'">'+x.o+'</button>';
+    }).join("");
+  }
+  $("#mcOpts").addEventListener("click", function(e){
+    var b = e.target.closest(".opt");
+    if(!b || locked) return;
+    locked = true;
+    var it = MC_ITEMS[idx];
+    var pick = +b.getAttribute("data-opt");
+    var ok = pick === it.a;
+    $$(".opt", area).forEach(function(x){
+      x.disabled = true;
+      if(+x.getAttribute("data-opt") === it.a) x.classList.add("correct");
+      else if(x !== b) x.classList.add("dim");
+    });
+    if(ok){
+      b.classList.add("correct");
+      var gain = 100 * streakMult();
+      streak++; addScore(gain); SFX.correct();
+    } else {
+      b.classList.add("wrong");
+      levelMistakes++; streak = 0; addScore(-25); SFX.wrong();
+    }
+    $("#mcStreak").textContent = "STREAK ×"+streakMult();
+    $("#mcAvatar").style.background = SCENES[currentLevel].color;
+    $("#mcSay").textContent = ok ? it.ok : it.no;
+    $("#mcBubble").classList.add("show");
+    $("#mcNextWrap").innerHTML =
+      '<button type="button" class="btn btn-gold btn-next" id="mcNext">'+
+        (idx === MC_ITEMS.length-1 ? "SEE RESULTS" : "NEXT →")+
+      '</button>';
+    $("#mcNext").addEventListener("click", function(){
+      SFX.click();
+      if(idx === MC_ITEMS.length-1){ finishLevel(); return; }
+      idx++; renderQ();
+    });
+    $("#mcNext").focus();
+  });
+  renderQ();
+  pendingStart = null;
+}
+
+/* ======================================================================
+   MINI-GAME 4: MATCH THE MEANING (reel 4 — Ross, the toy box)
+   Click a word, then its meaning. Correct pairs lock green.
+   ====================================================================== */
+function renderMatch(){
+  var area = $("#gameArea");
+  var words = shuffle(MATCH_PAIRS.map(function(p,i){ return {w:p.w, m:p.m, i:i}; }));
+  var means = shuffle(MATCH_PAIRS.map(function(p,i){ return {w:p.w, m:p.m, i:i}; }));
+  area.innerHTML =
+    '<div class="match-example">WORD · metaphorical → MEANING · not literal; symbolic</div>'+
+    '<div class="match-grid">'+
+      '<div class="match-col" id="colWords">'+
+        words.map(function(p){ return '<button type="button" class="match-item" data-w="'+p.i+'">'+p.w+'</button>'; }).join("")+
+      '</div>'+
+      '<div class="match-col" id="colMeans">'+
+        means.map(function(p){ return '<button type="button" class="match-item" data-m="'+p.i+'">'+p.m+'</button>'; }).join("")+
+      '</div>'+
+    '</div>'+
+    '<p class="match-count" id="matchCount" aria-live="polite">PAIRS 0/6 · ATTEMPTS 0</p>'+
+    '<p class="g-note">Click a word, then click its meaning. Correct pairs lock green and cannot be reused.</p>';
+
+  var selW = -1, found = 0, attempts = 0;
+
+  function upd(){ $("#matchCount").textContent = "PAIRS "+found+"/"+MATCH_PAIRS.length+" · ATTEMPTS "+attempts; }
+
+  function onClick(e){
+    var b = e.target.closest(".match-item");
+    if(!b || b.classList.contains("locked")) return;
+    if(b.getAttribute("data-w") !== null && b.getAttribute("data-w") !== undefined && b.hasAttribute("data-w")){
+      $$("#colWords .match-item", area).forEach(function(x){ x.classList.remove("sel"); });
+      b.classList.add("sel");
+      selW = +b.getAttribute("data-w");
+      SFX.flip();
+      return;
+    }
+    /* a meaning was clicked */
+    if(selW < 0){
+      SFX.wrong(); shakeEl(b);
+      toast("Pick a word on the left first.");
+      return;
+    }
+    attempts++;
+    var wB = $('#colWords .match-item[data-w="'+selW+'"]', area);
+    if(+b.getAttribute("data-m") === selW){
+      found++;
+      [wB, b].forEach(function(x){
+        x.classList.remove("sel");
+        x.classList.add("locked");
+        x.disabled = true;
+      });
+      var gain = 100 + found*10;
+      streak++; addScore(gain); SFX.match();
+      var r = b.getBoundingClientRect();
+      popFloat(r.left + r.width/2, r.top, "+"+gain, "#bfe8c6");
+      selW = -1; upd();
+      if(found === MATCH_PAIRS.length) tAfter(finishLevel, 650);
+    } else {
+      levelMistakes++; streak = 0; addScore(-10);
+      SFX.wrong();
+      shakeEl(wB); shakeEl(b);
+      var rw = b.getBoundingClientRect();
+      popFloat(rw.left + rw.width/2, rw.top, "-10", "#ffb3ab");
+      tAfter(function(){ wB.classList.remove("sel"); }, 420);
+      selW = -1; upd();
+    }
+  }
+  area.addEventListener("click", onClick);
+  setCleanup(function(){ area.removeEventListener("click", onClick); });
+  upd();
+  pendingStart = null;
+}
+
+/* ======================================================================
+   MINI-GAME 5: TIMED BONUS ROUND (reel 5 — Janice, the napkin)
+   750 seconds, mixed questions, streak multiplier, red flashing timer.
+   ====================================================================== */
+function renderBonus(){
+  var area = $("#gameArea");
+  var idx = 0, remaining = BONUS_TIME, locked = false, finished = false, timerId = null;
+
+  area.innerHTML =
+    '<div class="bonus-top">'+
+      '<span class="bonus-timer mono" id="bnTimer">'+fmtTime(remaining)+'</span>'+
+      '<span class="streak-chip" id="bnStreak">STREAK ×1</span>'+
+    '</div>'+
+    '<div class="timer-wrap" aria-hidden="true"><div class="timer-bar hot" id="bnBar"></div></div>'+
+    '<div class="stage-card">'+
+      '<p class="tf-count" id="bnCount" style="display:inline-block"></p>'+
+      '<p class="tf-text" id="bnQ"></p>'+
+      '<div id="bnOpts"></div>'+
+    '</div>'+
+    '<p class="g-note">Lightning round — the clock never stops and questions come from every reel. Ride the streak.</p>';
+
+  function fmtTime(s){ return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+  function stopTimer(){ if(timerId){ clearInterval(timerId); timerId = null; } }
+
+  function renderQ(){
+    locked = false;
+    var it = BONUS_ITEMS[idx];
+    $("#bnCount").textContent = (idx+1)+"/"+BONUS_ITEMS.length;
+    $("#bnQ").textContent = it.q;
+    $("#bnStreak").textContent = "STREAK ×"+streakMult();
+    $("#bnOpts").innerHTML = shuffle(it.opts.map(function(o,i){ return {o:o, i:i}; })).map(function(x){
+      return '<button type="button" class="opt" data-opt="'+x.i+'">'+x.o+'</button>';
+    }).join("");
+  }
+  function end(){
+    if(finished) return;
+    finished = true;
+    stopTimer();
+    finishLevel();
+  }
+  function tickT(){
+    remaining = Math.max(0, remaining-1);
+    var tEl = $("#bnTimer");
+    if(!tEl){ stopTimer(); return; }
+    tEl.textContent = fmtTime(remaining);
+    var bar = $("#bnBar");
+    if(bar) bar.style.width = (remaining/BONUS_TIME*100)+"%";
+    if(remaining <= 60) tEl.classList.add("flash");
+    if(remaining <= 10 && remaining > 0) SFX.tick();
+    if(remaining === 0) end();
+  }
+  $("#bnOpts").addEventListener("click", function(e){
+    var b = e.target.closest(".opt");
+    if(!b || locked || finished) return;
+    locked = true;
+    var it = BONUS_ITEMS[idx];
+    var pick = +b.getAttribute("data-opt");
+    var ok = pick === it.a;
+    $$("#bnOpts .opt", area).forEach(function(x){
+      x.disabled = true;
+      if(+x.getAttribute("data-opt") === it.a) x.classList.add("correct");
+      else if(x !== b) x.classList.add("dim");
+    });
+    if(ok){
+      b.classList.remove("dim");
+      var gain = 100 * streakMult();
+      streak++; addScore(gain); SFX.correct();
+    } else {
+      b.classList.add("wrong");
+      levelMistakes++; streak = 0; addScore(-25); SFX.wrong();
+    }
+    $("#bnStreak").textContent = "STREAK ×"+streakMult();
+    tAfter(function(){
+      if(finished) return;
+      idx++;
+      if(idx >= BONUS_ITEMS.length) end();
+      else renderQ();
+    }, ok ? 550 : 1150);
+  });
+  setCleanup(stopTimer);
+  renderQ();
+  pendingStart = function(){ timerId = tEvery(tickT, 1000); };
+}
+
+/* mechanic registry: scene id → render function */
+var GAMES = { blanks:renderBlanks, tf:renderTF, mc:renderMC, match:renderMatch, bonus:renderBonus };
+
+/* ======================================================================
+   LEVEL HEAD + BRIEFING + RESULT MODALS
+   ====================================================================== */
+function renderLevelHead(){
+  var s = SCENES[currentLevel];
+  $("#levelTitle").textContent = "REEL "+s.num+" · "+s.title;
+  $("#levelChar").textContent = s.char+" — “"+s.flavor+"”";
+  $("#levelScore").textContent = "SCORE 0";
+  var banner = $("#levelBanner");
+  banner.classList.remove("has-photo");
+  banner.style.backgroundImage = "linear-gradient(120deg, "+s.color+", #31212d)";
+  var img = new Image();
+  img.onload = function(){
+    banner.classList.add("has-photo");
+    banner.style.backgroundImage = 'url("'+s.slide+'")';
+  };
+  img.src = s.slide;
+}
+
+function showBriefing(){
+  var s = SCENES[currentLevel];
+  openModal(
+    '<p class="modal-tag" style="color:'+s.color+'">REEL '+s.num+' · '+s.tag+'</p>'+
+    '<h3>'+s.title+'</h3>'+
+    '<p class="modal-line"><b>'+s.char+'</b> says: '+s.obj+'</p>'+
+    '<p class="modal-line tip">💡 '+s.tip+'</p>'+
+    '<p class="flavor">“'+s.flavor+'” — '+s.char+'</p>'+
+    '<div class="modal-btns"><button type="button" class="btn btn-gold" id="mStart"><span data-icon="play"></span> Start reel</button></div>',
+    "briefing");
+  refreshIcons($("#modalRoot"));
+  $("#mStart").addEventListener("click", function(){
+    SFX.flip();
+    closeModal();
+    beginLevel();
+  });
+}
+
+function showResultModal(stars, isBest){
+  var s = SCENES[currentLevel];
+  var rec = save.levels[currentLevel];
+  var last = allComplete();
+  var starSpans = [1,2,3].map(function(i){
+    return '<span style="animation-delay:'+(i*0.18)+'s" aria-hidden="true">'+(i<=stars ? "★" : "☆")+'</span>';
+  }).join("");
+  openModal(
+    '<p class="modal-tag">RESULT</p>'+
+    '<h3>Reel '+s.num+' cleared!</h3>'+
+    '<div class="result-stars" role="img" aria-label="'+stars+' of 3 stars">'+starSpans+'</div>'+
+    '<p class="modal-line">Run score: <b class="mono">'+levelScore+'</b>'+(isBest ? " — new best!" : " (best: "+rec.score+")")+'</p>'+
+    '<p class="modal-line">Mistakes: <b class="mono">'+levelMistakes+'</b> · Stars: <b class="mono">'+stars+'/3</b></p>'+
+    (stars === 3
+      ? '<p class="modal-line">Zero mistakes. The napkin would frame itself.</p>'
+      : '<p class="modal-line">Honest feedback is the fastest route to improvement — replay any time for a better score.</p>')+
+    '<div class="modal-btns">'+
+      '<button type="button" class="btn btn-dark" id="mReplay"><span data-icon="replay"></span> Replay</button>'+
+      '<button type="button" class="btn btn-dark" id="mMap"><span data-icon="map"></span> Map</button>'+
+      (last ? '<button type="button" class="btn btn-gold" id="mFinal"><span data-icon="trophy"></span> Finale</button>' : "")+
+    '</div>',
+    "result");
+  refreshIcons($("#modalRoot"));
+  $("#mReplay").addEventListener("click", function(){ SFX.click(); closeModal(); startLevel(currentLevel, true); });
+  $("#mMap").addEventListener("click", function(){ SFX.click(); closeModal(); exitToMap(); });
+  if(last) $("#mFinal").addEventListener("click", function(){ SFX.click(); closeModal(); openFinale(); });
+}
+
+/* ===== generic modal root (briefing / result / rewind) ===== */
+var lastFocus = null;
+function openModal(html, mode){
+  lastFocus = document.activeElement;
+  var root = $("#modalRoot");
+  $("#modalBox").innerHTML = html;
+  root.hidden = false;
+  root.setAttribute("data-mode", mode||"");
+  var f = $("button, [href]", $("#modalBox"));
+  if(f) f.focus();
+}
+function closeModal(){
+  var root = $("#modalRoot");
+  root.hidden = true;
+  root.setAttribute("data-mode", "");
+  if(lastFocus && lastFocus.focus) lastFocus.focus();
+}
+
+/* ======================================================================
+   LEVEL MAP — reel cards, free order, best scores, final card
+   ====================================================================== */
+function placeholderSVG(letter, color){
+  var svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='320' height='180'>"+
+    "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>"+
+    "<stop offset='0' stop-color='"+color+"'/>"+
+    "<stop offset='1' stop-color='#3a2735'/>"+
+    "</linearGradient></defs>"+
+    "<rect width='320' height='180' fill='url(#g)'/>"+
+    "<circle cx='286' cy='26' r='46' fill='rgba(255,255,255,0.10)'/>"+
+    "<circle cx='34' cy='160' r='60' fill='rgba(0,0,0,0.14)'/>"+
+    "<text x='160' y='112' font-family='Arial Black,Arial' font-size='64' font-weight='900' fill='rgba(255,255,255,0.92)' text-anchor='middle'>"+letter+"</text>"+
+    "</svg>";
+  return "data:image/svg+xml;utf8,"+encodeURIComponent(svg);
+}
+
+function renderMap(){
+  var grid = $("#mapGrid"); if(!grid) return;
+  var html = "";
+  SCENES.forEach(function(s, i){
+    var rec = levelSave(i);
+    var stars = rec ? rec.stars : 0;
+    var best = rec ? rec.score : 0;
+    var starHtml = [1,2,3].map(function(k){ return '<span class="'+(k<=stars ? "on" : "")+'">★</span>'; }).join("");
+    var label = "Reel "+s.num+": "+s.title+". "+
+      (rec ? "Completed, "+stars+" stars, best "+best+" points." : "Not played yet.")+
+      " Free to play in any order.";
+    html +=
+      '<button type="button" class="reel-card" data-level="'+i+'" aria-label="'+label+'">'+
+        '<span class="reel-preview" data-slide="'+s.slide+'" style="background-image:url(\''+placeholderSVG(s.char.charAt(0), s.color)+'\')">'+
+          '<span class="reel-initial" aria-hidden="true">'+s.char.charAt(0)+'</span>'+
+          '<span class="reel-num">REEL '+s.num+'</span>'+
+        '</span>'+
+        '<span class="reel-body">'+
+          '<span class="reel-tag">'+s.tag+'</span>'+
+          '<span class="reel-title">'+s.title+'</span>'+
+          '<span class="reel-char">with '+s.char+'</span>'+
+          '<span class="reel-stats"><span class="stars" aria-hidden="true">'+starHtml+'</span>'+
+          '<span class="reel-best">BEST '+String(best).padStart(4,"0")+'</span></span>'+
+        '</span>'+
+      '</button>';
+  });
+  if(allComplete()){
+    html +=
+      '<button type="button" class="reel-card final-card" id="finalCard" data-final="1" aria-label="The finale: all reels cleared. Open your total score and rank.">'+
+        '<span class="reel-preview gold-bg">'+
+          '<span class="reel-initial" aria-hidden="true">🏆</span>'+
+          '<span class="reel-num">FINALE</span>'+
+        '</span>'+
+        '<span class="reel-body">'+
+          '<span class="reel-tag">ALL REELS CLEARED</span>'+
+          '<span class="reel-title">The One with the Total Score</span>'+
+          '<span class="reel-char">Joey is waiting with your rank</span>'+
+        '</span>'+
+      '</button>';
+  }
+  grid.innerHTML = html;
+  /* try the real slide image; keep the SVG placeholder if it is missing */
+  $$(".reel-preview[data-slide]", grid).forEach(function(el){
+    var img = new Image();
+    img.onload = function(){
+      el.classList.add("has-photo");
+      el.style.backgroundImage = 'url("'+el.getAttribute("data-slide")+'")';
+    };
+    img.src = el.getAttribute("data-slide");
+  });
+  refreshIcons(grid);
+}
+
+/* ======================================================================
+   FINALE — total score, stars, table, rank, rewind
+   ====================================================================== */
+function openFinale(){
+  showScreen("finale");
+  var ts = totalScore(), tstars = totalStars(), maxStars = SCENES.length*3;
+  $("#finScore").textContent = String(ts).padStart(5,"0");
+  $("#finStars").textContent = "★".repeat(tstars) + "☆".repeat(Math.max(0, maxStars-tstars));
+  $("#finStarsLabel").textContent = tstars+" / "+maxStars+" stars collected";
+  $("#resultsBody").innerHTML = SCENES.map(function(s,i){
+    var r = levelSave(i) || {score:0, stars:0};
+    return "<tr><td>R"+s.num+"</td><td>"+s.title+"</td><td>"+("★".repeat(r.stars)+"☆".repeat(3-r.stars))+"</td><td>"+String(r.score).padStart(5,"0")+"</td></tr>";
+  }).join("");
+  var rank;
+  if(ts >= 4800)      rank = ["FRIENDS LEGEND","The orange couch is yours forever. Gunther salutes you."];
+  else if(ts >= 3600) rank = ["SITCOM STAR","You could guest-star in “The One with the Vocabulary.”"];
+  else if(ts >= 2400) rank = ["CENTRAL PERK REGULAR","They started writing your name on the coffee cup."];
+  else                rank = ["NEWCOMER","Welcome in. Mind the cat — it smells."];
+  $("#rankName").textContent = rank[0];
+  $("#rankLine").textContent = rank[1];
+  SFX.cheer();
+  spawnConfetti(160);
+}
+
+/* ======================================================================
+   HUD + SOUND + GLOBAL BINDINGS
+   ====================================================================== */
+function updateHUD(){
+  var sc = $("#hudScore");
+  if(sc) sc.textContent = String(totalScore()).padStart(5,"0");
+  var dots = $("#hudDots");
+  if(dots){
+    dots.innerHTML = SCENES.map(function(s,i){
+      var rec = levelSave(i);
+      var cls = rec ? (rec.stars === 3 ? "dot gold" : "dot done") : "dot";
+      var label = "Reel "+s.num+": "+(rec ? "completed, "+rec.stars+" stars" : "not completed");
+      return '<button type="button" class="'+cls+'" data-dot="'+i+'" aria-label="'+label+'"></button>';
+    }).join("");
+  }
+}
+function renderSound(){
+  var b = $("#btnSound"); if(!b) return;
+  b.innerHTML = save.muted ? ICONS.mute : ICONS.vol;
+  b.setAttribute("aria-label", save.muted ? "Unmute sounds" : "Mute sounds");
+  b.setAttribute("aria-pressed", String(!save.muted));
+  b.style.color = save.muted ? "#ffb3ab" : "";
+}
+
+function bindGlobal(){
+  /* audio wakes on the first interaction, everywhere */
+  document.addEventListener("click", initAudio, {once:true});
+  document.addEventListener("click", function(){
+    if(AC && AC.state === "suspended") AC.resume();
+  });
+
+  $("#btnStart").addEventListener("click", function(){ SFX.click(); showScreen("map"); updateHUD(); });
+  $("#btnMap").addEventListener("click", function(){ SFX.click(); exitToMap(); });
+  $("#btnMap2").addEventListener("click", function(){ SFX.click(); exitToMap(); });
+  $("#btnMap3").addEventListener("click", function(){ SFX.click(); showScreen("map"); updateHUD(); });
+  $("#btnSound").addEventListener("click", function(){
+    save.muted = !save.muted;
+    persist(); renderSound();
+    toast(save.muted ? "🔇 Sound off" : "🔊 Sound on");
+    if(!save.muted) SFX.click();
+  });
+
+  /* map + header dots: delegation, many cards one listener */
+  $("#mapGrid").addEventListener("click", function(e){
+    var card = e.target.closest(".reel-card");
+    if(!card) return;
+    SFX.click();
+    if(card.hasAttribute("data-final")) openFinale();
+    else startLevel(+card.getAttribute("data-level"), false);
+  });
+  $("#hudDots").addEventListener("click", function(e){
+    var d = e.target.closest(".dot");
+    if(!d) return;
+    SFX.click();
+    startLevel(+d.getAttribute("data-dot"), false);
+  });
+
+  /* rewind the tape */
+  $("#btnRewind").addEventListener("click", function(){
+    SFX.click();
+    openModal(
+      '<p class="modal-tag">REWIND</p>'+
+      '<h3>Rewind the tape?</h3>'+
+      '<p class="modal-line">All stars and scores will be erased, exactly like a worn-out VHS. Joey will pretend not to cry.</p>'+
+      '<div class="modal-btns">'+
+        '<button type="button" class="btn btn-red" id="mErase">Erase everything</button>'+
+        '<button type="button" class="btn btn-dark" id="mKeep">Keep progress</button>'+
+      '</div>',
+      "rewind");
+    $("#mErase").addEventListener("click", function(){
+      save.levels = {};
+      persist(); updateHUD(); renderMap();
+      closeModal();
+      showScreen("map");
+      toast("📼 Tape rewound. Fresh start!");
+      SFX.flip();
+    });
+    $("#mKeep").addEventListener("click", function(){ SFX.click(); closeModal(); });
+  });
+
+  /* modal backdrop + Escape behavior */
+  $("#modalRoot").addEventListener("click", function(e){
+    if(e.target.id !== "modalRoot") return;
+    var mode = $("#modalRoot").getAttribute("data-mode");
+    if(mode === "briefing"){ SFX.click(); closeModal(); exitToMap(); toast("Reel postponed — it will wait on the shelf."); }
+    else if(mode === "result"){ closeModal(); exitToMap(); }
+    else closeModal();
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key !== "Escape") return;
+    var root = $("#modalRoot");
+    if(!root.hidden){
+      var mode = root.getAttribute("data-mode");
+      if(mode === "briefing"){ closeModal(); exitToMap(); toast("Reel postponed — it will wait on the shelf."); }
+      else if(mode === "result"){ closeModal(); exitToMap(); }
+      else closeModal();
+    } else if(currentScreen === "level"){
+      exitToMap();
+      toast("Left the reel — come back any time.");
+    }
+  });
+
+  /* preloader: PLAY ▶ exits upward, then the console appears */
+  var pre = $("#preloader"), btnPlay = $("#btnPlay");
+  setTimeout(function(){
+    btnPlay.classList.add("ready");
+    $("#vhsLoad").textContent = "READY.";
+  }, 1400);
+  btnPlay.addEventListener("click", function(){
+    initAudio();
+    SFX.flip();
+    pre.classList.add("exit");
+    $("#hud").hidden = false;
+    setTimeout(function(){ pre.remove(); }, 900);
+  });
+}
+
+/* ===== boot ===== */
+bindGlobal();
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+</script>
+</body>
+</html>
