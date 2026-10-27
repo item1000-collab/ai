@@ -1,0 +1,3286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friends Vocab Arcade — The One With The Flashback</title>
+<meta name="description" content="A retro-VHS educational arcade. Five mini-games built on the Friends flashback episode.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Courier+Prime:wght@400;700&family=Nunito+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+/* ===== Tokens ===== */
+:root {
+  --bg: #1a0e0a;
+  --bg-2: #2a1810;
+  --paper: #f4e8c8;
+  --paper-2: #ebdcb4;
+  --ink: #2a1f17;
+  --ink-soft: #5a4a3a;
+  --red: #d9433b;
+  --teal: #3e8e8c;
+  --gold: #f2b33d;
+  --magenta: #c8458a;
+  --brown: #6b4226;
+  --green: #4a7c59;
+  --shadow-hard: 4px 4px 0 var(--ink);
+  --shadow-hard-sm: 2px 2px 0 var(--ink);
+  --shadow-paper: 0 6px 0 var(--ink);
+  --radius: 4px;
+  --header-h: 64px;
+}
+
+/* ===== Reset ===== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--paper);
+  line-height: 1.55;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  min-height: 100vh;
+}
+body::before {
+  /* film grain */
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.85  0 0 0 0 0.65  0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: overlay;
+}
+body::after {
+  /* CRT scanlines */
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(0,0,0,0.10) 3px,
+    rgba(0,0,0,0.10) 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ===== Preloader ===== */
+.preloader {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.7s cubic-bezier(.7,0,.3,1), opacity 0.4s ease 0.5s;
+  overflow: hidden;
+}
+.preloader.exit { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+.preloader::before {
+  /* VHS static */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n2'><feTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n2)' opacity='0.4'/></svg>");
+  opacity: 0.6;
+  animation: staticShift 0.4s steps(4) infinite;
+}
+@keyframes staticShift {
+  0% { transform: translate(0,0); }
+  25% { transform: translate(-4px,2px); }
+  50% { transform: translate(3px,-3px); }
+  75% { transform: translate(-2px,4px); }
+  100% { transform: translate(0,0); }
+}
+.preloader-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 32px;
+}
+.preloader-title {
+  font-family: 'Righteous', cursive;
+  font-size: clamp(28px, 6vw, 52px);
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-shadow: 3px 3px 0 var(--red), 6px 6px 0 var(--ink);
+  margin-bottom: 8px;
+  animation: titleFlicker 4s infinite;
+}
+@keyframes titleFlicker {
+  0%,90%,100% { opacity: 1; }
+  92% { opacity: 0.6; }
+  94% { opacity: 1; }
+  96% { opacity: 0.7; }
+}
+.preloader-sub {
+  font-family: 'Courier Prime', monospace;
+  color: var(--paper);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  font-size: 13px;
+  margin-bottom: 32px;
+  opacity: 0.7;
+}
+.play-btn {
+  background: var(--gold);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  padding: 16px 40px;
+  font-family: 'Righteous', cursive;
+  font-size: 22px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: var(--radius);
+}
+.play-btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.play-btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.play-btn:focus-visible { outline: 3px solid var(--teal); outline-offset: 4px; }
+.play-btn i { width: 24px; height: 24px; }
+.preloader-hint {
+  font-family: 'Courier Prime', monospace;
+  color: var(--paper);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 20px;
+  opacity: 0.5;
+  animation: blink 1.4s steps(2) infinite;
+}
+@keyframes blink { 50% { opacity: 0.2; } }
+
+/* ===== Header ===== */
+.header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: var(--bg-2);
+  border-bottom: 3px solid var(--ink);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  z-index: 100;
+  gap: 16px;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.4);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.brand-icon {
+  width: 36px; height: 36px;
+  background: var(--gold);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-hard-sm);
+}
+.brand-icon svg { width: 22px; height: 22px; }
+.brand-text { line-height: 1.1; }
+.brand-name {
+  font-family: 'Righteous', cursive;
+  font-size: 14px;
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+.brand-tag {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  color: var(--paper);
+  opacity: 0.6;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.progress-dots {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+.dot {
+  width: 14px; height: 14px;
+  border: 2px solid var(--ink);
+  background: var(--bg);
+  border-radius: 50%;
+  transition: background 0.3s, transform 0.3s;
+}
+.dot.complete {
+  background: var(--teal);
+  transform: scale(1.15);
+}
+.dot.current {
+  background: var(--gold);
+  animation: dotPulse 1.2s infinite;
+}
+@keyframes dotPulse {
+  50% { transform: scale(1.3); }
+}
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.score-display {
+  background: var(--ink);
+  border: 2px solid var(--gold);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-family: 'Courier Prime', monospace;
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  text-align: right;
+}
+.score-label {
+  font-size: 8px;
+  color: var(--paper);
+  opacity: 0.6;
+  letter-spacing: 2px;
+}
+.score-value {
+  font-size: 16px;
+  color: var(--gold);
+  font-weight: 700;
+}
+.icon-btn {
+  width: 36px; height: 36px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-hard-sm);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.icon-btn:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--ink); }
+.icon-btn:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--ink); }
+.icon-btn:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.icon-btn[aria-pressed="true"] { background: var(--red); color: var(--paper); }
+.icon-btn i { width: 18px; height: 18px; }
+.icon-btn[hidden] { display: none; }
+
+/* ===== Main / Screens ===== */
+.main {
+  padding-top: calc(var(--header-h) + 24px);
+  padding-bottom: 40px;
+  padding-left: 16px;
+  padding-right: 16px;
+  position: relative;
+  z-index: 3;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+.screen {
+  display: none;
+  animation: screenIn 0.5s ease;
+}
+.screen.active { display: block; }
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Intro Screen ===== */
+.intro-screen { text-align: center; padding: 20px 0 40px; }
+.intro-eyebrow {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--teal);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.intro-title {
+  font-family: 'Righteous', cursive;
+  font-size: clamp(36px, 8vw, 72px);
+  color: var(--gold);
+  letter-spacing: 1px;
+  text-shadow: 4px 4px 0 var(--red), 8px 8px 0 var(--ink);
+  margin-bottom: 8px;
+  line-height: 1;
+}
+.intro-sub {
+  font-family: 'Courier Prime', monospace;
+  color: var(--paper);
+  font-size: 16px;
+  letter-spacing: 2px;
+  margin-bottom: 28px;
+  opacity: 0.85;
+}
+.intro-deck {
+  max-width: 580px;
+  margin: 0 auto 32px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--paper);
+  background: var(--bg-2);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-hard);
+  text-align: left;
+}
+.intro-deck strong { color: var(--gold); }
+.intro-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--red);
+  color: var(--paper);
+  border: 3px solid var(--ink);
+  padding: 16px 36px;
+  font-family: 'Righteous', cursive;
+  font-size: 20px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  transition: transform 0.1s, box-shadow 0.1s;
+  border-radius: var(--radius);
+  text-transform: uppercase;
+}
+.intro-cta:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.intro-cta:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.intro-cta:focus-visible { outline: 3px solid var(--teal); outline-offset: 4px; }
+.intro-cta i { width: 22px; height: 22px; }
+.intro-tape-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.tape-pill {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--paper);
+}
+.tape-pill:nth-child(1) { border-color: var(--red); color: var(--red); }
+.tape-pill:nth-child(2) { border-color: var(--gold); color: var(--gold); }
+.tape-pill:nth-child(3) { border-color: var(--teal); color: var(--teal); }
+.tape-pill:nth-child(4) { border-color: var(--magenta); color: var(--magenta); }
+.tape-pill:nth-child(5) { border-color: var(--brown); color: #c89570; }
+
+/* ===== Map Screen ===== */
+.screen-title {
+  font-family: 'Righteous', cursive;
+  font-size: clamp(28px, 5vw, 42px);
+  color: var(--gold);
+  text-align: center;
+  text-shadow: 3px 3px 0 var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+.screen-sub {
+  text-align: center;
+  color: var(--paper);
+  opacity: 0.7;
+  font-size: 14px;
+  margin-bottom: 28px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+.level-card {
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 0;
+  font-family: inherit;
+}
+.level-card:hover {
+  transform: translate(-3px,-3px) rotate(-0.5deg);
+  box-shadow: 7px 7px 0 var(--ink);
+}
+.level-card:active {
+  transform: translate(0,0);
+  box-shadow: var(--shadow-hard);
+}
+.level-card:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 3px;
+}
+.level-preview {
+  position: relative;
+  aspect-ratio: 16/10;
+  background: var(--ink);
+  overflow: hidden;
+  border-bottom: 2px solid var(--ink);
+}
+.level-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(1.1) contrast(1.05);
+}
+.level-preview::after {
+  /* scanlines on preview */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px);
+  pointer-events: none;
+}
+.level-num-badge {
+  position: absolute;
+  top: 6px; left: 6px;
+  background: var(--ink);
+  color: var(--gold);
+  font-family: 'Righteous', cursive;
+  font-size: 14px;
+  padding: 4px 10px;
+  border: 2px solid var(--gold);
+  border-radius: var(--radius);
+  z-index: 2;
+  letter-spacing: 1px;
+}
+.level-tag-badge {
+  position: absolute;
+  top: 6px; right: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  padding: 3px 7px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  z-index: 2;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.level-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.level-title {
+  font-family: 'Righteous', cursive;
+  font-size: 17px;
+  color: var(--ink);
+  line-height: 1.15;
+  letter-spacing: 0.5px;
+}
+.level-char {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.char-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Righteous', cursive;
+  font-size: 12px;
+  color: var(--paper);
+  flex-shrink: 0;
+}
+.level-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 2px dashed var(--ink-soft);
+}
+.level-stars {
+  display: flex;
+  gap: 2px;
+}
+.star-slot {
+  width: 16px; height: 16px;
+  color: var(--ink-soft);
+  opacity: 0.3;
+}
+.star-slot.filled {
+  color: var(--gold);
+  opacity: 1;
+  animation: starPop 0.5s ease;
+}
+@keyframes starPop {
+  0% { transform: scale(0) rotate(-45deg); }
+  60% { transform: scale(1.4) rotate(15deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.star-slot svg { width: 100%; height: 100%; }
+.level-best {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 1px;
+}
+.level-best strong { color: var(--ink); }
+.finale-cta {
+  text-align: center;
+  margin-top: 32px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(242,179,61,0.15), rgba(200,69,138,0.1));
+  border: 2px dashed var(--gold);
+  border-radius: var(--radius);
+  animation: finaleGlow 2s ease-in-out infinite;
+}
+@keyframes finaleGlow {
+  50% { box-shadow: 0 0 24px rgba(242,179,61,0.4); }
+}
+.finale-cta[hidden] { display: none; }
+.finale-btn {
+  background: var(--gold);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  padding: 14px 32px;
+  font-family: 'Righteous', cursive;
+  font-size: 18px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  border-radius: var(--radius);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
+}
+.finale-btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.finale-btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.finale-btn:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+.finale-btn i { width: 22px; height: 22px; }
+
+/* ===== Scene Screen ===== */
+.scene-screen { padding-bottom: 20px; }
+.scene-header {
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.scene-back {
+  background: var(--ink);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow-hard-sm);
+  transition: transform 0.1s, box-shadow 0.1s;
+  font-weight: 700;
+}
+.scene-back:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--ink); }
+.scene-back:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--ink); }
+.scene-back:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.scene-back i { width: 14px; height: 14px; }
+.scene-info { flex: 1; min-width: 0; }
+.scene-num {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.scene-title {
+  font-family: 'Righteous', cursive;
+  font-size: 20px;
+  color: var(--ink);
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+}
+.scene-char-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-2);
+  color: var(--paper);
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.scene-char-pill .char-avatar { width: 20px; height: 20px; font-size: 11px; }
+.scene-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.hud-pill {
+  background: var(--bg-2);
+  border: 2px solid var(--ink);
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  color: var(--paper);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.hud-pill strong { color: var(--gold); font-size: 14px; }
+.hud-pill.streak strong { color: var(--magenta); }
+
+.game-area {
+  background: var(--bg-2);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  padding: 24px;
+  min-height: 360px;
+}
+
+/* ===== Mini-game: Fill Blanks ===== */
+.fb-passage {
+  font-size: 19px;
+  line-height: 1.9;
+  color: var(--paper);
+  margin-bottom: 24px;
+  font-family: 'Nunito Sans', sans-serif;
+}
+.fb-blank {
+  display: inline-block;
+  min-width: 110px;
+  padding: 2px 12px;
+  margin: 0 4px;
+  background: var(--bg);
+  border: 2px dashed var(--gold);
+  border-radius: var(--radius);
+  color: var(--gold);
+  font-family: 'Courier Prime', monospace;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  vertical-align: middle;
+}
+.fb-blank:hover { background: rgba(242,179,61,0.15); border-color: var(--gold); }
+.fb-blank.selected {
+  background: var(--gold);
+  color: var(--ink);
+  border-style: solid;
+}
+.fb-blank.filled {
+  background: var(--teal);
+  color: var(--paper);
+  border-style: solid;
+  border-color: var(--teal);
+  cursor: default;
+}
+.fb-blank.wrong {
+  background: var(--red);
+  color: var(--paper);
+  border-color: var(--red);
+  animation: shake 0.4s ease;
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.fb-bank-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--paper);
+  opacity: 0.7;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.fb-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fb-word {
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-family: 'Courier Prime', monospace;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard-sm);
+  transition: transform 0.1s, box-shadow 0.1s, opacity 0.2s;
+  font-size: 14px;
+}
+.fb-word:hover:not(.used) {
+  transform: translate(-1px,-1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.fb-word:active:not(.used) { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--ink); }
+.fb-word:focus-visible:not(.used) { outline: 3px solid var(--teal); outline-offset: 2px; }
+.fb-word.used {
+  opacity: 0.3;
+  cursor: default;
+  pointer-events: none;
+}
+.fb-word.bouncing {
+  animation: bounceBack 0.5s ease;
+}
+@keyframes bounceBack {
+  0% { transform: translateY(0); }
+  30% { transform: translateY(-12px); }
+  60% { transform: translateY(4px); }
+  100% { transform: translateY(0); }
+}
+
+/* ===== Mini-game: True/False ===== */
+.tf-timer-wrap {
+  margin-bottom: 18px;
+}
+.tf-timer-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--paper);
+  opacity: 0.7;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.tf-timer-bar {
+  height: 10px;
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.tf-timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--gold));
+  width: 100%;
+  transition: width 0.2s linear;
+}
+.tf-card {
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  padding: 28px 24px;
+  margin-bottom: 18px;
+  text-align: center;
+  position: relative;
+}
+.tf-card-num {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.tf-statement {
+  font-family: 'Righteous', cursive;
+  font-size: 22px;
+  line-height: 1.35;
+  color: var(--ink);
+  margin-bottom: 18px;
+  letter-spacing: 0.5px;
+}
+.tf-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.tf-btn {
+  flex: 1;
+  max-width: 180px;
+  padding: 14px 20px;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  font-family: 'Righteous', cursive;
+  font-size: 18px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
+}
+.tf-btn.true { background: var(--teal); color: var(--paper); }
+.tf-btn.false { background: var(--red); color: var(--paper); }
+.tf-btn:hover:not(:disabled) { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.tf-btn:active:not(:disabled) { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.tf-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.tf-btn:disabled { opacity: 0.4; cursor: default; }
+.tf-btn.chosen-true { background: var(--teal); opacity: 1; }
+.tf-btn.chosen-false { background: var(--red); opacity: 1; }
+.tf-btn.correct-answer { box-shadow: 4px 4px 0 var(--green), var(--shadow-hard); }
+.tf-btn.wrong-answer { box-shadow: 4px 4px 0 var(--red), var(--shadow-hard); }
+.tf-explain {
+  background: var(--bg);
+  color: var(--paper);
+  border: 2px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-top: 16px;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.55;
+  display: none;
+}
+.tf-explain.show { display: block; animation: screenIn 0.4s ease; }
+.tf-explain-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.tf-next-row {
+  margin-top: 14px;
+  text-align: center;
+  display: none;
+}
+.tf-next-row.show { display: block; }
+.tf-next-btn {
+  background: var(--gold);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  padding: 12px 32px;
+  font-family: 'Righteous', cursive;
+  font-size: 16px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  border-radius: var(--radius);
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
+}
+.tf-next-btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.tf-next-btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.tf-next-btn:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+.tf-hint {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: var(--paper);
+  opacity: 0.5;
+  margin-top: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ===== Mini-game: Multiple Choice ===== */
+.mc-question {
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  padding: 22px 24px;
+  margin-bottom: 18px;
+}
+.mc-q-num {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.mc-q-text {
+  font-family: 'Righteous', cursive;
+  font-size: 21px;
+  line-height: 1.3;
+  color: var(--ink);
+  letter-spacing: 0.5px;
+}
+.mc-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.mc-opt {
+  background: var(--bg-2);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: var(--shadow-hard-sm);
+  transition: transform 0.1s, box-shadow 0.1s, background 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mc-opt:hover:not(:disabled) {
+  transform: translate(-1px,-1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.mc-opt:active:not(:disabled) { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--ink); }
+.mc-opt:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.mc-opt:disabled { cursor: default; }
+.mc-opt-letter {
+  width: 28px; height: 28px;
+  background: var(--ink);
+  color: var(--gold);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Righteous', cursive;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.mc-opt.correct {
+  background: var(--teal);
+  color: var(--paper);
+  border-color: var(--teal);
+}
+.mc-opt.correct .mc-opt-letter { background: var(--paper); color: var(--teal); }
+.mc-opt.wrong {
+  background: var(--red);
+  color: var(--paper);
+  border-color: var(--red);
+  animation: shake 0.4s ease;
+}
+.mc-opt.wrong .mc-opt-letter { background: var(--paper); color: var(--red); }
+.mc-opt.dimmed { opacity: 0.4; }
+.mc-reaction {
+  background: var(--bg);
+  border: 2px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: none;
+  align-items: flex-start;
+  gap: 12px;
+}
+.mc-reaction.show { display: flex; animation: screenIn 0.4s ease; }
+.mc-reaction-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Righteous', cursive;
+  font-size: 16px;
+  color: var(--paper);
+  flex-shrink: 0;
+}
+.mc-reaction-text {
+  color: var(--paper);
+  font-size: 14px;
+  line-height: 1.55;
+  font-style: italic;
+}
+.mc-reaction-text strong {
+  font-family: 'Courier Prime', monospace;
+  font-style: normal;
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+.mc-next-row { margin-top: 14px; text-align: center; display: none; }
+.mc-next-row.show { display: block; }
+.mc-next-btn {
+  background: var(--gold);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  padding: 12px 32px;
+  font-family: 'Righteous', cursive;
+  font-size: 16px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  border-radius: var(--radius);
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
+}
+.mc-next-btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.mc-next-btn:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+
+/* ===== Mini-game: Match the Meaning ===== */
+.match-hud-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.match-counter {
+  font-family: 'Courier Prime', monospace;
+  font-size: 13px;
+  color: var(--paper);
+  letter-spacing: 1px;
+}
+.match-counter strong { color: var(--gold); font-size: 16px; }
+.match-example {
+  background: var(--bg);
+  border: 1px dashed var(--gold);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--paper);
+  opacity: 0.8;
+  letter-spacing: 1px;
+}
+.match-example strong { color: var(--gold); }
+.match-grid {
+  display: grid;
+  grid-template-columns: 1fr 32px 1fr;
+  gap: 8px 12px;
+  align-items: stretch;
+}
+.match-col {
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.match-col-header {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-align: center;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--ink-soft);
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+.match-item {
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard-sm);
+  transition: transform 0.1s, box-shadow 0.1s, background 0.2s, color 0.2s;
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: center;
+}
+.match-item:hover:not(.locked) {
+  transform: translate(-1px,-1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.match-item:active:not(.locked) { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--ink); }
+.match-item:focus-visible:not(.locked) { outline: 3px solid var(--teal); outline-offset: 2px; }
+.match-item.selected {
+  background: var(--gold);
+  color: var(--ink);
+  transform: translate(-1px,-1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.match-item.shake { animation: shake 0.4s ease; }
+.match-item.locked {
+  background: var(--teal);
+  color: var(--paper);
+  border-color: var(--teal);
+  cursor: default;
+  pointer-events: none;
+}
+.match-item.locked .match-check {
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.match-check { display: none; color: var(--paper); }
+.match-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
+  font-family: 'Courier Prime', monospace;
+  font-size: 14px;
+}
+.match-progress-bar {
+  height: 6px;
+  background: var(--bg);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  margin-top: 14px;
+  overflow: hidden;
+}
+.match-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--gold));
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* ===== Mini-game: Timed Bonus ===== */
+.tb-timer-wrap { margin-bottom: 18px; }
+.tb-timer-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  color: var(--paper);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.tb-timer-label .time-val {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 14px;
+}
+.tb-timer-bar {
+  height: 14px;
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.tb-timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--gold), var(--red));
+  width: 100%;
+  transition: width 0.3s linear;
+}
+.tb-timer-wrap.danger .tb-timer-fill {
+  background: var(--red);
+  animation: dangerPulse 0.6s ease-in-out infinite;
+}
+.tb-timer-wrap.danger .time-val { color: var(--red); animation: dangerPulse 0.6s ease-in-out infinite; }
+@keyframes dangerPulse {
+  50% { opacity: 0.4; }
+}
+.tb-q-area {
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  padding: 22px 24px;
+}
+.tb-q-num {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.tb-q-text {
+  font-family: 'Righteous', cursive;
+  font-size: 20px;
+  line-height: 1.3;
+  color: var(--ink);
+  margin-bottom: 16px;
+  letter-spacing: 0.5px;
+}
+.tb-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tb-opt {
+  background: var(--bg-2);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: var(--shadow-hard-sm);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.tb-opt:hover:not(:disabled) {
+  transform: translate(-1px,-1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.tb-opt:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.tb-opt:disabled { cursor: default; opacity: 0.6; }
+.tb-opt.correct { background: var(--teal); color: var(--paper); border-color: var(--teal); }
+.tb-opt.wrong { background: var(--red); color: var(--paper); border-color: var(--red); animation: shake 0.4s ease; }
+.tb-feedback {
+  margin-top: 12px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+  min-height: 18px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* ===== Finale Screen ===== */
+.finale-screen { text-align: center; padding: 12px 0 40px; }
+.finale-eyebrow {
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  color: var(--teal);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.finale-title {
+  font-family: 'Righteous', cursive;
+  font-size: clamp(32px, 6vw, 56px);
+  color: var(--gold);
+  text-shadow: 4px 4px 0 var(--red), 8px 8px 0 var(--ink);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+.finale-rank {
+  font-family: 'Righteous', cursive;
+  font-size: 22px;
+  color: var(--paper);
+  background: var(--bg-2);
+  border: 3px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 10px 24px;
+  display: inline-block;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-hard);
+  letter-spacing: 1px;
+}
+.finale-totals {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.finale-total-card {
+  background: var(--bg-2);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 18px 28px;
+  min-width: 160px;
+  box-shadow: var(--shadow-hard);
+}
+.finale-total-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--paper);
+  opacity: 0.7;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.finale-total-value {
+  font-family: 'Righteous', cursive;
+  font-size: 36px;
+  color: var(--gold);
+  line-height: 1;
+}
+.finale-total-sub {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--paper);
+  opacity: 0.6;
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+.finale-table {
+  background: var(--bg-2);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  margin: 0 auto 28px;
+  max-width: 620px;
+  overflow: hidden;
+}
+.finale-table-row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ink);
+  text-align: left;
+}
+.finale-table-row.header {
+  background: var(--ink);
+  color: var(--gold);
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.finale-table-row:last-child { border-bottom: none; }
+.finale-table-num {
+  font-family: 'Righteous', cursive;
+  font-size: 18px;
+  color: var(--gold);
+  text-align: center;
+}
+.finale-table-title {
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 700;
+  color: var(--paper);
+  font-size: 14px;
+}
+.finale-table-stars {
+  display: flex;
+  gap: 2px;
+  color: var(--gold);
+}
+.finale-table-stars svg { width: 14px; height: 14px; }
+.finale-table-score {
+  font-family: 'Courier Prime', monospace;
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 1px;
+  min-width: 60px;
+  text-align: right;
+}
+.finale-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.finale-action-btn {
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  padding: 12px 24px;
+  font-family: 'Righteous', cursive;
+  font-size: 14px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  border-radius: var(--radius);
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.finale-action-btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.finale-action-btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.finale-action-btn:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+.finale-action-btn.primary { background: var(--red); color: var(--paper); }
+.finale-action-btn.gold { background: var(--gold); color: var(--ink); }
+.finale-action-btn i { width: 16px; height: 16px; }
+.finale-source {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--paper);
+  opacity: 0.5;
+  margin-top: 12px;
+  letter-spacing: 1px;
+}
+.finale-source a { color: var(--gold); }
+
+/* ===== Modal ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal[hidden] { display: none; }
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(2px);
+}
+.modal-card {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 8px 8px 0 var(--ink);
+  max-width: 460px;
+  width: 100%;
+  padding: 28px 24px;
+  text-align: center;
+  animation: modalIn 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-eyebrow {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.modal-title {
+  font-family: 'Righteous', cursive;
+  font-size: 26px;
+  color: var(--ink);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  line-height: 1.15;
+}
+.modal-char-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 16px;
+}
+.modal-char-row .char-avatar { width: 32px; height: 32px; font-size: 14px; }
+.modal-char-row span {
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.modal-section {
+  background: var(--bg-2);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.modal-section-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+.modal-flavor {
+  font-family: 'Courier Prime', monospace;
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin: 10px 0 16px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--gold);
+  background: rgba(242,179,61,0.1);
+  text-align: left;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.modal-cta {
+  background: var(--red);
+  color: var(--paper);
+  border: 3px solid var(--ink);
+  padding: 14px 36px;
+  font-family: 'Righteous', cursive;
+  font-size: 18px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  border-radius: var(--radius);
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+.modal-cta:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.modal-cta:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.modal-cta:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+.modal-cta.gold { background: var(--gold); color: var(--ink); }
+.modal-cta.teal { background: var(--teal); color: var(--paper); }
+
+/* Results-specific */
+.result-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0 18px;
+  min-height: 50px;
+  align-items: center;
+}
+.result-star {
+  width: 44px; height: 44px;
+  color: var(--ink-soft);
+  opacity: 0.2;
+}
+.result-star.filled {
+  color: var(--gold);
+  opacity: 1;
+  animation: starPop 0.6s cubic-bezier(.34,1.56,.64,1);
+  filter: drop-shadow(2px 2px 0 var(--ink));
+}
+.result-star svg { width: 100%; height: 100%; }
+.result-score-big {
+  font-family: 'Righteous', cursive;
+  font-size: 48px;
+  color: var(--ink);
+  line-height: 1;
+  margin: 8px 0 4px;
+}
+.result-score-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.result-stats {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.result-stat {
+  background: var(--bg-2);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.result-stat strong { color: var(--gold); font-size: 14px; }
+
+/* ===== Toast ===== */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 700;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+.toast {
+  background: var(--ink);
+  color: var(--gold);
+  border: 2px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 10px 18px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+  box-shadow: var(--shadow-hard);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.2s forwards;
+  max-width: 320px;
+  text-align: center;
+}
+.toast.success { color: var(--teal); border-color: var(--teal); }
+.toast.error { color: var(--red); border-color: var(--red); }
+.toast.gold { color: var(--ink); background: var(--gold); border-color: var(--ink); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastOut {
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
+/* ===== Floating popups ===== */
+.pop-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 600;
+  overflow: hidden;
+}
+.pop-float {
+  position: absolute;
+  font-family: 'Righteous', cursive;
+  font-size: 22px;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0 var(--ink);
+  animation: popFloat 1.2s ease forwards;
+  pointer-events: none;
+  white-space: nowrap;
+}
+@keyframes popFloat {
+  0% { opacity: 0; transform: translateY(0) scale(0.5); }
+  20% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-60px) scale(1); }
+}
+
+/* ===== Confetti ===== */
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 800;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .header { padding: 0 10px; gap: 8px; }
+  .brand-text { display: none; }
+  .progress-dots { gap: 4px; }
+  .dot { width: 10px; height: 10px; }
+  .score-display { padding: 4px 8px; }
+  .score-value { font-size: 13px; }
+  .icon-btn { width: 32px; height: 32px; }
+  .level-grid { grid-template-columns: 1fr; }
+  .scene-header { flex-wrap: wrap; }
+  .scene-char-pill { font-size: 10px; padding: 4px 8px; }
+  .match-grid { grid-template-columns: 1fr; gap: 8px; }
+  .match-connector { display: none; }
+  .tf-statement { font-size: 18px; }
+  .mc-q-text { font-size: 18px; }
+  .fb-passage { font-size: 17px; }
+  .finale-table-row { grid-template-columns: 24px 1fr auto; }
+  .finale-table-row .finale-table-stars { display: none; }
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .preloader::before { animation: none; }
+  .screen { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Preloader ===== -->
+<div class="preloader" id="preloader" role="dialog" aria-label="Game loading">
+  <div class="preloader-content">
+    <h1 class="preloader-title">FRIENDS VOCAB ARCADE</h1>
+    <p class="preloader-sub">The One With The Flashback</p>
+    <button class="play-btn" id="playBtn" aria-label="Start the game">
+      <i data-lucide="play"></i>
+      <span>PLAY ▶</span>
+    </button>
+    <p class="preloader-hint">Click to insert tape</p>
+  </div>
+</div>
+
+<!-- ===== Header ===== -->
+<header class="header" id="header" role="banner">
+  <div class="brand">
+    <div class="brand-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#2a1f17" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="8" width="18" height="12" rx="1"/>
+        <path d="M8 8 L6 4"/>
+        <path d="M16 8 L18 4"/>
+        <circle cx="12" cy="14" r="2.5"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <div class="brand-name">FRIENDS VOCAB ARCADE</div>
+      <div class="brand-tag">The One With The Flashback</div>
+    </div>
+  </div>
+  <div class="progress-dots" id="progressDots" aria-label="Level progress"></div>
+  <div class="header-controls">
+    <div class="score-display" aria-live="polite">
+      <span class="score-label">SCORE</span>
+      <span class="score-value" id="scoreValue">0</span>
+    </div>
+    <button class="icon-btn" id="soundBtn" aria-label="Toggle sound" aria-pressed="false">
+      <i data-lucide="volume-2"></i>
+    </button>
+    <button class="icon-btn" id="mapBtn" aria-label="Back to map" hidden>
+      <i data-lucide="map"></i>
+    </button>
+  </div>
+</header>
+
+<!-- ===== Main ===== -->
+<main class="main" role="main">
+
+  <!-- Intro Screen -->
+  <section class="screen intro-screen active" id="introScreen" aria-labelledby="introTitle">
+    <div class="intro-eyebrow">★ Insert Tape · Side A ★</div>
+    <h1 class="intro-title" id="introTitle">FRIENDS<br>VOCAB ARCADE</h1>
+    <p class="intro-sub">The One With The Flashback</p>
+    <div class="intro-deck">
+      Five retro-VHS mini-games built on the <em>Friends</em> flashback episode. Help <strong>Chandler</strong> find a roommate, slip past <strong>Monica</strong> with <strong>Phoebe</strong>, decode <strong>Joey's</strong> lemonade disaster, match <strong>Ross's</strong> vocabulary, and survive <strong>Janice's</strong> rapid-fire speed round. All five reels are unlocked from the start — play them in any order.
+    </div>
+    <button class="intro-cta" id="introStartBtn">
+      <i data-lucide="fast-forward"></i>
+      <span>Press Start</span>
+    </button>
+    <div class="intro-tape-row">
+      <span class="tape-pill">Reel 1 · Chandler</span>
+      <span class="tape-pill">Reel 2 · Phoebe</span>
+      <span class="tape-pill">Reel 3 · Joey</span>
+      <span class="tape-pill">Reel 4 · Ross</span>
+      <span class="tape-pill">Reel 5 · Janice</span>
+    </div>
+  </section>
+
+  <!-- Map Screen -->
+  <section class="screen map-screen" id="mapScreen" aria-labelledby="mapTitle">
+    <h2 class="screen-title" id="mapTitle">Select a Reel</h2>
+    <p class="screen-sub">All five reels are unlocked from the start. Play them in any order — the finale unlocks when every reel is complete.</p>
+    <div class="level-grid" id="levelGrid" role="list"></div>
+    <div class="finale-cta" id="finaleCta" hidden>
+      <button class="finale-btn" id="finaleBtn">
+        <i data-lucide="trophy"></i>
+        <span>Watch the Finale</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Scene Screen -->
+  <section class="screen scene-screen" id="sceneScreen" aria-labelledby="sceneTitle">
+    <div class="scene-header" id="sceneHeader">
+      <button class="scene-back" id="sceneBackBtn">
+        <i data-lucide="arrow-left"></i>
+        <span>Map</span>
+      </button>
+      <div class="scene-info">
+        <div class="scene-num" id="sceneNum">REEL 01</div>
+        <div class="scene-title" id="sceneTitle">—</div>
+      </div>
+      <div class="scene-char-pill" id="sceneCharPill">
+        <div class="char-avatar" id="sceneAvatar">C</div>
+        <span id="sceneCharName">Chandler</span>
+      </div>
+    </div>
+    <div class="scene-hud" id="sceneHud"></div>
+    <div class="game-area" id="gameArea"></div>
+  </section>
+
+  <!-- Finale Screen -->
+  <section class="screen finale-screen" id="finaleScreen" aria-labelledby="finaleTitle">
+    <div class="finale-eyebrow">★ End of Tape ★</div>
+    <h2 class="finale-title" id="finaleTitle">The One With the Perfect Score</h2>
+    <div class="finale-rank" id="finaleRank">—</div>
+    <div class="finale-totals">
+      <div class="finale-total-card">
+        <div class="finale-total-label">Total Score</div>
+        <div class="finale-total-value" id="finaleScore">0</div>
+        <div class="finale-total-sub">points</div>
+      </div>
+      <div class="finale-total-card">
+        <div class="finale-total-label">Total Stars</div>
+        <div class="finale-total-value" id="finaleStars">0</div>
+        <div class="finale-total-sub">of 15</div>
+      </div>
+    </div>
+    <div class="finale-table" id="finaleTable"></div>
+    <div class="finale-actions">
+      <button class="finale-action-btn primary" id="rewindBtn">
+        <i data-lucide="rotate-ccw"></i>
+        <span>Rewind the Tape</span>
+      </button>
+      <a class="finale-action-btn gold" id="replayBtn" href="#map">
+        <i data-lucide="play"></i>
+        <span>Replay a Reel</span>
+      </a>
+      <a class="finale-action-btn" href="306-friends-flashback-english.pdf" target="_blank" rel="noopener noreferrer">
+        <i data-lucide="file-text"></i>
+        <span>View Lesson PDF</span>
+      </a>
+    </div>
+    <p class="finale-source">Source slide deck: <a href="306-friends-flashback-english.pdf" target="_blank" rel="noopener noreferrer">306-friends-flashback-english.pdf</a></p>
+  </section>
+
+</main>
+
+<!-- ===== Briefing Modal ===== -->
+<div class="modal" id="briefingModal" hidden role="dialog" aria-labelledby="briefingTitle" aria-modal="true">
+  <div class="modal-overlay" data-close-briefing></div>
+  <div class="modal-card">
+    <div class="modal-eyebrow" id="briefingEyebrow">REEL 01 · BRIEFING</div>
+    <h3 class="modal-title" id="briefingTitle">—</h3>
+    <div class="modal-char-row">
+      <div class="char-avatar" id="briefingAvatar">C</div>
+      <span id="briefingChar">Chandler</span>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">Objective</div>
+      <div id="briefingObj">—</div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">How to Play</div>
+      <div id="briefingTip">—</div>
+    </div>
+    <div class="modal-flavor" id="briefingFlavor">—</div>
+    <button class="modal-cta" id="briefingStartBtn">Start Reel</button>
+  </div>
+</div>
+
+<!-- ===== Results Modal ===== -->
+<div class="modal" id="resultsModal" hidden role="dialog" aria-labelledby="resultsTitle" aria-modal="true">
+  <div class="modal-overlay"></div>
+  <div class="modal-card">
+    <div class="modal-eyebrow" id="resultsEyebrow">REEL COMPLETE</div>
+    <h3 class="modal-title" id="resultsTitle">—</h3>
+    <div class="result-stars" id="resultStars"></div>
+    <div class="result-score-big" id="resultScore">0</div>
+    <div class="result-score-label">Points Earned</div>
+    <div class="result-stats" id="resultStats"></div>
+    <button class="modal-cta gold" id="resultsContinueBtn">Back to Map</button>
+  </div>
+</div>
+
+<!-- ===== Toast ===== -->
+<div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ===== Pop layer & confetti ===== -->
+<div class="pop-layer" id="popLayer" aria-hidden="true"></div>
+<canvas class="confetti-canvas" id="confettiCanvas" aria-hidden="true"></canvas>
+
+<script>
+(function() {
+  "use strict";
+
+  /* ===== Utilities ===== */
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+  const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function refreshIcons() {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      try { window.lucide.createIcons(); } catch (e) {}
+    }
+  }
+  function toast(msg, kind) {
+    const c = $('#toastContainer');
+    const el = document.createElement('div');
+    el.className = 'toast' + (kind ? ' ' + kind : '');
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 2700);
+  }
+  function popFloat(x, y, text, color) {
+    const layer = $('#popLayer');
+    const el = document.createElement('div');
+    el.className = 'pop-float';
+    el.textContent = text;
+    el.style.left = (x - 40) + 'px';
+    el.style.top = (y - 20) + 'px';
+    el.style.color = color || '#f2b33d';
+    layer.appendChild(el);
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 1200);
+  }
+
+  /* ===== Confetti ===== */
+  const confettiCanvas = $('#confettiCanvas');
+  const confettiCtx = confettiCanvas.getContext('2d');
+  let confettiParticles = [];
+  let confettiRunning = false;
+  function resizeConfetti() {
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+  }
+  resizeConfetti();
+  window.addEventListener('resize', resizeConfetti);
+  function spawnConfetti(x, y, count) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    count = count || 60;
+    const colors = ['#f2b33d', '#d9433b', '#3e8e8c', '#c8458a', '#f4e8c8'];
+    for (let i = 0; i < count; i++) {
+      confettiParticles.push({
+        x: x + (Math.random() - 0.5) * 40,
+        y: y + (Math.random() - 0.5) * 20,
+        vx: (Math.random() - 0.5) * 8,
+        vy: -Math.random() * 10 - 4,
+        g: 0.4,
+        size: 4 + Math.random() * 5,
+        rot: Math.random() * Math.PI * 2,
+        vrot: (Math.random() - 0.5) * 0.3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 80 + Math.random() * 40
+      });
+    }
+    if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(confettiTick); }
+  }
+  function confettiTick() {
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    confettiParticles = confettiParticles.filter(p => p.life > 0);
+    confettiParticles.forEach(p => {
+      p.vy += p.g;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vrot;
+      p.life--;
+      confettiCtx.save();
+      confettiCtx.translate(p.x, p.y);
+      confettiCtx.rotate(p.rot);
+      confettiCtx.fillStyle = p.color;
+      confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.5);
+      confettiCtx.restore();
+    });
+    if (confettiParticles.length > 0) {
+      requestAnimationFrame(confettiTick);
+    } else {
+      confettiRunning = false;
+    }
+  }
+
+  /* ===== Sound ===== */
+  let audioCtx = null;
+  let muted = false;
+  function ensureAudio() {
+    if (audioCtx) return;
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      audioCtx = new Ctx();
+    } catch (e) { audioCtx = null; }
+  }
+  function tone(freq, dur, type, vol, when) {
+    if (muted || !audioCtx) return;
+    type = type || 'sine';
+    vol = (typeof vol === 'number') ? vol : 0.2;
+    when = (typeof when === 'number') ? when : 0;
+    try {
+      const t0 = audioCtx.currentTime + when;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t0);
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+  function noiseBurst(dur, vol) {
+    if (muted || !audioCtx) return;
+    dur = dur || 0.3;
+    vol = (typeof vol === 'number') ? vol : 0.2;
+    try {
+      const bufferSize = Math.floor(audioCtx.sampleRate * dur);
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+      }
+      const src = audioCtx.createBufferSource();
+      src.buffer = buffer;
+      const gain = audioCtx.createGain();
+      gain.gain.value = vol;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 800;
+      src.connect(filter).connect(gain).connect(audioCtx.destination);
+      src.start();
+    } catch (e) {}
+  }
+  const sfx = {
+    click:    () => tone(440, 0.06, 'square', 0.12),
+    flip:     () => tone(660, 0.1, 'triangle', 0.12),
+    correct:  () => { tone(523, 0.1, 'sine', 0.16); tone(659, 0.1, 'sine', 0.16, 0.08); tone(784, 0.18, 'sine', 0.16, 0.16); },
+    wrong:    () => { tone(180, 0.18, 'sawtooth', 0.16); tone(140, 0.22, 'sawtooth', 0.14, 0.1); },
+    match:    () => { tone(659, 0.08, 'triangle', 0.16); tone(880, 0.14, 'triangle', 0.16, 0.06); },
+    fanfare:  () => { [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.18, 'square', 0.14, i * 0.1)); },
+    tick:     () => tone(880, 0.04, 'square', 0.05),
+    cheer:    () => { noiseBurst(0.5, 0.16); tone(440, 0.3, 'triangle', 0.1); tone(660, 0.3, 'triangle', 0.1, 0.05); }
+  };
+
+  /* ===== State ===== */
+  const STORAGE_KEY = 'friendsArcade_v1';
+  const MUTE_KEY = 'friendsArcade_mute_v1';
+  const TOTAL_LEVELS = 5;
+  let progress = { levels: {}, totalScore: 0, totalStars: 0, finaleSeen: false };
+  let currentSceneId = null;
+  let cleanupFn = null;
+  function setCleanup(fn) { cleanupFn = fn; }
+  function runCleanup() { if (cleanupFn) { try { cleanupFn(); } catch (e) {} cleanupFn = null; } }
+  function loadProgress() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p && typeof p === 'object') {
+          progress = Object.assign({ levels: {}, totalScore: 0, totalStars: 0, finaleSeen: false }, p);
+          if (!progress.levels) progress.levels = {};
+        }
+      }
+    } catch (e) {}
+  }
+  function saveProgress() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(progress)); } catch (e) {}
+  }
+  function loadMute() {
+    try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (e) { muted = false; }
+  }
+  function saveMute() {
+    try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (e) {}
+  }
+
+  /* ===== Data: SCENES ===== */
+  const SCENES = [
+    {
+      id: 'roommate', num: 1, title: 'The Roommate Search', char: 'Chandler',
+      color: '#d9433b', slide: 'slide-004.jpg', tag: 'Fill in the Blanks',
+      obj: 'Complete Chandler\'s story by placing the right words in the blanks.',
+      tip: 'Click a blank, then click a word from the bank. Wrong words bounce back and cost points.',
+      flavor: 'Could this BE any more awkward?'
+    },
+    {
+      id: 'moveout', num: 2, title: 'The Secret Move-Out', char: 'Phoebe',
+      color: '#f2b33d', slide: 'slide-005.jpg', tag: 'True / False',
+      obj: 'Decide whether each statement about Phoebe and Monica is true or false.',
+      tip: 'Read the explanation after each answer. Press NEXT to continue. The timer stops while you read.',
+      flavor: 'I want to live in a land where people can spill!'
+    },
+    {
+      id: 'lemonade', num: 3, title: 'The Lemonade Misunderstanding', char: 'Joey',
+      color: '#3e8e8c', slide: 'slide-008.jpg', tag: 'Multiple Choice',
+      obj: 'Answer questions about the most awkward lemonade invitation in TV history.',
+      tip: 'One attempt per question. Choose wisely — context is everything!',
+      flavor: 'Do you wanna come in for some... lemonade?'
+    },
+    {
+      id: 'vocab', num: 4, title: 'Match the Meaning', char: 'Ross',
+      color: '#6b4226', slide: 'slide-010.jpg', tag: 'Match Pairs',
+      obj: 'Connect each English word on the left with its correct meaning on the right.',
+      tip: 'Click a word, then click its meaning. Correct pairs lock green and cannot be reused.',
+      flavor: 'It\'s not a mix and match situation!'
+    },
+    {
+      id: 'speed', num: 5, title: 'Janice\'s Speed Round', char: 'Janice',
+      color: '#c8458a', slide: 'slide-002.jpg', tag: 'Timed Bonus',
+      obj: 'Answer as many mixed questions as you can before the timer runs out.',
+      tip: 'Streak × multiplier = big points. Oh. My. God.',
+      flavor: 'Oh. My. God. Who of you has ever... almost?'
+    }
+  ];
+
+  /* ===== Data: Level content ===== */
+  const L1_DATA = {
+    text: "Chandler needed a new {{0}}. His first choice was Eric, a {{1}}, but Mr. Heckles {{2}} him into leaving. By accident, Joey {{3}} at the right moment and got the apartment.",
+    blanks: [
+      { id: 0, answer: 'roommate' },
+      { id: 1, answer: 'photographer' },
+      { id: 2, answer: 'tricked' },
+      { id: 3, answer: 'showed up' }
+    ],
+    bank: ['roommate', 'photographer', 'tricked', 'showed up', 'lemonade', 'sneak out', 'spill', 'crush']
+  };
+
+  const L2_DATA = [
+    { text: 'Phoebe moved out because Monica was too strict about cleaning.', answer: true,
+      explanation: 'TRUE. The slide says Phoebe left because Monica was "too strict about cleaning." A clean apartment, ironically, drove her friend away.' },
+    { text: 'Phoebe moved all her belongings out in a single trip during the day.', answer: false,
+      explanation: 'FALSE. She sneaked out at night, "one lamp at a time," to avoid hurting Monica\'s feelings. The slowness was the kindness.' },
+    { text: 'Phoebe said she wanted to live in a land where people can spill.', answer: true,
+      explanation: 'TRUE. The slide quotes Phoebe directly: "Phoebe wants to live in a land where people can spill." Spill here means living freely, imperfectly.' },
+    { text: 'The phrase "the third degree" means a polite, casual question.', answer: false,
+      explanation: 'FALSE. "The third degree" means intense, aggressive questioning — exactly the kind Monica would apply to any minor social infraction.' },
+    { text: 'Monica\'s apartment was famously messy and disorganized.', answer: false,
+      explanation: 'FALSE. The opposite is true — Monica\'s apartment was too clean, and that cleanliness is what drove Phoebe away.' },
+    { text: 'Phoebe left secretly because she wanted to avoid hurting Monica\'s feelings.', answer: true,
+      explanation: 'TRUE. She sneaked out one lamp at a time precisely to spare her friend\'s feelings — a small portrait of conflict avoidance as a love language.' }
+  ];
+
+  const L3_DATA = [
+    {
+      q: 'What did Monica offer Joey after he was moving heavy boxes?',
+      opts: ['A glass of cold water', 'Some lemonade', 'A cold beer'],
+      answer: 1,
+      reaction: 'Monica meant a refreshing drink. Simple, innocent, completely literal. Joey heard something else entirely.'
+    },
+    {
+      q: 'What did Joey think "lemonade" meant?',
+      opts: ['A secret code for a romantic invitation', 'A type of Italian coffee', 'A nickname for a basketball game'],
+      answer: 0,
+      reaction: 'Joey interpreted the word as a code. In his head, lemonade was a euphemism — and the rest is catastrophic television history.'
+    },
+    {
+      q: 'What happened as a result of the misunderstanding?',
+      opts: ['Joey left angrily and slammed the door', 'Joey stripped completely naked in her living room', 'Joey asked for a different drink instead'],
+      answer: 1,
+      reaction: 'Yes. Joey stripped naked. Monica was horrified. Comedy gold, and a perfect lesson in why context decides meaning.'
+    },
+    {
+      q: 'What is the lesson\'s main takeaway from this scene?',
+      opts: ['Joey was simply stupid', 'Context is everything in English', 'Lemonade is an unhealthy drink'],
+      answer: 1,
+      reaction: 'Exactly. The same word, in different ears, becomes a different sentence. The dictionary is the beginning of meaning, not the end of it.'
+    }
+  ];
+
+  const L4_DATA = {
+    pairs: [
+      { word: 'Roommate',     meaning: 'A person you share an apartment with' },
+      { word: 'To sneak out', meaning: 'To leave a place quietly in secret' },
+      { word: 'To spill',     meaning: 'To accidentally drop liquid from a container' },
+      { word: 'To hit it off',meaning: 'To immediately become good friends with someone' },
+      { word: 'To have a crush', meaning: 'To have strong romantic feelings for someone' },
+      { word: 'Flashback',    meaning: 'A scene set in a time earlier than the main story' }
+    ],
+    example: 'WORD · spills  →  MEANING · drops liquid'
+  };
+
+  const L5_DATA = [
+    { q: 'In 1993, Central Perk was originally a ___.', opts: ['bar', 'pizza restaurant', 'bookstore'], answer: 0 },
+    { q: 'Mr. Heckles is the friends\' strange ___.', opts: ['landlord', 'neighbor', 'cousin'], answer: 1 },
+    { q: 'Ross\'s wife Carol met ___ at the gym.', opts: ['Susan', 'Rachel', 'Monica'], answer: 0 },
+    { q: '"Bump uglies" means ___.', opts: ['to fight', 'to have sexual intercourse', 'to dance poorly'], answer: 1 },
+    { q: '"Whip your butt" means ___.', opts: ['to punish someone', 'to easily defeat someone in a game', 'to clean up a mess'], answer: 1 },
+    { q: 'Ross says his marriage isn\'t a ___ situation.', opts: ['mix and match', 'bump uglies', 'third degree'], answer: 0 },
+    { q: 'Rachel wants a ___ before getting married.', opts: ['pool table', 'meaningless fling', 'jukebox'], answer: 1 },
+    { q: 'A jukebox is a coin-operated machine that ___.', opts: ['makes coffee', 'plays selected music', 'cleans clothes'], answer: 1 },
+    { q: 'The ___ is the white ball used to strike other balls in pool.', opts: ['cue ball', 'oboe', 'pool table'], answer: 0 },
+    { q: '"Have a crush" means to have ___ for someone.', opts: ['strong romantic feelings', 'professional respect', 'angry resentment'], answer: 0 },
+    { q: 'Phoebe sneaked out "one ___ at a time."', opts: ['lamp', 'chair', 'book'], answer: 0 },
+    { q: 'A flashback is a scene set in a time ___ the main story.', opts: ['after', 'during', 'earlier than'], answer: 2 }
+  ];
+
+  /* ===== Helpers ===== */
+  function charInitial(name) { return (name || '?').charAt(0).toUpperCase(); }
+  function isLevelComplete(id) {
+    return !!(progress.levels[id] && typeof progress.levels[id].score === 'number');
+  }
+  function isAllComplete() {
+    return SCENES.every(s => isLevelComplete(s.id));
+  }
+  function recomputeTotals() {
+    let total = 0, stars = 0;
+    SCENES.forEach(s => {
+      const lp = progress.levels[s.id];
+      if (lp) { total += lp.score || 0; stars += lp.stars || 0; }
+    });
+    progress.totalScore = total;
+    progress.totalStars = stars;
+  }
+
+  /* ===== HUD ===== */
+  function updateHUD() {
+    recomputeTotals();
+    $('#scoreValue').textContent = progress.totalScore;
+    const dots = $('#progressDots');
+    dots.innerHTML = '';
+    SCENES.forEach(s => {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      if (isLevelComplete(s.id)) d.classList.add('complete');
+      if (s.id === currentSceneId) d.classList.add('current');
+      d.setAttribute('aria-label', 'Reel ' + s.num + ' ' + (isLevelComplete(s.id) ? 'complete' : 'incomplete'));
+      dots.appendChild(d);
+    });
+  }
+
+  /* ===== Screen switching ===== */
+  function showScreen(id) {
+    $$('.screen').forEach(s => s.classList.remove('active'));
+    const target = $('#' + id);
+    if (target) target.classList.add('active');
+    const mapBtn = $('#mapBtn');
+    if (id === 'sceneScreen') {
+      mapBtn.hidden = false;
+    } else {
+      mapBtn.hidden = true;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ===== Map ===== */
+  function renderMap() {
+    const grid = $('#levelGrid');
+    const parts = SCENES.map(s => {
+      const lp = progress.levels[s.id];
+      const stars = lp ? lp.stars : 0;
+      const score = lp ? lp.score : 0;
+      const starSlots = [0,1,2].map(i => {
+        const filled = i < stars ? ' filled' : '';
+        return '<span class="star-slot' + filled + '" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></span>';
+      }).join('');
+      const bestHtml = lp
+        ? '<div class="level-best">BEST <strong>' + score + '</strong></div>'
+        : '<div class="level-best">— not played —</div>';
+      return '<button class="level-card" data-scene="' + s.id + '" aria-label="Reel ' + s.num + ': ' + s.title + ', hosted by ' + s.char + '. ' + (lp ? stars + ' stars, best score ' + score : 'not yet played') + '.">' +
+        '<div class="level-preview">' +
+          '<img src="' + s.slide + '" alt="Preview of ' + s.title + '" loading="lazy">' +
+          '<div class="level-num-badge">REEL ' + String(s.num).padStart(2, '0') + '</div>' +
+          '<div class="level-tag-badge">' + s.tag + '</div>' +
+        '</div>' +
+        '<div class="level-body">' +
+          '<div class="level-title">' + s.title + '</div>' +
+          '<div class="level-char">' +
+            '<div class="char-avatar" style="background:' + s.color + '">' + charInitial(s.char) + '</div>' +
+            '<span>' + s.char + '</span>' +
+          '</div>' +
+          '<div class="level-stats">' +
+            '<div class="level-stars">' + starSlots + '</div>' +
+            bestHtml +
+          '</div>' +
+        '</div>' +
+      '</button>';
+    });
+    grid.innerHTML = parts.join('');
+    refreshIcons();
+    // Finale button visibility
+    $('#finaleCta').hidden = !isAllComplete();
+  }
+
+  /* ===== Level lifecycle ===== */
+  function openLevel(sceneId) {
+    const scene = SCENES.find(s => s.id === sceneId);
+    if (!scene) return;
+    sfx.click();
+    $('#briefingEyebrow').textContent = 'REEL ' + String(scene.num).padStart(2, '0') + ' · BRIEFING';
+    $('#briefingTitle').textContent = scene.title;
+    $('#briefingAvatar').textContent = charInitial(scene.char);
+    $('#briefingAvatar').style.background = scene.color;
+    $('#briefingChar').textContent = scene.char;
+    $('#briefingObj').textContent = scene.obj;
+    $('#briefingTip').textContent = scene.tip;
+    $('#briefingFlavor').textContent = '"' + scene.flavor + '"';
+    $('#briefingStartBtn').onclick = function() {
+      sfx.click();
+      hideModal('briefingModal');
+      startScene(sceneId);
+    };
+    showModal('briefingModal');
+    setTimeout(() => { $('#briefingStartBtn').focus(); }, 50);
+  }
+  function startScene(sceneId) {
+    runCleanup();
+    currentSceneId = sceneId;
+    const scene = SCENES.find(s => s.id === sceneId);
+    if (!scene) return;
+    // Render scene header
+    $('#sceneNum').textContent = 'REEL ' + String(scene.num).padStart(2, '0');
+    $('#sceneTitle').textContent = scene.title;
+    $('#sceneAvatar').textContent = charInitial(scene.char);
+    $('#sceneAvatar').style.background = scene.color;
+    $('#sceneCharName').textContent = scene.char;
+    $('#sceneHud').innerHTML = '';
+    showScreen('sceneScreen');
+    updateHUD();
+    // Start the appropriate mini-game
+    if (sceneId === 'roommate') gameFillBlanks(scene, L1_DATA);
+    else if (sceneId === 'moveout') gameTrueFalse(scene, L2_DATA);
+    else if (sceneId === 'lemonade') gameMultipleChoice(scene, L3_DATA);
+    else if (sceneId === 'vocab') gameMatchMeaning(scene, L4_DATA);
+    else if (sceneId === 'speed') gameTimedBonus(scene, L5_DATA);
+  }
+  function finishScene(scene, score, stars, mistakes) {
+    // Save progress (keep best)
+    const prev = progress.levels[scene.id];
+    const bestScore = prev ? Math.max(prev.score, score) : score;
+    const bestStars = prev ? Math.max(prev.stars, stars) : stars;
+    const bestMistakes = prev ? (prev.mistakes !== undefined ? Math.min(prev.mistakes, mistakes) : mistakes) : mistakes;
+    progress.levels[scene.id] = { score: bestScore, stars: bestStars, mistakes: bestMistakes };
+    saveProgress();
+    updateHUD();
+    renderMap();
+    // Show results modal
+    showResults(scene, score, stars, mistakes);
+    if (stars === 3) {
+      sfx.fanfare();
+      setTimeout(() => {
+        const r = $('#resultsModal').getBoundingClientRect();
+        spawnConfetti(r.left + r.width / 2, r.top + 80, 80);
+      }, 200);
+    } else if (stars >= 1) {
+      sfx.cheer();
+    } else {
+      sfx.wrong();
+    }
+  }
+  function showResults(scene, score, stars, mistakes) {
+    $('#resultsEyebrow').textContent = 'REEL ' + String(scene.num).padStart(2, '0') + ' COMPLETE';
+    $('#resultsTitle').textContent = scene.title;
+    // Stars
+    const starBox = $('#resultStars');
+    starBox.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const el = document.createElement('span');
+      el.className = 'result-star' + (i < stars ? ' filled' : '');
+      el.setAttribute('aria-hidden', 'true');
+      el.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>';
+      starBox.appendChild(el);
+      if (i < stars) setTimeout(() => { sfx.flip(); }, i * 250);
+    }
+    $('#resultScore').textContent = score;
+    const stats = $('#resultStats');
+    stats.innerHTML =
+      '<div class="result-stat">Stars <strong>' + stars + '/3</strong></div>' +
+      '<div class="result-stat">Mistakes <strong>' + mistakes + '</strong></div>' +
+      '<div class="result-stat">Best <strong>' + progress.levels[scene.id].score + '</strong></div>';
+    $('#resultsContinueBtn').onclick = function() {
+      sfx.click();
+      hideModal('resultsModal');
+      currentSceneId = null;
+      showScreen('mapScreen');
+      updateHUD();
+      renderMap();
+      // Auto-jump to finale if all complete
+      if (isAllComplete() && !progress.finaleSeen) {
+        setTimeout(() => {
+          if (confirm('All reels complete! Watch the finale now?')) {
+            showFinale();
+          }
+        }, 400);
+      }
+    };
+    showModal('resultsModal');
+    setTimeout(() => { $('#resultsContinueBtn').focus(); }, 50);
+  }
+  function showModal(id) { $('#' + id).hidden = false; }
+  function hideModal(id) { $('#' + id).hidden = true; }
+
+  /* ===== Mini-game 1: Fill in the Blanks ===== */
+  function gameFillBlanks(scene, data) {
+    const area = $('#gameArea');
+    const hud = $('#sceneHud');
+    let filled = 0;
+    let mistakes = 0;
+    let score = 0;
+    let selectedBlank = null;
+    let usedWords = new Set();
+
+    // HUD
+    hud.innerHTML =
+      '<div class="hud-pill">Filled <strong id="fbFilled">0</strong>/' + data.blanks.length + '</div>' +
+      '<div class="hud-pill">Mistakes <strong id="fbMistakes">0</strong></div>' +
+      '<div class="hud-pill">Score <strong id="fbScore">0</strong></div>';
+
+    // Build passage HTML
+    const parts = data.text.split(/(\{\{\d+\}\})/);
+    const passageHtml = parts.map(p => {
+      const m = p.match(/^\{\{(\d+)\}\}$/);
+      if (m) {
+        const id = parseInt(m[1], 10);
+        return '<button class="fb-blank" data-blank="' + id + '" aria-label="Blank ' + (id+1) + ': empty">_____</button>';
+      }
+      return p;
+    }).join('');
+
+    // Build bank HTML
+    const shuffledBank = shuffle(data.bank);
+    const bankHtml = shuffledBank.map((w, i) =>
+      '<button class="fb-word" data-word="' + w + '" aria-label="Word bank option: ' + w + '">' + w + '</button>'
+    ).join('');
+
+    area.innerHTML =
+      '<div class="fb-passage" id="fbPassage">' + passageHtml + '</div>' +
+      '<div class="fb-bank-label">★ Word Bank — click a word to fill the selected blank</div>' +
+      '<div class="fb-bank" id="fbBank">' + bankHtml + '</div>';
+
+    const bankEl = $('#fbBank');
+    const passageEl = $('#fbPassage');
+
+    function updateHUDStats() {
+      $('#fbFilled').textContent = filled;
+      $('#fbMistakes').textContent = mistakes;
+      $('#fbScore').textContent = score;
+    }
+
+    function selectBlank(btn) {
+      if (selectedBlank) selectedBlank.classList.remove('selected');
+      selectedBlank = btn;
+      btn.classList.add('selected');
+      sfx.click();
+    }
+
+    function tryWord(wordBtn) {
+      if (!selectedBlank) {
+        toast('Select a blank first', 'error');
+        sfx.wrong();
+        return;
+      }
+      const word = wordBtn.getAttribute('data-word');
+      const blankId = parseInt(selectedBlank.getAttribute('data-blank'), 10);
+      const blankData = data.blanks.find(b => b.id === blankId);
+      if (word === blankData.answer) {
+        // Correct
+        selectedBlank.classList.remove('selected');
+        selectedBlank.classList.add('filled');
+        selectedBlank.textContent = word;
+        selectedBlank.setAttribute('aria-label', 'Blank ' + (blankId+1) + ': ' + word);
+        selectedBlank.disabled = true;
+        wordBtn.classList.add('used');
+        usedWords.add(word);
+        filled++;
+        score += 100;
+        sfx.correct();
+        const rect = wordBtn.getBoundingClientRect();
+        popFloat(rect.left + rect.width/2, rect.top, '+100', '#3e8e8c');
+        selectedBlank = null;
+        if (filled === data.blanks.length) {
+          // Bonus for no mistakes
+          if (mistakes === 0) {
+            score += 200;
+            toast('Flawless! +200 bonus', 'gold');
+            spawnConfetti(window.innerWidth/2, 200, 50);
+          }
+          updateHUDStats();
+          setTimeout(() => {
+            const stars = mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1);
+            finishScene(scene, score, stars, mistakes);
+          }, 700);
+        }
+      } else {
+        // Wrong — bounce back
+        mistakes++;
+        score = Math.max(0, score - 50);
+        selectedBlank.classList.add('wrong');
+        wordBtn.classList.add('bouncing');
+        sfx.wrong();
+        const rect = wordBtn.getBoundingClientRect();
+        popFloat(rect.left + rect.width/2, rect.top, '-50', '#d9433b');
+        setTimeout(() => {
+          selectedBlank.classList.remove('wrong', 'selected');
+          wordBtn.classList.remove('bouncing');
+          selectedBlank = null;
+        }, 500);
+      }
+      updateHUDStats();
+    }
+
+    // Event delegation
+    function onPassageClick(e) {
+      const btn = e.target.closest('.fb-blank');
+      if (btn && !btn.classList.contains('filled')) selectBlank(btn);
+    }
+    function onBankClick(e) {
+      const btn = e.target.closest('.fb-word');
+      if (btn && !btn.classList.contains('used')) tryWord(btn);
+    }
+    passageEl.addEventListener('click', onPassageClick);
+    bankEl.addEventListener('click', onBankClick);
+
+    setCleanup(function() {
+      passageEl.removeEventListener('click', onPassageClick);
+      bankEl.removeEventListener('click', onBankClick);
+    });
+  }
+
+  /* ===== Mini-game 2: True / False ===== */
+  function gameTrueFalse(scene, data) {
+    const area = $('#gameArea');
+    const hud = $('#sceneHud');
+    let idx = 0;
+    let score = 0;
+    let mistakes = 0;
+    let streak = 0;
+    let bestStreak = 0;
+    let timerInterval = null;
+    let timeLeft = 600;
+    let answered = false;
+    let documentKeyHandler = null;
+
+    hud.innerHTML =
+      '<div class="hud-pill">Card <strong id="tfCard">1</strong>/' + data.length + '</div>' +
+      '<div class="hud-pill streak">Streak <strong id="tfStreak">0</strong> × <strong id="tfMult">1</strong></div>' +
+      '<div class="hud-pill">Score <strong id="tfScore">0</strong></div>';
+
+    function currentMult() { return Math.min(5, streak + 1); }
+
+    function renderCard() {
+      const c = data[idx];
+      answered = false;
+      timeLeft = 600;
+      area.innerHTML =
+        '<div class="tf-timer-wrap">' +
+          '<div class="tf-timer-label"><span>Time on this card</span><span id="tfTime">10:00</span></div>' +
+          '<div class="tf-timer-bar"><div class="tf-timer-fill" id="tfTimerFill"></div></div>' +
+        '</div>' +
+        '<div class="tf-card">' +
+          '<div class="tf-card-num">Statement ' + (idx+1) + ' of ' + data.length + '</div>' +
+          '<div class="tf-statement">' + c.text + '</div>' +
+          '<div class="tf-buttons">' +
+            '<button class="tf-btn true" data-tf="true" aria-label="Mark as true (left arrow)">TRUE</button>' +
+            '<button class="tf-btn false" data-tf="false" aria-label="Mark as false (right arrow)">FALSE</button>' +
+          '</div>' +
+          '<div class="tf-explain" id="tfExplain">' +
+            '<div class="tf-explain-label">Explanation</div>' +
+            '<div id="tfExplainText"></div>' +
+          '</div>' +
+          '<div class="tf-next-row" id="tfNextRow">' +
+            '<button class="tf-next-btn" id="tfNextBtn">' + (idx === data.length - 1 ? 'See Results' : 'Next ▶') + '</button>' +
+          '</div>' +
+          '<div class="tf-hint">← TRUE · → FALSE · ENTER for Next</div>' +
+        '</div>';
+      $('#tfCard').textContent = (idx + 1);
+      startTimer();
+      // Wire next button
+      $('#tfNextBtn').addEventListener('click', onNext);
+    }
+
+    function startTimer() {
+      stopTimer();
+      updateTimer();
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimer();
+        if (timeLeft <= 0) {
+          stopTimer();
+          // Auto-treat as wrong (timeout)
+          if (!answered) handleAnswer(null);
+        }
+      }, 1000);
+    }
+    function stopTimer() {
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    }
+    function updateTimer() {
+      const el = $('#tfTime');
+      const fill = $('#tfTimerFill');
+      if (el) {
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        el.textContent = m + ':' + (s < 10 ? '0' + s : s);
+      }
+      if (fill) fill.style.width = (timeLeft / 600 * 100) + '%';
+    }
+
+    function handleAnswer(choice) {
+      if (answered) return;
+      answered = true;
+      stopTimer();
+      const c = data[idx];
+      const correct = (choice === true && c.answer === true) || (choice === false && c.answer === false) || (choice === null && false);
+      const timeout = (choice === null);
+      // Mark buttons
+      const trueBtn = area.querySelector('[data-tf="true"]');
+      const falseBtn = area.querySelector('[data-tf="false"]');
+      trueBtn.disabled = true;
+      falseBtn.disabled = true;
+      if (c.answer === true) trueBtn.classList.add('correct-answer');
+      else falseBtn.classList.add('correct-answer');
+      if (choice === true) trueBtn.classList.add('chosen-true');
+      if (choice === false) falseBtn.classList.add('chosen-false');
+      if (correct) {
+        streak++;
+        bestStreak = Math.max(bestStreak, streak);
+        const mult = Math.min(5, streak);
+        const pts = 100 * mult;
+        score += pts;
+        sfx.correct();
+        const btn = (choice === true ? trueBtn : falseBtn);
+        const r = btn.getBoundingClientRect();
+        popFloat(r.left + r.width/2, r.top, '+' + pts + (mult > 1 ? ' ×' + mult : ''), '#3e8e8c');
+      } else {
+        mistakes++;
+        streak = 0;
+        const penalty = timeout ? 0 : 75;
+        score = Math.max(0, score - penalty);
+        sfx.wrong();
+        if (choice !== null) {
+          const btn = (choice === true ? trueBtn : falseBtn);
+          btn.classList.add('wrong-answer');
+          const r = btn.getBoundingClientRect();
+          popFloat(r.left + r.width/2, r.top, '-' + penalty, '#d9433b');
+        } else {
+          toast('Time up!', 'error');
+        }
+      }
+      $('#tfStreak').textContent = streak;
+      $('#tfMult').textContent = currentMult();
+      $('#tfScore').textContent = score;
+      // Show explanation
+      $('#tfExplainText').textContent = c.explanation;
+      $('#tfExplain').classList.add('show');
+      $('#tfNextRow').classList.add('show');
+      // Focus next button
+      setTimeout(() => { const nb = $('#tfNextBtn'); if (nb) nb.focus(); }, 100);
+    }
+
+    function onNext() {
+      sfx.click();
+      if (idx === data.length - 1) {
+        // Finish
+        stopTimer();
+        const stars = mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1);
+        finishScene(scene, score, stars, mistakes);
+      } else {
+        idx++;
+        renderCard();
+      }
+    }
+
+    // Event delegation for T/F buttons
+    area.addEventListener('click', function onAreaClick(e) {
+      const btn = e.target.closest('.tf-btn');
+      if (!btn || btn.disabled || answered) return;
+      const val = btn.getAttribute('data-tf') === 'true';
+      handleAnswer(val);
+    });
+
+    // Keyboard support
+    documentKeyHandler = function(e) {
+      if ($('#sceneScreen').classList.contains('active') !== true) return;
+      if (currentSceneId !== scene.id) return;
+      if (!answered) {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); handleAnswer(true); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); handleAnswer(false); }
+      } else {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onNext();
+        }
+      }
+    };
+    document.addEventListener('keydown', documentKeyHandler);
+
+    renderCard();
+
+    setCleanup(function() {
+      stopTimer();
+      area.removeEventListener('click', arguments.callee);
+      if (documentKeyHandler) document.removeEventListener('keydown', documentKeyHandler);
+    });
+    // Override cleanup (the area listener is anonymous, but we re-bind on each render so we leave it)
+    setCleanup(function() {
+      stopTimer();
+      if (documentKeyHandler) document.removeEventListener('keydown', documentKeyHandler);
+    });
+  }
+
+  /* ===== Mini-game 3: Multiple Choice ===== */
+  function gameMultipleChoice(scene, data) {
+    const area = $('#gameArea');
+    const hud = $('#sceneHud');
+    let idx = 0;
+    let score = 0;
+    let mistakes = 0;
+
+    hud.innerHTML =
+      '<div class="hud-pill">Question <strong id="mcQ">1</strong>/' + data.length + '</div>' +
+      '<div class="hud-pill">Mistakes <strong id="mcMistakes">0</strong></div>' +
+      '<div class="hud-pill">Score <strong id="mcScore">0</strong></div>';
+
+    function renderQ() {
+      const q = data[idx];
+      const optsHtml = q.opts.map((o, i) =>
+        '<button class="mc-opt" data-opt="' + i + '" aria-label="Option ' + String.fromCharCode(65+i) + ': ' + o + '">' +
+          '<span class="mc-opt-letter">' + String.fromCharCode(65+i) + '</span>' +
+          '<span>' + o + '</span>' +
+        '</button>'
+      ).join('');
+      area.innerHTML =
+        '<div class="mc-question">' +
+          '<div class="mc-q-num">Question ' + (idx+1) + ' of ' + data.length + '</div>' +
+          '<div class="mc-q-text">' + q.q + '</div>' +
+        '</div>' +
+        '<div class="mc-options" id="mcOptions">' + optsHtml + '</div>' +
+        '<div class="mc-reaction" id="mcReaction">' +
+          '<div class="mc-reaction-avatar" id="mcReactAvatar">' + charInitial(scene.char) + '</div>' +
+          '<div class="mc-reaction-text"><strong id="mcReactLabel">' + scene.char + ' says</strong><span id="mcReactText"></span></div>' +
+        '</div>' +
+        '<div class="mc-next-row" id="mcNextRow">' +
+          '<button class="mc-next-btn" id="mcNextBtn">' + (idx === data.length - 1 ? 'See Results' : 'Next ▶') + '</button>' +
+        '</div>';
+      $('#mcQ').textContent = (idx + 1);
+      $('#mcReactAvatar').style.background = scene.color;
+      $('#mcOptions').addEventListener('click', onOptionsClick);
+      $('#mcNextBtn').addEventListener('click', onNext);
+    }
+
+    function onOptionsClick(e) {
+      const btn = e.target.closest('.mc-opt');
+      if (!btn || btn.disabled) return;
+      const q = data[idx];
+      const chosen = parseInt(btn.getAttribute('data-opt'), 10);
+      const correct = chosen === q.answer;
+      // Disable all
+      $$('.mc-opt', area).forEach((o, i) => {
+        o.disabled = true;
+        if (i === q.answer) o.classList.add('correct');
+        else if (i === chosen && !correct) o.classList.add('wrong');
+        else if (!correct) o.classList.add('dimmed');
+      });
+      if (correct) {
+        score += 150;
+        sfx.correct();
+        const r = btn.getBoundingClientRect();
+        popFloat(r.left + r.width/2, r.top, '+150', '#3e8e8c');
+      } else {
+        mistakes++;
+        sfx.wrong();
+        const r = btn.getBoundingClientRect();
+        popFloat(r.left + r.width/2, r.top, 'WRONG', '#d9433b');
+      }
+      $('#mcMistakes').textContent = mistakes;
+      $('#mcScore').textContent = score;
+      // Show reaction
+      $('#mcReactText').textContent = q.reaction;
+      $('#mcReaction').classList.add('show');
+      $('#mcNextRow').classList.add('show');
+      setTimeout(() => { $('#mcNextBtn').focus(); }, 100);
+    }
+
+    function onNext() {
+      sfx.click();
+      if (idx === data.length - 1) {
+        const stars = mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1);
+        finishScene(scene, score, stars, mistakes);
+      } else {
+        idx++;
+        renderQ();
+      }
+    }
+
+    renderQ();
+
+    setCleanup(function() {
+      // Listeners are tied to elements that get replaced; nothing to remove globally
+    });
+  }
+
+  /* ===== Mini-game 4: Match the Meaning ===== */
+  function gameMatchMeaning(scene, data) {
+    const area = $('#gameArea');
+    const hud = $('#sceneHud');
+    const pairs = data.pairs;
+    let matched = 0;
+    let attempts = 0;
+    let mistakes = 0;
+    let score = 0;
+    let selectedWord = null;
+    let selectedMeaning = null;
+    let locked = false;
+
+    hud.innerHTML =
+      '<div class="hud-pill">Pairs <strong id="mmMatched">0</strong>/' + pairs.length + '</div>' +
+      '<div class="hud-pill">Attempts <strong id="mmAttempts">0</strong></div>' +
+      '<div class="hud-pill">Score <strong id="mmScore">0</strong></div>';
+
+    const shuffledWords = shuffle(pairs.map((p, i) => ({ ...p, _i: i })));
+    const shuffledMeanings = shuffle(pairs.map((p, i) => ({ ...p, _i: i })));
+
+    const wordsHtml = shuffledWords.map(p =>
+      '<button class="match-item" data-side="word" data-i="' + p._i + '" aria-label="Word: ' + p.word + '">' + p.word + '</button>'
+    ).join('');
+    const meaningsHtml = shuffledMeanings.map(p =>
+      '<button class="match-item" data-side="meaning" data-i="' + p._i + '" aria-label="Meaning: ' + p.meaning + '">' + p.meaning + '</button>'
+    ).join('');
+
+    area.innerHTML =
+      '<div class="match-hud-row">' +
+        '<div class="match-counter">Pairs found: <strong id="mmCounter">0</strong>/' + pairs.length + ' · Attempts: <strong id="mmAtt">0</strong></div>' +
+        '<div class="match-example"><strong>Example:</strong> ' + data.example + '</div>' +
+      '</div>' +
+      '<div class="match-grid">' +
+        '<div class="match-col"><div class="match-col-header">★ WORD</div>' + wordsHtml + '</div>' +
+        '<div class="match-connector">→</div>' +
+        '<div class="match-col"><div class="match-col-header">★ MEANING</div>' + meaningsHtml + '</div>' +
+      '</div>' +
+      '<div class="match-progress-bar"><div class="match-progress-fill" id="mmProgress"></div></div>';
+
+    function updateHUDStats() {
+      $('#mmMatched').textContent = matched;
+      $('#mmCounter').textContent = matched;
+      $('#mmAttempts').textContent = attempts;
+      $('#mmAtt').textContent = attempts;
+      $('#mmScore').textContent = score;
+      $('#mmProgress').style.width = (matched / pairs.length * 100) + '%';
+    }
+
+    function onAreaClick(e) {
+      const btn = e.target.closest('.match-item');
+      if (!btn || btn.classList.contains('locked') || locked) return;
+      const side = btn.getAttribute('data-side');
+      const i = parseInt(btn.getAttribute('data-i'), 10);
+      if (side === 'word') {
+        if (selectedWord) selectedWord.classList.remove('selected');
+        selectedWord = btn;
+        btn.classList.add('selected');
+        sfx.click();
+      } else {
+        if (selectedMeaning) selectedMeaning.classList.remove('selected');
+        selectedMeaning = btn;
+        btn.classList.add('selected');
+        sfx.click();
+      }
+      if (selectedWord && selectedMeaning) {
+        attemptMatch();
+      }
+    }
+
+    function attemptMatch() {
+      locked = true;
+      attempts++;
+      const wI = parseInt(selectedWord.getAttribute('data-i'), 10);
+      const mI = parseInt(selectedMeaning.getAttribute('data-i'), 10);
+      if (wI === mI) {
+        // Match
+        matched++;
+        score += 100;
+        if (attempts === matched) score += 25; // no wrong attempts bonus per match
+        sfx.match();
+        const r = selectedWord.getBoundingClientRect();
+        popFloat(r.left + r.width/2, r.top, '+100', '#3e8e8c');
+        setTimeout(() => {
+          selectedWord.classList.add('locked');
+          selectedMeaning.classList.add('locked');
+          selectedWord.classList.remove('selected');
+          selectedMeaning.classList.remove('selected');
+          selectedWord = null;
+          selectedMeaning = null;
+          locked = false;
+          updateHUDStats();
+          if (matched === pairs.length) {
+            // Done — bonus
+            if (mistakes === 0) {
+              score += 150;
+              toast('Flawless matching! +150', 'gold');
+              spawnConfetti(window.innerWidth/2, 200, 60);
+            }
+            updateHUDStats();
+            setTimeout(() => {
+              const stars = mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1);
+              finishScene(scene, score, stars, mistakes);
+            }, 700);
+          }
+        }, 250);
+      } else {
+        // Wrong
+        mistakes++;
+        score = Math.max(0, score - 25);
+        sfx.wrong();
+        const r = selectedWord.getBoundingClientRect();
+        popFloat(r.left + r.width/2, r.top, '-25', '#d9433b');
+        selectedWord.classList.add('shake');
+        selectedMeaning.classList.add('shake');
+        setTimeout(() => {
+          selectedWord.classList.remove('selected', 'shake');
+          selectedMeaning.classList.remove('selected', 'shake');
+          selectedWord = null;
+          selectedMeaning = null;
+          locked = false;
+          updateHUDStats();
+        }, 500);
+      }
+      updateHUDStats();
+    }
+
+    area.addEventListener('click', onAreaClick);
+
+    setCleanup(function() {
+      area.removeEventListener('click', onAreaClick);
+    });
+  }
+
+  /* ===== Mini-game 5: Timed Bonus ===== */
+  function gameTimedBonus(scene, data) {
+    const area = $('#gameArea');
+    const hud = $('#sceneHud');
+    const TOTAL_TIME = 750;
+    let timeLeft = TOTAL_TIME;
+    let idx = 0;
+    let score = 0;
+    let mistakes = 0;
+    let streak = 0;
+    let correctCount = 0;
+    let timerInterval = null;
+    let answered = false;
+    let documentKeyHandler = null;
+    const shuffled = shuffle(data);
+    const total = shuffled.length;
+
+    hud.innerHTML =
+      '<div class="hud-pill">Q <strong id="tbQ">1</strong>/' + total + '</div>' +
+      '<div class="hud-pill streak">Streak <strong id="tbStreak">0</strong> × <strong id="tbMult">1</strong></div>' +
+      '<div class="hud-pill">Score <strong id="tbScore">0</strong></div>';
+
+    function currentMult() { return Math.min(5, streak + 1); }
+
+    function renderQ() {
+      const q = shuffled[idx];
+      answered = false;
+      const optsHtml = q.opts.map((o, i) =>
+        '<button class="tb-opt" data-opt="' + i + '" aria-label="Option ' + String.fromCharCode(65+i) + ': ' + o + '">' +
+          '<strong>' + String.fromCharCode(65+i) + '.</strong> ' + o +
+        '</button>'
+      ).join('');
+      area.innerHTML =
+        '<div class="tb-timer-wrap" id="tbTimerWrap">' +
+          '<div class="tb-timer-label"><span>Time remaining</span><span class="time-val" id="tbTime">12:30</span></div>' +
+          '<div class="tb-timer-bar"><div class="tb-timer-fill" id="tbTimerFill"></div></div>' +
+        '</div>' +
+        '<div class="tb-q-area">' +
+          '<div class="tb-q-num">Question ' + (idx+1) + ' of ' + total + '</div>' +
+          '<div class="tb-q-text">' + q.q + '</div>' +
+          '<div class="tb-options" id="tbOptions">' + optsHtml + '</div>' +
+          '<div class="tb-feedback" id="tbFeedback"></div>' +
+        '</div>';
+      $('#tbQ').textContent = (idx + 1);
+      $('#tbOptions').addEventListener('click', onOptionsClick);
+    }
+
+    function updateTimer() {
+      const el = $('#tbTime');
+      const fill = $('#tbTimerFill');
+      const wrap = $('#tbTimerWrap');
+      if (el) {
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        el.textContent = m + ':' + (s < 10 ? '0' + s : s);
+      }
+      if (fill) fill.style.width = (timeLeft / TOTAL_TIME * 100) + '%';
+      if (wrap) {
+        if (timeLeft <= 60) wrap.classList.add('danger');
+        else wrap.classList.remove('danger');
+      }
+    }
+
+    function startTimer() {
+      stopTimer();
+      updateTimer();
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimer();
+        if (timeLeft === 60) sfx.tick();
+        if (timeLeft <= 60 && timeLeft % 5 === 0) sfx.tick();
+        if (timeLeft <= 0) {
+          stopTimer();
+          finish();
+        }
+      }, 1000);
+    }
+    function stopTimer() {
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    }
+
+    function onOptionsClick(e) {
+      const btn = e.target.closest('.tb-opt');
+      if (!btn || btn.disabled || answered) return;
+      answered = true;
+      const q = shuffled[idx];
+      const chosen = parseInt(btn.getAttribute('data-opt'), 10);
+      const correct = chosen === q.answer;
+      $$('.tb-opt', area).forEach((o, i) => {
+        o.disabled = true;
+        if (i === q.answer) o.classList.add('correct');
+        else if (i === chosen && !correct) o.classList.add('wrong');
+      });
+      if (correct) {
+        streak++;
+        correctCount++;
+        const mult = Math.min(5, streak);
+        const pts = 100 * mult;
+        score += pts;
+        sfx.correct();
+        const r = btn.getBoundingClientRect();
+        popFloat(r.left + r.width/2, r.top, '+' + pts + (mult > 1 ? ' ×' + mult : ''), '#3e8e8c');
+        $('#tbFeedback').textContent = '✓ Correct! ' + (mult > 1 ? 'Streak ×' + mult : '');
+      } else {
+        mistakes++;
+        streak = 0;
+        score = Math.max(0, score - 50);
+        sfx.wrong();
+        const r = btn.getBoundingClientRect();
+        popFloat(r.left + r.width/2, r.top, '-50', '#d9433b');
+        $('#tbFeedback').textContent = '✗ Wrong. Streak reset.';
+      }
+      $('#tbStreak').textContent = streak;
+      $('#tbMult').textContent = currentMult();
+      $('#tbScore').textContent = score;
+      // Next question after short delay
+      setTimeout(() => {
+        if (idx === total - 1) {
+          finish();
+        } else {
+          idx++;
+          renderQ();
+        }
+      }, 900);
+    }
+
+    function finish() {
+      stopTimer();
+      // Time bonus
+      let timeBonus = 0;
+      if (correctCount === total && timeLeft > 0) {
+        timeBonus = Math.floor(timeLeft * 2);
+        score += timeBonus;
+        toast('Time bonus: +' + timeBonus, 'gold');
+      }
+      const stars = correctCount >= total - 1 ? 3 : (correctCount >= total - 5 ? 2 : 1);
+      finishScene(scene, score, stars, mistakes);
+    }
+
+    // Keyboard support (1/2/3 for options)
+    documentKeyHandler = function(e) {
+      if ($('#sceneScreen').classList.contains('active') !== true) return;
+      if (currentSceneId !== scene.id) return;
+      if (answered) return;
+      if (['1','2','3'].indexOf(e.key) >= 0) {
+        const i = parseInt(e.key, 10) - 1;
+        const opts = $$('.tb-opt', area);
+        if (opts[i]) {
+          e.preventDefault();
+          opts[i].click();
+        }
+      }
+    };
+    document.addEventListener('keydown', documentKeyHandler);
+
+    renderQ();
+    startTimer();
+
+    setCleanup(function() {
+      stopTimer();
+      if (documentKeyHandler) document.removeEventListener('keydown', documentKeyHandler);
+    });
+  }
+
+  /* ===== Finale ===== */
+  function showFinale() {
+    progress.finaleSeen = true;
+    saveProgress();
+    recomputeTotals();
+    const rank = computeRank(progress.totalScore, progress.totalStars);
+    $('#finaleScore').textContent = progress.totalScore;
+    $('#finaleStars').textContent = progress.totalStars;
+    $('#finaleRank').textContent = rank;
+    // Results table
+    const table = $('#finaleTable');
+    let html =
+      '<div class="finale-table-row header">' +
+        '<div>#</div><div>Reel</div><div>Stars</div><div>Score</div>' +
+      '</div>';
+    SCENES.forEach(s => {
+      const lp = progress.levels[s.id];
+      const stars = lp ? lp.stars : 0;
+      const score = lp ? lp.score : 0;
+      const starHtml = [0,1,2].map(i =>
+        '<svg viewBox="0 0 24 24" fill="' + (i < stars ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>'
+      ).join('');
+      html +=
+        '<div class="finale-table-row">' +
+          '<div class="finale-table-num">' + s.num + '</div>' +
+          '<div class="finale-table-title">' + s.title + '</div>' +
+          '<div class="finale-table-stars">' + starHtml + '</div>' +
+          '<div class="finale-table-score">' + score + '</div>' +
+        '</div>';
+    });
+    table.innerHTML = html;
+    $('#rewindBtn').onclick = function() {
+      sfx.click();
+      if (confirm('Rewind the tape? This will erase all your progress.')) {
+        progress = { levels: {}, totalScore: 0, totalStars: 0, finaleSeen: false };
+        saveProgress();
+        currentSceneId = null;
+        updateHUD();
+        renderMap();
+        showScreen('mapScreen');
+        toast('Tape rewound', 'gold');
+      }
+    };
+    $('#replayBtn').onclick = function(e) {
+      e.preventDefault();
+      sfx.click();
+      currentSceneId = null;
+      showScreen('mapScreen');
+      updateHUD();
+      renderMap();
+    };
+    showScreen('finaleScreen');
+    sfx.fanfare();
+    setTimeout(() => spawnConfetti(window.innerWidth/2, 120, 100), 300);
+    setTimeout(() => spawnConfetti(window.innerWidth/3, 120, 60), 600);
+    setTimeout(() => spawnConfetti(window.innerWidth*2/3, 120, 60), 900);
+  }
+  function computeRank(totalScore, totalStars) {
+    if (totalStars >= 15) return '★ The One With the Perfect Score ★';
+    if (totalStars >= 12) return 'Friend of Friends';
+    if (totalStars >= 9)  return 'Central Perk Insider';
+    if (totalStars >= 5)  return 'Bar Stool Regular';
+    return 'Coffee Shop Newcomer';
+  }
+
+  /* ===== Sound button ===== */
+  function renderSound() {
+    const btn = $('#soundBtn');
+    btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+    btn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+    btn.innerHTML = muted
+      ? '<i data-lucide="volume-x"></i>'
+      : '<i data-lucide="volume-2"></i>';
+    refreshIcons();
+  }
+
+  /* ===== Preloader ===== */
+  function initPreloader() {
+    const btn = $('#playBtn');
+    btn.addEventListener('click', function() {
+      ensureAudio();
+      sfx.click();
+      const pre = $('#preloader');
+      pre.classList.add('exit');
+      setTimeout(() => { pre.style.display = 'none'; }, 800);
+    });
+  }
+
+  /* ===== Init ===== */
+  function init() {
+    loadProgress();
+    loadMute();
+    initPreloader();
+    // Intro → Map
+    $('#introStartBtn').addEventListener('click', function() {
+      ensureAudio();
+      sfx.click();
+      showScreen('mapScreen');
+      updateHUD();
+      renderMap();
+    });
+    // Map delegation
+    $('#levelGrid').addEventListener('click', function(e) {
+      const card = e.target.closest('.level-card');
+      if (!card) return;
+      const id = card.getAttribute('data-scene');
+      openLevel(id);
+    });
+    $('#levelGrid').addEventListener('keydown', function(e) {
+      const card = e.target.closest('.level-card');
+      if (!card) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const id = card.getAttribute('data-scene');
+        openLevel(id);
+      }
+    });
+    // Finale button
+    $('#finaleBtn').addEventListener('click', function() {
+      sfx.click();
+      showFinale();
+    });
+    // Scene back button
+    $('#sceneBackBtn').addEventListener('click', function() {
+      sfx.click();
+      runCleanup();
+      currentSceneId = null;
+      showScreen('mapScreen');
+      updateHUD();
+      renderMap();
+    });
+    // Map button in header
+    $('#mapBtn').addEventListener('click', function() {
+      sfx.click();
+      runCleanup();
+      currentSceneId = null;
+      showScreen('mapScreen');
+      updateHUD();
+      renderMap();
+    });
+    // Sound button
+    $('#soundBtn').addEventListener('click', function() {
+      ensureAudio();
+      muted = !muted;
+      saveMute();
+      renderSound();
+      if (!muted) sfx.click();
+    });
+    // Briefing close on overlay click
+    $('[data-close-briefing]').addEventListener('click', function() {
+      sfx.click();
+      hideModal('briefingModal');
+    });
+    // Escape closes modals
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        if (!$('#briefingModal').hidden) { hideModal('briefingModal'); sfx.click(); }
+      }
+    });
+    // First click anywhere inits audio
+    document.addEventListener('click', ensureAudio, { once: true });
+    // Initial state
+    renderSound();
+  }
+
+  init();
+
+  /* ===== End of code ===== */
+  updateHUD();
+  renderMap();
+  renderSound();
+  refreshIcons();
+})();
+</script>
+</body>
+</html>
