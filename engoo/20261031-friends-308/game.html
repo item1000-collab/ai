@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#211912">
+<meta name="description" content="Friends Vocab Arcade — a retro, warm, fully self-contained vocabulary game built on the study guide for Friends S3E8, The One with the Giant Poking Device. Five reels, five mechanics, one Final.">
+<title>Friends Vocab Arcade — S3E8 “The One with the Giant Poking Device”</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Caveat:wght@600;700&family=Courier+Prime:wght@400;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   FRIENDS VOCAB ARCADE — warm 90s NYC living-room arcade
+   Palette: cream paper #faf3e4 · ink #33291f · deep room #211912
+            gold #f5c542/#d4a017 · red #d0492e · teal #17756b
+   ============================================================ */
+:root{
+  --bg:#211912; --bg2:#2b2016; --panel:#342718; --panel2:#3d2e1d;
+  --paper:#faf3e4; --paper2:#efe3c8; --ink:#33291f; --ink2:#75634d;
+  --line:#e2d2ae; --dark:#17100a; --dark2:#241a10;
+  --gold:#f5c542; --gold2:#d4a017; --gold-dk:#7a5a0f;
+  --red:#d0492e; --teal:#17756b; --blue:#1f6f9f; --plum:#a5487e;
+  --ok:#3f9d63; --err:#d0492e;
+  --fh:'Archivo Black','Arial Black',sans-serif;
+  --fb:'Inter','Helvetica Neue',Arial,sans-serif;
+  --fm:'Courier Prime',ui-monospace,Menlo,Consolas,monospace;
+  --fhand:'Caveat',cursive;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  font-family:var(--fb);
+  color:var(--paper);
+  background:radial-gradient(1100px 720px at 50% -8%, #3c2c1c 0%, var(--bg) 58%) fixed var(--bg);
+  overflow-x:hidden;
+}
+::selection{background:var(--gold); color:var(--dark)}
+img{max-width:100%}
+button{font:inherit}
+:focus-visible{outline:3px solid var(--gold); outline-offset:3px; border-radius:6px}
+
+/* ===== atmosphere: film grain + vignette ===== */
+.grain{
+  position:fixed; inset:-60px; z-index:95; pointer-events:none; opacity:.09; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+.vignette{
+  position:fixed; inset:0; z-index:5; pointer-events:none;
+  background:radial-gradient(125% 95% at 50% 28%, transparent 55%, rgba(0,0,0,.42) 100%);
+}
+
+/* ===== preloader: VHS tape + PLAY gate ===== */
+.preloader{
+  position:fixed; inset:0; z-index:100; display:grid; place-items:center; text-align:center;
+  background:radial-gradient(900px 620px at 50% 18%, #3c2c1c, #14100a 78%);
+  transition:transform .68s cubic-bezier(.75,0,.25,1);
+}
+.preloader.gone{transform:translateY(-103%)}
+.rec{display:flex; align-items:center; gap:8px; justify-content:center;
+  font-family:var(--fm); font-size:11px; letter-spacing:.24em; color:rgba(250,243,228,.55)}
+.rec i{width:9px; height:9px; border-radius:50%; background:var(--red); display:inline-block; animation:blink 1.1s steps(2) infinite}
+.tape{width:min(400px,84vw); margin:16px auto 4px; filter:drop-shadow(0 18px 30px rgba(0,0,0,.55))}
+.spin1{animation:spin 3.6s linear infinite; transform-origin:86px 61px}
+.spin2{animation:spin 5.2s linear infinite; transform-origin:234px 61px}
+.load-line{height:10px; width:min(400px,84vw); margin:14px auto 0; background:rgba(250,243,228,.14); border-radius:999px; overflow:hidden}
+.load-line i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--gold),var(--gold2)); border-radius:999px; transition:width .2s}
+.load-label{font-family:var(--fm); letter-spacing:.3em; font-size:12px; color:rgba(250,243,228,.6); margin-top:12px}
+.play-btn{
+  display:none; margin:20px auto 0; cursor:pointer;
+  font-family:var(--fh); font-size:22px; letter-spacing:.1em; color:var(--dark);
+  background:linear-gradient(135deg,#f5c542,#d4a017);
+  border:0; border-radius:18px; padding:16px 46px;
+  box-shadow:0 8px 0 var(--gold-dk), 0 18px 44px rgba(245,197,66,.28);
+}
+.play-btn.show{display:inline-block; animation:pulse 1.3s ease-in-out infinite}
+.play-btn:active{transform:translateY(4px); box-shadow:0 3px 0 var(--gold-dk)}
+
+/* ===== fixed header console ===== */
+.hud{
+  position:fixed; top:0; left:0; right:0; z-index:40;
+  display:flex; align-items:center; gap:12px; padding:9px 16px;
+  background:rgba(23,16,10,.88); backdrop-filter:blur(6px);
+  border-bottom:1px solid rgba(245,197,66,.24);
+}
+.brand{font-family:var(--fh); font-size:15px; letter-spacing:.06em; white-space:nowrap; color:var(--paper)}
+.brand .dot{font-size:13px}
+.tagline{font-family:var(--fm); color:var(--gold); font-size:10.5px; margin-left:9px; letter-spacing:.2em; vertical-align:2px}
+.cells{display:flex; gap:6px; margin-left:auto}
+.cell{
+  width:30px; height:30px; padding:0; border-radius:9px; cursor:pointer;
+  border:2px solid rgba(250,243,228,.25); background:transparent;
+  color:rgba(250,243,228,.55); font-family:var(--fm); font-weight:700; font-size:13px;
+  display:grid; place-items:center;
+}
+.cell.done{color:var(--paper)}
+.cell.perfect{box-shadow:0 0 0 2px var(--gold) inset}
+.score-box{display:flex; flex-direction:column; align-items:flex-end; margin-left:4px; line-height:1.1}
+.score-box .lbl{font-size:8.5px; letter-spacing:.24em; color:rgba(250,243,228,.5)}
+#hudScore{font-family:var(--fm); font-weight:700; font-size:19px; color:var(--gold)}
+.icon-btn{
+  width:38px; height:38px; flex:none; border-radius:11px; cursor:pointer; font-size:17px;
+  border:2px solid rgba(250,243,228,.2); background:var(--dark2);
+  display:grid; place-items:center;
+}
+.icon-btn:active{transform:translateY(2px)}
+
+/* ===== layout & screens ===== */
+#app{max-width:1060px; margin:0 auto; padding:84px 20px 64px}
+.screen{display:none}
+.screen.active{display:block; animation:screenIn .45s cubic-bezier(.2,.7,.3,1)}
+.screen.flick{animation:flick .32s steps(2)}
+@keyframes screenIn{from{opacity:0; transform:translateY(16px)}to{opacity:1; transform:none}}
+@keyframes flick{0%{opacity:.55}30%{opacity:.9}55%{opacity:.6}100%{opacity:1}}
+@keyframes blink{50%{opacity:.15}}
+@keyframes pulse{50%{transform:scale(1.05)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@keyframes starPop{0%{transform:scale(0) rotate(-45deg)}70%{transform:scale(1.28) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes toastIn{from{opacity:0; transform:translateY(12px)}}
+@keyframes floatUp{from{opacity:1; transform:translateY(0)}to{opacity:0; transform:translateY(-48px)}}
+@keyframes popIn{from{opacity:0; transform:scale(.9) translateY(16px)}}
+@keyframes cardIn{from{opacity:0; transform:translateY(12px) rotate(-.5deg)}}
+@keyframes tflash{50%{opacity:.5}}
+
+/* ===== buttons ===== */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:9px; cursor:pointer;
+  font-family:var(--fh); text-transform:uppercase; letter-spacing:.05em; font-size:14.5px;
+  padding:14px 22px; border:0; border-radius:14px; text-decoration:none;
+  color:var(--dark); background:linear-gradient(135deg,#f5c542,#d4a017);
+  box-shadow:0 6px 0 var(--gold-dk), 0 12px 22px rgba(0,0,0,.35);
+  transition:transform .08s, box-shadow .08s;
+}
+.btn:active{transform:translateY(4px); box-shadow:0 2px 0 var(--gold-dk)}
+.btn.ghost{background:var(--paper); color:var(--ink); box-shadow:0 6px 0 #b9a67f, 0 12px 22px rgba(0,0,0,.3)}
+.btn.ghost:active{box-shadow:0 2px 0 #b9a67f}
+.btn.dark{background:var(--panel2); color:var(--paper); box-shadow:0 6px 0 #120c06, 0 12px 22px rgba(0,0,0,.3)}
+.btn.dark:active{box-shadow:0 2px 0 #120c06}
+.btn.small{padding:10px 14px; font-size:12px; border-radius:11px; box-shadow:0 4px 0 rgba(0,0,0,.45)}
+.btn.small:active{box-shadow:0 1px 0 rgba(0,0,0,.45)}
+
+/* ===== intro ===== */
+.tv{
+  background:var(--dark); border-radius:22px; padding:14px; max-width:640px; margin:6px auto 0;
+  box-shadow:0 12px 0 rgba(0,0,0,.45), 0 34px 70px rgba(0,0,0,.5);
+}
+.tv .scr{position:relative; border-radius:14px; overflow:hidden}
+.tv .scr img{display:block; width:100%; aspect-ratio:16/10; object-fit:cover}
+.tv .scr::after{content:''; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.15) 0 2px, transparent 2px 4px)}
+.nowshowing{position:absolute; top:10px; left:10px; z-index:2;
+  background:rgba(23,16,10,.86); color:var(--gold); font-family:var(--fm); font-weight:700;
+  font-size:11px; letter-spacing:.18em; padding:4px 10px; border-radius:8px}
+.epi{font-family:var(--fm); color:var(--gold); text-align:center; letter-spacing:.16em; font-size:12.5px; text-transform:uppercase; margin:24px 0 4px}
+h1{font-family:var(--fh); font-size:clamp(30px,5.6vw,54px); text-align:center; margin:0 0 8px; text-shadow:0 4px 0 rgba(0,0,0,.4); line-height:1.05}
+.intro-sub{text-align:center; color:rgba(250,243,228,.72); font-size:15.5px; margin:0 0 26px}
+.intro-cards{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:0 0 8px}
+.icard{background:var(--panel); border:1px solid rgba(250,243,228,.12); border-radius:16px; padding:16px; box-shadow:0 6px 0 rgba(0,0,0,.35)}
+.icard .em{font-size:24px}
+.icard h3{font-family:var(--fh); font-size:13.5px; letter-spacing:.05em; text-transform:uppercase; margin:9px 0 6px}
+.icard p{font-size:13.5px; line-height:1.62; color:rgba(250,243,228,.74); margin:0}
+.intro-actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:24px}
+.note{font-family:var(--fhand); font-size:20px; color:rgba(250,243,228,.62); text-align:center; margin-top:18px}
+
+/* ===== map ===== */
+.map-head h2{font-family:var(--fh); font-size:clamp(22px,3.6vw,32px); margin:6px 0 2px}
+.map-head p{color:rgba(250,243,228,.62); margin:0; font-size:14.5px}
+.map-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:18px; margin:18px 0 24px}
+.reel{
+  position:relative; display:block; width:100%; padding:0; text-align:left; cursor:pointer;
+  background:var(--paper); color:var(--ink); border:0; border-radius:16px; overflow:hidden;
+  box-shadow:0 8px 0 rgba(0,0,0,.4); transition:transform .15s;
+}
+.reel:hover{transform:translateY(-4px) rotate(-.4deg)}
+.reel .strip{display:block; background:var(--dark); padding:7px}
+.holes{display:block; height:11px; background-image:radial-gradient(circle 3px, var(--bg) 2.6px, transparent 3.2px); background-size:18px 11px; background-position:center; background-repeat:repeat-x}
+.reel .shot{display:block; position:relative}
+.reel .shot img{display:block; width:100%; aspect-ratio:16/9; object-fit:cover; filter:saturate(.92) sepia(.08)}
+.reel .num{position:absolute; top:8px; left:8px; background:var(--dark); color:var(--gold); font-family:var(--fm); font-weight:700; font-size:13px; padding:2px 8px; border-radius:8px}
+.reel .tag{position:absolute; bottom:8px; right:8px; background:rgba(23,16,10,.85); color:var(--paper); font-size:10px; letter-spacing:.09em; padding:3px 8px; border-radius:8px; text-transform:uppercase}
+.reel .meta{display:block; padding:12px 14px 14px}
+.reel .rt{display:block; font-family:var(--fh); font-size:16.5px; margin-bottom:3px}
+.reel .who{display:block; font-size:12.5px; color:var(--ink2); font-weight:600}
+.reel .starrow{display:block; font-size:15px; letter-spacing:3px; margin-top:7px; color:#cdbd95}
+.reel .starrow b{color:var(--gold2)}
+.reel .best{display:block; margin-top:6px; font-family:var(--fm); font-weight:700; font-size:13px; color:var(--teal)}
+.finalcard{grid-column:1/-1; border-radius:18px; padding:22px; text-align:center}
+.finalcard.locked{border:2px dashed rgba(245,197,66,.45); color:rgba(250,243,228,.68); background:transparent}
+.finalcard.locked .fc-em{filter:grayscale(.7); opacity:.7}
+.finalcard h3{font-family:var(--fh); letter-spacing:.04em; margin:6px 0 4px; font-size:17px}
+.finalcard p{margin:0 auto; max-width:520px; font-size:14px; line-height:1.6}
+.finalcard.open{border:0; cursor:pointer; width:100%;
+  background:linear-gradient(135deg,#f5c542,#d4a017); color:var(--dark);
+  box-shadow:0 8px 0 var(--gold-dk), 0 16px 34px rgba(245,197,66,.22); transition:transform .15s}
+.finalcard.open:hover{transform:translateY(-3px)}
+.finalcard.open:active{transform:translateY(3px); box-shadow:0 3px 0 var(--gold-dk)}
+.finalcard.done{cursor:default}
+.finalcard .fc-em{font-size:30px}
+.fcrow{display:flex; gap:10px; justify-content:center; margin-top:12px; flex-wrap:wrap}
+.map-note{text-align:center; color:rgba(250,243,228,.5); font-size:13px; margin-top:6px}
+.map-note b{color:var(--gold)}
+
+/* ===== scene ===== */
+.scene-top{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+.chip{display:inline-flex; align-items:center; gap:8px; background:var(--panel);
+  border:1px solid rgba(250,243,228,.14); padding:8px 13px; border-radius:999px; font-weight:700; font-size:13px}
+.chip .em{font-size:16px}
+.live{margin-left:auto; display:flex; gap:8px; align-items:center}
+.liv-box{background:var(--dark2); border:1px solid rgba(250,243,228,.14); border-radius:12px; padding:5px 12px; text-align:center; line-height:1.25}
+.liv-box .lbl{display:block; font-size:8.5px; letter-spacing:.22em; color:rgba(250,243,228,.5)}
+.liv-box b{font-family:var(--fm); font-size:16px; color:var(--gold)}
+#gameStage{background:var(--panel); border:1px solid rgba(250,243,228,.12); border-radius:20px; padding:22px; box-shadow:0 10px 0 rgba(0,0,0,.35); min-height:340px}
+.g-instr{font-family:var(--fm); font-size:12.5px; letter-spacing:.04em; color:rgba(250,243,228,.6); margin:0 0 16px}
+.g-instr b{color:var(--gold)}
+
+/* statement card (true/false & questions) */
+.stcard{background:var(--paper); color:var(--ink); border-radius:16px; padding:24px 26px; box-shadow:0 8px 0 rgba(0,0,0,.4); animation:cardIn .35s}
+.stcard .qno{font-family:var(--fm); font-weight:700; color:var(--ink2); font-size:12.5px; letter-spacing:.12em}
+.stcard .st{font-weight:700; font-size:clamp(17px,2.5vw,22px); line-height:1.5; margin:10px 0 2px}
+.stcard.shake{animation:shake .4s}
+.opts{display:grid; gap:10px; margin-top:16px}
+.opt{
+  display:flex; align-items:center; gap:12px; text-align:left; width:100%;
+  background:var(--paper); color:var(--ink); border:0; border-radius:14px; padding:13px 16px;
+  font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 5px 0 rgba(0,0,0,.35);
+  transition:transform .1s;
+}
+.opt:hover{transform:translateX(3px)}
+.opt .key{font-family:var(--fm); font-weight:700; background:var(--dark); color:var(--gold); border-radius:8px; padding:2px 9px; font-size:12.5px; flex:none}
+.opt.ok{background:#dff0e2; box-shadow:0 5px 0 #2c5e3c}
+.opt.ok .key{background:var(--ok); color:#fff}
+.opt.no{background:#f6ded7; box-shadow:0 5px 0 #7a2c1a; animation:shake .4s}
+.opt.no .key{background:var(--err); color:#fff}
+.opt.dim{opacity:.45}
+.opt:disabled{cursor:default; transform:none}
+.tfrow{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:18px}
+.tfbtn{font-family:var(--fh); font-size:clamp(14px,2vw,18px); letter-spacing:.05em; padding:17px 10px; border:0; border-radius:16px; cursor:pointer; color:var(--paper); box-shadow:0 6px 0 rgba(0,0,0,.4); transition:transform .08s}
+.tfbtn:active{transform:translateY(3px)}
+.tfbtn.real{background:linear-gradient(135deg,#2aa07c,#17756b)}
+.tfbtn.delu{background:linear-gradient(135deg,#e0684b,#c14a2e)}
+.tfbtn:disabled{opacity:.5; cursor:default}
+.tfbtn.picked-ok{outline:4px solid var(--gold); opacity:1}
+.tfbtn.picked-no{outline:4px solid #6d1d0f; opacity:1; animation:shake .4s}
+.kbhint{text-align:center; font-family:var(--fm); font-size:11px; color:rgba(250,243,228,.45); margin-top:12px; letter-spacing:.14em}
+.explain{margin-top:16px; background:rgba(250,243,228,.09); border-left:4px solid var(--gold); border-radius:0 12px 12px 0; padding:13px 16px; font-size:14.5px; line-height:1.65; animation:screenIn .3s}
+.explain b{color:var(--gold)}
+.nextrow{margin-top:14px; text-align:right}
+.bubble{display:flex; gap:12px; align-items:flex-start; margin-top:16px; animation:screenIn .3s}
+.bubble .bem{font-size:30px; flex:none}
+.bubble .btx{background:var(--paper); color:var(--ink); border-radius:14px 14px 14px 4px; padding:10px 14px; font-weight:600; font-size:14.5px; box-shadow:0 4px 0 rgba(0,0,0,.3)}
+
+/* fill-in-the-blanks */
+.sent{background:var(--paper); color:var(--ink); border-radius:14px; padding:13px 16px; margin-bottom:11px; font-size:15px; line-height:2; font-weight:500; box-shadow:0 5px 0 rgba(0,0,0,.3)}
+.blank{
+  display:inline-block; min-width:96px; text-align:center; vertical-align:baseline; cursor:pointer;
+  border:0; border-bottom:3px dashed var(--gold2); background:#f3e6c4; color:var(--ink);
+  font-family:var(--fm); font-weight:700; font-size:14px; border-radius:8px 8px 0 0; padding:2px 10px 0;
+}
+.blank.armed{background:#ffe9a8; box-shadow:0 0 0 3px var(--gold)}
+.blank.filled{border-bottom-style:solid; border-bottom-color:var(--ok); background:#e2f1e4; cursor:default}
+.blank.flash-no{animation:shake .4s; background:#f6c9bd}
+.bank{display:flex; flex-wrap:wrap; gap:10px; margin-top:16px}
+.wchip{
+  font-family:var(--fm); font-weight:700; font-size:15px; cursor:pointer;
+  background:var(--dark2); color:var(--paper); border:1.5px solid rgba(250,243,228,.28);
+  padding:9px 16px; border-radius:12px; box-shadow:0 4px 0 rgba(0,0,0,.35);
+}
+.wchip:hover{border-color:var(--gold)}
+.wchip.used{opacity:.22; pointer-events:none}
+.wchip.shake{animation:shake .4s; border-color:var(--err)}
+
+/* match the meaning */
+.matchhead{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px}
+.demo{font-family:var(--fm); font-size:12px; background:var(--dark2); border-radius:10px; padding:8px 12px; color:rgba(250,243,228,.85); margin:0 0 16px}
+.demo b{color:var(--gold)}
+.matchwrap{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+.mcol{display:grid; gap:10px; align-content:start}
+.mitem{
+  background:var(--paper); color:var(--ink); border:0; border-radius:13px; padding:12px 14px;
+  font-weight:600; font-size:14px; cursor:pointer; text-align:left; box-shadow:0 5px 0 rgba(0,0,0,.35); font-family:var(--fb);
+}
+.mitem .sm{display:block; font-size:10.5px; color:var(--ink2); font-weight:700; letter-spacing:.14em; margin-bottom:3px}
+.mitem.sel{outline:3px solid var(--gold); transform:translateX(2px)}
+.mitem.lock{background:#e2f1e4; box-shadow:0 5px 0 #2c5e3c; cursor:default; transform:none; outline:none}
+.mitem.no{animation:shake .4s; background:#f6ded7}
+
+/* timer bar */
+.trow{display:flex; align-items:center; gap:12px; margin-top:16px}
+.tbar{flex:1; height:14px; background:var(--dark2); border-radius:999px; overflow:hidden; border:1px solid rgba(250,243,228,.15)}
+.tbar i{display:block; height:100%; width:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); transition:width .3s linear}
+.tbar.danger i{background:linear-gradient(90deg,#ff6a4d,var(--red)); animation:tflash .5s steps(2) infinite}
+.clock{font-family:var(--fm); font-weight:700; color:var(--gold); min-width:60px; text-align:right; font-size:15px}
+.clock.danger{color:#ff8d75; animation:tflash .5s steps(2) infinite}
+.mult-chip{font-family:var(--fm); font-weight:700; font-size:12.5px; background:var(--dark2); border:1px solid rgba(245,197,66,.5); color:var(--gold); border-radius:999px; padding:4px 10px}
+
+/* ===== modal ===== */
+.modal-root{position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:20px}
+.modal-root.hidden{display:none}
+.backdrop{position:absolute; inset:0; background:rgba(10,6,3,.74); backdrop-filter:blur(3px)}
+.modal{position:relative; background:var(--paper); color:var(--ink); width:min(560px,100%); max-height:88vh; overflow:auto; border-radius:20px; padding:26px; box-shadow:0 12px 0 rgba(0,0,0,.45); animation:popIn .32s cubic-bezier(.2,.9,.3,1.15)}
+.modal .mtag{font-family:var(--fm); color:var(--teal); font-weight:700; font-size:11.5px; letter-spacing:.2em; margin:0 0 4px}
+.modal h2{font-family:var(--fh); font-size:25px; margin:0 0 4px; line-height:1.15}
+.modal .mchar{font-weight:700; color:var(--ink2); font-size:14px; margin:0}
+.mimg{width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:14px; border:6px solid var(--dark); box-shadow:0 6px 0 rgba(0,0,0,.25); margin:14px 0; display:block}
+.modal .obj{font-size:15px; line-height:1.65; margin:8px 0 0}
+.modal .tip{margin-top:10px; font-size:13.5px; color:var(--ink2); line-height:1.6}
+.modal .flavor{font-family:var(--fhand); font-size:24px; color:var(--teal); margin:12px 0 0; line-height:1.2}
+.mrow{display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; justify-content:flex-end}
+.bigscore{text-align:center; margin:10px 0 2px}
+.bigscore .u{display:block; font-size:11px; letter-spacing:.26em; color:var(--ink2); font-weight:700}
+.bigscore b{font-family:var(--fm); font-weight:700; font-size:48px; line-height:1.1}
+.stars-big{text-align:center; font-size:36px; letter-spacing:10px; margin:2px 0 4px}
+.stars-big .on{color:var(--gold2)}
+.stars-big .off{color:#d9caa5; opacity:.55}
+.stars-big b{display:inline-block; animation:starPop .5s backwards}
+.mstat{display:flex; justify-content:center; gap:26px; margin-top:8px; font-size:12px; letter-spacing:.14em; color:var(--ink2); font-weight:700}
+.mstat b{font-family:var(--fm); font-size:15px; color:var(--ink)}
+.newbest{text-align:center; color:var(--teal); font-weight:800; font-size:12.5px; letter-spacing:.16em; margin:10px 0 0}
+.centerrow{display:flex; justify-content:center; gap:10px; margin-top:20px; flex-wrap:wrap}
+
+/* ===== toasts / floats / confetti ===== */
+.toast-root{position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:70; display:grid; gap:8px; justify-items:center}
+.toast{background:var(--dark2); color:var(--paper); border:1px solid rgba(245,197,66,.5); border-radius:999px; padding:10px 18px; font-weight:700; font-size:13px; letter-spacing:.05em; box-shadow:0 10px 24px rgba(0,0,0,.5); animation:toastIn .3s; white-space:nowrap; max-width:92vw; overflow:hidden; text-overflow:ellipsis}
+.toast b{color:var(--gold); margin-right:4px}
+.pfloat{position:fixed; z-index:80; font-family:var(--fm); font-weight:700; font-size:18px; color:var(--gold); text-shadow:0 2px 0 rgba(0,0,0,.6); pointer-events:none; animation:floatUp .95s forwards}
+.pfloat.neg{color:#ff8d75}
+.confetti-canvas{position:fixed; inset:0; pointer-events:none; z-index:90}
+
+/* ===== finale ===== */
+.fin-wrap{max-width:720px; margin:0 auto; text-align:center}
+.fin-rank{font-family:var(--fh); font-size:clamp(21px,4vw,33px); color:var(--gold); text-shadow:0 3px 0 rgba(0,0,0,.4); margin:8px 0 2px}
+.fin-line{font-family:var(--fhand); font-size:23px; color:rgba(250,243,228,.72); margin:0}
+.fin-total{font-family:var(--fm); font-weight:700; font-size:clamp(44px,8vw,66px); color:var(--paper); margin-top:10px; line-height:1}
+.fin-total .u{display:block; font-family:var(--fb); font-size:10.5px; letter-spacing:.3em; color:rgba(250,243,228,.5)}
+.fin-stars{font-size:19px; letter-spacing:3px; color:#cdb98b; margin:8px 0 4px}
+.fin-stars b{color:var(--gold2)}
+.fin-table{width:100%; border-collapse:collapse; margin:20px 0; background:var(--panel); border-radius:16px; overflow:hidden; box-shadow:0 8px 0 rgba(0,0,0,.35)}
+.fin-table th{font-family:var(--fm); font-size:10.5px; letter-spacing:.2em; color:rgba(250,243,228,.5); text-align:left; padding:12px 14px; border-bottom:1px solid rgba(250,243,228,.12)}
+.fin-table td{padding:11px 14px; text-align:left; font-size:14px; border-bottom:1px solid rgba(250,243,228,.07)}
+.fin-table td.mono{font-family:var(--fm); font-weight:700}
+.fin-table td .st{letter-spacing:2px; color:#cdb98b}
+.fin-table td .st b{color:var(--gold2)}
+.fin-table tr.total td{border-top:2px solid rgba(245,197,66,.4); border-bottom:0; color:var(--gold); font-weight:700}
+.fin-photo{width:min(420px,86%); aspect-ratio:16/9; object-fit:cover; border-radius:14px; border:8px solid var(--dark); box-shadow:0 10px 0 rgba(0,0,0,.4); margin:16px 0 4px}
+.fin-actions{display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:18px}
+
+/* ===== responsive ===== */
+@media (max-width:880px){
+  .intro-cards{grid-template-columns:1fr}
+  .tagline{display:none}
+}
+@media (max-width:640px){
+  #app{padding:80px 12px 56px}
+  .matchwrap{grid-template-columns:1fr}
+  .tfrow{grid-template-columns:1fr}
+  .hud{gap:8px; padding:8px 10px}
+  .brand{font-size:13px}
+  .cells{gap:4px}
+  .cell{width:24px; height:24px; font-size:11px; border-radius:7px}
+  .score-box{margin-left:0}
+  #hudScore{font-size:16px}
+  .icon-btn{width:32px; height:32px; font-size:14px; border-radius:9px}
+  .live{margin-left:0; width:100%}
+  #gameStage{padding:16px}
+  .mrow{justify-content:stretch}
+  .mrow .btn{flex:1}
+}
+
+/* ===== reduced motion: kill all animation & transition ===== */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important; transition:none!important}
+  .preloader.gone{transform:translateY(-103%)}
+}
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+<noscript><p style="text-align:center;padding:20px">This arcade needs JavaScript to roll the tape. Please enable it and reload.</p></noscript>
+
+<!-- ===== PRELOADER: VHS tape + PLAY gate (also unlocks Web Audio) ===== -->
+<div class="preloader" id="preloader" role="dialog" aria-modal="true" aria-label="Loading screen — press play to start">
+  <div>
+    <div class="rec"><i aria-hidden="true"></i>REC · FVA TAPE 308</div>
+    <svg class="tape" viewBox="0 0 320 180" aria-hidden="true">
+      <rect x="6" y="6" width="308" height="168" rx="16" fill="#241a10" stroke="#f5c542" stroke-opacity=".35" stroke-width="2"/>
+      <rect x="24" y="24" width="272" height="74" rx="8" fill="#17100a" stroke="#f5c542" stroke-opacity=".2"/>
+      <g class="spin1"><circle cx="86" cy="61" r="22" fill="#33291f" stroke="#f5c542" stroke-opacity=".5" stroke-width="3"/><circle cx="86" cy="61" r="7" fill="#f5c542" opacity=".85"/></g>
+      <g class="spin2"><circle cx="234" cy="61" r="22" fill="#33291f" stroke="#f5c542" stroke-opacity=".5" stroke-width="3"/><circle cx="234" cy="61" r="7" fill="#f5c542" opacity=".85"/></g>
+      <rect x="24" y="112" width="272" height="46" rx="8" fill="#faf3e4" opacity=".93"/>
+      <text x="160" y="132" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#33291f">FRIENDS VOCAB ARCADE</text>
+      <text x="160" y="149" text-anchor="middle" font-family="monospace" font-size="9.5" fill="#75634d">S3E08 · THE GIANT POKING DEVICE · TAPE 308</text>
+    </svg>
+    <div class="load-line"><i id="loadFill"></i></div>
+    <div class="load-label" id="loadLabel">TRACKING…</div>
+    <button class="play-btn" id="playBtn" aria-label="Play the game">PLAY ▶</button>
+  </div>
+</div>
+
+<!-- ===== FIXED HEADER CONSOLE ===== -->
+<header class="hud" id="hud" aria-label="Game console">
+  <div class="brand">F<span class="dot" style="color:#d0492e">•</span>R<span class="dot" style="color:#1f6f9f">•</span>I<span class="dot" style="color:#f5c542">•</span>E<span class="dot" style="color:#d0492e">•</span>N<span class="dot" style="color:#1f6f9f">•</span>D<span class="dot" style="color:#f5c542">•</span>S<span class="tagline">VOCAB ARCADE</span></div>
+  <div class="cells" id="hudCells" aria-label="Progress across the five reels"></div>
+  <div class="score-box"><span class="lbl">SCORE</span><b id="hudScore">0</b></div>
+  <button class="icon-btn" id="soundBtn" aria-label="Toggle sound" aria-pressed="false">🔊</button>
+  <button class="icon-btn" id="mapBtn" aria-label="Back to the level map">🗺️</button>
+</header>
+
+<main id="app">
+
+  <!-- ===== SCREEN: INTRO ===== -->
+  <section class="screen active" id="screen-intro" aria-label="Intro">
+    <div class="tv">
+      <div class="scr">
+        <span class="nowshowing">NOW SHOWING · S3E08</span>
+        <img src="slide-001.jpg" alt="The study guide cover — a scrapbook of 1990s New York">
+      </div>
+    </div>
+    <p class="epi">Season 3 · Episode 8 — “The One with the Giant Poking Device”</p>
+    <h1>FRIENDS VOCAB ARCADE</h1>
+    <p class="intro-sub">Five reels. One apartment building. All the honest English you can carry.</p>
+    <div class="intro-cards">
+      <div class="icard"><span class="em">🧭</span><h3>Free order</h3><p>Every reel is unlocked from the very start. Play in any order, replay any time — your best score stays on the tape.</p></div>
+      <div class="icard"><span class="em">🎛️</span><h3>Five mechanics</h3><p>Fill the blanks, call REAL or DELUSION, pick from three options, match the meanings — then survive the timed Final.</p></div>
+      <div class="icard"><span class="em">⭐</span><h3>Stars &amp; ranks</h3><p>Play clean for three stars. Streaks multiply your points. Your final rank depends on the total score.</p></div>
+    </div>
+    <div class="intro-actions">
+      <button class="btn" id="introStart">▶ ROLL THE TAPE</button>
+      <a class="btn ghost" href="friends-308.pdf" target="_blank" rel="noopener noreferrer" aria-label="Open the study guide PDF in a new tab">📖 OPEN THE STUDY GUIDE</a>
+    </div>
+    <p class="note">Every sound is synthesized live in your browser — nothing to download. Turn it up and press play.</p>
+  </section>
+
+  <!-- ===== SCREEN: LEVEL MAP ===== -->
+  <section class="screen" id="screen-map" aria-label="Level map">
+    <div class="map-head">
+      <h2>THE REEL MAP</h2>
+      <p>Pick any reel. Any order. The Final opens when all four are done.</p>
+    </div>
+    <div class="map-grid" id="mapGrid"></div>
+    <div id="finalSlot"></div>
+    <p class="map-note">Every question comes from the study guide for <b>Friends S3E8 — The One with the Giant Poking Device</b>.</p>
+  </section>
+
+  <!-- ===== SCREEN: SCENE (mini-game stage) ===== -->
+  <section class="screen" id="screen-scene" aria-label="Level scene">
+    <div class="scene-top" id="sceneTop"></div>
+    <div id="gameStage"></div>
+  </section>
+
+  <!-- ===== SCREEN: FINALE ===== -->
+  <section class="screen" id="screen-finale" aria-label="Finale">
+    <div class="fin-wrap" id="finWrap"></div>
+  </section>
+
+</main>
+
+<!-- ===== MODAL ROOT ===== -->
+<div class="modal-root hidden" id="modalRoot">
+  <div class="backdrop" id="modalBackdrop"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" id="modalBox"></div>
+</div>
+
+<div class="toast-root" id="toastRoot" aria-live="polite"></div>
+<canvas class="confetti-canvas" id="confettiCv" aria-hidden="true"></canvas>
+
+<script>
+(function () {
+'use strict';
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function $(s, r) { return (r || document).querySelector(s); }
+function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+/* Hook for an optional icon library (e.g. Lucide). This build uses
+   emoji + inline SVG, which need no refresh — kept for API parity. */
+function refreshIcons() { /* no-op by design */ }
+
+var prmQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+var prm = prmQuery.matches;
+
+var toastRoot = null, toastCount = 0;
+function toast(msg, ico) {
+  if (!toastRoot) toastRoot = $('#toastRoot');
+  if (toastRoot.children.length >= 3) toastRoot.removeChild(toastRoot.firstChild);
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = '<b>' + (ico || '📌') + '</b>' + msg;
+  toastRoot.appendChild(el);
+  window.setTimeout(function () {
+    if (el.parentNode) el.parentNode.removeChild(el);
+  }, 2700);
+}
+
+function popFloat(x, y, txt, neg) {
+  if (prm) { return; }
+  var el = document.createElement('span');
+  el.className = 'pfloat' + (neg ? ' neg' : '');
+  el.textContent = txt;
+  el.style.left = (x - 14) + 'px';
+  el.style.top = (y - 30) + 'px';
+  document.body.appendChild(el);
+  window.setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 960);
+}
+
+/* confetti particles on a fixed canvas */
+var cv = null, ctx = null, parts = [], confRaf = null, confStop = null;
+var CONF_COLORS = ['#f5c542', '#d4a017', '#d0492e', '#17756b', '#faf3e4', '#1f6f9f'];
+function spawnConfetti(n) {
+  if (prm) { return; }
+  if (!cv) { cv = $('#confettiCv'); ctx = cv.getContext ? cv.getContext('2d') : null; }
+  if (!ctx) { return; }
+  cv.width = window.innerWidth; cv.height = window.innerHeight;
+  n = n || 130;
+  for (var i = 0; i < n; i++) {
+    parts.push({
+      x: Math.random() * cv.width,
+      y: -12 - Math.random() * 90,
+      vx: (Math.random() - 0.5) * 2.4,
+      vy: 2 + Math.random() * 3.2,
+      s: 4 + Math.random() * 5,
+      r: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.24,
+      c: CONF_COLORS[Math.floor(Math.random() * CONF_COLORS.length)]
+    });
+  }
+  if (confRaf) { return; }
+  window.clearTimeout(confStop);
+  confStop = window.setTimeout(function () { parts = []; }, 3600);
+  (function loop() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    parts = parts.filter(function (p) { return p.y < cv.height + 24; });
+    parts.forEach(function (p) {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.62);
+      ctx.restore();
+    });
+    if (parts.length) { confRaf = window.requestAnimationFrame(loop); }
+    else { ctx.clearRect(0, 0, cv.width, cv.height); confRaf = null; }
+  })();
+}
+
+/* localStorage with version key + private-mode guard */
+var SAVE_KEY = 'friends-vocab-arcade-v1';
+function storeLoad() { try { return JSON.parse(window.localStorage.getItem(SAVE_KEY)) || null; } catch (e) { return null; } }
+function storeSave(data) { try { window.localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode: play without saving */ } }
+
+/* ============================================================
+   AUDIO — Web Audio API, all sounds synthesized, no files
+   ============================================================ */
+var AC = null, master = null, muted = false;
+function initAudio() {
+  if (AC) { return; }
+  try {
+    var Ctor = window.AudioContext || window.webkitAudioContext;
+    AC = new Ctor();
+    master = AC.createGain();
+    master.gain.value = 0.5;
+    master.connect(AC.destination);
+  } catch (e) { AC = null; }
+}
+/* basic enveloped oscillator */
+function tone(freq, dur, type, vol, when) {
+  if (!AC || muted) { return; }
+  try {
+    var t0 = AC.currentTime + (when || 0);
+    var o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.2, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  } catch (e) { /* audio is never allowed to break gameplay */ }
+}
+/* white-noise burst (applause bed) */
+function noiseBurst(dur, vol) {
+  if (!AC || muted) { return; }
+  try {
+    var n = Math.floor(AC.sampleRate * dur);
+    var buf = AC.createBuffer(1, n, AC.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) { d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 1.5); }
+    var src = AC.createBufferSource(); src.buffer = buf;
+    var f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1700; f.Q.value = 0.6;
+    var g = AC.createGain(); g.gain.value = vol || 0.3;
+    src.connect(f); f.connect(g); g.connect(master);
+    src.start();
+  } catch (e) { /* ignore */ }
+}
+/* ready-made presets */
+var sfx = {
+  click:    function () { tone(660, 0.06, 'square', 0.12); tone(880, 0.05, 'square', 0.09, 0.05); },
+  flip:     function () { tone(320, 0.07, 'triangle', 0.16); tone(520, 0.09, 'triangle', 0.14, 0.06); },
+  correct:  function () { tone(523, 0.12, 'triangle', 0.2); tone(659, 0.12, 'triangle', 0.2, 0.1); tone(784, 0.18, 'triangle', 0.2, 0.2); },
+  wrong:    function () { tone(196, 0.22, 'sawtooth', 0.18); tone(147, 0.3, 'sawtooth', 0.15, 0.08); },
+  match:    function () { tone(660, 0.09, 'sine', 0.2); tone(990, 0.16, 'sine', 0.18, 0.08); },
+  fanfare:  function () { [523, 659, 784, 1046].forEach(function (f, i) { tone(f, 0.16, 'triangle', 0.2, i * 0.11); }); tone(1046, 0.4, 'triangle', 0.16, 0.46); },
+  tick:     function () { tone(1050, 0.03, 'sine', 0.12); },
+  cheer:    function () { noiseBurst(0.9, 0.4); tone(784, 0.14, 'triangle', 0.12, 0.05); tone(988, 0.14, 'triangle', 0.12, 0.18); tone(1175, 0.22, 'triangle', 0.12, 0.3); }
+};
+function renderSound() {
+  var b = $('#soundBtn');
+  b.textContent = muted ? '🔇' : '🔊';
+  b.setAttribute('aria-pressed', muted ? 'true' : 'false');
+}
+function toggleSound() {
+  muted = !muted;
+  save.sound = muted ? false : true;
+  storeSave(save);
+  renderSound();
+  if (!muted) { sfx.click(); }
+}
+
+/* ============================================================
+   DATA — SCENES (levels) + question set constants
+   All content is grounded in the study guide for
+   Friends S3E08 “The One with the Giant Poking Device”.
+   ============================================================ */
+var SCENES = [
+  {
+    id: 'dilemma', num: '01', title: 'The Dilemma', mech: 'choice',
+    char: 'JOEY', charEmoji: '🎭', color: '#17756b', slide: 'slide-003.jpg',
+    tag: 'Multiple choice · 3 options',
+    obj: 'Six questions about the kiss, the pearls, and the art of bowing out. One attempt per question — Joey reacts to every answer.',
+    tip: 'Advice-giving English: “bow out” names the obstacle and lets the conclusion arrive on its own.',
+    flavor: '“How you doin’? Let’s talk about that kiss.”'
+  },
+  {
+    id: 'coverup', num: '02', title: 'The Cover-Up', mech: 'blanks',
+    char: 'MONICA', charEmoji: '🧸', color: '#c14a2e', slide: 'slide-004.jpg',
+    tag: 'Fill in the blanks',
+    obj: 'Tap a blank, then tap the right word from the bank. Wrong words bounce back with a shake — and every return costs points.',
+    tip: 'A cover-up is an attempt to hide a mistake or misbehavior — and on screen it always collapses.',
+    flavor: '“He’s gonna rat me out!”'
+  },
+  {
+    id: 'delusion', num: '03', title: 'Real or Delusion?', mech: 'tf',
+    char: 'PHOEBE', charEmoji: '🔮', color: '#a5487e', slide: 'slide-009.jpg',
+    tag: 'True / False · reaction',
+    obj: 'Decide if the statement is REAL or DELUSION. The clock runs per card, a streak builds a multiplier, and every card comes with an explanation.',
+    tip: 'A superstition feels airtight inside one head and completely empty outside it. Check the evidence.',
+    flavor: '“Your dentist visits make people die. Mine do, anyway.”'
+  },
+  {
+    id: 'meaning', num: '04', title: 'Match the Meaning', mech: 'match',
+    char: 'ROSS', charEmoji: '📖', color: '#1f6f9f', slide: 'slide-007.jpg',
+    tag: 'Match · 6 pairs',
+    obj: 'Click a word on the left, then click its meaning on the right. Correct pairs lock green; wrong picks shake and clear the selection.',
+    tip: 'The engineering glossary: cantilevered beam, yield strength, moment of inertia — say each one out loud.',
+    flavor: '“We were on a break — from guessing. Be precise.”'
+  },
+  {
+    id: 'final', num: 'F', title: 'The Giant Poking Device', mech: 'bonus',
+    char: 'THE GANG', charEmoji: '🥢', color: '#d4a017', slide: 'slide-006.jpg',
+    tag: 'Timed bonus · all topics',
+    obj: 'Ten rapid questions from every reel, one shared clock of 750 seconds. Streaks multiply, speed pays, and the timer flashes red at the end.',
+    tip: 'The mission: “Reach across the street to poke a sleeping neighbor to see if he is alive.”',
+    flavor: '“Retract the device!”'
+  }
+];
+var REGULAR_IDS = ['dilemma', 'coverup', 'delusion', 'meaning'];
+
+/* ---- Level 1 · multiple choice (The Dilemma) ---- */
+var MC_QUESTIONS = [
+  {
+    q: 'Joey glances out the window and sees Janice doing something. What does he see?',
+    opts: ['Janice kissing her ex-husband', 'Janice buying pearls for herself', 'Janice singing with Ross'],
+    a: 0,
+    why: 'The guide opens the plot plainly: “Joey sees Chandler’s girlfriend, Janice, kissing her ex-husband (the ‘Mattress King’).”',
+    ok: 'How you doin’! Nailed it.', no: 'Whoa. Look out the window again, buddy.'
+  },
+  {
+    q: 'Which nickname does Janice’s ex-husband go by?',
+    opts: ['The Carpet King', 'The Mattress King', 'Ugly Naked Guy'],
+    a: 1,
+    why: 'He is a mattress salesman whose commercials haunt the show — hence the Mattress King.',
+    ok: 'That’s the one!', no: 'Nah. That guy sells sleep, not carpets.'
+  },
+  {
+    q: 'What is Joey’s main reason for telling Chandler to bow out?',
+    opts: ['Chandler needs more free time', 'Janice hates expensive jewelry', 'Janice and her ex-husband have a child together — they are a family'],
+    a: 2,
+    why: 'Joey says he “wouldn’t want to be the guy who stood in the way of that” — the child makes it a family.',
+    ok: 'Buddy, you got a heart.', no: 'It’s about the kid, man. The kid!'
+  },
+  {
+    q: 'Joey finally tells the truth at one exact moment. Which one?',
+    opts: ['During Thanksgiving dinner', 'Right after the football game', 'Just as Chandler is about to buy pearls for Janice'],
+    a: 2,
+    why: 'The answer key is blunt: the confession arrives to stop Chandler from buying the pearls.',
+    ok: 'Pearls! You were listening!', no: 'Think expensive. Think shiny. Think pearls.'
+  },
+  {
+    q: 'Which birthday “gift” does Joey suggest dead seriously?',
+    opts: ['A barium enema', 'A pack of Hubba-Bubba gum', 'A teddy bear’s hat'],
+    a: 0,
+    why: 'Dead serious means completely serious, without any joking — which is the joke: the most ridiculous gift, delivered with a straight face.',
+    ok: 'Dead serious. Exactly.', no: 'Come on, that one was a classic.'
+  },
+  {
+    q: 'How does the romantic plot close?',
+    opts: ['Chandler buys the pearls anyway', 'Chandler chooses an honest, empathetic breakup', 'Janice moves in with Chandler'],
+    a: 1,
+    why: 'Path 1 on the chalkboard: “He chooses an honest, empathetic breakup” — and the episode ends in duet.',
+    ok: 'With grace. That’s the word.', no: 'No no no. He bows out with grace.'
+  }
+];
+
+/* ---- Level 2 · fill in the blanks (The Cover-Up) ---- */
+var BLANKS = [
+  { pre: 'Monica accidentally bumps baby Ben’s head while playing ', post: '.', word: 'airplane', why: 'The guide: “Monica accidentally bumps baby Ben’s head while playing ‘airplane.’”' },
+  { pre: '“He’s gonna ', post: ' me out!” Monica panics.', word: 'rat', why: 'To rat someone out means to betray someone by revealing their secret to an authority figure — here, Ross.' },
+  { pre: 'Joey suggests a barium enema as a ', post: ' serious birthday gift.', word: 'dead', why: 'Dead serious means completely serious, without any joking.' },
+  { pre: 'Trying to disguise Ben’s bump with a teddy bear’s ', post: ' fails.', word: 'hat', why: 'The theme slide: “Trying to disguise Ben’s bump with a teddy bear hat fails.”' },
+  { pre: '“', post: ' the device!” Joey shouts when the neighbor wakes up mid-poke.', word: 'Retract', why: 'To retract means to pull something back in — Joey’s command, plain and simple.' },
+  { pre: 'The poking device is a giant ', post: ' beam, anchored at only one end.', word: 'cantilevered', why: 'A cantilevered beam hangs free at one end and survives by its own stiffness.' },
+  { pre: 'Pine wood has an ultimate ', post: ' strength of 40 MPa, or 5800 psi.', word: 'yield', why: 'Yield strength is the maximum stress a material can tolerate before it deforms permanently.' }
+];
+var BLANK_BANK = ['airplane', 'rat', 'dead', 'hat', 'Retract', 'cantilevered', 'yield', 'pearls', 'mattress', 'dentist'];
+
+/* ---- Level 3 · true/false reaction (Real or Delusion) ---- */
+var TF_QUESTIONS = [
+  { t: 'Joey decides to keep Janice’s kiss a secret and never tells Chandler.', real: false, why: 'False on the tape: Joey tells Chandler about the kiss to stop him from buying pearls — the answer key says so.' },
+  { t: 'Phoebe believes her mailman, John, died because she visited the dentist.', real: true, why: 'True — the guide’s answer key confirms it. Her private superstition turns the dentist into a curse.' },
+  { t: 'Monica successfully hides the bump on Ben’s head by using a teddy bear’s hat.', real: false, why: 'The hat trick fails — Ross figures it out by tricking Monica into confessing.' },
+  { t: 'According to Reddit math, you would need exactly 15 chopsticks to reach 300 feet.', real: false, why: 'Roughly 405 chopsticks — the hypotenuse of the 300-foot gap is 300.42 ft, or 3065 inches.' },
+  { t: 'A standard takeout chopstick is 9.5 inches long.', real: true, why: 'Straight from the physics slide — the unit that makes the whole calculation possible.' },
+  { t: 'Phoebe fears that Ugly Naked Guy is her latest victim.', real: true, why: 'That fear is the engine of the whole plot — and the reason the gang builds the poking device at all.' },
+  { t: '“Dead serious” means joking around.', real: false, why: 'Dead serious means completely serious, without any joking. Dead works as an intensifier.' },
+  { t: 'At the end, Chandler sings “Endless Love” with Rachel.', real: false, why: 'It is Phoebe — a hilariously off-key but supportive duet, straight from the closing slide.' }
+];
+
+/* ---- Level 4 · match the meaning ---- */
+var MATCH_PAIRS = [
+  { w: 'to bow out', m: 'To withdraw and let others proceed', ex: '“Chandler decided to bow out.”' },
+  { w: 'to rat someone out', m: 'To reveal someone’s secret to an authority figure', ex: '“He’s gonna rat me out!”' },
+  { w: 'dead serious', m: 'Completely serious, without any joking', ex: '“A barium enema — dead serious.”' },
+  { w: 'cantilevered beam', m: 'A beam anchored at only one end', ex: '“The poking device is a giant cantilever.”' },
+  { w: 'yield strength', m: 'Maximum stress before permanent deformation', ex: '“Pine wood: 40 MPa or 5800 psi.”' },
+  { w: 'to retract', m: 'To pull something back in', ex: '“Retract the device!”' }
+];
+
+/* ---- FINAL · timed bonus across all topics ---- */
+var FINAL_QUESTIONS = [
+  { q: 'How many chopsticks does the 300-foot gap really need?', opts: ['About 15', 'About 45', 'About 405'], a: 2, why: 'Hypotenuse 300.42 ft ÷ 9.5-inch sticks ≈ 405.' },
+  { q: 'Complete the chalkboard thesis: avoiding the truth causes even more…', opts: ['harmony', 'chaos', 'romance'], a: 1, why: 'The yellow chalk circle says chaos.' },
+  { q: 'Pine wood’s ultimate yield strength is…', opts: ['40 MPa (5800 psi)', '40 inches', '400 friends'], a: 0, why: 'From the engineering glossary slide.' },
+  { q: 'Which gum brand does Joey suggest for Janice’s birthday?', opts: ['Bubblicious', 'Hubba-Bubba', 'Bubble Yum'], a: 1, why: '“Dear Janice, have a Hubba-Bubba birthday.”' },
+  { q: 'Which toy does Joey compare the neighbor in the hammock to?', opts: ['Etch A Sketch', 'Silly Putty', 'Play-Doh Fat Factory'], a: 2, why: 'Joey sees the neighbor and thinks of the modeling-clay toy.' },
+  { q: 'Which song closes the episode?', opts: ['“Endless Love”', '“My Way”', '“Paperback Writer”'], a: 0, why: 'Lionel Richie’s ballad, sung by Chandler and Phoebe.' },
+  { q: 'The mission: “Reach across the street to poke a sleeping neighbor to…”', opts: ['return his mail', 'see if he is alive', 'borrow some gum'], a: 1, why: 'The physics slide states the mission word for word.' },
+  { q: 'Theory B measures the gap at 20 feet. That is…', opts: ['an 8 ft street plus two 6 ft sidewalks', 'two 10 ft sidewalks', 'a 20 ft wide avenue'], a: 0, why: 'A single-lane NY street is 8 ft, plus two 6 ft sidewalks.' },
+  { q: 'Who keeps repeating “Monica bang!”?', opts: ['Baby Ben', 'Gunther', 'Rachel'], a: 0, why: 'After the head-bump, Ben becomes a walking confession.' },
+  { q: 'Moment of inertia measures…', opts: ['the length of a chopstick', 'the weight of a beam', 'resistance to changes in rotation'], a: 2, why: 'The slide keeps it short and exact.' }
+];
+
+/* ---- ranks by total score ---- */
+var RANKS = [
+  { min: 5500, t: 'SITCOM LEGEND', ico: '🏆', line: 'The whole gang salutes you.' },
+  { min: 3800, t: 'CENTRAL PERK REGULAR', ico: '☕', line: 'Your booth is always reserved.' },
+  { min: 2200, t: 'COFFEE RUNNER', ico: '🍩', line: 'You fetch the scones with honor.' },
+  { min: 0,    t: 'SOFA ROOKIE', ico: '🛋️', line: 'Everyone starts on the couch.' }
+];
+
+/* ============================================================
+   STATE — per-level progress in localStorage
+   ============================================================ */
+var save = storeLoad() || { v: 1, sound: true, levels: {} };
+save.v = 1;
+if (typeof save.levels !== 'object' || !save.levels) { save.levels = {}; }
+muted = save.sound === false;
+
+function getProg(id) { return save.levels[id] || null; }
+function totalScore() {
+  var t = 0;
+  SCENES.forEach(function (s) { var p = getProg(s.id); if (p) { t += p.score; } });
+  return t;
+}
+function totalStars() {
+  var t = 0;
+  SCENES.forEach(function (s) { var p = getProg(s.id); if (p) { t += p.stars; } });
+  return t;
+}
+function allRegularDone() {
+  return REGULAR_IDS.every(function (id) { return !!getProg(id); });
+}
+function rankFor(total) {
+  for (var i = 0; i < RANKS.length; i++) { if (total >= RANKS[i].min) { return RANKS[i]; } }
+  return RANKS[RANKS.length - 1];
+}
+/* scoring helpers shared by the mini-games */
+function streakMult(streak) { return streak >= 6 ? 3 : (streak >= 3 ? 2 : 1); }
+function streakBonus(streak) { return 10 * clamp(streak, 0, 5); }
+function fmt(sec) { var m = Math.floor(sec / 60), s = sec % 60; return m + ':' + (s < 10 ? '0' : '') + s; }
+function starsHtml(n, total) {
+  var out = '', i, t = total || 3;
+  for (i = 0; i < t; i++) { out += i < n ? '<b>★</b>' : '☆'; }
+  return out;
+}
+
+/* ============================================================
+   SHELL — screens, HUD, preloader
+   ============================================================ */
+var currentScreen = 'intro';
+function showScreen(name) {
+  $$('.screen').forEach(function (el) { el.classList.remove('active', 'flick'); });
+  var target = $('#screen-' + name);
+  target.classList.add('active');
+  if (!prm) {
+    target.classList.add('flick');
+    window.setTimeout(function () { target.classList.remove('flick'); }, 360);
+  }
+  currentScreen = name;
+  window.scrollTo(0, 0);
+}
+
+var hudScoreEl = null, hudShownScore = 0;
+function animateNumber(el, to) {
+  var from = hudShownScore || 0;
+  hudShownScore = to;
+  if (prm || from === to) { el.textContent = to; return; }
+  var t0 = null;
+  function step(ts) {
+    if (!t0) { t0 = ts; }
+    var k = clamp((ts - t0) / 420, 0, 1);
+    el.textContent = Math.round(from + (to - from) * k);
+    if (k < 1) { window.requestAnimationFrame(step); }
+  }
+  window.requestAnimationFrame(step);
+}
+function updateHUD() {
+  if (!hudScoreEl) { hudScoreEl = $('#hudScore'); }
+  animateNumber(hudScoreEl, totalScore());
+  $$('#hudCells .cell').forEach(function (c) {
+    var s = sceneById(c.getAttribute('data-scene'));
+    var p = getProg(s.id);
+    c.classList.toggle('done', !!p);
+    c.classList.toggle('perfect', !!p && p.stars === 3);
+    c.style.borderColor = p ? s.color : '';
+    c.style.background = p ? hexFade(s.color, 0.28) : '';
+    c.setAttribute('aria-label', 'Reel ' + s.num + ' — ' + s.title + (p ? ', best score ' + p.score + ', ' + p.stars + ' stars' : ', no score yet'));
+  });
+}
+function hexFade(hex, a) {
+  var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
+function buildCells() {
+  var html = '';
+  SCENES.forEach(function (s) {
+    html += '<button class="cell" data-scene="' + s.id + '" aria-label="Reel ' + s.num + '">' + s.num + '</button>';
+  });
+  $('#hudCells').innerHTML = html;
+}
+function sceneById(id) {
+  for (var i = 0; i < SCENES.length; i++) { if (SCENES[i].id === id) { return SCENES[i]; } }
+  return SCENES[0];
+}
+
+/* ============================================================
+   LEVEL MAP — reel cards, free order, gated Final button
+   ============================================================ */
+function renderMap() {
+  var html = '';
+  REGULAR_IDS.forEach(function (id) {
+    var s = sceneById(id), p = getProg(id);
+    html += '<button class="reel" data-scene="' + s.id + '" aria-label="Reel ' + s.num + ' — ' + s.title + '. ' + (p ? 'Best score ' + p.score + ', ' + p.stars + ' of 3 stars.' : 'No score yet.') + '">'
+      + '<span class="strip"><span class="holes"></span><span class="shot">'
+      + '<img src="' + s.slide + '" alt="">'
+      + '<span class="num">' + s.num + '</span><span class="tag">' + s.tag + '</span>'
+      + '</span><span class="holes"></span></span>'
+      + '<span class="meta">'
+      + '<span class="rt">' + s.title + '</span>'
+      + '<span class="who">' + s.charEmoji + ' ' + s.char + '</span>'
+      + '<span class="starrow" aria-hidden="true">' + starsHtml(p ? p.stars : 0) + '</span>'
+      + '<span class="best">' + (p ? 'BEST ' + p.score : 'NO SCORE YET') + '</span>'
+      + '</span></button>';
+  });
+  $('#mapGrid').innerHTML = html;
+
+  var slot = $('#finalSlot');
+  if (allRegularDone()) {
+    var p = getProg('final');
+    slot.innerHTML = p
+      ? '<div class="finalcard open done"><div class="fc-em">🥢</div><h3>THE FINAL REEL — COMPLETE</h3>'
+        + '<p>The Giant Poking Device · best <b>' + p.score + '</b> · <span class="starrow" aria-hidden="true">' + starsHtml(p.stars) + '</span></p>'
+        + '<div class="fcrow"><button class="btn dark small" data-scene="final">↺ REPLAY THE FINAL</button>'
+        + '<button class="btn small" data-finale>🏆 SEE THE FINALE</button></div></div>'
+      : '<button class="finalcard open" data-scene="final" aria-label="Play the Final reel — The Giant Poking Device">'
+        + '<div class="fc-em">🥢</div><h3>▶ THE FINAL REEL — THE GIANT POKING DEVICE</h3>'
+        + '<p>Timed bonus · 750 seconds · every topic · streak multipliers. All four reels are done — the device is yours to fire.</p></button>';
+  } else {
+    var done = REGULAR_IDS.filter(function (id) { return !!getProg(id); }).length;
+    slot.innerHTML = '<div class="finalcard locked"><div class="fc-em">🥢</div>'
+      + '<h3>THE FINAL REEL — THE GIANT POKING DEVICE</h3>'
+      + '<p>A timed bonus round across every topic. Finish all four reels to unlock it. <b>(' + done + '/4 done)</b></p></div>';
+  }
+  updateHUD();
+}
+
+/* ============================================================
+   SCENE RUNNER — start/exit levels, per-game cleanup
+   ============================================================ */
+var currentScene = null, cleanupFns = [];
+function setCleanup(fn) { cleanupFns.push(fn); }
+function runCleanup() {
+  cleanupFns.forEach(function (fn) { try { fn(); } catch (e) { /* never block exit */ } });
+  cleanupFns = [];
+}
+function startScene(id) {
+  runCleanup();
+  var s = sceneById(id);
+  currentScene = s;
+  renderSceneTop(s);
+  var stage = $('#gameStage');
+  stage.innerHTML = '';
+  showScreen('scene');
+  GAMES[s.mech](stage, s);
+}
+function exitToMap() {
+  runCleanup();
+  closeModal();
+  currentScene = null;
+  renderMap();
+  showScreen('map');
+}
+function renderSceneTop(s) {
+  $('#sceneTop').innerHTML =
+    '<button class="btn dark small" id="backToMap">⬅ MAP</button>'
+    + '<span class="chip"><span class="em">' + s.charEmoji + '</span>' + s.char + '</span>'
+    + '<span class="chip">REEL ' + s.num + ' · ' + s.title + '</span>'
+    + '<span class="live">'
+    + '<span class="liv-box"><span class="lbl">SCORE</span><b id="liveScore">0</b></span>'
+    + '<span class="liv-box"><span class="lbl" id="liveAuxLbl">—</span><b id="liveAux">—</b></span>'
+    + '<span class="liv-box" id="liveBox2" hidden><span class="lbl" id="liveAuxLbl2"></span><b id="liveAux2"></b></span>'
+    + '</span>';
+}
+function setLive(score, auxLbl, auxVal, aux2Lbl, aux2Val) {
+  var a = $('#liveAux'), b = $('#liveBox2');
+  if (score !== null && $('#liveScore')) { $('#liveScore').textContent = Math.max(0, score); }
+  if (auxLbl !== null) { $('#liveAuxLbl').textContent = auxLbl; $('#liveAux').textContent = auxVal; }
+  if (aux2Lbl !== null && b) { b.hidden = false; $('#liveAuxLbl2').textContent = aux2Lbl; $('#liveAux2').textContent = aux2Val; }
+}
+
+/* ============================================================
+   MODALS — briefing, results, confirm
+   ============================================================ */
+var modalRoot = null, modalBox = null, modalKind = null, lastFocus = null;
+function openModal(html, kind) {
+  if (!modalRoot) { modalRoot = $('#modalRoot'); modalBox = $('#modalBox'); }
+  modalBox.innerHTML = html;
+  modalKind = kind || null;
+  modalRoot.classList.remove('hidden');
+  modalRoot.setAttribute('aria-hidden', 'false');
+  lastFocus = document.activeElement;
+  document.body.style.overflow = 'hidden';
+  var f = modalBox.querySelector('[data-autofocus]') || modalBox.querySelector('button, a');
+  if (f) { f.focus(); }
+}
+function closeModal() {
+  if (!modalRoot || modalRoot.classList.contains('hidden')) { return; }
+  modalRoot.classList.add('hidden');
+  modalRoot.setAttribute('aria-hidden', 'true');
+  modalBox.innerHTML = '';
+  modalKind = null;
+  document.body.style.overflow = '';
+  if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+}
+function openBriefing(id) {
+  var s = sceneById(id);
+  sfx.flip();
+  openModal(
+    '<p class="mtag">REEL ' + s.num + ' · ' + s.tag.toUpperCase() + '</p>'
+    + '<h2 id="modalTitle">' + s.title + '</h2>'
+    + '<p class="mchar">' + s.charEmoji + ' ' + s.char + '</p>'
+    + '<img class="mimg" src="' + s.slide + '" alt="Study guide slide for this reel">'
+    + '<p class="obj">' + s.obj + '</p>'
+    + '<p class="tip">📌 ' + s.tip + '</p>'
+    + '<p class="flavor">' + s.flavor + '</p>'
+    + '<div class="mrow"><button class="btn dark" data-close>NOT YET</button>'
+    + '<button class="btn" data-autofocus data-start="' + s.id + '">START ▶</button></div>',
+    'briefing');
+}
+function openResults(s, r) {
+  var best = getProg(s.id);
+  var third = '';
+  if (s.id === 'final') { third = '<button class="btn" data-autofocus data-finale>🏆 SEE THE FINALE</button>'; }
+  else if (allRegularDone()) { third = '<button class="btn" data-autofocus data-start="final">▶ PLAY THE FINAL</button>'; }
+  var starSpans = '';
+  for (var i = 0; i < 3; i++) {
+    starSpans += '<b class="' + (i < r.stars ? 'on' : 'off') + '" style="animation-delay:' + (0.15 + i * 0.18) + 's">★</b>';
+  }
+  openModal(
+    '<p class="mtag">REEL COMPLETE</p>'
+    + '<h2 id="modalTitle">' + s.title + '</h2>'
+    + '<div class="bigscore"><span class="u">SCORE</span><b>' + r.score + '</b></div>'
+    + '<div class="stars-big" aria-label="' + r.stars + ' of 3 stars">' + starSpans + '</div>'
+    + '<div class="mstat"><span>MISTAKES <b>' + r.mistakes + '</b></span><span>BEST ON REEL <b>' + (best ? best.score : r.score) + '</b></span></div>'
+    + (r.isBest ? '<p class="newbest">🎬 NEW BEST ON THIS REEL</p>' : '')
+    + '<div class="mrow"><button class="btn ghost" data-replay="' + s.id + '">↺ REPLAY</button>'
+    + '<button class="btn dark" data-tomap>MAP</button>' + third + '</div>',
+    'results');
+}
+function openRewindConfirm() {
+  openModal(
+    '<p class="mtag">FINALE</p><h2 id="modalTitle">Rewind the tape?</h2>'
+    + '<p class="obj">This clears every score, star and best on the tape. A fresh start — the reels stay unlocked.</p>'
+    + '<div class="mrow"><button class="btn ghost" data-close>KEEP MY PROGRESS</button>'
+    + '<button class="btn" data-autofocus data-rewind>🔁 REWIND IT</button></div>',
+    'confirm');
+}
+function doRewind() {
+  save.levels = {};
+  storeSave(save);
+  closeModal();
+  renderMap();
+  updateHUD();
+  showScreen('map');
+  toast('TAPE REWOUND — FRESH START', '🔁');
+  sfx.flip();
+}
+
+/* ============================================================
+   SHARED GAME HELPERS
+   ============================================================ */
+var TF_CARD_SECONDS = 600; /* ten minutes per statement card, per design spec */
+var BONUS_TOTAL = 750;     /* the Final runs on one shared clock */
+
+/* one-second ticker with stop/reset; registers its own cleanup */
+function makeTicker(total, onTick, onEnd) {
+  var remain = total, iv = null;
+  function tick() {
+    remain -= 1;
+    if (remain <= 10 && remain > 0) { sfx.tick(); }
+    if (remain <= 0) { remain = 0; stop(); onTick(0); onEnd(); return; }
+    onTick(remain);
+  }
+  function start() { stop(); iv = window.setInterval(tick, 1000); onTick(remain); }
+  function stop() { if (iv) { window.clearInterval(iv); iv = null; } }
+  function reset(v) { stop(); remain = v; }
+  setCleanup(stop);
+  return { start: start, stop: stop, reset: reset, get: function () { return remain; } };
+}
+
+/* finish a level: score, stars, best save, results modal, fanfare */
+function finishLevel(scene, score, mistakes) {
+  runCleanup();
+  currentScene = null;
+  score = Math.max(0, score);
+  var stars = mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1);
+  var prev = getProg(scene.id);
+  var isBest = !prev || score > prev.score;
+  if (isBest) { save.levels[scene.id] = { score: score, stars: stars, mistakes: mistakes }; storeSave(save); }
+  var finalNowUnlocked = scene.id !== 'final' && !prev && allRegularDone();
+  updateHUD();
+  renderMap();
+  openResults(scene, { score: score, stars: stars, mistakes: mistakes, isBest: isBest });
+  if (stars === 3) { sfx.cheer(); spawnConfetti(150); }
+  else if (stars === 2) { sfx.fanfare(); }
+  else { sfx.correct(); }
+  if (finalNowUnlocked) {
+    window.setTimeout(function () {
+      toast('THE FINAL REEL IS UNLOCKED', '🥢');
+      sfx.fanfare();
+      spawnConfetti(90);
+    }, 700);
+  }
+}
+
+/* ============================================================
+   MINI-GAME 1 · MULTIPLE CHOICE — The Dilemma
+   Three options, one attempt, character reaction per answer.
+   ============================================================ */
+function gameChoice(root, scene) {
+  var qs = shuffle(MC_QUESTIONS);
+  var idx = 0, score = 0, mistakes = 0, streak = 0, answered = false;
+
+  function renderQ() {
+    answered = false;
+    var q = qs[idx];
+    var optsHtml = '';
+    q.opts.forEach(function (o, i) {
+      optsHtml += '<button class="opt" data-i="' + i + '"><span class="key">' + (i + 1) + '</span>' + o + '</button>';
+    });
+    root.innerHTML =
+      '<p class="g-instr">ONE ATTEMPT PER QUESTION · KEYS <b>1–3</b> WORK TOO</p>'
+      + '<div class="stcard"><span class="qno">QUESTION ' + (idx + 1) + ' / ' + qs.length + '</span><p class="st">' + q.q + '</p></div>'
+      + '<div class="opts">' + optsHtml + '</div>'
+      + '<div id="fb"></div>';
+    setLive(score, 'QUESTION', (idx + 1) + '/' + qs.length, 'MISTAKES', mistakes);
+  }
+
+  function answer(i, ev) {
+    if (answered) { return; }
+    answered = true;
+    var q = qs[idx];
+    var btns = $$('.opt', root);
+    btns.forEach(function (b) { b.disabled = true; });
+    var ok = i === q.a;
+    if (ok) {
+      streak += 1;
+      var pts = 100 + streakBonus(streak - 1);
+      score += pts;
+      btns[q.a].classList.add('ok');
+      sfx.correct();
+      if (ev) { popFloat(ev.clientX, ev.clientY, '+' + pts, false); }
+    } else {
+      streak = 0; mistakes += 1; score = Math.max(0, score - 25);
+      btns[i].classList.add('no');
+      btns[q.a].classList.add('ok');
+      btns.forEach(function (b, k) { if (k !== i && k !== q.a) { b.classList.add('dim'); } });
+      sfx.wrong();
+      if (ev) { popFloat(ev.clientX, ev.clientY, '-25', true); }
+    }
+    var last = idx === qs.length - 1;
+    $('#fb', root).innerHTML =
+      '<div class="bubble"><span class="bem">' + scene.charEmoji + '</span><span class="btx">' + (ok ? q.ok : q.no) + '</span></div>'
+      + '<div class="explain"><b>WHY:</b> ' + q.why + '</div>'
+      + '<div class="nextrow"><button class="btn" id="nextBtn">' + (last ? 'SEE RESULTS 🏁' : 'NEXT QUESTION ▶') + '</button></div>';
+    var nb = $('#nextBtn', root);
+    if (nb) { nb.focus(); }
+    setLive(score, 'QUESTION', (idx + 1) + '/' + qs.length, 'MISTAKES', mistakes);
+  }
+
+  /* delegation: one listener for the whole board */
+  root.addEventListener('click', function (e) {
+    var opt = e.target.closest('.opt');
+    if (opt && !opt.disabled) { answer(parseInt(opt.getAttribute('data-i'), 10), e); return; }
+    if (e.target.closest('#nextBtn')) {
+      sfx.click();
+      idx += 1;
+      if (idx >= qs.length) { finishLevel(scene, score, mistakes); }
+      else { renderQ(); }
+    }
+  });
+  function onKey(e) {
+    if (currentScreen !== 'scene' || currentScene !== scene) { return; }
+    if (!answered && e.key >= '1' && e.key <= '3') { answer(parseInt(e.key, 10) - 1, null); }
+    else if (e.key === 'Enter') {
+      var nb = $('#nextBtn', root);
+      if (nb && document.activeElement !== nb) { nb.click(); }
+    }
+  }
+  document.addEventListener('keydown', onKey);
+  setCleanup(function () { document.removeEventListener('keydown', onKey); });
+  renderQ();
+}
+
+/* ============================================================
+   MINI-GAME 2 · FILL IN THE BLANKS — The Cover-Up
+   Tap a blank, tap a word; wrong words bounce back for -25.
+   ============================================================ */
+function gameBlanks(root, scene) {
+  var sents = shuffle(BLANKS);
+  var bank = shuffle(BLANK_BANK);
+  var armed = -1, done = 0, score = 0, mistakes = 0, streak = 0, finished = false;
+
+  var sentsHtml = '';
+  sents.forEach(function (b, i) {
+    sentsHtml += '<div class="sent">' + b.pre
+      + '<button class="blank" data-i="' + i + '" aria-label="Blank ' + (i + 1) + ' of ' + sents.length + '">_____</button>'
+      + b.post + '</div>';
+  });
+  var bankHtml = '';
+  bank.forEach(function (w) { bankHtml += '<button class="wchip" data-w="' + w + '">' + w + '</button>'; });
+  root.innerHTML =
+    '<p class="g-instr">TAP A BLANK, THEN TAP A WORD FROM THE BANK · WRONG PICKS BOUNCE BACK (<b>-25</b>)</p>'
+    + sentsHtml
+    + '<div class="bank">' + bankHtml + '</div>';
+  setLive(score, 'FILLED', '0/' + sents.length, 'MISTAKES', mistakes);
+
+  root.addEventListener('click', function (e) {
+    if (finished) { return; }
+    var blank = e.target.closest('.blank');
+    if (blank && !blank.disabled) {
+      var i = parseInt(blank.getAttribute('data-i'), 10);
+      $$('.blank', root).forEach(function (b) { b.classList.remove('armed'); });
+      if (armed === i) { armed = -1; sfx.click(); return; }
+      armed = i;
+      blank.classList.add('armed');
+      sfx.click();
+      return;
+    }
+    var chip = e.target.closest('.wchip');
+    if (chip && !chip.classList.contains('used')) {
+      if (armed < 0) { toast('Tap a blank first', '📌'); return; }
+      var item = sents[armed];
+      var blankEl = $('.blank[data-i="' + armed + '"]', root);
+      if (chip.getAttribute('data-w') === item.word) {
+        chip.classList.add('used');
+        blankEl.textContent = item.word;
+        blankEl.classList.remove('armed');
+        blankEl.classList.add('filled');
+        blankEl.disabled = true;
+        armed = -1; done += 1; streak += 1;
+        var pts = 100 + streakBonus(streak - 1);
+        score += pts;
+        sfx.match();
+        popFloat(blankEl.getBoundingClientRect().left + 40, blankEl.getBoundingClientRect().top, '+' + pts, false);
+        setLive(score, 'FILLED', done + '/' + sents.length, 'MISTAKES', mistakes);
+        if (done === sents.length) {
+          finished = true;
+          sfx.fanfare();
+          window.setTimeout(function () { finishLevel(scene, score, mistakes); }, 800);
+        }
+      } else {
+        mistakes += 1; streak = 0; score = Math.max(0, score - 25);
+        sfx.wrong();
+        blankEl.classList.add('flash-no');
+        chip.classList.add('shake');
+        window.setTimeout(function () {
+          blankEl.classList.remove('flash-no');
+          chip.classList.remove('shake');
+        }, 480);
+        var r = blankEl.getBoundingClientRect();
+        popFloat(r.left + 40, r.top, '-25', true);
+        setLive(score, 'FILLED', done + '/' + sents.length, 'MISTAKES', mistakes);
+      }
+    }
+  });
+}
+
+/* ============================================================
+   MINI-GAME 3 · TRUE/FALSE REACTION — Real or Delusion?
+   Per-card clock, streak multiplier, mandatory NEXT button:
+   the game never auto-advances past an explanation.
+   ============================================================ */
+function gameTF(root, scene) {
+  var qs = shuffle(TF_QUESTIONS);
+  var idx = 0, score = 0, mistakes = 0, streak = 0, answered = false;
+  var ticker = null;
+
+  function renderCard() {
+    answered = false;
+    var q = qs[idx];
+    root.innerHTML =
+      '<p class="g-instr">REAL OR DELUSION? · STREAK MULTIPLIER UP TO <b>×3</b> · KEYS ← → WORK</p>'
+      + '<div class="stcard" id="tfCard"><span class="qno">STATEMENT ' + (idx + 1) + ' / ' + qs.length + '</span><p class="st">' + q.t + '</p>'
+      + '<div class="tfrow">'
+      + '<button class="tfbtn real" data-v="1">👈 REAL</button>'
+      + '<button class="tfbtn delu" data-v="0">DELUSION 👉</button>'
+      + '</div></div>'
+      + '<div class="trow" aria-hidden="true"><div class="tbar" id="tfBar"><i></i></div><span class="clock" id="tfClock">' + fmt(TF_CARD_SECONDS) + '</span></div>'
+      + '<div id="tfFb"></div>'
+      + '<p class="kbhint">← REAL &nbsp;·&nbsp; DELUSION → &nbsp;·&nbsp; ENTER = NEXT</p>';
+    setLive(score, 'STREAK', streak + ' ×' + streakMult(streak), 'MISTAKES', mistakes);
+    ticker.reset(TF_CARD_SECONDS);
+    ticker.start();
+    sfx.flip();
+  }
+
+  function answer(v, ev) {
+    if (answered) { return; }
+    answered = true;
+    ticker.stop(); /* the clock freezes while the explanation is on screen */
+    var q = qs[idx];
+    var ok = (v === 1) === q.real;
+    var card = $('#tfCard', root);
+    var bReal = $('.tfbtn.real', root), bDelu = $('.tfbtn.delu', root);
+    bReal.disabled = true; bDelu.disabled = true;
+    if (ok) {
+      streak += 1;
+      var pts = 100 * streakMult(streak);
+      score += pts;
+      (v === 1 ? bReal : bDelu).classList.add('picked-ok');
+      sfx.correct();
+      if (ev) { popFloat(ev.clientX, ev.clientY, '+' + pts, false); }
+    } else {
+      streak = 0; mistakes += 1; score = Math.max(0, score - 25);
+      (v === 1 ? bReal : bDelu).classList.add('picked-no');
+      (q.real ? bReal : bDelu).classList.add('picked-ok');
+      card.classList.add('shake');
+      sfx.wrong();
+      if (ev) { popFloat(ev.clientX, ev.clientY, '-25', true); }
+    }
+    var last = idx === qs.length - 1;
+    $('#tfFb', root).innerHTML =
+      '<div class="explain">' + (v === -1 ? '<b>TIME!</b> ' : '') + '<b>WHY:</b> ' + q.why + '</div>'
+      + '<div class="nextrow"><button class="btn" id="tfNext">' + (last ? 'SEE RESULTS 🏁' : 'NEXT ▶') + '</button></div>';
+    var nb = $('#tfNext', root);
+    if (nb) { nb.focus(); }
+    setLive(score, 'STREAK', streak + ' ×' + streakMult(streak), 'MISTAKES', mistakes);
+  }
+
+  ticker = makeTicker(TF_CARD_SECONDS, function (left) {
+    var bar = $('#tfBar i', root), clock = $('#tfClock', root);
+    if (bar) { bar.style.width = (left / TF_CARD_SECONDS * 100) + '%'; }
+    if (clock) { clock.textContent = fmt(left); }
+  }, function () { answer(-1, null); });
+
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('.tfbtn');
+    if (b && !b.disabled) { answer(parseInt(b.getAttribute('data-v'), 10), e); return; }
+    if (e.target.closest('#tfNext')) {
+      sfx.click();
+      idx += 1;
+      if (idx >= qs.length) { finishLevel(scene, score, mistakes); }
+      else { renderCard(); }
+    }
+  });
+  function onKey(e) {
+    if (currentScreen !== 'scene' || currentScene !== scene) { return; }
+    if (!answered) {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); answer(1, null); }
+      else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); answer(0, null); }
+    } else if (e.key === 'Enter') {
+      var nb = $('#tfNext', root);
+      if (nb && document.activeElement !== nb) { nb.click(); }
+    }
+  }
+  document.addEventListener('keydown', onKey);
+  setCleanup(function () { document.removeEventListener('keydown', onKey); });
+  renderCard();
+}
+
+/* ============================================================
+   MINI-GAME 4 · MATCH THE MEANING — Ross's glossary
+   Two columns, lock-green pairs, live counters.
+   ============================================================ */
+function gameMatch(root, scene) {
+  var wIdx = shuffle([0, 1, 2, 3, 4, 5]);
+  var mIdx = shuffle([0, 1, 2, 3, 4, 5]);
+  var sel = -1, found = 0, tries = 0, score = 0, finished = false;
+
+  function colHtml(order, kind) {
+    var out = '';
+    order.forEach(function (pi) {
+      var p = MATCH_PAIRS[pi];
+      out += '<button class="mitem" data-k="' + kind + pi + '"><span class="sm">' + (kind === 'w' ? 'WORD' : 'MEANING') + '</span>' + (kind === 'w' ? p.w : p.m) + '</button>';
+    });
+    return out;
+  }
+  root.innerHTML =
+    '<p class="g-instr">CLICK A WORD, THEN ITS MEANING · CORRECT PAIRS LOCK GREEN · WRONG PICKS SHAKE (<b>-15</b>)</p>'
+    + '<p class="demo"><b>WORD</b> · to retract → <b>MEANING</b> · to pull something back in</p>'
+    + '<div class="matchwrap">'
+    + '<div class="mcol">' + colHtml(wIdx, 'w') + '</div>'
+    + '<div class="mcol">' + colHtml(mIdx, 'm') + '</div>'
+    + '</div>';
+  setLive(score, 'FOUND', '0/6', 'TRIES', '0');
+
+  root.addEventListener('click', function (e) {
+    if (finished) { return; }
+    var it = e.target.closest('.mitem');
+    if (!it || it.classList.contains('lock')) { return; }
+    var k = it.getAttribute('data-k');
+    var kind = k.charAt(0);
+    var pi = parseInt(k.slice(1), 10);
+    if (kind === 'w') {
+      $$('.mitem', root).forEach(function (x) { x.classList.remove('sel'); });
+      sel = pi;
+      it.classList.add('sel');
+      sfx.click();
+      return;
+    }
+    if (sel < 0) { toast('Pick a word first', '📌'); return; }
+    tries += 1;
+    var wordBtn = $('.mitem[data-k="w' + sel + '"]', root);
+    if (pi === sel) {
+      wordBtn.classList.remove('sel');
+      wordBtn.classList.add('lock');
+      it.classList.add('lock');
+      found += 1;
+      score += 100;
+      sfx.match();
+      popFloat(e.clientX, e.clientY, '+100', false);
+      sel = -1;
+      setLive(score, 'FOUND', found + '/6', 'TRIES', String(tries));
+      if (found === 6) {
+        finished = true;
+        sfx.fanfare();
+        window.setTimeout(function () { finishLevel(scene, score, tries - 6); }, 750);
+      }
+    } else {
+      score = Math.max(0, score - 15);
+      sfx.wrong();
+      wordBtn.classList.add('no');
+      it.classList.add('no');
+      window.setTimeout(function () {
+        wordBtn.classList.remove('no', 'sel');
+        it.classList.remove('no');
+      }, 480);
+      popFloat(e.clientX, e.clientY, '-15', true);
+      sel = -1;
+      setLive(score, 'FOUND', found + '/6', 'TRIES', String(tries));
+    }
+  });
+}
+
+/* ============================================================
+   MINI-GAME 5 · TIMED BONUS — The Giant Poking Device (FINAL)
+   750 shared seconds, streak ×2/×3, speed bonus, red flashing
+   timer at the end, rapid auto-advance.
+   ============================================================ */
+function gameBonus(root, scene) {
+  var qs = shuffle(FINAL_QUESTIONS);
+  var idx = 0, score = 0, mistakes = 0, streak = 0;
+  var answered = false, finished = false, nextTimer = null, qStart = 0;
+  var ticker = null;
+
+  function endRun() {
+    if (finished) { return; }
+    finished = true;
+    window.clearTimeout(nextTimer);
+    ticker.stop();
+    finishLevel(scene, score, mistakes);
+  }
+
+  function renderQ() {
+    answered = false;
+    qStart = Date.now();
+    var q = qs[idx];
+    var optsHtml = '';
+    q.opts.forEach(function (o, i) {
+      optsHtml += '<button class="opt" data-i="' + i + '"><span class="key">' + (i + 1) + '</span>' + o + '</button>';
+    });
+    root.innerHTML =
+      '<p class="g-instr">RAPID FIRE FROM EVERY REEL · <b>×2</b> AT STREAK 3 · <b>×3</b> AT 6 · SPEED PAYS</p>'
+      + '<div class="stcard"><span class="qno">FINAL QUESTION ' + (idx + 1) + ' / ' + qs.length + '</span><p class="st">' + q.q + '</p>'
+      + '<div class="opts">' + optsHtml + '</div></div>'
+      + '<div class="trow" aria-hidden="true"><span class="mult-chip" id="bMult">×' + streakMult(streak) + '</span>'
+      + '<div class="tbar" id="bBar"><i></i></div><span class="clock" id="bClock">' + fmt(BONUS_TOTAL) + '</span></div>';
+    setLive(score, 'QUESTION', (idx + 1) + '/' + qs.length, 'MISTAKES', mistakes);
+  }
+
+  function answer(i, ev) {
+    if (answered || finished) { return; }
+    answered = true;
+    var q = qs[idx];
+    var btns = $$('.opt', root);
+    btns.forEach(function (b) { b.disabled = true; });
+    var ok = i === q.a;
+    if (ok) {
+      streak += 1;
+      var speed = (Date.now() - qStart) <= 5000 ? 50 : 0;
+      var pts = 100 * streakMult(streak) + speed;
+      score += pts;
+      btns[q.a].classList.add('ok');
+      sfx.correct();
+      popFloat(ev ? ev.clientX : window.innerWidth / 2, ev ? ev.clientY : 200, '+' + pts, false);
+    } else {
+      streak = 0; mistakes += 1; score = Math.max(0, score - 25);
+      btns[i].classList.add('no');
+      btns[q.a].classList.add('ok');
+      sfx.wrong();
+      popFloat(ev ? ev.clientX : window.innerWidth / 2, ev ? ev.clientY : 200, '-25', true);
+    }
+    setLive(score, 'QUESTION', (idx + 1) + '/' + qs.length, 'MISTAKES', mistakes);
+    nextTimer = window.setTimeout(function () {
+      idx += 1;
+      if (idx >= qs.length) { endRun(); }
+      else { renderQ(); }
+    }, 720);
+  }
+
+  ticker = makeTicker(BONUS_TOTAL, function (left) {
+    var bar = $('#bBar', root), fill = $('#bBar i', root), clock = $('#bClock', root);
+    if (fill) { fill.style.width = (left / BONUS_TOTAL * 100) + '%'; }
+    if (clock) { clock.textContent = fmt(left); }
+    if (left < 60) {
+      if (bar) { bar.classList.add('danger'); }
+      if (clock) { clock.classList.add('danger'); }
+    }
+  }, endRun);
+
+  root.addEventListener('click', function (e) {
+    var opt = e.target.closest('.opt');
+    if (opt && !opt.disabled) { answer(parseInt(opt.getAttribute('data-i'), 10), e); }
+  });
+  function onKey(e) {
+    if (currentScreen !== 'scene' || currentScene !== scene) { return; }
+    if (!answered && e.key >= '1' && e.key <= '3') { answer(parseInt(e.key, 10) - 1, null); }
+  }
+  document.addEventListener('keydown', onKey);
+  setCleanup(function () {
+    document.removeEventListener('keydown', onKey);
+    window.clearTimeout(nextTimer);
+  });
+  ticker.start();
+  renderQ();
+}
+
+/* mini-game registry */
+var GAMES = { choice: gameChoice, blanks: gameBlanks, tf: gameTF, match: gameMatch, bonus: gameBonus };
+
+/* ============================================================
+   FINALE — total score, stars, results table, rank, rewind
+   ============================================================ */
+function showFinale() {
+  runCleanup();
+  closeModal();
+  currentScene = null;
+  showScreen('finale');
+  renderFinale();
+  sfx.fanfare();
+  window.setTimeout(function () { sfx.cheer(); }, 520);
+  spawnConfetti(170);
+}
+function renderFinale() {
+  var total = totalScore(), stars = totalStars();
+  var rank = rankFor(total);
+  var rows = '';
+  SCENES.forEach(function (s) {
+    var p = getProg(s.id);
+    rows += '<tr><td class="mono">' + s.num + '</td><td>' + s.title + '</td>'
+      + '<td class="mono">' + (p ? p.score : '—') + '</td>'
+      + '<td><span class="st" aria-label="' + (p ? p.stars : 0) + ' of 3 stars">' + (p ? starsHtml(p.stars) : '☆☆☆') + '</span></td></tr>';
+  });
+  rows += '<tr class="total"><td></td><td>TOTAL</td><td class="mono">' + total + '</td>'
+    + '<td><span class="st"><b>' + stars + '</b>/15</span></td></tr>';
+  $('#finWrap').innerHTML =
+    '<p class="epi">THAT’S A WRAP · S3E08</p>'
+    + '<h2 class="fin-rank">' + rank.ico + ' ' + rank.t + '</h2>'
+    + '<p class="fin-line">' + rank.line + '</p>'
+    + '<div class="fin-total"><span class="u">TOTAL SCORE</span>' + total + '</div>'
+    + '<p class="fin-stars" aria-label="' + stars + ' of 15 stars">' + starsHtml(stars, 15) + '</p>'
+    + '<table class="fin-table"><thead><tr><th>REEL</th><th>TITLE</th><th>BEST</th><th>STARS</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    + '<img class="fin-photo" src="slide-010.jpg" alt="The closing slide — the Endless Love duet on a television screen in a dark cozy room">'
+    + '<p class="fin-line">“…a hilariously off-key but supportive duet.” The tape remembers everything.</p>'
+    + '<div class="fin-actions"><button class="btn ghost" data-rewind-open>🔁 REWIND THE TAPE</button>'
+    + '<button class="btn dark" data-tomap2>⬅ BACK TO MAP</button></div>';
+}
+
+/* ============================================================
+   PRELOADER — VHS tracking bar, then the PLAY gate
+   ============================================================ */
+function startPreloader() {
+  var pre = $('#preloader'), fill = $('#loadFill'), label = $('#loadLabel'), btn = $('#playBtn');
+  var pct = 0;
+  var iv = window.setInterval(function () {
+    pct += 9 + Math.random() * 17;
+    if (pct >= 100) {
+      pct = 100;
+      window.clearInterval(iv);
+      label.textContent = 'READY WHEN YOU ARE';
+      btn.classList.add('show');
+      btn.focus();
+    }
+    fill.style.width = pct + '%';
+  }, 120);
+  btn.addEventListener('click', function () {
+    initAudio(); /* AudioContext wakes on the user's first click */
+    sfx.click();
+    pre.classList.add('gone');
+    window.setTimeout(function () { pre.style.display = 'none'; }, 780);
+  });
+}
+
+/* ============================================================
+   GLOBAL WIRING — delegation, keyboard, resize
+   ============================================================ */
+function modalEscape() {
+  sfx.click();
+  var wasResults = modalKind === 'results';
+  closeModal();
+  if (wasResults && currentScreen === 'scene') { exitToMap(); }
+}
+function bindGlobal() {
+  /* header cells → briefing (final cell gated) */
+  $('#hudCells').addEventListener('click', function (e) {
+    var c = e.target.closest('.cell');
+    if (!c) { return; }
+    var id = c.getAttribute('data-scene');
+    if (id === 'final' && !allRegularDone()) { toast('Finish all four reels first', '📌'); return; }
+    openBriefing(id);
+  });
+  $('#soundBtn').addEventListener('click', toggleSound);
+  $('#mapBtn').addEventListener('click', function () { sfx.click(); exitToMap(); });
+  $('#introStart').addEventListener('click', function () { sfx.click(); renderMap(); showScreen('map'); });
+
+  /* map screen: reel cards + final slot (delegated) */
+  $('#screen-map').addEventListener('click', function (e) {
+    var el = e.target.closest('[data-scene]');
+    if (el) { openBriefing(el.getAttribute('data-scene')); return; }
+    if (e.target.closest('[data-finale]')) { sfx.click(); showFinale(); }
+  });
+
+  /* scene top bar: back to map */
+  $('#sceneTop').addEventListener('click', function (e) {
+    if (e.target.closest('#backToMap')) { sfx.click(); exitToMap(); }
+  });
+
+  /* finale buttons */
+  $('#finWrap').addEventListener('click', function (e) {
+    if (e.target.closest('[data-rewind-open]')) { sfx.click(); openRewindConfirm(); }
+    else if (e.target.closest('[data-tomap2]')) { sfx.click(); exitToMap(); }
+  });
+
+  /* modal root: backdrop + buttons (delegated) */
+  $('#modalBackdrop').addEventListener('click', modalEscape);
+  $('#modalBox').addEventListener('click', function (e) {
+    if (e.target.closest('[data-close]')) { sfx.click(); closeModal(); return; }
+    var st = e.target.closest('[data-start]');
+    if (st) { sfx.click(); closeModal(); startScene(st.getAttribute('data-start')); return; }
+    var rp = e.target.closest('[data-replay]');
+    if (rp) { sfx.click(); closeModal(); startScene(rp.getAttribute('data-replay')); return; }
+    if (e.target.closest('[data-tomap]')) { sfx.click(); exitToMap(); return; }
+    if (e.target.closest('[data-finale]')) { sfx.click(); showFinale(); return; }
+    if (e.target.closest('[data-rewind]')) { doRewind(); }
+  });
+
+  /* global keyboard: Escape closes modal or returns to the map */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') { return; }
+    if (modalRoot && !modalRoot.classList.contains('hidden')) { modalEscape(); return; }
+    if (currentScreen === 'scene' || currentScreen === 'finale') { sfx.click(); exitToMap(); }
+  });
+
+  /* generic click blip for shell buttons (games carry their own sounds) */
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.btn, .icon-btn')) {
+      if (!e.target.closest('#gameStage')) { sfx.click(); }
+    }
+  }, true);
+
+  window.addEventListener('resize', function () {
+    if (cv) { cv.width = window.innerWidth; cv.height = window.innerHeight; }
+  });
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+buildCells();
+bindGlobal();
+startPreloader();
+
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+</script>
+</body>
+</html>
