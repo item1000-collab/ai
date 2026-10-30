@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title> Trips Around the World </title>
+  <title>Trips Around the World</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -14,7 +14,6 @@
     </div>
     <div class="header-right">
       <a href="tech.html" class="tech-link">Tech</a>
-      <button id="resetFiltersBtn" class="reset-btn">⟳ Reset</button>
       <span id="lessonCountDisplay" class="stats-info">0 lessons</span>
     </div>
   </div>
@@ -62,55 +61,36 @@ const LESSONS = [
 ];
 
 // ============== HELPERS ==============
-function getGradient(colors) {
-  if (colors.length === 2) {
-    return `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`;
-  }
-  const stops = colors.map((c, i) => `${c} ${(i / (colors.length - 1)) * 100}%`).join(', ');
-  return `linear-gradient(135deg, ${stops})`;
-}
+const getGradient = colors => colors.length === 2 
+  ? `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`
+  : `linear-gradient(135deg, ${colors.map((c, i) => `${c} ${(i / (colors.length - 1)) * 100}%`).join(', ')})`;
 
-function formatDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
+const formatDate = dateStr => new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 // ============== STATE ==============
 let currentTeacher = 'all';
 
 // ============== RENDER ==============
 function renderLessons() {
-  let filtered = currentTeacher === 'all' 
-    ? LESSONS 
-    : LESSONS.filter(l => l.teacher === currentTeacher);
+  const filtered = (currentTeacher === 'all' ? LESSONS : LESSONS.filter(l => l.teacher === currentTeacher))
+    .slice()
+    .sort((a, b) => new Date(a.date + 'T00:00:00') - new Date(b.date + 'T00:00:00'));
   
-  filtered = [...filtered].sort((a, b) => {
-    const dateA = new Date(a.date + 'T00:00:00');
-    const dateB = new Date(b.date + 'T00:00:00');
-    return dateA - dateB;
-  });
-  
-  document.getElementById('lessonsGrid').innerHTML = filtered.map(l => {
-    const pendingHtml = l.pending ? '<span class="pending-badge">🔗 link pending</span>' : '';
-    const titleHtml = l.pending ? `${l.title} ${pendingHtml}` : l.title;
-    const teacherHtml = l.teacher ? `<span class="teacher-tag">👩‍🏫 ${l.teacher}</span>` : '';
-    
-    return `
-      <div class="class-card">
-        <div class="card-media" style="background: ${getGradient(l.colors)};">
-          <span class="date-tag">🗓️ ${formatDate(l.date)}</span>
-          ${teacherHtml}
-        </div>
-        <div class="card-content">
-          <div class="class-title">${titleHtml}</div>
-          <a href="${l.url}" class="class-link" target="_blank">
-            <span>📘 Material</span>
-            <span class="arrow-icon">→</span>
-          </a>
-        </div>
+  document.getElementById('lessonsGrid').innerHTML = filtered.map(l => `
+    <div class="class-card">
+      <div class="card-media" style="background: ${getGradient(l.colors)};">
+        <span class="date-tag">🗓️ ${formatDate(l.date)}</span>
+        ${l.teacher ? `<span class="teacher-tag">👩‍🏫 ${l.teacher}</span>` : ''}
       </div>
-    `;
-  }).join('');
+      <div class="card-content">
+        <div class="class-title">${l.pending ? `${l.title} <span class="pending-badge">🔗 link pending</span>` : l.title}</div>
+        <a href="${l.url}" class="class-link" target="_blank">
+          <span>📘 Material</span>
+          <span class="arrow-icon">→</span>
+        </a>
+      </div>
+    </div>
+  `).join('');
   
   document.getElementById('lessonCountDisplay').innerText = `${filtered.length} lesson${filtered.length !== 1 ? 's' : ''}`;
 }
@@ -119,19 +99,17 @@ function renderLessons() {
 const filterContainer = document.getElementById('teacherFilterButtons');
 
 function renderFilters() {
-  const teachers = [...new Set(LESSONS.map(l => l.teacher).filter(t => t !== ''))].sort();
+  const teachers = [...new Set(LESSONS.map(l => l.teacher).filter(Boolean))].sort();
   if (teachers.length === 0) {
     filterContainer.parentElement.style.display = 'none';
     return;
   }
+  
   filterContainer.parentElement.style.display = 'flex';
-  const html = `
-    <button data-teacher="all" class="filter-btn ${currentTeacher === 'all' ? 'active' : ''}">All teachers</button>
-    ${teachers.map(t => `
-      <button data-teacher="${t}" class="filter-btn ${currentTeacher === t ? 'active' : ''}">${t}</button>
-    `).join('')}
-  `;
-  filterContainer.innerHTML = html;
+  filterContainer.innerHTML = [
+    `<button data-teacher="all" class="filter-btn ${currentTeacher === 'all' ? 'active' : ''}">All teachers</button>`,
+    ...teachers.map(t => `<button data-teacher="${t}" class="filter-btn ${currentTeacher === t ? 'active' : ''}">${t}</button>`)
+  ].join('');
   
   filterContainer.querySelectorAll('[data-teacher]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -141,13 +119,6 @@ function renderFilters() {
     });
   });
 }
-
-// ============== RESET ==============
-document.getElementById('resetFiltersBtn').addEventListener('click', () => {
-  currentTeacher = 'all';
-  renderFilters();
-  renderLessons();
-});
 
 // ============== INIT ==============
 renderFilters();
