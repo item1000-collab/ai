@@ -79,14 +79,6 @@
       background: #f0ede8;
       border-color: #b0aba0;
     }
-    .stats-info {
-      background: #eae7e0;
-      padding: 6px 16px;
-      border-radius: 40px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: #2b2b3a;
-    }
     .filter-section {
       margin-bottom: 22px;
     }
@@ -241,7 +233,7 @@
     @media (max-width: 600px) {
       .classes-container { padding: 16px 12px; }
       .header { flex-direction: column; align-items: stretch; gap: 10px; }
-      .header-right { justify-content: space-between; }
+      .header-right { justify-content: flex-end; }
       .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
       .card-media { min-height: 60px; padding: 12px 10px 10px; }
       .card-content { padding: 10px 10px 12px; }
@@ -260,7 +252,6 @@
     </div>
     <div class="header-right">
       <button id="resetFiltersBtn" class="reset-btn">⟳ Reset</button>
-      <span id="lessonCountDisplay" class="stats-info">0 lessons</span>
     </div>
   </div>
 
@@ -280,9 +271,7 @@
 </div>
 
 <script>
-// ============== DATA (chronological order) ==============
-// All URLs are relative to the folder where this index.html resides.
-// Each lesson lives in its own subfolder, e.g. ./20260429-lesotho/index.html
+// ============== DATA ==============
 const LESSONS = [
   // === JANUARY 2026 ===
   { date: '2026-01-01', teacher: '', title: 'Conversation about Mind Your Language', url: './20260101-mind-104/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
@@ -435,8 +424,12 @@ function getGradient(colors) {
 }
 
 function formatDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('en-US', { 
+    timeZone: 'UTC', 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
 }
 
 // ============== STATE ==============
@@ -444,15 +437,9 @@ let currentTeacher = 'all';
 
 // ============== RENDER ==============
 function renderLessons() {
-  let filtered = currentTeacher === 'all' 
+  const filtered = currentTeacher === 'all' 
     ? LESSONS 
     : LESSONS.filter(l => l.teacher === currentTeacher);
-  
-  filtered = [...filtered].sort((a, b) => {
-    const dateA = new Date(a.date + 'T00:00:00');
-    const dateB = new Date(b.date + 'T00:00:00');
-    return dateA - dateB;
-  });
   
   document.getElementById('lessonsGrid').innerHTML = filtered.map(l => {
     const pendingHtml = l.pending ? '<span class="pending-badge">🔗 link pending</span>' : '';
@@ -474,8 +461,6 @@ function renderLessons() {
       </div>
     `;
   }).join('');
-  
-  document.getElementById('lessonCountDisplay').innerText = `${filtered.length} lesson${filtered.length !== 1 ? 's' : ''}`;
 }
 
 // ============== FILTERS ==============
