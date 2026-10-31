@@ -122,5 +122,5 @@ const LESSONS = [
   { date: '2026-10-28', teacher: 'Ingrid', title: 'Friends (S3E6)', url: './20261028-friends-306/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
   { date: '2026-10-29', teacher: 'Ramisa', title: 'Friends (S3E7)', url: './20261029-friends-307/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
   { date: '2026-10-30', teacher: 'Anna Leah', title: 'Friends (S3E8)', url: './20261031-friends-308/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
-  { date: '2026-11-01', teacher: 'Shritima', title: 'Priceless', url: './20260101-priceless/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] }
+  { date: '2026-11-01', teacher: 'Tao Kay', title: 'Friends (S3E9)', url: './20261101-friends-309/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] }
 ];
