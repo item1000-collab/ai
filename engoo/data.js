@@ -1,6 +1,7 @@
 const LESSONS = [
   { date: '2026-01-01', teacher: '', title: 'Conversation about Mind Your Language', url: './20260101-mind-104/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
   { date: '2026-01-01', teacher: '', title: 'Roman Holiday', url: './20260101-roman-holiday/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
+  { date: '2026-01-01', teacher: '', title: 'Priceless', url: './20260101-priceless/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
   { date: '2026-04-29', teacher: 'Nkhala', title: 'Conversation about Lesotho', url: './20260429-lesotho/index.html', colors: ['#2c5a6e','#4c9faf'] },
   { date: '2026-05-02', teacher: 'Maddie', title: 'Conversation about Titanic (1997)', url: './20260502-titanic/index.html', colors: ['#0f2b3d','#2f6f8f'] },
   { date: '2026-05-04', teacher: 'Jelena', title: 'Conversation about Friends (S1E2-4)', url: './20260504-friends-s1e2-4/index.html', colors: ['#3c5e3a','#7da07a'] },
