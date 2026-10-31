@@ -1,12 +1,7 @@
 const LESSONS = [
-  // === JANUARY 2026 ===
   { date: '2026-01-01', teacher: '', title: 'Conversation about Mind Your Language', url: './20260101-mind-104/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
   { date: '2026-01-01', teacher: '', title: 'Roman Holiday', url: './20260101-roman-holiday/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
-
-  // === APRIL 2026 ===
   { date: '2026-04-29', teacher: 'Nkhala', title: 'Conversation about Lesotho', url: './20260429-lesotho/index.html', colors: ['#2c5a6e','#4c9faf'] },
-
-  // === MAY 2026 ===
   { date: '2026-05-02', teacher: 'Maddie', title: 'Conversation about Titanic (1997)', url: './20260502-titanic/index.html', colors: ['#0f2b3d','#2f6f8f'] },
   { date: '2026-05-04', teacher: 'Jelena', title: 'Conversation about Friends (S1E2-4)', url: './20260504-friends-s1e2-4/index.html', colors: ['#3c5e3a','#7da07a'] },
   { date: '2026-05-05', teacher: 'Ramisa', title: 'Conversation about Bangladesh', url: './20260505-bangladesh/index.html', colors: ['#1e6b5e','#20b2aa'] },
@@ -30,8 +25,6 @@ const LESSONS = [
   { date: '2026-05-30', teacher: 'Faiith', title: 'Conversation about Nigeria · Culture, Nollywood & Afrobeat', url: './20260530-nigeria/index.html', colors: ['#008753','#e5b13b'] },
   { date: '2026-05-30', teacher: 'Elham', title: 'Conversation about Harry Potter · Sorcerer\'s Stone', url: './20260530-harry-potter/index.html', colors: ['#1b2a47','#b8860b'] },
   { date: '2026-05-31', teacher: 'Tasha', title: 'Conversation about Biographical Movies · From Fact to Film', url: './20260531-biographical-movies/index.html', colors: ['#2b2d42','#e6b422'] },
-
-  // === JUNE 2026 ===
   { date: '2026-06-01', teacher: 'Ivania', title: 'Conversation about Niš, Serbia · History, Culture & Hospitality', url: './20260601-serbia-nis/index.html', colors: ['#c0392b','#e67e22'] },
   { date: '2026-06-02', teacher: 'Elham', title: 'Conversation about Cuba · From Son to Salsa, Timeless Charms', url: './20260602-cuba-game/index.html', colors: ['#1e6f5c','#28b487'] },
   { date: '2026-06-03', teacher: 'Maboko', title: 'Conversation about Midnight in Paris · Nostalgia & Art', url: './20260603-midnight-in-paris/index.html', colors: ['#2b2e4a','#e5a54b'] },
@@ -45,8 +38,6 @@ const LESSONS = [
   { date: '2026-06-26', teacher: 'Lillian', title: 'Conversation about Jordan · Ancient wonders, Bedouin culture & the Dead Sea', url: './20260626-jordan/index.html', colors: ['#b87c4b','#e8b86d'] },
   { date: '2026-06-27', teacher: 'Lillian', title: 'Conversation about It\'s a Wonderful Life · A timeless Christmas classic', url: './20260627-its-w-life/index.html', colors: ['#2c3e50','#3498db'] },
   { date: '2026-06-29', teacher: 'Katarina', title: 'Conversation about Kragujevac · Industrial heart & cultural soul', url: './20260629-kragujevac/index.html', colors: ['#4a2c2a','#9e6b4b'] },
-
-  // === JULY 2026 ===
   { date: '2026-07-01', teacher: 'Elham', title: 'Conversation about North Korea · Impressions & Culture', url: './20260701-n-korea/index.html', colors: ['#2c3e50','#e74c3c'] },
   { date: '2026-07-02', teacher: 'Paulina', title: 'Conversation about The Crown (S1E1) · Royalty, duty & destiny', url: './20260702-crown-s1e1/index.html', colors: ['#1a1a2e','#c9a84c'] },
   { date: '2026-07-04', teacher: 'Lillian', title: 'Conversation about The Grand Budapest Hotel · Wes Anderson\'s Masterpiece', url: './20260704-gb-hotel/index.html', colors: ['#1a2a3a','#b8860b'] },
@@ -67,8 +58,6 @@ const LESSONS = [
   { date: '2026-07-28', teacher: 'Raya', title: 'Conversation about Friends (S1E15) · Job interviews, cooking & mishaps', url: './20260728-friends-s1e15/index.html', colors: ['#2c4a6e','#4a8faf','#7fc9d8'] },
   { date: '2026-07-29', teacher: 'Katarina', title: 'Conversation about Friends (S1E17) · The hospital, the baby & the mix-up', url: './20260729-friends-s1e17/index.html', colors: ['#4a3f2c','#8a7a5a','#c9b88a'] },
   { date: '2026-07-30', teacher: 'Katarina', title: 'Conversation about Friends (S1E18) · Poker, pride & Rachel\'s big win', url: './20260730-friends-s1e18/index.html', colors: ['#2c4f3a','#5a8f6a','#8fc9a0'] },
-
-  // === AUGUST 2026 ===
   { date: '2026-08-01', teacher: 'Katarina', title: 'Conversation about Friends (S1E19) · Marcel returns & a crucial decision', url: './20260801-friends-s1e19/index.html', colors: ['#4a2c4a','#7a5a7a','#b88eb8'] },
   { date: '2026-08-02', teacher: 'Maggie', title: 'Conversation about Amélie · The whimsical Parisian tale', url: './20260802-amélie/index.html', colors: ['#2d7a4a','#5cb88a','#8fd4b0'] },
   { date: '2026-08-07', teacher: 'Katarina', title: 'Conversation about Friends (S1E20) · Secrets, lies & dental drama', url: './20260807-friends-s1e20/index.html', colors: ['#4a3a5e','#8a7a9e','#c9b8d4'] },
@@ -91,8 +80,6 @@ const LESSONS = [
   { date: '2026-08-29', teacher: 'Raya', title: 'Conversation about Friends (S2E9) · New twists & friendship dynamics', url: './20260829-friends-209/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
   { date: '2026-08-30', teacher: 'Anchyca', title: 'Conversation about Chocolat · A magical tale of temptation & transformation', url: './20260830-chocolat/index.html', colors: ['#3d1f0e','#8b5a3a','#d4a373'] },
   { date: '2026-08-31', teacher: 'Marina', title: 'Conversation about Friends (S2E10) · New twists & friendship dynamics', url: './20260831-friends-210/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
-
-  // === SEPTEMBER 2026 ===
   { date: '2026-09-01', teacher: 'Kelyn', title: 'Conversation about The Phantom of the Opera · Music, mystery & obsession', url: './20260901-phantom-opera/index.html', colors: ['#1f1a2e','#5a3f6b','#b28ab5'] },
   { date: '2026-09-02', teacher: 'Renee', title: 'Conversation about Arrival · Language, time & alien contact', url: './20260902-arrival/index.html', colors: ['#1a2a3a','#4a7a8a','#8ab5c5'] },
   { date: '2026-09-03', teacher: 'Renee', title: 'Conversation about Friends (S2E11) · New twists & friendship dynamics', url: './20260903-friends-211/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
@@ -115,8 +102,6 @@ const LESSONS = [
   { date: '2026-09-27', teacher: 'Marina', title: 'Friends (S2E17)', url: './20260928-friends-217/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
   { date: '2026-09-29', teacher: 'Katarina', title: 'Friends (S2E18)', url: './20260929-friends-218/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
   { date: '2026-09-30', teacher: 'Katarina', title: 'Grease', url: './20260930-grease/index.html', colors: ['#b33b2c','#e88952'] },
-
-  // === OCTOBER 2026 ===
   { date: '2026-10-01', teacher: 'Katarina', title: 'Friends (S2E19)', url: './20261001-friends-219/index.html', colors: ['#2a5f5c','#4a9e8f','#82c2b2'] },
   { date: '2026-10-03', teacher: 'Anna Leah', title: 'Breakfast at Tiffany\'s', url: './20261003-br-tiffany/index.html', colors: ['#2b2d42','#8d99ae','#ef233c'] },
   { date: '2026-10-04', teacher: 'Marrga', title: 'Architectural Opulence of St. Petersburg', url: './20261004-ptb/index.html', colors: ['#1e6f5c','#28b487'] },
