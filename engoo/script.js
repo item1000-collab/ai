@@ -50,7 +50,6 @@ function renderLessons() {
       ];
     }
 
-    // Оборачиваем весь контент карточки в тег <a>, чтобы кликабельна была вся область
     return `
       <a href="${l.url}" class="class-card" target="_blank">
         <div class="card-media" style="background: ${getGradient(cardColors)};">
@@ -90,17 +89,3 @@ function renderFilters() {
 // ============== INIT ==============
 renderFilters();
 renderLessons();
-
-// ============== STICKY FILTER SHADOW EFFECT ==============
-window.addEventListener('scroll', () => {
-  const filterSection = document.querySelector('.filter-section');
-  if (!filterSection) return;
-  
-  if (window.scrollY > 20) {
-    filterSection.style.boxShadow = '0 4px 15px rgba(0,0,0,0.05)';
-    filterSection.style.borderBottom = '1px solid #eeebe6';
-  } else {
-    filterSection.style.boxShadow = 'none';
-    filterSection.style.borderBottom = '1px solid transparent';
-  }
-});
