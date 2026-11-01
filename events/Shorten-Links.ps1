@@ -13,13 +13,6 @@ $Root = (Resolve-Path -LiteralPath $Root).Path
 $changedFiles = 0
 $changedLinks = 0
 
-# Ищем в тексте:
-# 1. https://item1000-collab.github.io/ + любые папки + файл
-# 2. ../../ + любые папки + файл
-# Заменяем на просто имя файла
-$patternAbs = 'https?://item1000-collab\.github\.io/(?:[^"\s''\)]+/)+(?<file>[^"\s''\)]+)'
-$patternRel = '(?:\.\./)+(?:[^"\s''\)]+/)+(?<file>[^"\s''\)]+)'
-
 $dirs = Get-ChildItem -LiteralPath $Root -Directory -Recurse
 
 foreach ($dir in $dirs) {
@@ -35,29 +28,45 @@ foreach ($dir in $dirs) {
         }
 
         $content = [System.IO.File]::ReadAllText($file.FullName, $enc)
+        $originalContent = $content
 
-        # Считаем замены
-        $matchesAbs = [regex]::Matches($content, $patternAbs)
-        $matchesRel = [regex]::Matches($content, $patternRel)
-        
-        $totalLinks = $matchesAbs.Count + $matchesRel.Count
-        if ($totalLinks -eq 0) { continue }
+        # 1. Абсолютные ссылки на ваш домен с дублированием папки
+        # https://item1000-collab.github.io/ai/events/20260815-peter-in-uk/20260815-peter-in-uk/file.pdf
+        # -> file.pdf
+        $patternAbs = 'https?://item1000-collab\.github\.io/(?:[^/"]+/)+(?<file>[^"/]+\.\w+)'
 
-        # Меняем
-        $newContent = [regex]::Replace($content, $patternAbs, '${file}')
-        $newContent = [regex]::Replace($newContent, $patternRel, '${file}')
+        # 2. Относительные ссылки с дублированием папки
+        # ../../events/20260815-peter-in-uk/20260815-peter-in-uk/file.pdf
+        # -> file.pdf
+        $patternRel = '(?:\.\./)+(?:[^/"]+/)+(?<file>[^"/]+\.\w+)'
 
-        Write-Host ("Changed: {0} (links: {1})" -f $file.FullName, $totalLinks) -ForegroundColor Cyan
+        # 3. Ссылки с дублированием папки в корне сайта
+        # /ai/events/20260815-peter-in-uk/20260815-peter-in-uk/file.pdf
+        # -> file.pdf
+        $patternRoot = '/(?:[^/"]+/)+(?<file>[^"/]+\.\w+)'
 
-        if (-not $DryRun) {
-            [System.IO.File]::WriteAllText($file.FullName, $newContent, $enc)
+        # Применяем замены (осторожно, чтобы не задеть текст, только href/src)
+        # Мы ищем внутри атрибутов href="..." или src="..."
+        $newContent = [regex]::Replace($content, '(?<=(?:href|src)\s*=\s*["''])(https?://item1000-collab\.github\.io/(?:[^/"]+/)+)(?<file>[^"/]+\.\w+)', '${file}')
+        $newContent = [regex]::Replace($newContent, '(?<=(?:href|src)\s*=\s*["''])((?:\.\./)+(?:[^/"]+/)+)(?<file>[^"/]+\.\w+)', '${file}')
+        $newContent = [regex]::Replace($newContent, '(?<=(?:href|src)\s*=\s*["''])(/(?:[^/"]+/)+)(?<file>[^"/]+\.\w+)', '${file}')
+
+        # 4. Специальное правило для хаба (как в index.html)
+        # Если есть текст "Peter in the UK (1)" и ссылка на index.html, меняем на index-1.html
+        if ($newContent -match 'Peter in the UK \(1\)') {
+            $newContent = $newContent -replace 'href="index\.html"', 'href="index-1.html"'
         }
 
-        $script:changedFiles++
-        $script:changedLinks += $totalLinks
+        if ($newContent -ne $originalContent) {
+            Write-Host ("Changed: {0}" -f $file.FullName) -ForegroundColor Cyan
+            if (-not $DryRun) {
+                [System.IO.File]::WriteAllText($file.FullName, $newContent, $enc)
+            }
+            $script:changedFiles++
+        }
     }
 }
 
 Write-Host ""
-Write-Host ("Files changed: {0}; Links shortened: {1}" -f $changedFiles, $changedLinks) -ForegroundColor Green
+Write-Host ("Files changed: {0}" -f $changedFiles) -ForegroundColor Green
 if ($DryRun) { Write-Host "(DryRun mode - files not saved)" -ForegroundColor Yellow }
