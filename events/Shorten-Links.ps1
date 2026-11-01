@@ -29,27 +29,31 @@ foreach ($dir in $dirs) {
 
         $content = [System.IO.File]::ReadAllText($file.FullName, $enc)
 
-        # Новая регулярка:
-        # (?<attr>\b(?:href|src)=") - захватываем начало
-        # (?:\.\./)+ - захватываем одну или несколько групп ../
-        # (?:[^/"]+/)+ - захватываем одну или несколько папок (например, zen/, nc/, 20130615/)
-        # (?<file>[^"]+") - захватываем имя файла до кавычки
-        $pattern = '(?<attr>\b(?:href|src)=")(?:\.\./)+(?:[^/"]+/)+(?<file>[^"]+")'
+        # 1. Паттерн для относительных путей (../../zen/...)
+        $patternRel = '(?<attr>\b(?:href|src)=")(?:\.\./)+(?:[^/"]+/)+(?<file>[^"]+")'
         
-        $matches = [regex]::Matches($content, $pattern)
+        # 2. Паттерн для полных ссылок на GitHub Pages (https://item1000-collab.github.io/...)
+        # Ищем именно ваш домен, чтобы не трогать сторонние сайты
+        $patternAbs = '(?<attr>\b(?:href|src)=")https?://item1000-collab\.github\.io/(?:[^/"]+/)+(?<file>[^"]+")'
         
-        if ($matches.Count -eq 0) { continue }
+        # Заменяем и считаем количество
+        $matchesRel = [regex]::Matches($content, $patternRel)
+        $matchesAbs = [regex]::Matches($content, $patternAbs)
+        
+        $totalLinks = $matchesRel.Count + $matchesAbs.Count
+        if ($totalLinks -eq 0) { continue }
 
-        $newContent = [regex]::Replace($content, $pattern, '${attr}${file}')
+        $newContent = [regex]::Replace($content, $patternRel, '${attr}${file}')
+        $newContent = [regex]::Replace($newContent, $patternAbs, '${attr}${file}')
 
-        Write-Host ("Changed: {0} (links: {1})" -f $file.FullName, $matches.Count) -ForegroundColor Cyan
+        Write-Host ("Changed: {0} (links: {1})" -f $file.FullName, $totalLinks) -ForegroundColor Cyan
 
         if (-not $DryRun) {
             [System.IO.File]::WriteAllText($file.FullName, $newContent, $enc)
         }
 
         $script:changedFiles++
-        $script:changedLinks += $matches.Count
+        $script:changedLinks += $totalLinks
     }
 }
 
