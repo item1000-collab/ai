@@ -29,14 +29,15 @@ foreach ($dir in $dirs) {
 
         $content = [System.IO.File]::ReadAllText($file.FullName, $enc)
 
-        # 1. Паттерн для относительных путей (../../zen/...)
-        $patternRel = '(?<attr>\b(?:href|src)=")(?:\.\./)+(?:[^/"]+/)+(?<file>[^"]+")'
+        # Ищем href=" или src: " или url("
+        # (?:\.\./)+ - любые ../
+        # (?:[^/"]+/)+ - любые папки (pcs/, zen/ и т.д.)
+        # (?<file>[^"]+) - само имя файла
+        $patternRel = '(?<attr>(?:href|src)\s*[=:]\s*["'']|url\(["'']?)(?:\.\./)+(?:[^/"]+/)+(?<file>[^"]+["'']|\))'
         
-        # 2. Паттерн для полных ссылок на GitHub Pages (https://item1000-collab.github.io/...)
-        # Ищем именно ваш домен, чтобы не трогать сторонние сайты
-        $patternAbs = '(?<attr>\b(?:href|src)=")https?://item1000-collab\.github\.io/(?:[^/"]+/)+(?<file>[^"]+")'
+        # То же самое, но для полных путей https://item1000-collab.github.io/
+        $patternAbs = '(?<attr>(?:href|src)\s*[=:]\s*["'']|url\(["'']?)https?://item1000-collab\.github\.io/(?:[^/"]+/)+(?<file>[^"]+["'']|\))'
         
-        # Заменяем и считаем количество
         $matchesRel = [regex]::Matches($content, $patternRel)
         $matchesAbs = [regex]::Matches($content, $patternAbs)
         
