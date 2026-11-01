@@ -16,7 +16,6 @@ function formatDate(dateStr) {
   });
 }
 
-// Новая функция: превращает строку (имя) в число
 function stringToHash(string) {
   let hash = 0;
   for (let i = 0; i < string.length; i++) {
@@ -38,21 +37,18 @@ function renderLessons() {
     const pendingHtml = l.pending ? '<span class="pending-badge">🔗 link pending</span>' : '';
     const titleHtml = l.pending ? `${l.title} ${pendingHtml}` : l.title;
     
-    // --- ЛОГИКА ЦВЕТОВ ---
     let cardColors = l.colors;
 
-    // Если цветов нет, генерируем их на основе имени хоста
     if (!cardColors || cardColors.length === 0) {
       const hostName = l.host || "Unknown";
-      const hue = stringToHash(hostName) % 360; // Получаем оттенок от 0 до 360
+      const hue = stringToHash(hostName) % 360;
       
       cardColors = [
-        `hsl(${hue}, 40%, 30%)`,  // Темный
-        `hsl(${hue}, 50%, 45%)`,  // Средний
-        `hsl(${hue}, 60%, 65%)`   // Светлый
+        `hsl(${hue}, 40%, 30%)`,
+        `hsl(${hue}, 50%, 45%)`,
+        `hsl(${hue}, 60%, 65%)`
       ];
     }
-    // ----------------------
 
     return `
       <div class="class-card">
@@ -93,13 +89,6 @@ function renderFilters() {
     });
   });
 }
-
-// ============== RESET ==============
-document.getElementById('resetFiltersBtn').addEventListener('click', () => {
-  currentHost = 'all';
-  renderFilters();
-  renderLessons();
-});
 
 // ============== INIT ==============
 renderFilters();
