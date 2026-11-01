@@ -16,6 +16,15 @@ function formatDate(dateStr) {
   });
 }
 
+// Новая функция: превращает строку (имя) в число
+function stringToHash(string) {
+  let hash = 0;
+  for (let i = 0; i < string.length; i++) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash);
+}
+
 // ============== STATE ==============
 let currentTeacher = 'all';
 
@@ -29,9 +38,25 @@ function renderLessons() {
     const pendingHtml = l.pending ? '<span class="pending-badge">🔗 link pending</span>' : '';
     const titleHtml = l.pending ? `${l.title} ${pendingHtml}` : l.title;
     
+    // --- ЛОГИКА ЦВЕТОВ ---
+    let cardColors = l.colors;
+
+    // Если цветов нет, генерируем их на основе имени учителя
+    if (!cardColors || cardColors.length === 0) {
+      const teacherName = l.teacher || "Unknown";
+      const hue = stringToHash(teacherName) % 360; // Получаем оттенок от 0 до 360
+      
+      cardColors = [
+        `hsl(${hue}, 40%, 30%)`,  // Темный
+        `hsl(${hue}, 50%, 45%)`,  // Средний
+        `hsl(${hue}, 60%, 65%)`   // Светлый
+      ];
+    }
+    // ----------------------
+
     return `
       <div class="class-card">
-        <div class="card-media" style="background: ${getGradient(l.colors)};">
+        <div class="card-media" style="background: ${getGradient(cardColors)};">
           <span class="date-tag">🗓️ ${formatDate(l.date)}</span>
           <span class="teacher-tag">👩‍🏫 ${l.teacher || 'None'}</span>
         </div>
