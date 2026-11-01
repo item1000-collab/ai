@@ -29,17 +29,17 @@ foreach ($dir in $dirs) {
 
         $content = [System.IO.File]::ReadAllText($file.FullName, $enc)
 
-        # Ищем ссылки, которые начинаются с ../../zen/ИМЯ_ПАПКИ/
-        # (?<attr>...) - захватывает href=" или src="
-        # \.\./\.\./zen/[^/]+/ - ищет ../../zen/название_папки/
-        # (?<file>[^"]+) - захватывает оставшееся имя файла до конца кавычки
-        $pattern = '(?<attr>\b(?:href|src)=")(?:\.\./)+zen/[^/]+/(?<file>[^"]+")'
+        # Новая регулярка:
+        # (?<attr>\b(?:href|src)=") - захватываем начало
+        # (?:\.\./)+ - захватываем одну или несколько групп ../
+        # (?:[^/"]+/)+ - захватываем одну или несколько папок (например, zen/, nc/, 20130615/)
+        # (?<file>[^"]+") - захватываем имя файла до кавычки
+        $pattern = '(?<attr>\b(?:href|src)=")(?:\.\./)+(?:[^/"]+/)+(?<file>[^"]+")'
         
         $matches = [regex]::Matches($content, $pattern)
         
         if ($matches.Count -eq 0) { continue }
 
-        # Заменяем на attr + file (т.е. href="01.webp")
         $newContent = [regex]::Replace($content, $pattern, '${attr}${file}')
 
         Write-Host ("Changed: {0} (links: {1})" -f $file.FullName, $matches.Count) -ForegroundColor Cyan
