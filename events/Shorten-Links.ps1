@@ -29,23 +29,25 @@ foreach ($dir in $dirs) {
 
         $content = [System.IO.File]::ReadAllText($file.FullName, $enc)
 
-        # Ищем href=" или src: " или url("
-        # (?:\.\./)+ - любые ../
-        # (?:[^/"]+/)+ - любые папки (pcs/, zen/ и т.д.)
-        # (?<file>[^"]+) - само имя файла
+        # 1. Относительные пути: ../../trips/.../file.pdf -> file.pdf
         $patternRel = '(?<attr>(?:href|src)\s*[=:]\s*["'']|url\(["'']?)(?:\.\./)+(?:[^/"]+/)+(?<file>[^"]+["'']|\))'
         
-        # То же самое, но для полных путей https://item1000-collab.github.io/
+        # 2. Полные URL на ваш домен: https://item1000-collab.github.io/ai/.../file.pdf -> file.pdf
         $patternAbs = '(?<attr>(?:href|src)\s*[=:]\s*["'']|url\(["'']?)https?://item1000-collab\.github\.io/(?:[^/"]+/)+(?<file>[^"]+["'']|\))'
         
+        # 3. Абсолютные пути от корня сайта: /ai/gdc/.../file.pdf -> file.pdf
+        $patternRoot = '(?<attr>(?:href|src)\s*[=:]\s*["'']|url\(["'']?)/(?:[^/"]+/)+(?<file>[^"]+["'']|\))'
+
         $matchesRel = [regex]::Matches($content, $patternRel)
         $matchesAbs = [regex]::Matches($content, $patternAbs)
+        $matchesRoot = [regex]::Matches($content, $patternRoot)
         
-        $totalLinks = $matchesRel.Count + $matchesAbs.Count
+        $totalLinks = $matchesRel.Count + $matchesAbs.Count + $matchesRoot.Count
         if ($totalLinks -eq 0) { continue }
 
         $newContent = [regex]::Replace($content, $patternRel, '${attr}${file}')
         $newContent = [regex]::Replace($newContent, $patternAbs, '${attr}${file}')
+        $newContent = [regex]::Replace($newContent, $patternRoot, '${attr}${file}')
 
         Write-Host ("Changed: {0} (links: {1})" -f $file.FullName, $totalLinks) -ForegroundColor Cyan
 
