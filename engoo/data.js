@@ -31,7 +31,8 @@ const LESSONS = [
   { date: '2026-06-03', host: 'Maboko', title: 'Midnight in Paris · Nostalgia & Art', url: './20260603-midnight-in-paris/index.html' },
   { date: '2026-06-04', host: 'Pili', title: 'La La Land · Dreams & Jazz', url: './20260604-la-la-land/index.html' },
   { date: '2026-06-05', host: 'Ingrid', title: 'Salvador', url: './20260605-salvador/index.html' },
-  { date: '2026-06-06', host: 'Snezanica', title: 'Niš, Serbia · Hidden Gems & Local Stories', url: './20260606-serbia-nis/index.html', pending: true },
+  // В этой строке убран pending: true
+  { date: '2026-06-06', host: 'Snezanica', title: 'Niš, Serbia · Hidden Gems & Local Stories', url: './20260606-serbia-nis/index.html' },
   { date: '2026-06-08', host: 'Paulina', title: '100 Years of Solitude · Magic Realism & the Buendía Legacy', url: './20260608-100y-of-solitude/index.html' },
   { date: '2026-06-09', host: 'Barkha', title: 'India · Festivals, Flavors & Timeless Heritage', url: './20260609-india/index.html' },
   { date: '2026-06-10', host: 'Pili', title: 'Friends (S1E5) · Laundry, Lies & Romance', url: './20260610-friends-s1e5/index.html' },
