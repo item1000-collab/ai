@@ -13,6 +13,13 @@ $Root = (Resolve-Path -LiteralPath $Root).Path
 $changedFiles = 0
 $changedLinks = 0
 
+# Ищем в тексте:
+# 1. https://item1000-collab.github.io/ + любые папки + файл
+# 2. ../../ + любые папки + файл
+# Заменяем на просто имя файла
+$patternAbs = 'https?://item1000-collab\.github\.io/(?:[^"\s''\)]+/)+(?<file>[^"\s''\)]+)'
+$patternRel = '(?:\.\./)+(?:[^"\s''\)]+/)+(?<file>[^"\s''\)]+)'
+
 $dirs = Get-ChildItem -LiteralPath $Root -Directory -Recurse
 
 foreach ($dir in $dirs) {
@@ -29,25 +36,16 @@ foreach ($dir in $dirs) {
 
         $content = [System.IO.File]::ReadAllText($file.FullName, $enc)
 
-        # 1. Относительные пути: ../../trips/.../file.pdf -> file.pdf
-        $patternRel = '(?<attr>(?:href|src)\s*[=:]\s*["'']|url\(["'']?)(?:\.\./)+(?:[^/"]+/)+(?<file>[^"]+["'']|\))'
-        
-        # 2. Полные URL на ваш домен: https://item1000-collab.github.io/ai/.../file.pdf -> file.pdf
-        $patternAbs = '(?<attr>(?:href|src)\s*[=:]\s*["'']|url\(["'']?)https?://item1000-collab\.github\.io/(?:[^/"]+/)+(?<file>[^"]+["'']|\))'
-        
-        # 3. Абсолютные пути от корня сайта: /ai/gdc/.../file.pdf -> file.pdf
-        $patternRoot = '(?<attr>(?:href|src)\s*[=:]\s*["'']|url\(["'']?)/(?:[^/"]+/)+(?<file>[^"]+["'']|\))'
-
-        $matchesRel = [regex]::Matches($content, $patternRel)
+        # Считаем замены
         $matchesAbs = [regex]::Matches($content, $patternAbs)
-        $matchesRoot = [regex]::Matches($content, $patternRoot)
+        $matchesRel = [regex]::Matches($content, $patternRel)
         
-        $totalLinks = $matchesRel.Count + $matchesAbs.Count + $matchesRoot.Count
+        $totalLinks = $matchesAbs.Count + $matchesRel.Count
         if ($totalLinks -eq 0) { continue }
 
-        $newContent = [regex]::Replace($content, $patternRel, '${attr}${file}')
-        $newContent = [regex]::Replace($newContent, $patternAbs, '${attr}${file}')
-        $newContent = [regex]::Replace($newContent, $patternRoot, '${attr}${file}')
+        # Меняем
+        $newContent = [regex]::Replace($content, $patternAbs, '${file}')
+        $newContent = [regex]::Replace($newContent, $patternRel, '${file}')
 
         Write-Host ("Changed: {0} (links: {1})" -f $file.FullName, $totalLinks) -ForegroundColor Cyan
 
