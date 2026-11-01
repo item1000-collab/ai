@@ -225,6 +225,19 @@
             font-size: 1.3rem;
         }
 
+        .pdf-hint {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #7a9aaa;
+            line-height: 1.5;
+        }
+        .pdf-hint code {
+            background: rgba(74, 106, 122, 0.08);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.82rem;
+        }
+
         .narrative-text {
             font-size: 0.98rem;
             line-height: 1.7;
@@ -328,7 +341,7 @@
     <!-- ========== TOP LINK BAR ========== -->
     <div class="top-link-bar">
         <span class="link-icon">🔗</span>
-        <a href="index.html" target="_blank">
+        <a href="index.html">
             AI Radio · Peter in the UK
         </a>
         <span class="badge-new">Live</span>
@@ -346,6 +359,7 @@
                 <span class="badge-dot"></span> 📁 Session Files
             </div>
             <div class="pdf-grid" id="pdfGrid"></div>
+            <p class="pdf-hint" id="pdfHint" style="display:none;"></p>
         </div>
     </div>
 
@@ -379,20 +393,35 @@
 <script>
     (function() {
         // -------- PDF FILES --------
+        // Файлы лежат в ТОЙ ЖЕ папке, что и этот HTML-файл.
+        // Поэтому BASE_PATH = './' (а не '20260815-peter-in-uk/').
+        const BASE_PATH = './';
+
         const pdfFiles = [
             { name: 'british-coastal-guide.pdf', emoji: '📘' },
             { name: 'summary-20260816045847QiVnXh.pdf', emoji: '📕' },
             { name: 'summary-20260816050434psvfBJ.pdf', emoji: '📗' },
             { name: 'summary-20260816050725fWPrGv.pdf', emoji: '📙' }
         ];
-        const BASE_PATH = '20260815-peter-in-uk/';
+
         const pdfGrid = document.getElementById('pdfGrid');
+        const pdfHint = document.getElementById('pdfHint');
+
+        // Нормализуем путь: убираем двойные слэши, но сохраняем './'
+        function buildPath(base, name) {
+            let b = base || './';
+            if (!b.endsWith('/')) b += '/';
+            // убираем возможный двойной слэш после './' или 'folder/'
+            return b.replace(/\/{2,}/g, '/').replace(/^\.\//, './') + name;
+        }
+
         if (pdfGrid) {
             pdfGrid.innerHTML = '';
             pdfFiles.forEach(file => {
                 const a = document.createElement('a');
-                a.href = BASE_PATH + file.name;
+                a.href = buildPath(BASE_PATH, file.name);
                 a.target = '_blank';
+                a.rel = 'noopener';
                 a.className = 'pdf-item';
                 a.innerHTML = `
                     <span class="emoji">${file.emoji}</span>
@@ -401,6 +430,16 @@
                 `;
                 pdfGrid.appendChild(a);
             });
+        }
+
+        // Подсказка, если открыто локально через file:// (некоторые браузеры
+        // блокируют переход к PDF по относительным ссылкам).
+        if (pdfHint && location.protocol === 'file:') {
+            pdfHint.style.display = 'block';
+            pdfHint.innerHTML =
+                'Открыто локально (<code>file://</code>). Если PDF не открываются, ' +
+                'запустите локальный сервер: <code>python3 -m http.server 8000</code> ' +
+                'и откройте страницу по адресу <code>http://localhost:8000/</code>.';
         }
 
         // -------- NARRATIVE : EXACTLY AS IN PDF (no dates, no medical details) --------
