@@ -26,13 +26,13 @@ function stringToHash(string) {
 }
 
 // ============== STATE ==============
-let currentTeacher = 'all';
+let currentHost = 'all';
 
 // ============== RENDER ==============
 function renderLessons() {
-  const filtered = currentTeacher === 'all' 
+  const filtered = currentHost === 'all' 
     ? LESSONS 
-    : LESSONS.filter(l => l.teacher === currentTeacher);
+    : LESSONS.filter(l => l.host === currentHost);
   
   document.getElementById('lessonsGrid').innerHTML = filtered.map(l => {
     const pendingHtml = l.pending ? '<span class="pending-badge">🔗 link pending</span>' : '';
@@ -41,10 +41,10 @@ function renderLessons() {
     // --- ЛОГИКА ЦВЕТОВ ---
     let cardColors = l.colors;
 
-    // Если цветов нет, генерируем их на основе имени учителя
+    // Если цветов нет, генерируем их на основе имени хоста
     if (!cardColors || cardColors.length === 0) {
-      const teacherName = l.teacher || "Unknown";
-      const hue = stringToHash(teacherName) % 360; // Получаем оттенок от 0 до 360
+      const hostName = l.host || "Unknown";
+      const hue = stringToHash(hostName) % 360; // Получаем оттенок от 0 до 360
       
       cardColors = [
         `hsl(${hue}, 40%, 30%)`,  // Темный
@@ -58,7 +58,7 @@ function renderLessons() {
       <div class="class-card">
         <div class="card-media" style="background: ${getGradient(cardColors)};">
           <span class="date-tag">${formatDate(l.date)}</span>
-          <span class="teacher-tag">${l.teacher || 'None'}</span>
+          <span class="host-tag">${l.host || 'None'}</span>
         </div>
         <div class="card-content">
           <div class="class-title">${titleHtml}</div>
@@ -73,21 +73,21 @@ function renderLessons() {
 }
 
 // ============== FILTERS ==============
-const filterContainer = document.getElementById('teacherFilterButtons');
+const filterContainer = document.getElementById('hostFilterButtons');
 
 function renderFilters() {
-  const teachers = [...new Set(LESSONS.map(l => l.teacher).filter(t => t !== ''))].sort();
+  const hosts = [...new Set(LESSONS.map(l => l.host).filter(t => t !== ''))].sort();
   const html = `
-    <button data-teacher="all" class="filter-btn ${currentTeacher === 'all' ? 'active' : ''}">All teachers</button>
-    ${teachers.map(t => `
-      <button data-teacher="${t}" class="filter-btn ${currentTeacher === t ? 'active' : ''}">${t}</button>
+    <button data-host="all" class="filter-btn ${currentHost === 'all' ? 'active' : ''}">All hosts</button>
+    ${hosts.map(t => `
+      <button data-host="${t}" class="filter-btn ${currentHost === t ? 'active' : ''}">${t}</button>
     `).join('')}
   `;
   filterContainer.innerHTML = html;
   
-  filterContainer.querySelectorAll('[data-teacher]').forEach(btn => {
+  filterContainer.querySelectorAll('[data-host]').forEach(btn => {
     btn.addEventListener('click', () => {
-      currentTeacher = btn.dataset.teacher;
+      currentHost = btn.dataset.host;
       renderFilters();
       renderLessons();
     });
@@ -96,7 +96,7 @@ function renderFilters() {
 
 // ============== RESET ==============
 document.getElementById('resetFiltersBtn').addEventListener('click', () => {
-  currentTeacher = 'all';
+  currentHost = 'all';
   renderFilters();
   renderLessons();
 });
