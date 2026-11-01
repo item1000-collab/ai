@@ -50,20 +50,17 @@ function renderLessons() {
       ];
     }
 
+    // Оборачиваем весь контент карточки в тег <a>, чтобы кликабельна была вся область
     return `
-      <div class="class-card">
+      <a href="${l.url}" class="class-card" target="_blank">
         <div class="card-media" style="background: ${getGradient(cardColors)};">
           <span class="date-tag">${formatDate(l.date)}</span>
           <span class="host-tag">${l.host || 'None'}</span>
         </div>
         <div class="card-content">
           <div class="class-title">${titleHtml}</div>
-          <a href="${l.url}" class="class-link" target="_blank">
-            <span>📘 Open</span>
-            <span class="arrow-icon">→</span>
-          </a>
         </div>
-      </div>
+      </a>
     `;
   }).join('');
 }
@@ -95,7 +92,6 @@ renderFilters();
 renderLessons();
 
 // ============== STICKY FILTER SHADOW EFFECT ==============
-// Добавляем тень и рамку панели фильтров при прокрутке страницы
 window.addEventListener('scroll', () => {
   const filterSection = document.querySelector('.filter-section');
   if (!filterSection) return;
