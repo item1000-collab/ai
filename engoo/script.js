@@ -57,8 +57,8 @@ function renderLessons() {
     return `
       <div class="class-card">
         <div class="card-media" style="background: ${getGradient(cardColors)};">
-          <span class="date-tag">🗓️ ${formatDate(l.date)}</span>
-          <span class="teacher-tag">👩‍🏫 ${l.teacher || 'None'}</span>
+          <span class="date-tag">${formatDate(l.date)}</span>
+          <span class="teacher-tag">${l.teacher || 'None'}</span>
         </div>
         <div class="card-content">
           <div class="class-title">${titleHtml}</div>
