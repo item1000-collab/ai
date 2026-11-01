@@ -63,7 +63,7 @@ function renderLessons() {
         <div class="card-content">
           <div class="class-title">${titleHtml}</div>
           <a href="${l.url}" class="class-link" target="_blank">
-            <span>📘 Class material</span>
+            <span>📘 Open</span>
             <span class="arrow-icon">→</span>
           </a>
         </div>
