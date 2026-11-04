@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friends Vocab Arcade — Learn English with Friends S2E12</title>
+<meta name="description" content="A retro-VHS learning arcade built on the lesson deck for The One With All the Jealousy: five mini-games, one map, zero locks.">
+<style>
+/* ===== tokens ===== */
+:root{
+  --paper:#F6EEDC;
+  --card:#FFFCF3;
+  --ink:#2E2438;
+  --ink-soft:#5F5368;
+  --gold:#F2B33D;
+  --teal:#3E8E8C;
+  --purple:#7C5CBF;
+  --green:#3E8E5C;
+  --red:#D9433B;
+  --line:rgba(46,36,56,.16);
+  --shadow:0 6px 0 rgba(46,36,56,.18);
+  --shadow-sm:0 4px 0 rgba(46,36,56,.16);
+  --f-display:'Arial Black','Arial Bold',Avenir,'Helvetica Neue',sans-serif;
+  --f-body:Georgia,'Times New Roman',serif;
+  --f-mono:'Courier New',Courier,monospace;
+  --f-hand:'Segoe Script','Comic Sans MS','Bradley Hand',cursive;
+}
+/* ===== base ===== */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:17px;
+  line-height:1.55;
+  min-height:100vh;
+}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+a{color:var(--ink)}
+:focus-visible{outline:3px dashed var(--gold);outline-offset:2px}
+.mono{font-family:var(--f-mono)}
+/* film grain + scanlines + vignette over everything */
+.fx{position:fixed;inset:0;z-index:300;pointer-events:none}
+.fx::before{
+  content:"";position:absolute;inset:0;opacity:.07;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.fx::after{
+  content:"";position:absolute;inset:0;opacity:.5;
+  background:
+    repeating-linear-gradient(0deg,rgba(46,36,56,.045) 0 1px,transparent 1px 3px),
+    radial-gradient(ellipse at center,transparent 58%,rgba(46,36,56,.16));
+}
+/* ===== preloader ===== */
+#preloader{
+  position:fixed;inset:0;z-index:200;background:var(--paper);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  text-align:center;padding:20px;transition:transform .65s cubic-bezier(.6,0,.3,1);
+}
+#preloader.exit{transform:translateY(-100%)}
+#preloader.gone{display:none}
+.pl-title{font-family:var(--f-display);font-size:clamp(26px,5vw,44px);letter-spacing:1px;text-transform:uppercase}
+.pl-sub{font-family:var(--f-mono);font-size:13px;letter-spacing:2px;color:var(--ink-soft)}
+.pl-bar{width:min(300px,70vw);height:12px;border:2px solid var(--ink);border-radius:6px;background:var(--card);overflow:hidden}
+.pl-bar span{display:block;height:100%;width:0;background:var(--gold);transition:width .25s}
+.pl-pct{font-family:var(--f-mono);font-size:13px;letter-spacing:1px}
+.pl-note{font-family:var(--f-hand);font-size:15px;color:var(--ink-soft)}
+/* cassette sketch */
+.cassette{width:120px;height:78px;border:3px solid var(--ink);border-radius:10px;background:var(--card);position:relative;box-shadow:var(--shadow-sm)}
+.cassette::before{content:"";position:absolute;left:18px;right:18px;top:24px;height:26px;border:2px solid var(--ink);border-radius:13px;background:var(--paper)}
+.cassette::after{content:"";position:absolute;top:32px;left:26px;width:12px;height:12px;border:2px solid var(--ink);border-radius:50%;background:var(--gold);box-shadow:44px 0 0 var(--paper),44px 0 0 2px var(--ink) inset}
+.cassette .lbl{position:absolute;top:4px;left:0;right:0;text-align:center;font-family:var(--f-mono);font-size:9px;letter-spacing:2px;font-weight:bold}
+/* ===== header console ===== */
+#console{
+  position:fixed;top:0;left:0;right:0;z-index:150;height:58px;
+  background:var(--card);border-bottom:2px solid var(--ink);
+  display:flex;align-items:center;gap:14px;padding:0 14px;
+}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-size:15px;letter-spacing:.5px;white-space:nowrap}
+.logo .tape{font-size:20px}
+.cells{display:flex;align-items:center;gap:6px;margin-left:auto}
+.cell{width:15px;height:15px;border:2px solid var(--ink);border-radius:4px;background:var(--card);transition:background .25s}
+.cell.done{background:var(--gold)}
+.cell.end{width:42px;font-family:var(--f-mono);font-size:9px;font-weight:bold;letter-spacing:1px;display:flex;align-items:center;justify-content:center;border-radius:4px}
+.cell.end.done{background:var(--gold)}
+.hud-right{display:flex;align-items:center;gap:10px;margin-left:4px}
+.rec{color:var(--red);font-family:var(--f-mono);font-size:11px;font-weight:bold;letter-spacing:1px;animation:recBlink 1.6s infinite}
+.hud-time,.hud-score{font-family:var(--f-mono);font-weight:bold;font-size:14px;letter-spacing:1px}
+.hud-score{background:var(--ink);color:var(--paper);padding:4px 8px;border-radius:6px}
+.icon-btn{
+  width:38px;height:38px;border:2px solid var(--ink);border-radius:10px;background:var(--card);
+  box-shadow:var(--shadow-sm);font-size:17px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;transition:transform .08s,box-shadow .08s;
+}
+.icon-btn:hover{background:#FFF6DF}
+.icon-btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(46,36,56,.16)}
+/* ===== buttons ===== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--f-display);font-size:15px;letter-spacing:.5px;text-transform:uppercase;
+  padding:12px 22px;border:2px solid var(--ink);border-radius:14px;
+  background:var(--gold);color:var(--ink);box-shadow:var(--shadow);text-decoration:none;
+  transition:transform .08s,box-shadow .08s,background .15s;
+}
+.btn:hover{background:#F7C158}
+.btn:active{transform:translateY(2px);box-shadow:0 4px 0 rgba(46,36,56,.18)}
+.btn.ghost{background:var(--card)}
+.btn.ghost:hover{background:#FFF6DF}
+.btn.big{font-size:17px;padding:15px 30px}
+.btn.sm{font-size:12px;padding:8px 14px;border-radius:10px;box-shadow:var(--shadow-sm)}
+.btn.danger{background:var(--red);color:#fff}
+.btn.danger:hover{background:#E4554D}
+/* ===== layout & screens ===== */
+main{padding:78px 0 60px}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px}
+.screen{display:none}
+.screen.active{display:block;animation:screenIn .45s ease both}
+.screen:focus{outline:none}
+body.glitching main{animation:glitch .32s steps(2,end)}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:3px;color:var(--ink-soft);margin-bottom:10px}
+.display{font-family:var(--f-display);text-transform:uppercase;line-height:1.04;letter-spacing:.5px}
+.display.sm{font-size:clamp(22px,4vw,32px)}
+h1.display{font-size:clamp(40px,8vw,64px);text-shadow:3px 3px 0 var(--gold)}
+.blink{animation:blink 1s steps(1) infinite;color:var(--red)}
+/* cards */
+.vhs-card{
+  background:var(--card);border:2px solid var(--ink);border-radius:18px;
+  box-shadow:var(--shadow);padding:clamp(20px,4vw,36px);position:relative;
+}
+/* ===== intro ===== */
+.lead{font-size:18px;margin:16px 0 6px;max-width:64ch}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 6px}
+.chip{display:inline-flex;align-items:center;gap:7px;border:2px solid var(--ink);border-radius:999px;background:var(--paper);padding:6px 13px;font-size:14px;font-weight:bold;box-shadow:0 3px 0 rgba(46,36,56,.15)}
+.chip small{font-weight:normal;color:var(--ink-soft);font-family:var(--f-body);font-style:italic}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:20px 0}
+.step{border:2px solid var(--ink);border-radius:14px;background:var(--paper);padding:12px 14px;box-shadow:0 4px 0 rgba(46,36,56,.14)}
+.step b{font-family:var(--f-mono);font-size:12px;letter-spacing:2px;color:var(--ink-soft)}
+.step p{font-size:15px;margin-top:4px}
+.m-btns{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0 10px}
+.tiny-note{font-family:var(--f-mono);font-size:12px;color:var(--ink-soft);letter-spacing:.5px}
+/* ===== map ===== */
+.map-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;margin-bottom:16px}
+.map-note{color:var(--ink-soft);font-size:15px;font-style:italic}
+.reels{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+.reel{
+  text-align:left;background:var(--card);border:2px solid var(--ink);border-radius:18px;
+  overflow:hidden;box-shadow:var(--shadow);padding:0;transition:transform .15s;
+  display:flex;flex-direction:column;width:100%;
+}
+.reel:hover{transform:translateY(-3px)}
+.reel:active{transform:translateY(1px)}
+.reel-top{position:relative;border-bottom:2px solid var(--ink);aspect-ratio:16/9;overflow:hidden;background:var(--paper)}
+.reel-top img{width:100%;height:100%;object-fit:cover}
+.reel-num{position:absolute;top:10px;left:10px;background:var(--ink);color:var(--paper);font-family:var(--f-mono);font-size:11px;font-weight:bold;letter-spacing:2px;padding:4px 9px;border-radius:6px}
+.reel-flag{position:absolute;top:10px;right:10px;background:var(--gold);border:2px solid var(--ink);font-family:var(--f-mono);font-size:10px;font-weight:bold;letter-spacing:1px;padding:3px 7px;border-radius:6px}
+.reel-body{padding:13px 14px 15px;display:flex;flex-direction:column;gap:7px;flex:1}
+.reel-tag{font-family:var(--f-mono);font-size:10.5px;font-weight:bold;letter-spacing:2px;color:var(--acc,var(--teal))}
+.reel-title{font-family:var(--f-display);font-size:17px;text-transform:uppercase;letter-spacing:.4px}
+.reel-char{font-size:13.5px;font-style:italic;color:var(--ink-soft)}
+.stars{font-size:16px;letter-spacing:4px;color:var(--gold);text-shadow:1px 1px 0 rgba(46,36,56,.25)}
+.stars.none{color:var(--ink-soft);opacity:.5}
+.reel-best{font-family:var(--f-mono);font-size:12.5px;font-weight:bold;letter-spacing:1px;margin-top:auto}
+.reel-hint{font-family:var(--f-mono);font-size:11px;color:var(--ink-soft);letter-spacing:1px}
+.reel.final{border:3px dashed var(--ink);background:#FDEFC8;justify-content:center;align-items:center;text-align:center;gap:6px;padding:22px}
+.reel.final .reel-title{font-size:20px}
+.reel-note{border:2px dashed var(--line);border-radius:18px;display:flex;align-items:center;justify-content:center;text-align:center;padding:22px;color:var(--ink-soft);font-style:italic;font-size:15px;background:transparent}
+/* ===== level ===== */
+.level-bar{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:var(--card);border:2px solid var(--ink);border-radius:16px;
+  box-shadow:var(--shadow-sm);padding:10px 14px;margin-bottom:16px;
+}
+.lvl-title{font-family:var(--f-display);font-size:15px;letter-spacing:.5px;text-transform:uppercase;flex:1;min-width:200px}
+.lvl-score-box{font-family:var(--f-mono);font-size:12px;font-weight:bold;letter-spacing:2px;color:var(--ink-soft)}
+.lvl-score-box .mono{color:var(--ink);font-size:15px}
+#stage{min-height:340px}
+.flavor{font-family:var(--f-hand);font-size:17px;color:var(--ink-soft);margin:20px 4px 8px;transform:rotate(-.6deg)}
+.kbd-hint{font-family:var(--f-mono);font-size:11.5px;letter-spacing:1px;color:var(--ink-soft);margin-top:14px}
+/* --- fill in the blanks --- */
+.fb-sent{
+  background:var(--card);border:2px solid var(--ink);border-radius:14px;
+  padding:14px 16px;font-size:18.5px;line-height:2.1;margin-bottom:11px;box-shadow:0 3px 0 rgba(46,36,56,.12);
+}
+.fb-blank{
+  display:inline-block;min-width:130px;border:2px dashed var(--ink);border-radius:10px;
+  padding:1px 12px;font-family:var(--f-body);font-size:17px;background:var(--paper);
+  vertical-align:baseline;transition:background .15s;
+}
+.fb-blank:hover{background:#FFF3D6}
+.fb-blank.selected{border-style:solid;background:#FDEFC8;box-shadow:0 3px 0 rgba(46,36,56,.16)}
+.fb-blank.filled{border-style:solid;border-color:var(--green);background:#E8F3EA;color:var(--ink);cursor:default}
+.fb-bank{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.fb-word{
+  border:2px solid var(--ink);border-radius:12px;background:var(--card);padding:9px 15px;
+  font-size:16px;box-shadow:var(--shadow-sm);transition:transform .08s,box-shadow .08s,opacity .2s;
+}
+.fb-word:hover{background:#FFF6DF}
+.fb-word:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(46,36,56,.16)}
+.fb-word.used{opacity:.32;box-shadow:none;cursor:default;text-decoration:line-through}
+/* --- real or delusion --- */
+.rd-hud{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.rd-idx{font-family:var(--f-mono);font-size:12px;font-weight:bold;letter-spacing:2px;color:var(--ink-soft)}
+.mult{font-family:var(--f-mono);font-size:12px;font-weight:bold;letter-spacing:1px;background:var(--gold);border:2px solid var(--ink);border-radius:8px;padding:2px 8px}
+.mult.hot{animation:multPulse .6s infinite alternate}
+.timer-track{height:13px;border:2px solid var(--ink);border-radius:7px;background:var(--card);overflow:hidden;flex:1;min-width:150px}
+.timer-fill{display:block;height:100%;width:100%;background:var(--teal)}
+.timer-fill.low{background:var(--red)}
+.rd-clock{font-family:var(--f-mono);font-size:14px;font-weight:bold;letter-spacing:1px;min-width:52px;text-align:right}
+.rd-clock.danger{color:var(--red);animation:dangerFlash 1s infinite}
+.rd-card{
+  background:var(--card);border:2px solid var(--ink);border-radius:18px;
+  padding:clamp(16px,3vw,26px);margin-top:12px;box-shadow:var(--shadow);
+  font-size:clamp(18px,2.6vw,21px);line-height:1.6;
+}
+.rd-tagline{font-family:var(--f-mono);font-size:11px;font-weight:bold;letter-spacing:2px;color:var(--purple);margin-bottom:10px}
+.rd-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.rd-btn{
+  font-family:var(--f-display);font-size:16px;letter-spacing:.5px;text-transform:uppercase;
+  border:2px solid var(--ink);border-radius:14px;padding:14px 10px;background:var(--card);
+  box-shadow:var(--shadow-sm);transition:transform .08s,box-shadow .08s,background .15s;
+}
+.rd-btn.real:hover{background:#E8F3EA}
+.rd-btn.delu:hover{background:#FBE7E4}
+.rd-btn.real.sel{background:var(--green);color:#fff}
+.rd-btn.delu.sel{background:var(--red);color:#fff}
+.rd-btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(46,36,56,.16)}
+.rd-btn.win{background:var(--green);color:#fff}
+.rd-btn.lose{background:var(--red);color:#fff}
+.rd-why{border-left:6px solid var(--gold);background:#FDF6E3;border-radius:0 12px 12px 0;padding:13px 16px;margin-top:16px;font-size:16px}
+.rd-why.good{border-left-color:var(--green)}
+.rd-why.bad{border-left-color:var(--red)}
+.rd-why b{font-family:var(--f-mono);font-size:12px;letter-spacing:2px}
+.next-btn{margin-top:14px}
+/* --- multiple choice / bonus --- */
+.ch-q{
+  background:var(--card);border:2px solid var(--ink);border-radius:18px;
+  padding:clamp(16px,3vw,24px);font-size:clamp(17.5px,2.4vw,20px);box-shadow:var(--shadow);
+}
+.ch-idx{font-family:var(--f-mono);font-size:11.5px;font-weight:bold;letter-spacing:2px;color:var(--ink-soft);margin-bottom:8px}
+.ch-opts{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+.ch-opt{
+  text-align:left;border:2px solid var(--ink);border-radius:13px;background:var(--card);
+  padding:12px 15px;font-size:16.5px;box-shadow:var(--shadow-sm);display:flex;gap:10px;align-items:baseline;
+  transition:transform .08s,box-shadow .08s,background .15s;
+}
+.ch-opt .key{font-family:var(--f-mono);font-size:12px;font-weight:bold;border:1.5px solid var(--ink);border-radius:6px;padding:1px 7px;flex:none}
+.ch-opt:hover{background:#FFF6DF}
+.ch-opt:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(46,36,56,.16)}
+.ch-opt.correct{background:#E8F3EA;border-color:var(--green)}
+.ch-opt.correct .key{background:var(--green);color:#fff;border-color:var(--green)}
+.ch-opt.wrong{background:#FBE7E4;border-color:var(--red)}
+.ch-opt.wrong .key{background:var(--red);color:#fff;border-color:var(--red)}
+.ch-opt:disabled{cursor:default}
+.react{
+  display:flex;align-items:center;gap:10px;margin-top:16px;
+  background:var(--paper);border:2px solid var(--ink);border-radius:14px;padding:10px 14px;
+  font-size:16px;animation:screenIn .3s ease both;
+}
+.react .face{font-size:26px}
+.bn-hud{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.bn-note{margin-top:10px;font-size:15px;color:var(--ink-soft);font-style:italic;min-height:1.4em}
+/* --- match the meaning --- */
+.mt-example{
+  font-family:var(--f-mono);font-size:13px;letter-spacing:1px;background:var(--ink);color:var(--paper);
+  border-radius:12px;padding:9px 14px;display:inline-block;margin-bottom:14px;
+}
+.mt-hud{font-family:var(--f-mono);font-size:12.5px;font-weight:bold;letter-spacing:2px;color:var(--ink-soft);margin-bottom:12px}
+.mt-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mt-col{display:flex;flex-direction:column;gap:9px}
+.mt-col h3{font-family:var(--f-mono);font-size:11px;letter-spacing:3px;color:var(--ink-soft);margin-bottom:2px}
+.mt-item{
+  text-align:left;border:2px solid var(--ink);border-radius:11px;background:var(--card);
+  padding:10px 13px;font-size:16px;box-shadow:0 3px 0 rgba(46,36,56,.14);
+  transition:transform .08s,box-shadow .08s,background .15s;
+}
+.mt-item:hover{background:#FFF6DF}
+.mt-item.sel{background:#FDEFC8;border-color:var(--gold);box-shadow:0 3px 0 rgba(46,36,56,.2)}
+.mt-item.lock{background:#E8F3EA;border-color:var(--green);box-shadow:none;opacity:.75;cursor:default}
+/* ===== modal ===== */
+#modal-root{position:fixed;inset:0;z-index:180;background:rgba(46,36,56,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+#modal-root[hidden]{display:none}
+.modal{
+  background:var(--card);border:2px solid var(--ink);border-radius:18px;box-shadow:0 8px 0 rgba(20,14,30,.35);
+  max-width:530px;width:100%;padding:clamp(18px,4vw,28px);animation:pop .3s ease both;
+  max-height:88vh;overflow:auto;
+}
+.m-emoji{font-size:40px;width:74px;height:74px;border:2px solid var(--ink);border-radius:50%;background:var(--paper);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);margin-bottom:12px}
+.m-tag{font-family:var(--f-mono);font-size:11px;font-weight:bold;letter-spacing:2px;color:var(--acc,var(--teal))}
+.m-title{font-family:var(--f-display);font-size:22px;text-transform:uppercase;margin:4px 0 12px}
+.m-obj{font-size:17px;margin-bottom:10px}
+.m-tip{font-size:15px;color:var(--ink-soft);margin-bottom:8px}
+.m-flavor{font-family:var(--f-hand);font-size:16px;color:var(--ink-soft);margin:14px 0 4px;transform:rotate(-.5deg)}
+.m-stars{font-size:38px;letter-spacing:8px;color:var(--gold);text-align:center;margin:8px 0}
+.m-stars span{display:inline-block;animation:starPop .5s back-ease both}
+.m-stars span.dim{opacity:.22;animation:none}
+.m-score{font-family:var(--f-mono);font-size:30px;font-weight:bold;text-align:center;letter-spacing:2px}
+.m-sub{font-family:var(--f-mono);font-size:12px;letter-spacing:1.5px;color:var(--ink-soft);text-align:center;margin-top:4px}
+.newbest{display:inline-block;background:var(--gold);border:2px solid var(--ink);border-radius:8px;font-family:var(--f-mono);font-size:11px;font-weight:bold;letter-spacing:1px;padding:2px 8px;animation:multPulse .7s infinite alternate}
+/* ===== toast / float / confetti ===== */
+#toast-root{position:fixed;bottom:18px;left:0;right:0;z-index:190;display:flex;justify-content:center;pointer-events:none}
+.toast{
+  background:var(--ink);color:var(--paper);font-family:var(--f-mono);font-size:13.5px;letter-spacing:.5px;
+  padding:10px 18px;border-radius:12px;box-shadow:0 4px 0 rgba(20,14,30,.3);animation:screenIn .25s ease both;max-width:90vw;text-align:center;
+}
+.pf{
+  position:fixed;z-index:195;font-family:var(--f-mono);font-weight:bold;font-size:21px;letter-spacing:1px;
+  pointer-events:none;animation:pfUp .9s ease-out both;text-shadow:2px 2px 0 rgba(46,36,56,.25);
+}
+#confetti{position:fixed;inset:0;z-index:185;pointer-events:none}
+/* ===== finale ===== */
+.fin-totals{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+.fin-box{flex:1;min-width:150px;border:2px solid var(--ink);border-radius:14px;background:var(--paper);padding:12px;text-align:center;box-shadow:0 4px 0 rgba(46,36,56,.14)}
+.fin-box .n{font-family:var(--f-mono);font-size:26px;font-weight:bold}
+.fin-box .l{font-family:var(--f-mono);font-size:10.5px;letter-spacing:2px;color:var(--ink-soft)}
+.rank-badge{display:inline-flex;align-items:center;gap:10px;border:2px solid var(--ink);background:#FDEFC8;border-radius:14px;padding:10px 18px;box-shadow:var(--shadow-sm);font-family:var(--f-display);font-size:19px;letter-spacing:.5px;text-transform:uppercase;margin:6px 0 4px}
+.rank-badge .em{font-size:28px}
+.rank-badge small{display:block;font-family:var(--f-body);text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink-soft);font-weight:normal;font-style:italic}
+.fin-table{width:100%;border-collapse:collapse;margin:14px 0 6px;font-size:15px}
+.fin-table th{font-family:var(--f-mono);font-size:11px;letter-spacing:2px;color:var(--ink-soft);text-align:left;border-bottom:2px solid var(--ink);padding:6px 8px}
+.fin-table td{border-bottom:1.5px solid var(--line);padding:8px}
+.fin-table td:nth-child(3),.fin-table td:nth-child(4),.fin-table th:nth-child(3),.fin-table th:nth-child(4){text-align:right;font-family:var(--f-mono)}
+/* ===== animations ===== */
+@keyframes screenIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{opacity:0;transform:scale(.85)}70%{transform:scale(1.03)}100%{opacity:1;transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .38s ease}
+@keyframes blink{50%{opacity:0}}
+@keyframes recBlink{0%,60%{opacity:1}70%,100%{opacity:.25}}
+@keyframes dangerFlash{50%{opacity:.35}}
+@keyframes multPulse{from{transform:scale(1)}to{transform:scale(1.12)}}
+@keyframes starPop{from{opacity:0;transform:scale(0) rotate(-160deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes pfUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-46px)}}
+@keyframes glitch{
+  0%{transform:translate(0);clip-path:inset(0)}
+  25%{transform:translate(-5px,2px) skewX(-2deg);clip-path:inset(8% 0 6% 0)}
+  50%{transform:translate(4px,-2px) skewX(2deg);clip-path:inset(3% 0 12% 0)}
+  75%{transform:translate(-2px,1px);clip-path:inset(0)}
+  100%{transform:translate(0);clip-path:inset(0)}
+}
+.back-ease{animation-timing-function:cubic-bezier(.2,1.6,.4,1)}
+/* ===== responsive ===== */
+@media (max-width:640px){
+  .logo b{display:none}
+  .hud-time{display:none}
+  .mt-cols{grid-template-columns:1fr}
+  .rd-btns{grid-template-columns:1fr}
+  .cells{gap:4px}
+  main{padding-top:70px}
+}
+/* ===== reduced motion ===== */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="fx" aria-hidden="true"></div>
+
+<!-- ===== preloader shell ===== -->
+<div id="preloader" role="dialog" aria-label="Loading the tape">
+  <div class="cassette" aria-hidden="true"><span class="lbl">S2 · E12</span></div>
+  <div class="pl-title">Friends Vocab Arcade</div>
+  <div class="pl-sub">SEASON 2 · EPISODE 12 · THE ONE WITH ALL THE JEALOUSY</div>
+  <div class="pl-bar" aria-hidden="true"><span id="pl-fill"></span></div>
+  <div class="pl-pct" id="pl-pct">LOADING 0%</div>
+  <button id="pl-play" class="btn big" hidden>▶ PLAY</button>
+  <div class="pl-note" id="pl-note">Rewinding the master tape…</div>
+</div>
+
+<!-- ===== header console ===== -->
+<header id="console">
+  <div class="logo"><span class="tape" aria-hidden="true">📼</span> <b>FRIENDS VOCAB ARCADE</b></div>
+  <div class="cells" id="cells" aria-label="Reel progress"></div>
+  <div class="hud-right">
+    <span class="rec" aria-hidden="true">● REC</span>
+    <span class="hud-time" id="hud-time">▶ 00:00</span>
+    <span class="hud-score" id="hud-score" title="Total banked score">000000</span>
+    <button class="icon-btn" id="btn-sound" aria-label="Mute or unmute sound" aria-pressed="false">🔊</button>
+    <button class="icon-btn" id="btn-map" aria-label="Open the level map">🗺️</button>
+  </div>
+</header>
+
+<main id="app">
+  <!-- ===== intro ===== -->
+  <section id="screen-intro" class="screen active" tabindex="-1" aria-label="Intro">
+    <div class="wrap">
+      <div class="vhs-card">
+        <div class="eyebrow">A LEARNING GAME ON A 90s TAPE · BUILT ON THE LESSON DECK</div>
+        <h1 class="display">Friends Vocab Arcade<span class="blink">▍</span></h1>
+        <p class="lead">Season 2 · Episode 12 — <em>The One With All the Jealousy</em>. The deck taught you jealousy,
+        jazz hands and a piece of cake; now the VHS wants it back. Five reels, five mini-games, one green couch
+        worth of 90s English. Ross guards his territory, Joey lies to Broadway, and Julio’s empty vase starts a war.</p>
+        <div class="chips" aria-label="Characters">
+          <span class="chip">🦖 ROSS <small>jealous owner of the gesture</small></span>
+          <span class="chip">🥪 JOEY <small>Broadway’s biggest liar</small></span>
+          <span class="chip">💼 RACHEL <small>new job, new problem</small></span>
+          <span class="chip">🏺 MONICA <small>dense about poetry</small></span>
+          <span class="chip">🛋️ CHANDLER <small>warns, mocks, repeats</small></span>
+        </div>
+        <div class="steps">
+          <div class="step"><b>01 · PICK A REEL</b><p>Any reel, any order — the map never locks a door.</p></div>
+          <div class="step"><b>02 · PLAY THE GAME</b><p>Earn points, keep the streak alive, guard your stars.</p></div>
+          <div class="step"><b>03 · BEAT YOUR BEST</b><p>Every reel saves its top score. Finish all five to unlock the credits.</p></div>
+        </div>
+        <div class="m-btns">
+          <button class="btn big" id="btn-start-tape">▶ START THE TAPE</button>
+          <a class="btn ghost" href="312-90s-sitcom-english.pdf" target="_blank" rel="noopener noreferrer">📖 LESSON SLIDES (PDF)</a>
+        </div>
+        <p class="tiny-note">ALL REELS UNLOCKED FROM THE START · PROGRESS SAVED IN THIS BROWSER · WORKS OFFLINE</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== level map ===== -->
+  <section id="screen-map" class="screen" tabindex="-1" aria-label="Level map">
+    <div class="wrap">
+      <div class="map-head">
+        <h2 class="display sm">🎬 Choose a Reel</h2>
+        <p class="map-note">Replay any reel any time. Finish all five — in any order — to unlock the credits.</p>
+      </div>
+      <div class="reels" id="reels"></div>
+    </div>
+  </section>
+
+  <!-- ===== level scene ===== -->
+  <section id="screen-level" class="screen" tabindex="-1" aria-label="Level">
+    <div class="wrap">
+      <div class="level-bar">
+        <button class="btn ghost sm" id="btn-back-map">◀ MAP</button>
+        <div class="lvl-title" id="lvl-title">REEL</div>
+        <div class="lvl-score-box">SCORE <span class="mono" id="lvl-score">000000</span></div>
+      </div>
+      <div id="stage"></div>
+      <p class="flavor" id="lvl-flavor"></p>
+    </div>
+  </section>
+
+  <!-- ===== finale ===== -->
+  <section id="screen-finale" class="screen" tabindex="-1" aria-label="Finale">
+    <div class="wrap">
+      <div class="vhs-card">
+        <div class="eyebrow">END OF TAPE · TOTAL RESULTS</div>
+        <h2 class="display sm">🎬 The Credits</h2>
+        <div id="fin-rank"></div>
+        <div class="fin-totals" id="fin-totals"></div>
+        <table class="fin-table" id="fin-table"></table>
+        <div class="m-btns">
+          <button class="btn ghost" id="btn-back-map2">◀ BACK TO THE MAP</button>
+          <button class="btn big" id="btn-rewind">⏮ REWIND THE TAPE</button>
+        </div>
+        <p class="tiny-note">REWIND ERASES ALL SAVED PROGRESS AND RETURNS TO THE INTRO.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="modal-root" hidden></div>
+<div id="toast-root" aria-live="polite"></div>
+<div id="float-root" aria-hidden="true"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<script>
+(function(){ "use strict";
+
+/* ===== dom helpers ===== */
+function $(sel,root){ return (root||document).querySelector(sel); }
+function $$(sel,root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+function clamp(n,a,b){ return Math.max(a,Math.min(b,n)); }
+function shuffle(arr){
+  var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var t=a[i]; a[i]=a[j]; a[j]=t;
+  }
+  return a;
+}
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function pad6(n){ return String(clamp(Math.round(n),0,999999)).padStart(6,'0'); }
+/* Reserved hook: if an icon CDN (e.g. Lucide) is ever added, refresh its glyphs. */
+function refreshIcons(){
+  if(window.lucide && typeof window.lucide.createIcons==='function'){ window.lucide.createIcons(); }
+}
+var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ===== constants: save key with version ===== */
+var SAVE_KEY='friends_vocab_arcade_v1';
+
+/* ===== constants: scenes (the five reels) =====
+   id, num, title, char, color, slide, tag, obj, tip, flavor */
+var SCENES=[
+ {id:'r1',num:1,title:'Fill the Blanks',char:'ROSS',charIcon:'🦖',color:'#3E8E8C',
+  slide:'slide-003.jpg',alt:'A note pinned to a yellow legal pad titled Workplace Jealousy and Love Bugs, next to Ross leaning over Rachel’s desk with heart balloons and roses.',
+  tag:'FILL IN THE BLANKS',
+  obj:'Six famous lines from the episode lost their last word. Fill every blank from the word bank.',
+  tip:'Tap a blank first, then tap a word. A wrong word bounces back with a shake and costs 20 points.',
+  flavor:'“Rachel accuses Ross of acting like a dog peeing on her desk.”'},
+ {id:'r2',num:2,title:'Real or Delusion',char:'JOEY',charIcon:'🥪',color:'#7C5CBF',
+  slide:'slide-005.jpg',alt:'Joey standing terrified in a dance studio in front of ballerinas, next to a note titled Joey’s Broadway Lie.',
+  tag:'REACTION · TRUE OR FALSE',
+  obj:'Six statements from the tape. The deck calls it True or False — Joey calls it REAL or DELUSION. Call each one before the clock eats it.',
+  tip:'Arrow keys pick a side, Enter confirms. After the reveal the clock stops — press Enter or the NEXT button once you have read the explanation.',
+  flavor:'“Joey doesn’t know who Charles Dickens is — and he is starring in a Dickens musical.”'},
+ {id:'r3',num:3,title:'One Attempt Only',char:'RACHEL',charIcon:'💼',color:'#F2B33D',
+  slide:'slide-002.jpg',alt:'A film strip with three scenes: Ross arriving at Rachel’s office with a bouquet, Joey panicking in a dance studio, and Monica arguing with a poet in a diner.',
+  tag:'MULTIPLE CHOICE',
+  obj:'Five questions, three options each, exactly one attempt per question.',
+  tip:'Rachel reacts to every answer. Keys 1 · 2 · 3 also pick an option.',
+  flavor:'“Ross thinks Mark is hitting on Rachel — one coffee at a time.”'},
+ {id:'r4',num:4,title:'Match the Meaning',char:'MONICA',charIcon:'🏺',color:'#3E8E5C',
+  slide:'slide-013.jpg',alt:'A rainy window with taxis outside, titled Match the Vocabulary, with three polaroid words waiting to be matched to definitions.',
+  tag:'MATCH THE MEANING',
+  obj:'Six words on the left, six meanings on the right. Pair all of them.',
+  tip:'Tap a word, then tap a meaning. Correct pairs lock green and cannot be reused; wrong picks shake and clear the selection.',
+  flavor:'“TOTAL DUE: $0.00 — the price of a bad date, stamped on a diner receipt.”'},
+ {id:'r5',num:5,title:'Bonus Reel',char:'CHANDLER',charIcon:'🛋️',color:'#D9433B',
+  slide:'slide-012.jpg',alt:'A retro television with a green quiz screen showing three true-or-false statements from the lesson deck.',
+  tag:'BONUS ROUND · 750 SECONDS',
+  obj:'Ten rapid questions drawn from every reel. 750 seconds for the whole run.',
+  tip:'Streaks raise your multiplier up to ×5 — one miss resets it. The clock flashes red in the final minute.',
+  flavor:'“The singers call Julio a buttmunch — in four-part harmony.”'}
+];
+
+/* ===== constants: reel 1 — fill in the blanks ===== */
+var FILL_DATA={
+ bank:['confidant','piece of cake','jazz hands','dense','buttmunch','hitting on someone',
+       'marking your territory','pretentious','metaphor','CliffsNotes'],
+ items:[
+  {html:'Chandler warns Ross that Mark is becoming Rachel’s ___ .',answer:'confidant'},
+  {html:'The director tells Joey the dance will be a ___ .',answer:'piece of cake'},
+  {html:'Joey’s only dance move is step-ity step and ___ .',answer:'jazz hands'},
+  {html:'Monica admits, “I am totally ___ about poetry.”',answer:'dense'},
+  {html:'The singers call Julio a ___ .',answer:'buttmunch'},
+  {html:'Ross thinks Mark is ___ — flirting with Rachel over coffee.',answer:'hitting on someone'}
+ ]
+};
+
+/* ===== constants: reel 2 — real or delusion (explanations quote the deck's answer page) ===== */
+var RD_DATA=[
+ {text:'Ross sent singers, flowers and a musical love bug to Rachel’s office because he was proud of her new job.',
+  answer:'DELUSION',
+  why:'The deck is blunt: “FALSE. He sent them because he was marking his territory.” Ross was intensely jealous, wanted to prove she has a boyfriend — and the gifts push Rachel away rather than bringing her closer.'},
+ {text:'Joey has years of real dance experience with the American Ballet Theatre and Twyla Tharp.',
+  answer:'DELUSION',
+  why:'“FALSE. Joey lied on his resume.” He invented the credentials to get a role in the musical A Tale of Two Cities — and the lie collapsed when the director made him teach a complex routine.'},
+ {text:'Julio wrote “The Empty Vase” specifically to insult Monica.',
+  answer:'DELUSION',
+  why:'The poem sounds like a love letter, but the vase is a metaphor aimed at Monica’s whole country — the deck’s answer page marks this statement FALSE.'},
+ {text:'Rachel has started a new job at Bloomingdale’s, where she works with Mark.',
+  answer:'REAL',
+  why:'TRUE. The new job is exactly why Ross feels pushed out: Mark is friendly, helpful — and always there.'},
+ {text:'Monica understands poetry deeply and explains “The Empty Vase” to Julio.',
+  answer:'DELUSION',
+  why:'Monica admits, “I am totally dense about poetry.” It is Ross who reads the poem closely and uncovers the hidden insult.'},
+ {text:'Chandler thinks Ross’s gift scheme pushes Rachel away rather than bringing her closer.',
+  answer:'REAL',
+  why:'TRUE. Chandler warns Ross that Mark is becoming Rachel’s confidant — and that a public gift offensive only makes things worse.'}
+];
+
+/* ===== constants: reel 3 — multiple choice (Rachel reacts) ===== */
+var CHOICE_DATA=[
+ {q:'Why does Ross really send a barbershop quintet, flowers and a love bug to Rachel’s office?',
+  opts:['He is marking his territory out of jealousy','He is celebrating Rachel’s birthday','He lost a bet to Chandler'],
+  correct:0,win:'“Waa! Somebody paid attention!”',lose:'“Nuh-uh! Watch the tape again!”'},
+ {q:'What does “dense” mean in Monica’s line “I am totally dense about poetry”?',
+  opts:['Closely packed together','Slow to understand; slightly stupid','Thick, like heavy fog — literally'],
+  correct:1,win:'“Oh… my… God, yes!”',lose:'“Oh… my… God, no.”'},
+ {q:'How does Joey’s dance lie fall apart?',
+  opts:['Ross exposes the fake resume','The director makes him teach a complex routine','Monica recognizes him on stage'],
+  correct:1,win:'“You are so welcome.”',lose:'“It’s like… the opposite of that.”'},
+ {q:'What is “The Empty Vase” really about?',
+  opts:['A vase Monica broke at the diner','A love letter to Julio’s grandmother','A hidden insult aimed at Monica’s country'],
+  correct:2,win:'“Stop it, I’m blushing!”',lose:'“Whatever!”'},
+ {q:'What does Chandler warn Ross about Mark?',
+  opts:['Mark wants Joey’s role in the musical','Mark is becoming Rachel’s confidant','Mark wrote the poem for Julio'],
+  correct:1,win:'“Correct is my middle name.”',lose:'“Try again, sweetie.”'}
+];
+
+/* ===== constants: reel 4 — match the meaning (definitions straight from the deck) ===== */
+var MATCH_DATA={
+ example:{word:'dense',meaning:'slow to understand'},
+ pairs:[
+  {word:'confidant',meaning:'a person you share your secrets with'},
+  {word:'dense',meaning:'slow to understand'},
+  {word:'pretentious',meaning:'acting more important than you are'},
+  {word:'piece of cake',meaning:'incredibly easy to do'},
+  {word:'hitting on someone',meaning:'flirting to show romantic interest'},
+  {word:'marking your territory',meaning:'acting like something belongs to you'}
+ ]
+};
+
+/* ===== constants: reel 5 — bonus round (mixed topics, 750 s) ===== */
+var BONUS_DATA=[
+ {q:'What does “a piece of cake” mean?',
+  opts:['A recipe for disaster','Something incredibly easy to do','A dessert served at auditions'],
+  correct:1,note:'The director’s promise that destroyed Joey.'},
+ {q:'Joey trained for years with the American Ballet Theatre.',
+  opts:['REAL','DELUSION','Only on weekends'],
+  correct:1,note:'He lied on his resume — the deck checked.'},
+ {q:'Mark is becoming Rachel’s…',
+  opts:['roommate','director','confidant'],
+  correct:2,note:'Chandler warns Ross about it.'},
+ {q:'“I am totally ___ about poetry.” — Monica',
+  opts:['dense','pretentious','jealous'],
+  correct:0,note:'A soft insult, safe to use about yourself.'},
+ {q:'Julio uses the empty vase as a…',
+  opts:['resume','metaphor','CliffsNotes'],
+  correct:1,note:'One ceramic object carries a whole argument.'},
+ {q:'The barbershop quintet calls Julio a…',
+  opts:['jazz hands','buttmunch','piece of cake'],
+  correct:1,note:'A juvenile, mild 90s insult — in four-part harmony.'},
+ {q:'Why did Ross really send the office gifts?',
+  opts:['He was marking his territory','It was a charity fundraiser','He apologized to Mark'],
+  correct:0,note:'Rachel compares him to a dog at a fire hydrant.'},
+ {q:'Whose verse sneers “Mister Pretentious, you think there’s no one finer”?',
+  opts:['Chandler’s','Joey’s','Julio’s'],
+  correct:2,note:'The insult attacks poetry that admires itself.'},
+ {q:'Chandler offers Joey the ___ so he can fake knowing Dickens.',
+  opts:['love bug','CliffsNotes','empty vase'],
+  correct:1,note:'Small summary books instead of the real novel.'},
+ {q:'Rachel’s new job is at…',
+  opts:['Central Perk','Bloomingdale’s','a Broadway stage'],
+  correct:1,note:'Same floor as Mark. Naturally, Ross is thrilled.'}
+];
+
+/* ===== constants: finale ranks (by total score) ===== */
+var RANKS=[
+ [6000,'🏆','Sitcom Legend','The tape is worn out from all this winning.'],
+ [4500,'🌟','Lead Role','Your name goes above the title.'],
+ [3000,'🎭','Supporting Cast','Steady hands, solid English, one coffee away from stardom.'],
+ [1500,'☕','Central Perk Regular','You know the words to the theme song, at least.'],
+ [0,'🧦','Bloomingdale’s Intern','Everyone starts somewhere. Mark did too.']
+];
+
+/* ===== constants: preview images for the preloader ===== */
+var PRELOAD=['slide-001.jpg','slide-002.jpg','slide-003.jpg','slide-005.jpg','slide-012.jpg','slide-013.jpg'];
+/* ===== state & persistence (try/catch for private mode) ===== */
+var store=loadStore();
+function blankStore(){ return {v:1,muted:false,levels:{}}; }
+function loadStore(){
+  try{
+    var raw=localStorage.getItem(SAVE_KEY);
+    if(!raw) return blankStore();
+    var d=JSON.parse(raw);
+    if(!d || d.v!==1 || typeof d.levels!=='object') return blankStore();
+    var s=blankStore(); s.muted=!!d.muted;
+    for(var k in d.levels){ if(d.levels[k]) s.levels[k]=d.levels[k]; }
+    return s;
+  }catch(e){ return blankStore(); }
+}
+function saveStore(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(store)); }catch(e){} }
+function lvlState(id){
+  if(!store.levels[id]) store.levels[id]={best:0,stars:0,done:false};
+  return store.levels[id];
+}
+function sceneById(id){ for(var i=0;i<SCENES.length;i++){ if(SCENES[i].id===id) return SCENES[i]; } return null; }
+function allDone(){ return SCENES.every(function(sc){ return lvlState(sc.id).done; }); }
+function bankedTotal(){ return SCENES.reduce(function(sum,sc){ return sum+lvlState(sc.id).best; },0); }
+function starsTotal(){ return SCENES.reduce(function(sum,sc){ return sum+lvlState(sc.id).stars; },0); }
+
+/* ===== audio: everything synthesized, AudioContext after first click ===== */
+var AC=null;
+function ac(){
+  if(!AC){
+    try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; }
+  }
+  if(AC && AC.state==='suspended'){ AC.resume(); }
+  return AC;
+}
+document.addEventListener('pointerdown',function(){ ac(); },true);
+function tone(freq,dur,type,vol,when){
+  if(store.muted) return;
+  var c=ac(); if(!c) return;
+  var t0=c.currentTime+(when||0);
+  var o=c.createOscillator(), g=c.createGain();
+  o.type=type||'sine'; o.frequency.value=freq;
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(vol||0.2,t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t0); o.stop(t0+dur+0.05);
+}
+function noiseBurst(dur,vol){
+  if(store.muted) return;
+  var c=ac(); if(!c) return;
+  var n=Math.floor(c.sampleRate*dur);
+  var buf=c.createBuffer(1,n,c.sampleRate);
+  var d=buf.getChannelData(0);
+  for(var i=0;i<n;i++){ d[i]=(Math.random()*2-1)*(1-i/n); }
+  var s=c.createBufferSource(); s.buffer=buf;
+  var g=c.createGain(); g.gain.value=vol||0.2;
+  s.connect(g); g.connect(c.destination); s.start();
+}
+/* ready-made presets */
+var S={
+  click:function(){ tone(880,0.05,'square',0.12); },
+  flip:function(){ tone(520,0.06,'triangle',0.15); tone(700,0.06,'triangle',0.12,0.06); },
+  correct:function(){ tone(660,0.09,'triangle',0.2); tone(990,0.14,'triangle',0.2,0.09); },
+  wrong:function(){ tone(220,0.12,'sawtooth',0.18); tone(150,0.18,'sawtooth',0.16,0.1); },
+  match:function(){ tone(523,0.08,'triangle',0.18); tone(659,0.12,'triangle',0.16,0.07); },
+  fanfare:function(){ [523,659,784,1047].forEach(function(f,i){ tone(f,0.14,'triangle',0.2,i*0.12); }); tone(1319,0.3,'triangle',0.16,0.5); },
+  tick:function(){ tone(1200,0.03,'square',0.08); },
+  cheer:function(){ noiseBurst(1.1,0.22); S.fanfare(); }
+};
+
+/* ===== fx utilities ===== */
+var toastTimer=null;
+function toast(msg){
+  var r=$('#toast-root');
+  r.innerHTML='<div class="toast">'+esc(msg)+'</div>';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){ r.innerHTML=''; },2400);
+}
+function popFloat(text,x,y,color){
+  var el=document.createElement('span');
+  el.className='pf';
+  el.textContent=text;
+  el.style.left=(x-30)+'px';
+  el.style.top=(y-20)+'px';
+  el.style.color=color||'var(--gold)';
+  $('#float-root').appendChild(el);
+  setTimeout(function(){ el.remove(); },950);
+}
+function floatAt(el,text,color){
+  var r=el.getBoundingClientRect();
+  popFloat(text,r.left+r.width/2,r.top,color);
+}
+var confettiRunning=false, confettiRaf=0;
+function spawnConfetti(n){
+  if(REDUCED) return;
+  var cv=$('#confetti'), ctx=cv.getContext('2d');
+  cv.width=window.innerWidth; cv.height=window.innerHeight;
+  var colors=['#F2B33D','#3E8E8C','#D9433B','#7C5CBF','#3E8E5C','#2E2438'];
+  var parts=[];
+  for(var i=0;i<(n||90);i++){
+    parts.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*0.3,
+      vx:(Math.random()-0.5)*3,vy:2+Math.random()*3.5,s:5+Math.random()*6,
+      c:colors[i%colors.length],r:Math.random()*Math.PI,vr:(Math.random()-0.5)*0.25});
+  }
+  cancelAnimationFrame(confettiRaf);
+  var frames=0;
+  confettiRunning=true;
+  (function loop(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(function(p){
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.04; p.r+=p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62); ctx.restore();
+    });
+    frames++;
+    if(frames<170){ confettiRaf=requestAnimationFrame(loop); }
+    else{ ctx.clearRect(0,0,cv.width,cv.height); confettiRunning=false; }
+  })();
+}
+function glitchSwap(fn){
+  if(REDUCED){ fn(); return; }
+  document.body.classList.add('glitching');
+  noiseBurst(0.12,0.12);
+  setTimeout(function(){ fn(); },140);
+  setTimeout(function(){ document.body.classList.remove('glitching'); },400);
+}
+
+/* ===== HUD ===== */
+function updateHUD(){
+  $('#hud-score').textContent=pad6(bankedTotal());
+  var cells=$$('#cells .cell');
+  SCENES.forEach(function(sc,i){
+    if(cells[i]) cells[i].classList.toggle('done',lvlState(sc.id).done);
+  });
+  var end=cells[SCENES.length];
+  if(end) end.classList.toggle('done',allDone());
+  var mapBtn=$('#btn-map');
+  if(mapBtn) mapBtn.setAttribute('aria-pressed',currentScreen()==='screen-map'?'true':'false');
+}
+function buildCells(){
+  var html=SCENES.map(function(sc,i){
+    return '<span class="cell" title="Reel '+(i+1)+'" aria-label="Reel '+(i+1)+'"></span>';
+  }).join('')+'<span class="cell end" title="Credits">END</span>';
+  $('#cells').innerHTML=html;
+}
+function renderSound(){
+  var b=$('#btn-sound');
+  b.textContent=store.muted?'🔇':'🔊';
+  b.setAttribute('aria-pressed',store.muted?'true':'false');
+  b.setAttribute('aria-label',store.muted?'Unmute sound':'Mute sound');
+}
+var sessionSeconds=0;
+function startClock(){
+  setInterval(function(){
+    sessionSeconds++;
+    var m=Math.floor(sessionSeconds/60), s=sessionSeconds%60;
+    var el=$('#hud-time');
+    if(el) el.textContent='▶ '+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  },1000);
+}
+
+/* ===== screens ===== */
+function currentScreen(){
+  var el=$('.screen.active');
+  return el?el.id:'';
+}
+function show(id){
+  $$('.screen').forEach(function(s){ s.classList.toggle('active',s.id===id); });
+  var el=$('#'+id);
+  if(el){ el.focus({preventScroll:true}); }
+  window.scrollTo(0,0);
+  updateHUD();
+  refreshIcons();
+}
+
+/* ===== modal ===== */
+function openModal(html,accColor){
+  var root=$('#modal-root');
+  root.innerHTML='<div class="modal" role="dialog" aria-modal="true" style="--acc:'+(accColor||'var(--teal)')+'">'+html+'</div>';
+  root.hidden=false;
+  var dlg=$('.modal',root);
+  if(dlg) dlg.focus&&dlg.focus();
+  refreshIcons();
+}
+function closeModal(){ $('#modal-root').hidden=true; $('#modal-root').innerHTML=''; }
+function modalOpen(){ return !$('#modal-root').hidden; }
+
+/* ===== level map ===== */
+function renderMap(){
+  var parts=SCENES.map(function(sc){
+    var st=lvlState(sc.id);
+    var stars=st.done?('★'.repeat(st.stars)+'☆'.repeat(3-st.stars)):'···';
+    var flag=st.done?'<span class="reel-flag">CLEARED</span>':'';
+    var hint=st.done?'▶ REPLAY ANY TIME':'▶ PLAY';
+    return '<button class="reel" data-level="'+sc.id+'" style="--acc:'+sc.color+'" aria-label="Reel '+sc.num+': '+esc(sc.title)+' — '+esc(sc.tag)+'">'+
+      '<span class="reel-top"><img src="'+sc.slide+'" alt="'+esc(sc.alt)+'" loading="lazy">'+flag+
+      '<span class="reel-num">REEL '+sc.num+'</span></span>'+
+      '<span class="reel-body">'+
+        '<span class="reel-tag">'+esc(sc.tag)+'</span>'+
+        '<span class="reel-title">'+esc(sc.title)+'</span>'+
+        '<span class="reel-char">'+sc.charIcon+' '+esc(sc.char.charAt(0)+sc.char.slice(1).toLowerCase())+'</span>'+
+        '<span class="stars'+(st.done?'':' none')+'" role="img" aria-label="'+(st.done?(st.stars+' of 3 stars'):'no stars yet')+'">'+stars+'</span>'+
+        '<span class="reel-best">BEST '+pad6(st.best)+'</span>'+
+        '<span class="reel-hint">'+hint+'</span>'+
+      '</span></button>';
+  });
+  if(allDone()){
+    parts.push('<button class="reel final" data-level="finale" aria-label="Open the credits finale">🎬<span class="reel-title">The Credits</span><span class="reel-hint">▶ FINALE UNLOCKED</span></button>');
+  }else{
+    parts.push('<div class="reel-note">🎬 The credits stay in the can until every reel is cleared — any order you like.</div>');
+  }
+  $('#reels').innerHTML=parts.join('');
+  refreshIcons();
+}
+
+/* ===== level framework ===== */
+var cleanupFn=null;
+function setCleanup(fn){ cleanupFn=fn; }
+function runCleanup(){ if(cleanupFn){ try{ cleanupFn(); }catch(e){} cleanupFn=null; } }
+var pendingLevel=null;
+function prepareLevelBar(sc){
+  $('#lvl-title').textContent='REEL '+sc.num+' — '+sc.title.toUpperCase()+' · '+sc.charIcon+' '+sc.char;
+  $('#lvl-flavor').textContent=sc.flavor;
+  $('#lvl-score').textContent='000000';
+}
+function setLevelScore(n){ $('#lvl-score').textContent=pad6(n); }
+function enterLevel(id){
+  var sc=sceneById(id); if(!sc) return;
+  pendingLevel=id;
+  glitchSwap(function(){ show('screen-level'); });
+  prepareLevelBar(sc);
+  openModal(
+    '<div class="m-emoji">'+sc.charIcon+'</div>'+
+    '<div class="m-tag">REEL '+sc.num+' · '+esc(sc.tag)+'</div>'+
+    '<h3 class="m-title">'+esc(sc.title)+'</h3>'+
+    '<p class="m-obj">'+esc(sc.obj)+'</p>'+
+    '<p class="m-tip">💡 '+esc(sc.tip)+'</p>'+
+    '<p class="m-flavor">'+esc(sc.flavor)+'</p>'+
+    '<div class="m-btns">'+
+      '<button class="btn big" data-act="start">▶ START REEL '+sc.num+'</button>'+
+      '<button class="btn ghost" data-act="cancel">BACK TO MAP</button>'+
+    '</div>',sc.color);
+  S.flip();
+}
+function startEngine(id){
+  runCleanup();
+  var sc=sceneById(id); if(!sc) return;
+  var stage=$('#stage');
+  stage.innerHTML='';
+  if(id==='r1') runFill(stage,sc);
+  else if(id==='r2') runRealDelusion(stage,sc);
+  else if(id==='r3') runChoice(stage,sc);
+  else if(id==='r4') runMatch(stage,sc);
+  else if(id==='r5') runBonus(stage,sc);
+}
+function leaveLevel(){
+  runCleanup();
+  $('#stage').innerHTML='';
+  glitchSwap(function(){ show('screen-map'); });
+}
+function finishLevel(id,score,mistakes){
+  runCleanup();
+  var sc=sceneById(id), st=lvlState(id);
+  st.done=true;
+  var stars=(mistakes===0)?3:(mistakes<=2?2:1);
+  var isNew=score>st.best;
+  if(isNew) st.best=score;
+  st.stars=Math.max(st.stars,stars);
+  saveStore();
+  updateHUD();
+  renderMap();
+  var starHtml='';
+  for(var i=0;i<3;i++){
+    starHtml+='<span'+(i<stars?'':' class="dim"')+' style="animation-delay:'+(0.15+i*0.22)+'s">★</span>';
+  }
+  var wasFinalRun=allDone();
+  openModal(
+    '<div class="m-emoji">'+sc.charIcon+'</div>'+
+    '<div class="m-tag">REEL '+sc.num+' · RESULT</div>'+
+    '<h3 class="m-title">Reel Complete!</h3>'+
+    '<div class="m-stars" role="img" aria-label="'+stars+' of 3 stars">'+starHtml+'</div>'+
+    '<div class="m-score">'+pad6(score)+'</div>'+
+    '<p class="m-sub">'+mistakes+' MISTAKE'+(mistakes===1?'':'S')+(isNew?' · <span class="newbest">NEW BEST!</span>':' · BEST '+pad6(st.best))+'</p>'+
+    '<div class="m-btns">'+
+      '<button class="btn ghost" data-act="replay">↻ REPLAY</button>'+
+      '<button class="btn big" data-act="map">MAP ▶</button>'+
+    '</div>',sc.color);
+  S.fanfare();
+  if(stars===3){ spawnConfetti(110); setTimeout(S.cheer,300); }
+  if(wasFinalRun){
+    setTimeout(function(){
+      toast('🎬 ALL REELS CLEARED — THE CREDITS ARE UNLOCKED');
+      spawnConfetti(140);
+    },900);
+  }
+}
+
+/* ===== finale ===== */
+function rankFor(total){
+  for(var i=0;i<RANKS.length;i++){ if(total>=RANKS[i][0]) return RANKS[i]; }
+  return RANKS[RANKS.length-1];
+}
+function showFinale(){
+  runCleanup();
+  var total=bankedTotal(), stars=starsTotal(), rank=rankFor(total);
+  var rows=SCENES.map(function(sc){
+    var st=lvlState(sc.id);
+    return '<tr><td>REEL '+sc.num+' · '+esc(sc.title)+'</td><td>'+sc.charIcon+' '+esc(sc.char)+'</td><td>'+pad6(st.best)+'</td><td>'+'★'.repeat(st.stars)+'</td></tr>';
+  }).join('');
+  $('#fin-rank').innerHTML='<span class="rank-badge"><span class="em">'+rank[1]+'</span><span>'+esc(rank[2]).toUpperCase()+'<small>'+esc(rank[3])+'</small></span></span>';
+  $('#fin-totals').innerHTML=
+    '<div class="fin-box"><div class="n">'+pad6(total)+'</div><div class="l">TOTAL SCORE</div></div>'+
+    '<div class="fin-box"><div class="n">'+stars+' / 15</div><div class="l">TOTAL STARS</div></div>'+
+    '<div class="fin-box"><div class="n">5 / 5</div><div class="l">REELS CLEARED</div></div>';
+  $('#fin-table').innerHTML='<thead><tr><th>REEL</th><th>CHARACTER</th><th>BEST</th><th>STARS</th></tr></thead><tbody>'+rows+'</tbody>';
+  glitchSwap(function(){ show('screen-finale'); });
+  setTimeout(function(){ S.cheer(); spawnConfetti(160); },250);
+}
+var rewindArmed=false, rewindTimer=null;
+function handleRewind(){
+  var b=$('#btn-rewind');
+  if(!rewindArmed){
+    rewindArmed=true;
+    b.textContent='⚠ SURE? CLICK AGAIN';
+    b.classList.add('danger');
+    clearTimeout(rewindTimer);
+    rewindTimer=setTimeout(function(){
+      rewindArmed=false;
+      b.textContent='⏮ REWIND THE TAPE';
+      b.classList.remove('danger');
+    },3000);
+    S.wrong();
+    return;
+  }
+  clearTimeout(rewindTimer);
+  rewindArmed=false;
+  b.textContent='⏮ REWIND THE TAPE';
+  b.classList.remove('danger');
+  store=blankStore();
+  saveStore();
+  updateHUD();
+  renderMap();
+  noiseBurst(0.5,0.25);
+  glitchSwap(function(){ show('screen-intro'); });
+  toast('⏪ TAPE REWOUND — FRESH START');
+}
+/* ===== engine 1: fill in the blanks ===== */
+function runFill(stage,sc){
+  var items=FILL_DATA.items, bank=shuffle(FILL_DATA.bank);
+  var sel=null, filled=0, score=0, mistakes=0, done=false, finishT=null;
+  var html=items.map(function(it,i){
+    return '<p class="fb-sent">'+it.html.replace('___','<button class="fb-blank" data-i="'+i+'" aria-label="blank '+(i+1)+'">______</button>')+'</p>';
+  }).join('');
+  html+='<div class="fb-bank" aria-label="Word bank">'+bank.map(function(w){
+    return '<button class="fb-word" data-w="'+esc(w)+'">'+esc(w)+'</button>';
+  }).join('')+'</div>';
+  html+='<p class="kbd-hint">TAP A BLANK FIRST, THEN TAP A WORD FROM THE BANK. WRONG WORDS BOUNCE BACK (−20).</p>';
+  stage.innerHTML=html;
+  setLevelScore(0);
+
+  function onClick(e){
+    var t=e.target;
+    if(t.classList.contains('fb-blank') && !t.classList.contains('filled')){
+      $$('.fb-blank',stage).forEach(function(b){ b.classList.remove('selected'); });
+      t.classList.add('selected');
+      sel=parseInt(t.getAttribute('data-i'),10);
+      S.flip();
+      return;
+    }
+    if(t.classList.contains('fb-word') && !t.classList.contains('used') && !done){
+      var w=t.getAttribute('data-w');
+      if(sel===null){ toast('TAP A BLANK FIRST, THEN PICK A WORD'); S.click(); return; }
+      if(w===items[sel].answer){
+        var blank=$('.fb-blank[data-i="'+sel+'"]',stage);
+        blank.textContent=w;
+        blank.classList.remove('selected');
+        blank.classList.add('filled');
+        blank.disabled=true;
+        t.classList.add('used');
+        t.disabled=true;
+        sel=null; filled++; score+=100;
+        S.correct(); floatAt(blank,'+100'); setLevelScore(score);
+        if(filled===items.length){
+          done=true;
+          finishT=setTimeout(function(){ finishLevel('r1',score,mistakes); },750);
+        }
+      }else{
+        mistakes++;
+        score=Math.max(0,score-20);
+        S.wrong(); floatAt(t,'−20','var(--red)'); setLevelScore(score);
+        t.classList.remove('shake');
+        void t.offsetWidth; /* restart the animation */
+        t.classList.add('shake');
+      }
+    }
+  }
+  function onAnim(e){ if(e.target.classList && e.target.classList.contains('fb-word')){ e.target.classList.remove('shake'); } }
+  stage.addEventListener('click',onClick);
+  stage.addEventListener('animationend',onAnim);
+  setCleanup(function(){
+    stage.removeEventListener('click',onClick);
+    stage.removeEventListener('animationend',onAnim);
+    clearTimeout(finishT);
+  });
+}
+
+/* ===== engine 2: real or delusion (no auto-advance — NEXT only) ===== */
+function runRealDelusion(stage,sc){
+  var data=RD_DATA, idx=0, streak=0, score=0, mistakes=0;
+  var revealed=false, picked=null, timeLeft=600, timer=null;
+
+  stage.innerHTML=
+    '<div class="rd-hud"><span class="rd-idx" id="rd-idx"></span>'+
+    '<span class="mult" id="rd-mult">STREAK ×1</span>'+
+    '<span class="timer-track" aria-hidden="true"><span class="timer-fill" id="rd-fill"></span></span>'+
+    '<span class="rd-clock" id="rd-clock">10:00</span></div>'+
+    '<div class="rd-card"><div class="rd-tagline">STATEMENT <span id="rd-n"></span> OF '+data.length+' — CALL IT</div>'+
+    '<p id="rd-text"></p>'+
+    '<div class="rd-btns">'+
+      '<button class="rd-btn real" id="rd-real" aria-pressed="false">✓ REAL <span class="mono">←</span></button>'+
+      '<button class="rd-btn delu" id="rd-delu" aria-pressed="false">✗ DELUSION <span class="mono">→</span></button>'+
+    '</div>'+
+    '<div id="rd-whybox"></div><div class="m-btns" id="rd-nextrow"></div></div>';
+
+  function fmt(t){
+    var m=Math.floor(t/60), s=t%60;
+    return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+  function stopTimer(){ if(timer){ clearInterval(timer); timer=null; } }
+  function startTimer(){
+    stopTimer();
+    timeLeft=600;
+    paintTimer();
+    timer=setInterval(function(){
+      timeLeft--;
+      paintTimer();
+      if(timeLeft<=0){ onTimeout(); }
+    },1000);
+  }
+  function paintTimer(){
+    $('#rd-fill').style.width=(timeLeft/600*100)+'%';
+    $('#rd-fill').classList.toggle('low',timeLeft<=60);
+    var c=$('#rd-clock');
+    c.textContent=fmt(timeLeft);
+    c.classList.toggle('danger',timeLeft<=60);
+  }
+  function paintMult(){
+    var m=Math.max(1,Math.min(streak,3));
+    var el=$('#rd-mult');
+    el.textContent='STREAK ×'+m;
+    el.classList.toggle('hot',m>=2);
+  }
+  function renderCard(){
+    var card=data[idx];
+    revealed=false; picked=null;
+    $('#rd-idx').textContent='CARD '+(idx+1)+'/'+data.length;
+    $('#rd-n').textContent=(idx+1);
+    $('#rd-text').textContent='“'+card.text+'”';
+    var r=$('#rd-real'), d=$('#rd-delu');
+    r.classList.remove('sel','win','lose'); d.classList.remove('sel','win','lose');
+    r.setAttribute('aria-pressed','false'); d.setAttribute('aria-pressed','false');
+    r.disabled=false; d.disabled=false;
+    $('#rd-whybox').innerHTML='';
+    $('#rd-nextrow').innerHTML='';
+    paintMult();
+    startTimer();
+  }
+  function pick(side){
+    if(revealed) return;
+    picked=side;
+    var r=$('#rd-real'), d=$('#rd-delu');
+    r.classList.toggle('sel',side==='REAL');
+    d.classList.toggle('sel',side==='DELUSION');
+    r.setAttribute('aria-pressed',side==='REAL'?'true':'false');
+    d.setAttribute('aria-pressed',side==='DELUSION'?'true':'false');
+    S.flip();
+  }
+  function submit(){
+    if(revealed) return;
+    if(!picked){ toast('PICK A SIDE FIRST — ARROWS OR BUTTONS'); return; }
+    revealed=true;
+    stopTimer();
+    var card=data[idx];
+    var elapsed=600-timeLeft;
+    var speedBonus=elapsed<=15?50:0;
+    var ok=(picked===card.answer);
+    var real=$('#rd-real'), delu=$('#rd-delu');
+    real.disabled=true; delu.disabled=true;
+    real.classList.add(card.answer==='REAL'?'win':'lose');
+    delu.classList.add(card.answer==='DELUSION'?'win':'lose');
+    var box=$('#rd-whybox'), label, whyClass;
+    if(ok){
+      streak++;
+      var mult=Math.min(streak,3);
+      var pts=150*mult+speedBonus;
+      score+=pts;
+      S.correct();
+      floatAt(picked==='REAL'?real:delu,'+'+pts);
+      setLevelScore(score);
+      label=picked+' ✓ — +'+pts+(speedBonus?(' (SPEED +'+speedBonus+')'):'')+' · STREAK ×'+mult;
+      whyClass='good';
+    }else{
+      mistakes++;
+      streak=0;
+      score=Math.max(0,score-50);
+      S.wrong();
+      floatAt(picked==='REAL'?real:delu,'−50','var(--red)');
+      setLevelScore(score);
+      label='DELUSION ✗ — IT WAS '+card.answer+' · −50';
+      whyClass='bad';
+    }
+    paintMult();
+    box.innerHTML='<div class="rd-why '+whyClass+'"><b>'+esc(label)+'</b><br>'+esc(card.why)+'</div>';
+    var last=(idx===data.length-1);
+    $('#rd-nextrow').innerHTML='<button class="btn big next-btn" id="rd-next">'+(last?'SEE RESULTS ▶':'NEXT ▶')+'</button>';
+    var nb=$('#rd-next');
+    if(nb){ nb.focus(); }
+  }
+  function onTimeout(){
+    if(revealed) return;
+    revealed=true;
+    stopTimer();
+    var card=data[idx];
+    mistakes++;
+    streak=0;
+    $('#rd-real').disabled=true; $('#rd-delu').disabled=true;
+    $('#rd-real').classList.add(card.answer==='REAL'?'win':'lose');
+    $('#rd-delu').classList.add(card.answer==='DELUSION'?'win':'lose');
+    $('#rd-whybox').innerHTML='<div class="rd-why bad"><b>⏰ TIME — THE STATEMENT SURVIVED · IT WAS '+card.answer+'</b><br>'+esc(card.why)+'</div>';
+    paintMult();
+    var last=(idx===data.length-1);
+    $('#rd-nextrow').innerHTML='<button class="btn big next-btn" id="rd-next">'+(last?'SEE RESULTS ▶':'NEXT ▶')+'</button>';
+    var nb=$('#rd-next');
+    if(nb){ nb.focus(); }
+  }
+  function next(){
+    if(!revealed) return;
+    idx++;
+    if(idx<data.length){ renderCard(); }
+    else{ finishLevel('r2',score,mistakes); }
+  }
+  function onClick(e){
+    var t=e.target;
+    if(t.id==='rd-real'){ pick('REAL'); }
+    else if(t.id==='rd-delu'){ pick('DELUSION'); }
+    else if(t.id==='rd-next'){ next(); }
+  }
+  function onKey(e){
+    if(!revealed){
+      if(e.key==='ArrowLeft'){ e.preventDefault(); pick('REAL'); }
+      else if(e.key==='ArrowRight'){ e.preventDefault(); pick('DELUSION'); }
+      else if(e.key==='Enter'){ e.preventDefault(); submit(); }
+    }else if(e.key==='Enter'){
+      e.preventDefault();
+      next();
+    }
+  }
+  stage.addEventListener('click',onClick);
+  document.addEventListener('keydown',onKey);
+  setCleanup(function(){
+    stage.removeEventListener('click',onClick);
+    document.removeEventListener('keydown',onKey);
+    stopTimer();
+  });
+  renderCard();
+}
+
+/* ===== engine 3: multiple choice (one attempt, Rachel reacts) ===== */
+function runChoice(stage,sc){
+  var data=CHOICE_DATA, idx=0, score=0, mistakes=0, locked=false;
+  stage.innerHTML=
+    '<div class="ch-q"><div class="ch-idx" id="ch-idx"></div><p id="ch-qtext"></p>'+
+    '<div class="ch-opts" id="ch-opts"></div>'+
+    '<div id="ch-react"></div><div class="m-btns" id="ch-nextrow"></div></div>';
+  function renderQ(){
+    locked=false;
+    var card=data[idx];
+    $('#ch-idx').textContent='QUESTION '+(idx+1)+'/'+data.length+' · ONE ATTEMPT';
+    $('#ch-qtext').textContent=card.q;
+    $('#ch-opts').innerHTML=card.opts.map(function(o,i){
+      return '<button class="ch-opt" data-i="'+i+'"><span class="key">'+(i+1)+'</span>'+esc(o)+'</button>';
+    }).join('');
+    $('#ch-react').innerHTML='';
+    $('#ch-nextrow').innerHTML='';
+  }
+  function answer(i){
+    if(locked) return;
+    locked=true;
+    var card=data[idx], ok=(i===card.correct);
+    $$('.ch-opt',stage).forEach(function(b,j){
+      b.disabled=true;
+      if(j===card.correct){ b.classList.add('correct'); }
+      else if(j===i && !ok){ b.classList.add('wrong'); }
+    });
+    var face=ok?'💼':'😳';
+    $('#ch-react').innerHTML='<div class="react"><span class="face">'+face+'</span><span>'+esc(ok?card.win:card.lose)+'</span></div>';
+    if(ok){
+      score+=100;
+      S.correct();
+      var ob=$('.ch-opt[data-i="'+i+'"]',stage);
+      if(ob) floatAt(ob,'+100');
+      setLevelScore(score);
+    }else{
+      mistakes++;
+      S.wrong();
+    }
+    var last=(idx===data.length-1);
+    $('#ch-nextrow').innerHTML='<button class="btn big" id="ch-next">'+(last?'SEE RESULTS ▶':'NEXT ▶')+'</button>';
+    var nb=$('#ch-next');
+    if(nb){ nb.focus(); }
+  }
+  function next(){
+    idx++;
+    if(idx<data.length){ renderQ(); }
+    else{ finishLevel('r3',score,mistakes); }
+  }
+  function onClick(e){
+    var t=e.target;
+    var opt=t.closest?t.closest('.ch-opt'):null;
+    if(opt){ answer(parseInt(opt.getAttribute('data-i'),10)); }
+    else if(t.id==='ch-next'){ next(); }
+  }
+  function onKey(e){
+    if(e.key>='1'&&e.key<='3'&&!locked){ answer(parseInt(e.key,10)-1); }
+    else if(e.key==='Enter'&&locked){ e.preventDefault(); next(); }
+  }
+  stage.addEventListener('click',onClick);
+  document.addEventListener('keydown',onKey);
+  setCleanup(function(){
+    stage.removeEventListener('click',onClick);
+    document.removeEventListener('keydown',onKey);
+  });
+  renderQ();
+}
+
+/* ===== engine 4: match the meaning (no memory flips — direct pairing) ===== */
+function runMatch(stage,sc){
+  var pairs=MATCH_DATA.pairs;
+  var words=shuffle(pairs), meanings=shuffle(pairs);
+  var selW=null, found=0, attempts=0, score=0, mistakes=0, done=false, finishT=null;
+  function itemHtml(p,side,i){
+    return '<button class="mt-item" data-side="'+side+'" data-pair="'+esc(p.word)+'">'+esc(side==='w'?p.word:p.meaning)+'</button>';
+  }
+  stage.innerHTML=
+    '<span class="mt-example">EXAMPLE · WORD '+esc(MATCH_DATA.example.word.toUpperCase())+' → MEANING '+esc(MATCH_DATA.example.meaning.toUpperCase())+'</span>'+
+    '<div class="mt-hud" id="mt-hud">FOUND 0/6 · ATTEMPTS 0</div>'+
+    '<div class="mt-cols"><div class="mt-col"><h3>WORD</h3>'+words.map(function(p,i){return itemHtml(p,'w',i);}).join('')+'</div>'+
+    '<div class="mt-col"><h3>MEANING</h3>'+meanings.map(function(p,i){return itemHtml(p,'m',i);}).join('')+'</div></div>';
+  setLevelScore(0);
+  function paintHud(){ $('#mt-hud').textContent='FOUND '+found+'/6 · ATTEMPTS '+attempts; }
+  function onClick(e){
+    if(done) return;
+    var t=e.target;
+    if(!t.classList || !t.classList.contains('mt-item')) return;
+    if(t.classList.contains('lock')) return;
+    if(t.getAttribute('data-side')==='w'){
+      $$('.mt-item',stage).forEach(function(b){ b.classList.remove('sel'); });
+      t.classList.add('sel');
+      selW=t;
+      S.flip();
+      return;
+    }
+    /* a meaning was clicked */
+    if(!selW){ toast('TAP A WORD ON THE LEFT FIRST'); S.click(); return; }
+    attempts++;
+    if(selW.getAttribute('data-pair')===t.getAttribute('data-pair')){
+      selW.classList.remove('sel');
+      selW.classList.add('lock'); selW.disabled=true;
+      t.classList.add('lock'); t.disabled=true;
+      selW=null; found++; score+=75;
+      S.match(); floatAt(t,'+75'); setLevelScore(score);
+      paintHud();
+      if(found===pairs.length){
+        done=true;
+        finishT=setTimeout(function(){ finishLevel('r4',score,mistakes); },750);
+      }
+    }else{
+      mistakes++;
+      score=Math.max(0,score-15);
+      S.wrong(); floatAt(t,'−15','var(--red)'); setLevelScore(score);
+      t.classList.remove('shake');
+      void t.offsetWidth;
+      t.classList.add('shake');
+      selW.classList.remove('sel');
+      selW=null;
+      paintHud();
+    }
+  }
+  function onAnim(e){ if(e.target.classList && e.target.classList.contains('mt-item')){ e.target.classList.remove('shake'); } }
+  stage.addEventListener('click',onClick);
+  stage.addEventListener('animationend',onAnim);
+  setCleanup(function(){
+    stage.removeEventListener('click',onClick);
+    stage.removeEventListener('animationend',onAnim);
+    clearTimeout(finishT);
+  });
+}
+
+/* ===== engine 5: bonus round (750 s, streak multiplier, red flashing clock) ===== */
+function runBonus(stage,sc){
+  var data=BONUS_DATA, idx=0, streak=0, score=0, mistakes=0, locked=false, timeLeft=750, timer=null, nextT=null;
+  stage.innerHTML=
+    '<div class="bn-hud"><span class="rd-idx" id="bn-idx"></span>'+
+    '<span class="mult" id="bn-mult">STREAK ×1</span>'+
+    '<span class="timer-track" aria-hidden="true"><span class="timer-fill" id="bn-fill"></span></span>'+
+    '<span class="rd-clock" id="bn-clock">12:30</span></div>'+
+    '<div class="ch-q"><div class="ch-idx" id="bn-qtag"></div><p id="bn-qtext"></p>'+
+    '<div class="ch-opts" id="bn-opts"></div><div class="bn-note" id="bn-note"></div></div>'+
+    '<p class="kbd-hint">KEYS 1 · 2 · 3 WORK TOO. ONE MISS RESETS THE MULTIPLIER (−25).</p>';
+  setLevelScore(0);
+  function fmt(t){
+    var m=Math.floor(t/60), s=t%60;
+    return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+  function stopTimer(){ if(timer){ clearInterval(timer); timer=null; } }
+  function startTimer(){
+    stopTimer();
+    timer=setInterval(function(){
+      timeLeft--;
+      paintTimer();
+      if(timeLeft<=10&&timeLeft>0){ S.tick(); }
+      if(timeLeft<=0){ endByTime(); }
+    },1000);
+  }
+  function paintTimer(){
+    $('#bn-fill').style.width=(timeLeft/750*100)+'%';
+    $('#bn-fill').classList.toggle('low',timeLeft<=60);
+    var c=$('#bn-clock');
+    c.textContent=fmt(Math.max(0,timeLeft));
+    c.classList.toggle('danger',timeLeft<=60);
+  }
+  function paintMult(){
+    var m=Math.max(1,Math.min(streak,5));
+    var el=$('#bn-mult');
+    el.textContent='STREAK ×'+m;
+    el.classList.toggle('hot',m>=3);
+  }
+  function renderQ(){
+    locked=false;
+    var card=data[idx];
+    $('#bn-idx').textContent='QUESTION '+(idx+1)+'/'+data.length;
+    $('#bn-qtag').textContent='BONUS REEL · ALL TOPICS MIXED';
+    $('#bn-qtext').textContent=card.q;
+    $('#bn-opts').innerHTML=card.opts.map(function(o,i){
+      return '<button class="ch-opt" data-i="'+i+'"><span class="key">'+(i+1)+'</span>'+esc(o)+'</button>';
+    }).join('');
+    $('#bn-note').textContent='';
+    paintMult();
+  }
+  function answer(i){
+    if(locked) return;
+    locked=true;
+    var card=data[idx], ok=(i===card.correct);
+    $$('.ch-opt',stage).forEach(function(b,j){
+      b.disabled=true;
+      if(j===card.correct){ b.classList.add('correct'); }
+      else if(j===i&&!ok){ b.classList.add('wrong'); }
+    });
+    if(ok){
+      streak++;
+      var mult=Math.min(streak,5);
+      var pts=120+30*(mult-1);
+      score+=pts;
+      S.correct();
+      var ob=$('.ch-opt[data-i="'+i+'"]',stage);
+      if(ob) floatAt(ob,'+'+pts);
+      setLevelScore(score);
+      $('#bn-note').textContent='✔ '+card.note;
+    }else{
+      mistakes++;
+      streak=0;
+      score=Math.max(0,score-25);
+      S.wrong();
+      floatAt($('#bn-opts'),'−25','var(--red)');
+      setLevelScore(score);
+      $('#bn-note').textContent='✘ '+card.note;
+    }
+    paintMult();
+    nextT=setTimeout(next,950);
+  }
+  function next(){
+    idx++;
+    if(idx<data.length){ renderQ(); }
+    else{ stopTimer(); finishLevel('r5',score,mistakes); }
+  }
+  function endByTime(){
+    if(timeLeft>0) return;
+    stopTimer();
+    finishLevel('r5',score,mistakes);
+  }
+  function onClick(e){
+    var t=e.target;
+    var opt=t.closest?t.closest('.ch-opt'):null;
+    if(opt&&!locked){ answer(parseInt(opt.getAttribute('data-i'),10)); }
+  }
+  function onKey(e){
+    if(e.key>='1'&&e.key<='3'&&!locked){ answer(parseInt(e.key,10)-1); }
+  }
+  stage.addEventListener('click',onClick);
+  document.addEventListener('keydown',onKey);
+  setCleanup(function(){
+    stage.removeEventListener('click',onClick);
+    document.removeEventListener('keydown',onKey);
+    stopTimer();
+    clearTimeout(nextT);
+  });
+  paintTimer();
+  startTimer();
+  renderQ();
+}
+
+/* ===== global keys (Escape) ===== */
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape') return;
+  if(modalOpen()){
+    closeModal();
+    if(currentScreen()==='screen-level'){ glitchSwap(function(){ show('screen-map'); }); }
+    return;
+  }
+  if(currentScreen()==='screen-level'){ leaveLevel(); }
+});
+
+/* ===== header / static bindings ===== */
+$('#btn-sound').addEventListener('click',function(){
+  store.muted=!store.muted;
+  saveStore();
+  renderSound();
+  if(!store.muted) S.click();
+});
+$('#btn-map').addEventListener('click',function(){
+  S.click();
+  closeModal();
+  runCleanup();
+  if(currentScreen()!=='screen-map'){
+    glitchSwap(function(){ show('screen-map'); });
+  }
+});
+$('#btn-back-map').addEventListener('click',function(){ S.click(); leaveLevel(); });
+$('#btn-back-map2').addEventListener('click',function(){ S.click(); glitchSwap(function(){ show('screen-map'); }); });
+$('#btn-start-tape').addEventListener('click',function(){ S.click(); glitchSwap(function(){ show('screen-map'); }); });
+$('#btn-rewind').addEventListener('click',handleRewind);
+
+/* map delegation */
+$('#reels').addEventListener('click',function(e){
+  var card=e.target.closest?e.target.closest('.reel'):null;
+  if(!card) return;
+  var id=card.getAttribute('data-level');
+  if(id==='finale'){ S.click(); showFinale(); }
+  else if(id){ enterLevel(id); }
+});
+
+/* modal delegation */
+$('#modal-root').addEventListener('click',function(e){
+  if(e.target===this){
+    closeModal();
+    if(currentScreen()==='screen-level'){ glitchSwap(function(){ show('screen-map'); }); }
+    return;
+  }
+  var b=e.target.closest?e.target.closest('[data-act]'):null;
+  if(!b) return;
+  var act=b.getAttribute('data-act');
+  if(act==='start'){ S.click(); closeModal(); startEngine(pendingLevel); }
+  else if(act==='cancel'){ S.click(); closeModal(); glitchSwap(function(){ show('screen-map'); }); }
+  else if(act==='replay'){ S.click(); closeModal(); startEngine(pendingLevel); }
+  else if(act==='map'){ S.click(); closeModal(); glitchSwap(function(){ show('screen-map'); }); }
+});
+
+/* ===== preloader ===== */
+var plLoaded=0, plReady=false;
+function plPaint(){
+  var pct=Math.round(plLoaded/PRELOAD.length*100);
+  $('#pl-fill').style.width=pct+'%';
+  $('#pl-pct').textContent='LOADING '+pct+'%';
+}
+function plReadyNow(){
+  if(plReady) return;
+  plReady=true;
+  plPaint();
+  $('#pl-pct').textContent='LOADED 100%';
+  $('#pl-note').textContent='TAPE READY — PRESS PLAY';
+  $('#pl-play').hidden=false;
+}
+PRELOAD.forEach(function(src){
+  var im=new Image();
+  im.onload=im.onerror=function(){
+    plLoaded++;
+    plPaint();
+    if(plLoaded>=PRELOAD.length) plReadyNow();
+  };
+  im.src=src;
+});
+setTimeout(plReadyNow,4000);
+$('#pl-play').addEventListener('click',function(){
+  ac();
+  noiseBurst(0.22,0.2);
+  var pl=$('#preloader');
+  pl.classList.add('exit');
+  setTimeout(function(){ pl.classList.add('gone'); },700);
+});
+
+/* ===== init ===== */
+buildCells();
+renderMap();
+renderSound();
+updateHUD();
+startClock();
+refreshIcons();
+
+})();
+</script>
+</body>
+</html>
