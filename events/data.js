@@ -52,7 +52,7 @@ const LESSONS = [
   { date: '2026-08-09', host: 'Shi', title: 'News in Focus · Global Headlines & Language Workshop', url: './20260809/index.html' },
   { date: '2026-08-15', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20260815-len-debates/index.html' },
   { date: '2026-08-15', host: 'Peter', title: 'In UK II', url: './20260815-peter-in-uk/index.html' },
-  { date: '2026-08-16', host: 'Shi', title: 'News in Focus · Weekly Review & Language Workshop', url: './20260816/index.html' },
+  { date: '2026-08-16', host: 'Shi', title: 'News Clips · USS Abraham Lincoln: overboard attempts & crisis', url: './20260816/index.html' },
   { date: '2026-08-16', host: 'Anatoly', title: 'Moscow: Sunday Route Through Neskuchny Garden', url: './20260816-moscow/index.html' },
   { date: '2026-08-18', host: 'Anatoly', title: 'Korean Embroidery', url: './20260818-korean-embroidery/index.html' },
   { date: '2026-08-21', host: 'Hernan', title: 'LEN Debates · The Gravity of Pride: Hubris, Nemesis', url: './20260821-len-debates/index.html' },
