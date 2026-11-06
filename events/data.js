@@ -50,7 +50,7 @@ const LESSONS = [
   { date: '2026-08-07', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20260807-len-debates/index.html' },
   { date: '2026-08-08', host: 'Peter', title: 'In UK', url: './20260808-peter-in-uk/index.html' },
   { date: '2026-08-09', host: 'Shi', title: 'News in Focus · Global Headlines & Language Workshop', url: './20260809/index.html' },
-  { date: '2026-08-15', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20260815-len-debates/index.html' },
+  { date: '2026-08-15', host: 'Hernan', title: 'LEN Debates · Introduction to hubris and nemesis', url: './20260815-len-debates/index.html' },
   { date: '2026-08-15', host: 'Peter', title: 'In UK II', url: './20260815-peter-in-uk/index.html' },
   { date: '2026-08-16', host: 'Shi', title: 'News Clips · USS Abraham Lincoln: overboard attempts & crisis', url: './20260816/index.html' },
   { date: '2026-08-16', host: 'Anatoly', title: 'Moscow: Sunday Route Through Neskuchny Garden', url: './20260816-moscow/index.html' },
