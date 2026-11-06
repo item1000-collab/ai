@@ -69,5 +69,5 @@ const LESSONS = [
   { date: '2026-09-27', host: 'Peter', title: 'AI Cult', url: './20260927-ai-cult/index.html' },
   { date: '2026-10-07', host: 'AI', title: 'AI & Language · AR1 · Interactive Session', url: './20261007-ar1/index.html' },
   { date: '2026-10-16', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20261016-len-debates/index.html' },
-  { date: '2026-10-23', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20261023-len-debates/index.html' }
+  { date: '2026-10-23', host: 'Hernan', title: 'LEN Debates · The Blood of Troy', url: './20261023-len-debates/index.html' }
 ];
