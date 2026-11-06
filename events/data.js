@@ -62,12 +62,12 @@ const LESSONS = [
   { date: '2026-09-04', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20260904-len-debates/index.html' },
   { date: '2026-09-06', host: 'Shi', title: 'Redrawing the World: Mercator Projection', url: './20260906/index.html' },
   { date: '2026-09-06', host: 'Peter', title: 'Miles · Pizza', url: './20260906-peter-miles-pizza/index.html' },
-  { date: '2026-09-11', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20260911-len-debates/index.html' },
-  { date: '2026-09-18', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20260918-len-debates/index.html' },
+  { date: '2026-09-11', host: 'Hernan', title: 'LEN Debates · Queen Cassiopeia Punished Upside Down in the Sky', url: './20260911-len-debates/index.html' },
+  { date: '2026-09-18', host: 'Hernan', title: 'LEN Debates · Origins of the Amazons', url: './20260918-len-debates/index.html' },
   { date: '2026-09-20', host: 'Peter', title: 'SL Train', url: './20260920-sl-train/index.html' },
-  { date: '2026-09-25', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20260925-len-debates/index.html' },
-  { date: '2026-09-27', host: 'Peter', title: 'AI Cult', url: './20260927-ai-cult/index.html' },
-  { date: '2026-10-07', host: 'AI', title: 'AI & Language · AR1 · Interactive Session', url: './20261007-ar1/index.html' },
-  { date: '2026-10-16', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20261016-len-debates/index.html' },
+  { date: '2026-09-25', host: 'Hernan', title: 'LEN Debates · Penthesilea: The Blood and the Hounds', url: './20260925-len-debates/index.html' },
+  { date: '2026-09-27', host: 'Peter', title: 'AI Cult - Article $ Radio & Audio', url: './20260927-ai-cult/index.html' },
+  { date: '2026-10-07', host: 'AI', title: 'AI & Arabok', url: './20261007-ar1/index.html' },
+  { date: '2026-10-16', host: 'Hernan', title: 'LEN Debates · Penthesilea: When the Cure Becomes the Curse', url: './20261016-len-debates/index.html' },
   { date: '2026-10-23', host: 'Hernan', title: 'LEN Debates · The Blood of Troy', url: './20261023-len-debates/index.html' }
 ];
