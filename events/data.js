@@ -14,7 +14,7 @@ const LESSONS = [
   { date: '2026-05-24', host: 'Shi', title: 'World View · Today\'s Headlines · Global Perspectives', url: './20260524/index.html' },
   { date: '2026-05-25', host: 'Peter', title: 'Elvis Edition', url: './20260525-elvis/index.html' },
   { date: '2026-05-31', host: 'Shi', title: 'Inside the Ebola Epicenter · Crisis & Vocabulary', url: './20260531/index.html' },
-  { date: '2026-06-05', host: 'Hernan', title: 'LEN · Aristotle\'s Golden Mean: Truthfulness in Love', url: './20260605/index.html' },
+  { date: '2026-06-05', host: 'Hernan', title: 'LEN · Aristotls Golden Mean: Truthfulness in Love', url: './20260605/index.html' },
   { date: '2026-06-06', host: 'AI', title: 'Discussion with AI Friends S1E5', url: './20260606/index.html' },
   { date: '2026-06-06', host: 'Peter', title: 'Maya Sings', url: './20260606-maya-singing/index.html' },
   { date: '2026-06-07', host: 'Shi', title: 'News in Focus · Four headlines, one world', url: './20260607/index.html' },
