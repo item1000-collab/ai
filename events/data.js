@@ -40,7 +40,7 @@ const LESSONS = [
   { date: '2026-07-17', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20260717-len-debates/index.html' },
   { date: '2026-07-17', host: 'Anatoly', title: 'North Village', url: './20260717-n-vil/index.html' },
   { date: '2026-07-18', host: 'Peter', title: 'AI Singing Attempts', url: './20260718-AI-singing-attemps/index.html' },
-  { date: '2026-07-19', host: 'Shi', title: 'News in Focus · Weekly Review & Analysis', url: './20260719/index.html' },
+  { date: '2026-07-19', host: 'Shi', title: 'News in Focus · The Keepers Watch', url: './20260719/index.html' },
   { date: '2026-07-19', host: 'Peter', title: 'AI - Lumina', url: './20260719-ai/index.html' },
   { date: '2026-07-24', host: 'Hernan', title: 'LEN Debates · Compass Navigating the Golden Mean', url: './20260724-len-debates/index.html' },
   { date: '2026-07-26', host: 'Shi', title: 'News Roundup · US–Iran airstrikes · European wildfires ·Drunk tank', url: './20260726/index.html' },
