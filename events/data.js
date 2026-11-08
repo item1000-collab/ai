@@ -3,7 +3,7 @@ const LESSONS = [
   { date: '2021-01-08', host: 'Peter', title: 'GDC 30: Exloration Steampunk Region', url: './20210108-gdc-30/index.html' },
   { date: '2021-11-11', host: 'Peter', title: 'GDC SE2: irtual Brazil Journal', url: './20211111-gdc-ce2/index.html' },
   { date: '2024-02-28', host: 'Anatoly', title: 'Cuba', url: './20240228-cuba/index.html' },
-  { date: '2026-01-24', host: 'Peter', title: 'AI Moscow NY', url: './20260124-ai-moscow-n-york/index.html' },
+  { date: '2026-01-24', host: 'Peter', title: 'AI: Moscow To-Manhattan', url: './20260124-ai-moscow-n-york/index.html' },
   { date: '2026-02-15', host: 'Peter', title: 'Maya Coffee Talk', url: './20260215-ai-maya-coffee/index.html' },
   { date: '2026-02-16', host: 'Anatoly', title: 'Moscow', url: './20260216-moscow/index.html' },
   { date: '2026-04-24', host: 'Anatoly', title: 'Vietnam', url: './20260424-vietnam/index.html' },
