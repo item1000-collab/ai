@@ -1,5 +1,5 @@
 const LESSONS = [
-  { date: '2026-01-01', host: '', title: 'Mind Your Language', url: './20260101-mind-104/index.html' },
+  { date: '2026-01-01', host: '', title: 'Mind Your Language (104)', url: './20260101-mind-104/index.html' },
   { date: '2026-01-01', host: '', title: 'Roman Holiday', url: './20260101-roman-holiday/index.html' },
   { date: '2026-01-01', host: '', title: 'Priceless', url: './20260101-priceless/index.html' },
   { date: '2026-04-29', host: 'Nkhala', title: 'Lesotho', url: './20260429-lesotho/index.html' },
@@ -116,7 +116,7 @@ const LESSONS = [
   { date: '2026-10-17', host: 'Roana', title: 'It\'s a Wonderful Life · A Timeless Christmas Classic', url: './20261017-w-life/index.html' },
   { date: '2026-10-18', host: 'Renee', title: 'Friends (S2E24)', url: './20261018-friends-224/index.html' },
   { date: '2026-10-19', host: 'Ramisa', title: 'Friends (S3E1)', url: './20261019-friends-301/index.html' },
-  { date: '2026-10-20', host: 'Catherine', title: 'Mind Your Language', url: './20261020-mind-103/index.html' },
+  { date: '2026-10-20', host: 'Catherine', title: 'Mind Your Language (103)', url: './20261020-mind-103/index.html' },
   { date: '2026-10-21', host: 'Rosie', title: 'Friends (S3E2) · The One Where No One’s Ready', url: './20261021-friends-302/index.html' },
   { date: '2026-10-25', host: 'Renee', title: 'Friends (S3E3) · New Twists & Friendship Dynamics', url: './20261025-friends-303/index.html' },
   { date: '2026-10-26', host: 'Renee', title: 'Friends (S3E4)', url: './20261026-friends-304/index.html' },
