@@ -43,7 +43,7 @@ const LESSONS = [
   { date: '2026-07-19', host: 'Shi', title: 'News in Focus · Weekly Review & Analysis', url: './20260719/index.html' },
   { date: '2026-07-19', host: 'Peter', title: 'AI Jul 19', url: './20260719-ai/index.html' },
   { date: '2026-07-24', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20260724-len-debates/index.html' },
-  { date: '2026-07-26', host: 'Shi', title: 'News Roundup · Global Headlines & Language Practice', url: './20260726/index.html' },
+  { date: '2026-07-26', host: 'Shi', title: 'News Roundup · US–Iran airstrikes · European wildfires ·Drunk tank', url: './20260726/index.html' },
   { date: '2026-07-31', host: 'Hernan', title: 'LEN Debates · The Cosmic Garden · hubris & nemesis', url: './20260731-len-debates/index.html' },
   { date: '2026-08-01', host: 'Peter', title: 'Miles: You are Just a Set of Patterns', url: './20260801-peter-miles/index.html' },
   { date: '2026-08-02', host: 'Shi', title: 'News Roundup · Merzs secret plan etc', url: './20260802/index.html' },
