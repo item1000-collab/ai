@@ -1,6 +1,6 @@
 const LESSONS = [
   { date: '2013-06-15', host: 'Shi', title: 'Event Review · PRISM & Snowden · Virtlantis (Second Life)', url: './20130615/index.html' },
-  { date: '2021-01-08', host: 'Peter', title: 'GDC 30', url: './20210108-gdc-30/index.html' },
+  { date: '2021-01-08', host: 'Peter', title: 'GDC 30: Exloration Steampunk Region', url: './20210108-gdc-30/index.html' },
   { date: '2021-11-11', host: 'Peter', title: 'GDC SE2', url: './20211111-gdc-ce2/index.html' },
   { date: '2024-02-28', host: 'Anatoly', title: 'Cuba', url: './20240228-cuba/index.html' },
   { date: '2025-07-02', host: 'Anatoly', title: 'Green Park', url: './20250702-green-p/index.html' },
