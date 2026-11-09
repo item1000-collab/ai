@@ -33,7 +33,7 @@ const LESSONS = [
   { date: '2026-07-08', host: 'Anatoly', title: 'North Korean Posters', url: './20260708-posters/index.html' },
   { date: '2026-07-10', host: 'Hernan', title: 'LEN Debates · Civic dialogue · Ethics & argumentation', url: './20260710-len-debates/index.html' },
   { date: '2026-07-11', host: 'Anatoly', title: 'North Korean Buddhism & Juche', url: './20260711-buddhism-juche/index.html' },
-  { date: '2026-07-12', host: 'Shi', title: 'News in Context & Conversation', url: './20260712/index.html' },
+  { date: '2026-07-12', host: 'Shi', title: 'News Clips - Is broken Russia is bad for the world? · Andrey Melnichenko', url: './20260712/index.html' },
   { date: '2026-07-12', host: 'Anatoly', title: 'North Korean Metro Museum', url: './20260712-metro-museum/index.html' },
   { date: '2026-07-13', host: 'Anatoly', title: 'North Korean Gifts Museum', url: './20260713-gifts-museum/index.html' },
   { date: '2026-07-16', host: 'Anatoly', title: 'North Korean Students', url: './20260716-nk-students/index.html' },
