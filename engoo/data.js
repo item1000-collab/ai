@@ -129,6 +129,6 @@ const LESSONS = [
   { date: '2026-11-04', host: 'Renee', title: 'Friends (S3E11)', url: './20261104-friends-311/index.html' },
   { date: '2026-11-05', host: 'Katarina', title: 'Friends (S3E12)', url: './20261105-friends-312/index.html' },
   { date: '2026-11-08', host: 'Mara', title: 'Dead Poets Society', url: './20261108-dead-poets-society/index.html' },
-  { date: '2026-11-09', host: 'Ingrid', title: 'Friends (S3E13)', url: './20261109-friends-313/index.html' },
+  { date: '2026-11-09', host: 'Katarina', title: 'Friends (S3E13)', url: './20261109-friends-313/index.html' },
   { date: '2026-11-10', host: '', title: 'Friends (S3E14)', url: './20261110-friends-314/index.html' }
 ];
