@@ -18,7 +18,7 @@ const LESSONS = [
   { date: '2026-06-06', host: 'Peter', title: 'Maya Sings', url: './20260606-maya-singing/index.html' },
   { date: '2026-06-07', host: 'Shi', title: 'News in Focus · Four headlines, one world', url: './20260607/index.html' },
   { date: '2026-06-07', host: 'Peter', title: 'Miles Showmaster', url: './20260607-miles-showmaster/index.html' },
-  { date: '2026-06-14', host: 'Anatoly', title: 'Vladivostok', url: './20260614-vladivostok/index.html' },
+  { date: '2026-06-14', host: 'Anatoly', title: 'Vladivostok 2026', url: './20260614-vladivostok/index.html' },
   { date: '2026-06-24', host: 'Anatoly', title: 'North Korean General information about DPRK', url: './20260624-dprk/index.html' },
   { date: '2026-06-27', host: 'Anatoly', title: 'North Korean Behind Glass', url: './20260627-b-glass/index.html' },
   { date: '2026-06-30', host: 'Anatoly', title: 'North Korean Kimchi', url: './20260630-kimchi/index.html' },
