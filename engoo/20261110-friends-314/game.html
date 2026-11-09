@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Friends Vocab Arcade — a retro VHS-style mini-game collection for learning English with Friends S03E14, built on the lesson deck friends-314.pdf.">
+<title>Friends Vocab Arcade — The One With Phoebe's Ex-Partner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Courier+Prime:wght@400;700&family=Caveat:wght@600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ===== 1. Design tokens ===== */
+:root{
+  --paper:#f6eedd; --card:#fffbf0; --ink:#2e2118; --muted:#8a7663;
+  --orange:#e4703a; --plum:#7c5ca8; --gold:#f2b33d; --gold-d:#c98d12;
+  --green:#3e8e5a; --red:#c9432f; --night:#241a13; --cream:#f7ead2;
+  --line:#e5d5b8; --teal:#3e7c8e;
+  --disp:'Righteous','Courier New',cursive;
+  --mono:'Courier Prime','Courier New',monospace;
+  --hand:'Caveat',cursive;
+  --body:'Nunito Sans','Segoe UI',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:radial-gradient(1200px 700px at 50% -10%, #fdf6e4 0%, var(--paper) 55%, #ecdfc3 100%);
+  color:var(--ink); font-family:var(--body); font-size:16.5px; line-height:1.6;
+  min-height:100vh; overflow-x:hidden;
+}
+::selection{background:var(--gold);color:var(--ink)}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px;border-radius:6px}
+
+/* ===== 2. Film grain + scanlines overlays ===== */
+.grain{position:fixed;inset:-40px;pointer-events:none;z-index:64;opacity:.07;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+.scan{position:fixed;inset:0;pointer-events:none;z-index:65;opacity:.5;
+  background:repeating-linear-gradient(0deg,rgba(46,33,24,.035) 0 1px,transparent 1px 3px)}
+
+/* ===== 3. Header console ===== */
+.console{
+  position:fixed;top:0;left:0;right:0;z-index:70;height:60px;
+  display:flex;align-items:center;gap:12px;padding:0 14px;
+  background:linear-gradient(180deg,#33261c,var(--night) 70%);
+  border-bottom:3px solid #120c08; box-shadow:0 4px 0 rgba(18,12,8,.45);
+}
+.logo{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-size:1.02rem;
+  letter-spacing:.04em;color:var(--gold);text-shadow:0 2px 0 #120c08;white-space:nowrap}
+.logo .logo-tape{width:30px;height:20px;flex:none;color:var(--cream)}
+.logo small{font-family:var(--mono);font-size:.6rem;color:#b99b6d;letter-spacing:.14em;display:block;line-height:1}
+.rec{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:.68rem;font-weight:700;
+  color:#ff8d7a;letter-spacing:.12em}
+.rec i{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);
+  animation:blink 1.2s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+.console .spacer{flex:1}
+.cells{display:flex;gap:5px}
+.cell{width:26px;height:18px;border:2px solid #5a4632;border-radius:4px;background:#191009;
+  display:flex;align-items:center;justify-content:center;color:#4d3b28}
+.cell.done{background:var(--gold);border-color:var(--gold-d);color:#4d3305;box-shadow:0 0 9px rgba(242,179,61,.55)}
+.cell svg{width:11px;height:11px}
+.hud-score{font-family:var(--mono);font-weight:700;font-size:.98rem;color:var(--gold);
+  letter-spacing:.06em;background:#191009;border:2px solid #5a4632;border-radius:8px;padding:4px 10px;white-space:nowrap}
+.hbtn{width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;
+  background:#3a2b1e;color:var(--cream);border:2px solid #5a4632;border-radius:9px;cursor:pointer;
+  box-shadow:0 3px 0 #120c08;transition:transform .1s}
+.hbtn:hover{border-color:var(--gold);color:var(--gold)}
+.hbtn:active{transform:translateY(3px);box-shadow:none}
+.hbtn svg{width:20px;height:20px}
+
+/* ===== 4. Layout + screens ===== */
+main{max-width:1080px;margin:0 auto;padding:86px 16px 60px}
+.screen{display:none}
+.screen.active{display:block;animation:screenIn .5s cubic-bezier(.2,.85,.3,1)}
+@keyframes screenIn{
+  0%{opacity:0;transform:translateY(16px) skewX(1.4deg)}
+  45%{opacity:1;transform:translateY(-3px) skewX(-.7deg)}
+  100%{opacity:1;transform:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .screen.active{animation:screenIn .5s cubic-bezier(.2,.85,.3,1), glitch .5s steps(2)}
+}
+@keyframes glitch{0%{filter:contrast(1.6) saturate(1.6)}40%{filter:contrast(1) saturate(1)}}
+
+/* ===== 5. Shared components ===== */
+.card{background:var(--card);border:2px solid var(--ink);border-radius:16px;
+  box-shadow:6px 6px 0 rgba(46,33,24,.85)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-weight:700;
+  font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border-radius:999px;
+  border:2px solid var(--ink);background:#fff}
+.btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;
+  font-family:var(--disp);font-size:1rem;letter-spacing:.03em;color:var(--ink);
+  background:var(--gold);border:2px solid var(--ink);border-radius:12px;padding:.72rem 1.5rem;
+  cursor:pointer;box-shadow:0 5px 0 var(--ink);transition:transform .08s,box-shadow .08s;text-decoration:none}
+.btn:hover{filter:brightness(1.05)}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.btn-green{background:#7ec98f}
+.btn-red{background:#e88a75}
+.btn-ghost{background:var(--card)}
+.btn-big{font-size:1.25rem;padding:.95rem 2.4rem;border-radius:14px}
+.btn[disabled]{opacity:.45;cursor:default;pointer-events:none}
+.btn svg{width:18px;height:18px}
+.avatar{width:30px;height:30px;flex:none;border-radius:50%;display:inline-flex;align-items:center;
+  justify-content:center;font-family:var(--disp);font-size:.9rem;color:#fff;
+  border:2px solid var(--ink);box-shadow:2px 2px 0 rgba(46,33,24,.7)}
+.hand{font-family:var(--hand);font-size:1.28rem;color:#7a5a33;line-height:1.25}
+.mono{font-family:var(--mono)}
+.kicker{font-family:var(--mono);font-weight:700;font-size:.72rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted)}
+h2.scene-title{font-family:var(--disp);font-size:1.65rem;margin:.15rem 0 .2rem;letter-spacing:.02em}
+.hr-tape{border:none;height:4px;border-radius:2px;margin:1rem 0;
+  background:repeating-linear-gradient(90deg,var(--ink) 0 26px,var(--gold) 26px 34px,var(--plum) 34px 42px,var(--orange) 42px 50px);opacity:.75}
+
+/* ===== 6. Preloader ===== */
+.loader{position:fixed;inset:0;z-index:100;background:linear-gradient(180deg,#1c130c,var(--night) 60%,#150e08);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:20px}
+.loader.done{transform:translateY(-100%);transition:transform .75s cubic-bezier(.75,0,.25,1)}
+.loader.gone{display:none}
+.loader .tape-svg{width:120px;height:80px;color:var(--gold)}
+.loader .tape-svg .reel{transform-origin:center;animation:spin 2.4s linear infinite}
+.loader .tape-svg .reel2{animation-duration:3.1s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader .ld-title{font-family:var(--disp);font-size:2rem;color:var(--cream);letter-spacing:.03em;margin:0;
+  text-shadow:0 3px 0 #120c08}
+.loader .ld-status{font-family:var(--mono);font-size:.78rem;letter-spacing:.18em;color:#b99b6d;margin:0;min-height:1.2em}
+.loader .ld-bar{width:min(320px,72vw);height:14px;border:2px solid #5a4632;border-radius:8px;background:#191009;overflow:hidden}
+.loader .ld-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--orange));transition:width .18s}
+.loader .btn{display:none}
+.loader.ready .btn{display:inline-flex;animation:popIn .35s cubic-bezier(.2,1.4,.4,1) backwards}
+.loader .blink-text{font-family:var(--mono);color:#7e6845;font-size:.72rem;letter-spacing:.14em}
+@keyframes popIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+
+/* ===== 7. Intro screen ===== */
+.intro-wrap{max-width:760px;margin:0 auto;text-align:center;padding:10px 0 30px}
+.vhs-title{font-family:var(--disp);font-size:clamp(2.2rem,7vw,3.6rem);line-height:1.04;margin:.4rem 0 0;
+  color:var(--ink);text-shadow:3px 3px 0 var(--gold),6px 6px 0 rgba(46,33,24,.25)}
+.vhs-sub{font-family:var(--mono);font-size:.82rem;letter-spacing:.14em;color:var(--muted);
+  text-transform:uppercase;margin:.7rem 0 0}
+.intro-story{background:var(--card);border:2px solid var(--ink);border-radius:16px;
+  box-shadow:6px 6px 0 rgba(46,33,24,.85);padding:1.2rem 1.4rem;margin:1.5rem 0;text-align:left}
+.intro-story p{margin:.45rem 0}
+.cast-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:1.2rem 0}
+.cast-chip{display:flex;align-items:center;gap:8px;background:var(--card);border:2px solid var(--ink);
+  border-radius:999px;padding:5px 14px 5px 6px;box-shadow:3px 3px 0 rgba(46,33,24,.7);font-size:.9rem;font-weight:700}
+.intro-links{margin-top:1.1rem;font-size:.92rem}
+.intro-links a{color:#9a6a10;font-weight:700}
+
+/* ===== 8. Level map ===== */
+.map-head{text-align:center;margin:.2rem 0 1.3rem}
+.map-head h2{font-family:var(--disp);font-size:1.9rem;margin:.2rem 0;letter-spacing:.02em}
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:20px}
+.reel{position:relative;text-align:left;padding:0;cursor:pointer;background:var(--card);
+  border:2px solid var(--ink);border-radius:16px;overflow:hidden;box-shadow:6px 6px 0 rgba(46,33,24,.85);
+  transition:transform .15s,box-shadow .15s;font-family:var(--body)}
+.reel:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:9px 10px 0 rgba(46,33,24,.8)}
+.reel:active{transform:translateY(1px)}
+.reel-thumb{display:block;position:relative;height:132px;border-bottom:2px solid var(--ink);
+  background:linear-gradient(135deg,var(--c1,#e4703a),var(--c2,#7c5ca8))}
+.reel-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.94}
+.reel-initials{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--disp);font-size:2.6rem;color:rgba(255,255,255,.92);text-shadow:2px 2px 0 rgba(0,0,0,.4)}
+.reel-num{position:absolute;top:8px;left:8px;z-index:2;font-family:var(--mono);font-weight:700;
+  font-size:.78rem;background:var(--night);color:var(--gold);border:2px solid var(--gold);
+  border-radius:8px;padding:2px 8px;letter-spacing:.1em}
+.reel-mech{position:absolute;top:8px;right:8px;z-index:2;font-family:var(--mono);font-weight:700;
+  font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;background:rgba(255,251,240,.94);
+  border:2px solid var(--ink);border-radius:8px;padding:2px 7px}
+.reel-body{display:block;padding:12px 14px 14px}
+.reel-title{display:block;font-family:var(--disp);font-size:1.06rem;line-height:1.2;margin:0 0 .45rem}
+.reel-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.reel-char{display:flex;align-items:center;gap:7px;font-weight:800;font-size:.88rem}
+.reel-stats{display:block;text-align:right;font-family:var(--mono);font-size:.72rem;color:var(--muted);line-height:1.35}
+.reel-stats b{color:var(--ink);font-size:.82rem}
+.reel-stars{display:flex;gap:2px;margin-top:7px}
+.reel-stars svg{width:17px;height:17px}
+.reel-stars .on{color:var(--gold);fill:var(--gold)}
+.reel-stars .off{color:#cbb894;fill:#e9ddc2}
+.final-bar{margin-top:26px;text-align:center;padding:1.3rem;border:3px dashed var(--gold-d);
+  border-radius:18px;background:#fdf3d3}
+.final-bar[hidden]{display:none}
+.final-bar .kicker{color:#9a6a10}
+.final-bar h3{font-family:var(--disp);font-size:1.5rem;margin:.3rem 0 .9rem}
+
+/* ===== 9. Scene (in-level) ===== */
+.scene-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:1rem}
+.scene-score{margin-left:auto;font-family:var(--mono);font-weight:700;background:var(--night);
+  color:var(--gold);border-radius:10px;padding:6px 13px;border:2px solid #120c08;letter-spacing:.05em;white-space:nowrap}
+.scene-progress{font-family:var(--mono);font-weight:700;font-size:.8rem;letter-spacing:.1em;color:var(--muted)}
+.tbar{height:16px;border:2px solid var(--ink);border-radius:9px;background:#fff;overflow:hidden;
+  box-shadow:inset 0 2px 0 rgba(46,33,24,.12);margin:0 0 1rem}
+.tbar-fill{height:100%;width:100%;background:linear-gradient(90deg,#63b37c,var(--green));transition:width .25s linear}
+.tbar-fill.warn{background:linear-gradient(90deg,#f2c04a,var(--gold-d))}
+.tbar-fill.danger{background:linear-gradient(90deg,#e86a50,var(--red));animation:blink .5s steps(2) infinite}
+.tbar-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.72rem;
+  font-weight:700;letter-spacing:.1em;color:var(--muted);margin:-.6rem 0 .9rem}
+.game-card{background:var(--card);border:2px solid var(--ink);border-radius:18px;
+  box-shadow:7px 7px 0 rgba(46,33,24,.85);padding:1.35rem 1.5rem;margin-bottom:1rem}
+.q-text{font-size:1.22rem;font-weight:800;line-height:1.5;margin:.2rem 0 1rem}
+.q-tag{display:inline-block;font-family:var(--mono);font-weight:700;font-size:.66rem;letter-spacing:.14em;
+  text-transform:uppercase;background:#f3e6c3;border:2px solid var(--ink);border-radius:999px;
+  padding:2px 10px;margin-bottom:.6rem}
+.opts{display:grid;gap:.6rem}
+.opt{text-align:left;font-family:var(--body);font-weight:700;font-size:1rem;line-height:1.45;
+  padding:.7rem 1rem;border:2px solid var(--ink);border-radius:12px;background:#fff;cursor:pointer;
+  box-shadow:0 4px 0 rgba(46,33,24,.85);transition:transform .08s,box-shadow .08s,background .15s}
+.opt:hover:not(:disabled){background:#fdf3d3}
+.opt:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 rgba(46,33,24,.85)}
+.opt .key{font-family:var(--mono);font-weight:700;font-size:.72rem;color:var(--muted);
+  border:1.5px solid var(--line);border-radius:5px;padding:0 5px;margin-right:8px;background:#faf4e4}
+.opt.correct{background:#e2f3e6;border-color:var(--green);box-shadow:0 4px 0 var(--green)}
+.opt.wrong{background:#fbe6df;border-color:var(--red);box-shadow:0 4px 0 var(--red);animation:shake .45s}
+.opt[disabled]{cursor:default;opacity:.92}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+.expl{margin:1rem 0 0;padding:.85rem 1.05rem;background:#f8efdb;border-left:4px solid var(--gold);
+  border-radius:0 10px 10px 0;font-size:.96rem}
+.expl.good{border-left-color:var(--green);background:#ecf5ea}
+.expl.bad{border-left-color:var(--red);background:#f9ece6}
+.next-row{margin-top:1.1rem;display:flex;justify-content:flex-end}
+.char-bubble{display:flex;gap:11px;align-items:flex-start;margin:1rem 0 0;padding:.8rem 1rem;
+  background:#f3e8d2;border:2px solid var(--ink);border-radius:14px 14px 14px 4px}
+.char-bubble .say{font-family:var(--hand);font-size:1.3rem;line-height:1.2;color:#5c4022}
+.streak-flag{display:inline-block;font-family:var(--mono);font-weight:700;font-size:.74rem;
+  letter-spacing:.1em;background:var(--plum);color:#fff;border:2px solid var(--ink);
+  border-radius:8px;padding:2px 9px;margin-left:8px;vertical-align:middle}
+/* fill-in-the-blanks */
+.sentence{font-size:1.25rem;line-height:1.9;font-weight:700}
+.blank{display:inline-block;min-width:118px;text-align:center;font-family:var(--mono);font-weight:700;
+  font-size:1.05rem;padding:.1rem .6rem;border:2px dashed var(--orange);border-radius:9px;
+  background:#fff7ea;cursor:pointer;color:#b05c1e;vertical-align:baseline}
+.blank.armed{background:var(--gold);border-style:solid;color:var(--ink);box-shadow:0 3px 0 rgba(46,33,24,.8)}
+.blank.filled{border-style:solid;border-color:var(--green);background:#e2f3e6;color:#1e5c33;cursor:default;
+  box-shadow:2px 2px 0 rgba(46,33,24,.4)}
+.bank{display:flex;flex-wrap:wrap;gap:10px;margin-top:1.2rem;padding-top:1.1rem;border-top:2px dashed var(--line)}
+.bank-word{font-family:var(--mono);font-weight:700;font-size:1rem;padding:.42rem .95rem;
+  border:2px solid var(--ink);border-radius:10px;background:#fff;cursor:pointer;
+  box-shadow:0 4px 0 rgba(46,33,24,.85);transition:transform .08s,box-shadow .08s}
+.bank-word:hover{background:#fdf3d3}
+.bank-word:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(46,33,24,.85)}
+.bank-word.used{opacity:.25;pointer-events:none;box-shadow:none;transform:translateY(3px)}
+.bank-word.bounce{animation:bounceBack .5s}
+@keyframes bounceBack{0%{transform:translateY(0) scale(1.12);background:#fbe6df}40%{transform:translateY(-9px)}100%{transform:translateY(0);background:#fff}}
+/* match the meaning */
+.match-example{font-family:var(--mono);font-size:.82rem;background:#f3e6c3;border:2px dashed var(--ink);
+  border-radius:10px;padding:.55rem .9rem;margin-bottom:1rem}
+.match-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.match-item{width:100%;text-align:left;font-weight:700;font-size:.98rem;padding:.72rem .9rem;
+  border:2px solid var(--ink);border-radius:12px;background:#fff;cursor:pointer;
+  box-shadow:0 4px 0 rgba(46,33,24,.85);transition:transform .08s,background .15s}
+.match-item:hover:not(:disabled){background:#fdf3d3}
+.match-item.sel{background:var(--gold);box-shadow:0 4px 0 rgba(46,33,24,.85)}
+.match-item.locked{background:#e2f3e6;border-color:var(--green);box-shadow:2px 2px 0 rgba(46,33,24,.4);
+  cursor:default;opacity:.9}
+.match-item.wrongpick{animation:shake .45s;background:#fbe6df;border-color:var(--red)}
+.match-counts{display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem}
+.count-pill{font-family:var(--mono);font-weight:700;font-size:.78rem;letter-spacing:.08em;
+  border:2px solid var(--ink);border-radius:999px;padding:4px 12px;background:#fff}
+.count-pill.gold{background:var(--gold)}
+/* scenario header chips */
+.scene-banner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:.9rem}
+.scene-banner .avatar{width:46px;height:46px;font-size:1.25rem;border-radius:12px}
+
+/* ===== 10. Finale ===== */
+.finale-wrap{max-width:730px;margin:0 auto;text-align:center}
+.finale-rank{font-family:var(--disp);font-size:clamp(1.5rem,4.5vw,2.3rem);color:var(--gold-d);
+  text-shadow:2px 2px 0 rgba(46,33,24,.18);margin:.3rem 0}
+.finale-nums{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:1.1rem 0}
+.finale-num{background:var(--card);border:2px solid var(--ink);border-radius:14px;
+  box-shadow:5px 5px 0 rgba(46,33,24,.85);padding:.8rem 1.5rem;min-width:130px}
+.finale-num .v{font-family:var(--mono);font-weight:700;font-size:1.7rem;color:var(--ink)}
+.finale-num .l{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.results-table{width:100%;border-collapse:collapse;margin:1.2rem 0;text-align:left;background:var(--card);
+  border:2px solid var(--ink);border-radius:14px;overflow:hidden;box-shadow:6px 6px 0 rgba(46,33,24,.85)}
+.results-table th,.results-table td{padding:.6rem .85rem;border-bottom:2px solid var(--line)}
+.results-table tr:last-child td{border-bottom:none}
+.results-table th{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--night);color:var(--gold);text-align:left}
+.results-table td .tstars{display:inline-flex;gap:2px;vertical-align:middle}
+.results-table td .tstars svg{width:15px;height:15px}
+.results-table .on{color:var(--gold-d);fill:var(--gold)}
+.results-table .off{color:#cbb894;fill:#eee3c8}
+
+/* ===== 11. Modals, toast, pop-float, confetti ===== */
+.overlay{position:fixed;inset:0;z-index:80;background:rgba(24,16,10,.66);display:none;
+  align-items:center;justify-content:center;padding:18px}
+.overlay.open{display:flex}
+.modal{width:min(590px,96vw);max-height:88vh;overflow:auto;background:var(--card);
+  border:3px solid var(--ink);border-radius:20px;box-shadow:12px 12px 0 rgba(0,0,0,.4);
+  padding:1.5rem 1.6rem;animation:popIn .32s cubic-bezier(.2,1.3,.4,1)}
+.modal h3{font-family:var(--disp);font-size:1.55rem;margin:.2rem 0 .3rem}
+.modal .kicker{display:block;margin-bottom:.2rem}
+.modal-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:1.2rem;justify-content:center}
+.modal .info-block{background:#f8efdb;border:2px dashed var(--ink);border-radius:12px;
+  padding:.7rem 1rem;margin:.65rem 0;font-size:.95rem}
+.modal .info-block b{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;
+  color:#9a6a10;display:block;margin-bottom:.15rem}
+.result-stars{display:flex;justify-content:center;gap:12px;margin:.8rem 0 1rem}
+.result-stars svg{width:52px;height:52px;color:#cbb894;fill:#eee3c8}
+.result-stars .on{color:var(--gold-d);fill:var(--gold)}
+@media (prefers-reduced-motion:no-preference){
+  .result-stars .on{animation:starPop .55s cubic-bezier(.2,1.6,.4,1) backwards}
+  .result-stars .on:nth-child(2){animation-delay:.18s}
+  .result-stars .on:nth-child(3){animation-delay:.36s}
+}
+@keyframes starPop{from{opacity:0;transform:scale(.2) rotate(-140deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);z-index:95;
+  background:var(--night);color:var(--cream);border:2px solid var(--gold);border-radius:12px;
+  padding:.6rem 1.2rem;font-weight:700;font-size:.95rem;opacity:0;pointer-events:none;
+  transition:opacity .25s,transform .25s;box-shadow:0 8px 22px rgba(0,0,0,.4);max-width:88vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.pop-float{position:fixed;z-index:96;font-family:var(--mono);font-weight:700;font-size:1.15rem;
+  pointer-events:none;animation:floatUp 1.05s ease-out forwards;text-shadow:1px 1px 0 #fff}
+.pop-float.good{color:#2e7d3f}.pop-float.bad{color:var(--red)}
+@keyframes floatUp{from{opacity:0;transform:translateY(6px) scale(.7)}18%{opacity:1;transform:translateY(-4px) scale(1.1)}100%{opacity:0;transform:translateY(-46px) scale(1)}}
+#fx{position:fixed;inset:0;z-index:92;pointer-events:none}
+
+/* ===== 12. Responsive + reduced motion ===== */
+@media (max-width:640px){
+  .console{gap:8px;padding:0 9px}
+  .logo .logo-tape{width:24px}
+  .logo small{display:none}
+  .rec{display:none}
+  .cells{display:none}
+  .hud-score{font-size:.82rem;padding:3px 7px}
+  main{padding-top:76px}
+  .match-cols{grid-template-columns:1fr}
+  .scene-score{margin-left:0}
+  .game-card{padding:1.05rem 1rem}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;scroll-behavior:auto !important}
+  .loader.done{transition:none}
+  .reel:hover,.btn:active,.hbtn:active{transform:none}
+  .tbar-fill{transition:none}
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:100px 20px;text-align:center;font-family:sans-serif">This arcade needs JavaScript to play. Please enable it and rewind the tape.</p></noscript>
+
+<!-- ===== Preloader ===== -->
+<div class="loader" id="loader" role="dialog" aria-label="Loading the game">
+  <svg class="tape-svg" viewBox="0 0 120 80" aria-hidden="true">
+    <rect x="4" y="14" width="112" height="52" rx="9" fill="none" stroke="currentColor" stroke-width="4"/>
+    <g class="reel"><circle cx="38" cy="40" r="13" fill="none" stroke="currentColor" stroke-width="4"/><path d="M38 30v6M38 44v6M28 40h6M42 40h6" stroke="currentColor" stroke-width="3"/></g>
+    <g class="reel reel2"><circle cx="82" cy="40" r="13" fill="none" stroke="currentColor" stroke-width="4"/><path d="M82 30v6M82 44v6M72 40h6M86 40h6" stroke="currentColor" stroke-width="3"/></g>
+    <path d="M8 66l14-10M112 66l-14-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+  </svg>
+  <h1 class="ld-title">FRIENDS VOCAB ARCADE</h1>
+  <p class="ld-status" id="loader-status">REWINDING TAPE…</p>
+  <div class="ld-bar" aria-hidden="true"><div class="ld-fill" id="loader-fill"></div></div>
+  <button type="button" class="btn btn-big" id="loader-play" aria-label="Play — start the game">PLAY <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg></button>
+  <p class="blink-text">▸ ▸ ▸ PRESS PLAY TO INSERT THE TAPE ▸ ▸ ▸</p>
+</div>
+
+<!-- ===== Header console ===== -->
+<header class="console" id="console">
+  <span class="rec" aria-hidden="true"><i></i>REC</span>
+  <span class="logo">
+    <svg class="logo-tape" viewBox="0 0 120 80" aria-hidden="true">
+      <rect x="4" y="14" width="112" height="52" rx="9" fill="none" stroke="currentColor" stroke-width="7"/>
+      <circle cx="38" cy="40" r="12" fill="none" stroke="currentColor" stroke-width="7"/>
+      <circle cx="82" cy="40" r="12" fill="none" stroke="currentColor" stroke-width="7"/>
+    </svg>
+    <span>VOCA<span style="color:var(--orange)">BAY</span>TE<small>FRIENDS · S03E14 · STUDY TAPE</small></span>
+  </span>
+  <span class="spacer"></span>
+  <div class="cells" id="cells" aria-label="Levels completed"></div>
+  <div class="hud-score" id="hud-score" aria-live="polite">SCORE 0</div>
+  <button type="button" class="hbtn" id="btn-sound" aria-label="Toggle sound"></button>
+  <button type="button" class="hbtn" id="btn-map" aria-label="Back to the level map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></button>
+</header>
+
+<main id="main">
+
+  <!-- ===== Screen: intro ===== -->
+  <section class="screen active" id="screen-intro" aria-label="Intro">
+    <div class="intro-wrap">
+      <p class="kicker">▸ THE CENTRAL PERK LOST-AND-FOUND PRESENTS</p>
+      <h1 class="vhs-title">FRIENDS<br>VOCAB ARCADE</h1>
+      <p class="vhs-sub">An English study tape · “The One With Phoebe’s Ex-Partner”</p>
+      <div class="intro-story">
+        <p>You found an unlabeled <b>VHS cassette</b> in the back of Central Perk’s lost-and-found basket. The handwritten sticker says: <span class="mono" style="font-weight:700">ENGLISH STUDY TAPE — 5 GAMES — NO COMMERCIALS</span>. (Leslie already tried the commercials. Phoebe said no.)</p>
+        <p>Drop it into the machine and practice the words of the episode — <i>sell out, nod off, freak out</i> and friends — across five mini-games. <b>Every level is unlocked from the start:</b> play them in any order, replay them as often as you like, and finish with the Final Tape.</p>
+        <p class="hand" style="margin-top:.6rem">“Smelly Cat approved this cartridge.” — P.B.</p>
+      </div>
+      <div class="cast-row" id="cast-row" aria-label="Your hosts"></div>
+      <button type="button" class="btn btn-big" id="btn-start" aria-label="Start — go to the level map">START ▶</button>
+      <p class="intro-links">New to the lesson? Read the <a href="friends-english-lesson-article.html" target="_blank" rel="noopener noreferrer">full article</a> or open the <a href="friends-314.pdf" target="_blank" rel="noopener noreferrer">lesson deck (friends-314.pdf)</a> first.</p>
+    </div>
+  </section>
+
+  <!-- ===== Screen: level map ===== -->
+  <section class="screen" id="screen-map" aria-label="Level map">
+    <div class="map-head">
+      <p class="kicker">▸ FREE ORDER — PICK ANY TAPE</p>
+      <h2>CHOOSE YOUR TAPE</h2>
+      <p class="scene-progress">All five levels are unlocked. Finish any level to bank its score and stars.</p>
+    </div>
+    <div class="map-grid" id="map-grid"></div>
+    <div class="final-bar" id="final-bar" hidden>
+      <span class="kicker">▸ ALL TAPES REWOUND — THE CLUNKER IS READY</span>
+      <h3>THE FINAL TAPE AWAITS</h3>
+      <button type="button" class="btn btn-big" id="btn-final">PLAY THE FINALE ▶</button>
+    </div>
+  </section>
+
+  <!-- ===== Screen: scene (in-level) ===== -->
+  <section class="screen" id="screen-scene" aria-label="Level">
+    <div class="scene-top">
+      <button type="button" class="btn btn-ghost" id="btn-back-map" aria-label="Back to the level map">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> MAP
+      </button>
+      <span class="chip" id="scene-tag" style="background:var(--gold)">TAPE 1</span>
+      <span class="scene-progress" id="scene-progress">ROUND 1/6</span>
+      <span class="scene-score" id="scene-score">LEVEL SCORE 0</span>
+    </div>
+    <div class="scene-banner" id="scene-banner"></div>
+    <div class="tbar" id="tbar-wrap" hidden aria-hidden="true"><div class="tbar-fill" id="tbar-fill"></div></div>
+    <div class="tbar-label" id="tbar-label" hidden><span id="tbar-hint">TIME</span><span id="tbar-num"></span></div>
+    <div id="game-root" aria-live="polite"></div>
+  </section>
+
+  <!-- ===== Screen: finale ===== -->
+  <section class="screen" id="screen-finale" aria-label="Finale">
+    <div class="finale-wrap">
+      <p class="kicker">▸ TRACKING · PLAY ▶ · SP MODE</p>
+      <h2 class="vhs-title" style="font-size:clamp(1.9rem,6vw,3rem)">THE FINAL TAPE</h2>
+      <p class="vhs-sub">Every level complete — the study tape plays to the end</p>
+      <div class="finale-nums">
+        <div class="finale-num"><div class="v" id="fin-total-score">0</div><div class="l">Total score</div></div>
+        <div class="finale-num"><div class="v" id="fin-total-stars">0/15</div><div class="l">Stars</div></div>
+      </div>
+      <p class="finale-rank" id="fin-rank">RANK</p>
+      <table class="results-table" id="fin-table" aria-label="Results by level"></table>
+      <div class="char-bubble" style="justify-content:center;text-align:left">
+        <span class="avatar" style="background:var(--orange)">P</span>
+        <span class="say">“Great job! Keep practicing your English with your favorite shows.”</span>
+      </div>
+      <div class="modal-row">
+        <button type="button" class="btn btn-ghost" id="btn-rewind">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 12l9-7v14zM2 12l9-7v14z" transform="scale(-1,1) translate(-24,0)"/></svg> REWIND THE TAPE
+        </button>
+        <button type="button" class="btn" id="btn-fin-map">BACK TO MAP</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== Modal ===== -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+<div class="scan" aria-hidden="true"></div>
+
+<script>
+(function () {
+"use strict";
+
+/* =========================================================
+   0. TINY UTILITIES
+========================================================= */
+var $  = function (sel, root) { return (root || document).querySelector(sel); };
+var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function shuffle(arr) {
+  var a = arr.slice(), i, j, t;
+  for (i = a.length - 1; i > 0; i--) {
+    j = Math.floor(Math.random() * (i + 1));
+    t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+/* Inline SVG icon library (no CDN needed) */
+var ICONS = {
+  star: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>',
+  sndOn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></svg>',
+  sndOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19" fill="currentColor" stroke="none"/><line x1="15" y1="9" x2="21" y2="15"/><line x1="21" y1="9" x2="15" y2="15"/></svg>',
+  rewind: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 12l9-7v14zM2 12l9-7v14z"/></svg>',
+  zap: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+  cross: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  coffee: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 8h1a3 3 0 010 6h-1"/><path d="M2 8h16v7a4 4 0 01-4 4H6a4 4 0 01-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>'
+};
+
+function refreshIcons() {
+  $$("[data-icon]").forEach(function (el) {
+    var name = el.getAttribute("data-icon");
+    if (ICONS[name] && el.getAttribute("data-done") !== name) {
+      el.innerHTML = ICONS[name];
+      el.setAttribute("data-done", name);
+    }
+  });
+}
+
+/* Toast notification (single element, queued by timeout) */
+var toastEl = $("#toast"), toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  if (toastTimer) { clearTimeout(toastTimer); }
+  toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2400);
+}
+
+/* Floating "+100" score popup */
+function popFloat(x, y, text, good) {
+  if (REDUCED) { return; }
+  var el = document.createElement("span");
+  el.className = "pop-float " + (good ? "good" : "bad");
+  el.textContent = text;
+  el.style.left = clamp(x, 10, window.innerWidth - 60) + "px";
+  el.style.top = clamp(y, 10, window.innerHeight - 40) + "px";
+  document.body.appendChild(el);
+  el.addEventListener("animationend", function () { el.remove(); });
+}
+
+/* Confetti particles on a fixed canvas */
+var fxCanvas = $("#fx"), fxCtx = fxCanvas.getContext("2d"), fxParts = [], fxRunning = false;
+function fxResize() { fxCanvas.width = window.innerWidth; fxCanvas.height = window.innerHeight; }
+window.addEventListener("resize", fxResize);
+fxResize();
+
+var FX_COLORS = ["#f2b33d", "#e4703a", "#7c5ca8", "#3e8e5a", "#c9432f", "#f7ead2"];
+function spawnConfetti(n) {
+  if (REDUCED) { n = 0; }
+  for (var i = 0; i < n; i++) {
+    fxParts.push({
+      x: Math.random() * fxCanvas.width,
+      y: -20 - Math.random() * fxCanvas.height * 0.25,
+      vx: (Math.random() - 0.5) * 2.4,
+      vy: 2 + Math.random() * 3.2,
+      s: 5 + Math.random() * 7,
+      r: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.25,
+      c: FX_COLORS[Math.floor(Math.random() * FX_COLORS.length)]
+    });
+  }
+  if (!fxRunning) { fxRunning = true; requestAnimationFrame(fxTick); }
+}
+function fxTick() {
+  fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+  fxParts = fxParts.filter(function (p) { return p.y < fxCanvas.height + 30; });
+  fxParts.forEach(function (p) {
+    p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    fxCtx.save();
+    fxCtx.translate(p.x, p.y);
+    fxCtx.rotate(p.r);
+    fxCtx.fillStyle = p.c;
+    fxCtx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.62);
+    fxCtx.restore();
+  });
+  if (fxParts.length) { requestAnimationFrame(fxTick); }
+  else { fxRunning = false; fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height); }
+}
+
+/* Per-scene cleanup registry: every engine clears its timers/listeners here */
+var cleanups = [];
+function setCleanup(fn) { cleanups.push(fn); }
+function runCleanups() {
+  cleanups.forEach(function (fn) { try { fn(); } catch (e) { /* keep going */ } });
+  cleanups = [];
+}
+
+/* =========================================================
+   1. AUDIO — Web Audio API, all sounds synthesized
+========================================================= */
+var actx = null, master = null;
+
+function initAudio() {
+  if (actx) { return; }
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { return; }
+    actx = new AC();
+    master = actx.createGain();
+    master.gain.value = 0.5;
+    master.connect(actx.destination);
+  } catch (e) { actx = null; }
+}
+
+function tone(freq, dur, type, vol, when) {
+  if (!actx || state.muted) { return; }
+  var t = actx.currentTime + (when || 0);
+  var osc = actx.createOscillator();
+  var g = actx.createGain();
+  osc.type = type || "square";
+  osc.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol || 0.18, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(g); g.connect(master);
+  osc.start(t); osc.stop(t + dur + 0.05);
+}
+
+function noiseBurst(dur, vol, when) {
+  if (!actx || state.muted) { return; }
+  var t = actx.currentTime + (when || 0);
+  var len = Math.floor(actx.sampleRate * dur);
+  var buf = actx.createBuffer(1, len, actx.sampleRate);
+  var data = buf.getChannelData(0);
+  for (var i = 0; i < len; i++) { data[i] = (Math.random() * 2 - 1) * (1 - i / len); }
+  var src = actx.createBufferSource();
+  src.buffer = buf;
+  var g = actx.createGain();
+  g.gain.setValueAtTime(vol || 0.2, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(g); g.connect(master);
+  src.start(t);
+}
+
+var SFX = {
+  click:   function () { tone(880, 0.06, "square", 0.12); },
+  flip:    function () { tone(520, 0.07, "triangle", 0.14); tone(760, 0.08, "triangle", 0.12, 0.06); },
+  correct: function () { tone(523, 0.1, "triangle", 0.2); tone(659, 0.1, "triangle", 0.2, 0.09); tone(784, 0.16, "triangle", 0.22, 0.18); },
+  wrong:   function () { tone(196, 0.22, "sawtooth", 0.16); tone(147, 0.28, "sawtooth", 0.14, 0.1); },
+  match:   function () { tone(660, 0.09, "sine", 0.2); tone(990, 0.14, "sine", 0.2, 0.08); },
+  rewind:  function () { tone(880, 0.07, "square", 0.15); tone(660, 0.07, "square", 0.15, 0.08); tone(440, 0.1, "square", 0.15, 0.16); },
+  fanfare: function () {
+    [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.14, "triangle", 0.22, i * 0.12); });
+    tone(1319, 0.4, "triangle", 0.22, 0.48);
+    noiseBurst(0.5, 0.12, 0.48);
+  },
+  tick:    function () { tone(1250, 0.035, "square", 0.07); },
+  cheer:   function () { noiseBurst(0.7, 0.22); tone(660, 0.12, "triangle", 0.16, 0.05); tone(880, 0.12, "triangle", 0.16, 0.17); tone(1109, 0.2, "triangle", 0.16, 0.29); },
+  whoosh:  function () { noiseBurst(0.28, 0.1); }
+};
+
+/* Initialize AudioContext strictly after the first user gesture */
+document.addEventListener("pointerdown", function once() {
+  initAudio();
+  if (actx && actx.state === "suspended") { actx.resume(); }
+  document.removeEventListener("pointerdown", once);
+});
+
+/* =========================================================
+   2. PERSISTENT STATE — localStorage, versioned, safe
+========================================================= */
+var STORE_KEY = "friendsVocabArcade.v1";
+var state = { muted: false, levels: {} };
+
+function loadState() {
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        state.muted = !!parsed.muted;
+        state.levels = (parsed.levels && typeof parsed.levels === "object") ? parsed.levels : {};
+      }
+    }
+  } catch (e) { /* private mode / blocked storage: play without saving */ }
+}
+function saveState() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+}
+function levelProgress(id) {
+  return state.levels[id] || { best: 0, stars: 0 };
+}
+function saveLevelResult(id, score, stars) {
+  var cur = levelProgress(id);
+  state.levels[id] = { best: Math.max(cur.best, score), stars: Math.max(cur.stars, stars) };
+  saveState();
+}
+function allLevelsDone() {
+  return SCENES.every(function (s) { return levelProgress(s.id).stars > 0; });
+}
+function totalBest() {
+  return SCENES.reduce(function (sum, s) { return sum + levelProgress(s.id).best; }, 0);
+}
+function totalStars() {
+  return SCENES.reduce(function (sum, s) { return sum + levelProgress(s.id).stars; }, 0);
+}
+
+/* =========================================================
+   3. GAME DATA — scenes + question sets (all from the deck)
+========================================================= */
+var SCENES = [
+  {
+    id: "blanks", num: 1, title: "SELL-OUT SENTENCES", char: "Phoebe",
+    color: "#e4703a", c2: "#b8431c", slide: "slide-003.jpg", tag: "FILL THE BLANK",
+    obj: "Rebuild six key sentences from the lesson. Tap a blank, then tap the right word from the bank.",
+    tip: "Wrong words bounce back and cost you 25 points — read the whole sentence before you commit.",
+    flavor: "“These sentences are like my songs: every word has to earn its place, man.”"
+  },
+  {
+    id: "tf", num: 2, title: "REAL OR DELUSION", char: "Chandler",
+    color: "#7c5ca8", c2: "#543a7d", slide: "slide-005.jpg", tag: "TRUE / FALSE",
+    obj: "Eight statements about the episode. Decide if each one is REAL (true) or pure DELUSION (false) before the bar empties.",
+    tip: "Arrow keys work too: LEFT is REAL, RIGHT is DELUSION. Streaks of correct answers multiply your points.",
+    flavor: "Could this tape BE any more dramatic?"
+  },
+  {
+    id: "mc", num: 3, title: "ROSS'S TRIVIA NIGHT", char: "Ross",
+    color: "#3e7c8e", c2: "#27545f", slide: "slide-009.jpg", tag: "MULTIPLE CHOICE",
+    obj: "Six museum-grade questions, three options each, ONE attempt. Choose like your dinosaur collection depends on it.",
+    tip: "You lose 25 points for a wrong pick, so think first — the dinosaur is watching.",
+    flavor: "We were on a BREAK… from not knowing these answers."
+  },
+  {
+    id: "match", num: 4, title: "MONICA'S PERFECT MATCH", char: "Monica",
+    color: "#3e8e5a", c2: "#265c3a", slide: "slide-007.jpg", tag: "MATCH THE MEANING",
+    obj: "Six words, six meanings, everything in its place. Tap a word, then tap its meaning. Perfect pairs lock in green.",
+    tip: "Wrong picks shake, clear the selection and cost 15 points. Monica counts every attempt.",
+    flavor: "I know! It's a mess! We'll organize it — seven minutes, tops."
+  },
+  {
+    id: "bonus", num: 5, title: "JOEY'S BONUS BLITZ", char: "Joey",
+    color: "#c9432f", c2: "#8c2617", slide: "slide-010.jpg", tag: "TIMED BONUS",
+    obj: "The blitz round: mixed questions from every topic, one giant 750-second timer, and a streak multiplier that climbs as you chain answers.",
+    tip: "How you doin'? Answer fast — when the timer flashes red, the sandwich is nearly over.",
+    flavor: "Joey doesn't share QUESTIONS!"
+  }
+];
+
+/* ---- Level 1: fill in the blanks (sentences quoted from the deck) ---- */
+var BLANKS_ITEMS = [
+  { before: "Leslie abandoned Phoebe years ago to write commercial ", after: " — advertising songs that paid a lot of money.", answer: "JINGLES" },
+  { before: "Phoebe refuses to ", after: " out, choosing her artistic integrity over money and the partnership.", answer: "SELL" },
+  { before: "Ross is jealous of Rachel’s former coworker Mark, so he attends her lecture to keep an ", after: " on her.", answer: "EYE" },
+  { before: "Phoebe hides her pager in a cooking ", after: " to muffle the sound because she wants to ignore Leslie.", answer: "POT" },
+  { before: "When Ginger discovers Chandler’s third nipple, she is disgusted and immediately ", after: " him.", answer: "DUMPS" },
+  { before: "Joey accidentally threw Ginger’s artificial ", after: " into a fire four years ago and ran away.", answer: "LEG" }
+];
+var BLANKS_DECOYS = ["GUITAR", "NUBBIN", "COUCH", "BEEPER"];
+var BLANKS_PENALTY = 25;
+
+/* ---- Level 2: REAL (true) or DELUSION (false) ---- */
+var TF_ITEMS = [
+  { text: "Leslie abandoned the musical partnership years ago because commercial jingles paid a lot of money.", real: true,
+    expl: "REAL. The cultural board says Leslie left the partnership “because jingles paid a lot of money.” Money was the cause; the breakup of the duet was the effect." },
+  { text: "Leslie reunites with Phoebe to record a brand-new album of original duets.", real: false,
+    expl: "DELUSION. Leslie begs to reunite — but then plays “Smelly Cat” for an ad agency and tries to sell it for a kitty litter commercial. No album, no duets, just a pitch page." },
+  { text: "Ross insists on attending Rachel’s four-hour fashion lecture to keep an eye on her.", real: true,
+    expl: "REAL. The board names the cause precisely: “Ross is jealous of Rachel’s former coworker (Mark) and insists on attending a 4-hour fashion lecture to keep an eye on her.”" },
+  { text: "Rachel is so moved by Ross’s support that her work life becomes partly his.", real: false,
+    expl: "DELUSION. Rachel is furious: she “demands that her work life remains hers alone” and models calm boundary-setting — “I like that you’re not involved in that part of my life.”" },
+  { text: "Joey accidentally threw Ginger’s artificial leg into a fire four years ago and ran away.", real: true,
+    expl: "REAL. The detective card is blunt: “Joey: Accidentally threw Ginger’s artificial leg into a fire four years ago and ran away. Hides when he sees her again.”" },
+  { text: "Chandler proudly shows Ginger his ‘nubbin’ on their first dinner date.", real: false,
+    expl: "DELUSION. Chandler claims the leg doesn’t bother him but hides his own flaw. The discovery happens by accident — and “she is disgusted and immediately dumps him.”" },
+  { text: "Phoebe hides her pager in a cooking pot to muffle the sound and ignore Leslie.", real: true,
+    expl: "REAL. The cultural board explains: “Phoebe hides hers in a cooking pot to muffle the sound because she wants to ignore Leslie.” Avoidance you can almost hear." },
+  { text: "Monica sincerely believes that pagers cooked in pots are a real delicacy in India.", real: false,
+    expl: "DELUSION. It is a sarcastic joke — the deck uses “delicacy” to show how English speakers bend a respectable word for comedy: “Monica jokes that pagers in pots are a delicacy in India.”" }
+];
+var TF_TIME = 600; /* seconds per statement, per the design spec (ten minutes per card) */
+
+/* ---- Level 3: multiple choice, one attempt, character reaction ---- */
+var MC_ITEMS = [
+  { text: "What does Leslie want to do with “Smelly Cat”?",
+    options: ["Sell it to an ad agency for a kitty litter commercial", "Record a live acoustic album with Phoebe", "Donate the song to a cat shelter"],
+    answer: 0,
+    good: "Correct! The pitch page literally says “Smelly Cat – Kitty Litter Commercial”. You dodged that trap like a velociraptor.",
+    bad: "Nope. Leslie played their song for an ad agency — a kitty litter commercial. Even the Triassic period saw that coming." },
+  { text: "Which conflict does the thematic matrix pair with Ross and Rachel?",
+    options: ["Art vs. Commercial Money", "Jealousy vs. Independence", "Acceptance vs. Physical Flaws"],
+    answer: 1,
+    good: "Correct! “Jealousy vs. Independence” — Ross brings the jealousy, Rachel defends her independence.",
+    bad: "Incorrect. The matrix gives Ross and Rachel “Jealousy vs. Independence”. Art vs. Money belongs to Phoebe and Leslie." },
+  { text: "What exactly is a ‘nubbin’ in this episode?",
+    options: ["A 90s pager brand", "The small cushion under the couch", "Chandler’s nickname for his third nipple"],
+    answer: 2,
+    good: "Correct — a ‘nubbin’ (a third nipple), the flaw Chandler is insecure about while demanding acceptance for himself.",
+    bad: "Wrong. A ‘nubbin’ is Chandler’s word for his third nipple — the secret Ginger discovers and dumps him over." },
+  { text: "According to the answer key, why does Phoebe refuse the partnership?",
+    options: ["Because she never liked money", "Because selling out ruins the integrity of the song", "Because Leslie sings better than her"],
+    answer: 1,
+    good: "Correct! The key says it outright: selling out “ruins the integrity of the song.” That is the moral core of the episode.",
+    bad: "Not quite. The key’s model answer: Phoebe refuses because “selling out ruins the integrity of the song.”" },
+  { text: "What does Rachel demand after Ross falls asleep on her shoulder?",
+    options: ["That her work life remains hers alone", "That Ross attends every lecture from now on", "That Mark be banned from the building"],
+    answer: 0,
+    good: "Correct. “She demands that her work life remains hers alone” — a textbook boundary, set without shouting.",
+    bad: "No. Rachel demands that her work life remains hers alone. Ross’s snoring did not earn him extra invitations." },
+  { text: "What task does the deck’s final board assign the learner?",
+    options: ["Draw the Central Perk couch from memory", "Translate “Smelly Cat” into three languages", "Write a paragraph using at least THREE vocabulary words"],
+    answer: 2,
+    good: "Correct! The writing task: describe a moment of loyalty vs. career using at least three lesson words — screw over, bummer, freak out, nod off…",
+    bad: "Incorrect. The final task is a paragraph — about loyalty vs. career — that must use at least THREE vocabulary words from the lesson." }
+];
+var MC_PENALTY = 25;
+
+/* ---- Level 4: match the meaning (word ↔ definition) ---- */
+var MATCH_PAIRS = [
+  { w: "sell out",            m: "to abandon your principles for money or success" },
+  { w: "nod off",             m: "to fall asleep unintentionally, usually when you shouldn’t" },
+  { w: "screw someone over",  m: "to cheat, deceive, or betray someone for personal gain" },
+  { w: "freak out",           m: "to suddenly feel extremely surprised, upset, or panicked" },
+  { w: "bummer",              m: "a highly disappointing or unpleasant situation" },
+  { w: "stand your ground",   m: "to hold your position and refuse to change your decision" }
+];
+var MATCH_EXAMPLE = { w: "bionic", m: "having artificial, electromechanical body parts" };
+var MATCH_PENALTY = 15;
+
+/* ---- Level 5: timed bonus blitz, mixed from every topic ---- */
+var BONUS_TIME = 750; /* seconds for the whole round */
+var BONUS_ITEMS = [
+  { kind: "mc", text: "Phoebe refuses to ______ out, choosing her artistic integrity.",
+    options: ["sell", "nod", "stand"], answer: 0,
+    expl: "“Sell out” = to abandon your principles for money. Phoebe won’t let the song become an ad." },
+  { kind: "tf", text: "Joey threw Ginger’s artificial leg into a fire four years ago.", real: true,
+    expl: "REAL — the detective card says exactly that, and adds that Joey hides when he sees her again." },
+  { kind: "mc", text: "A short, catchy, original song written to sell a product is a ______.",
+    options: ["nubbin", "jingle", "delicacy"], answer: 1,
+    expl: "A jingle — the 90s advertising engine that lured Leslie away from the partnership." },
+  { kind: "tf", text: "Rachel is delighted that Ross attended her fashion lecture.", real: false,
+    expl: "DELUSION — she is furious and demands that her work life remains hers alone." },
+  { kind: "mc", text: "Monica jokes that pagers in pots are a ______ in India.",
+    options: ["bummer", "trademark", "delicacy"], answer: 2,
+    expl: "“Delicacy” — a rare, prized food — bent sarcastically to describe a beeping gadget in a soup pot." },
+  { kind: "mc", text: "Chandler nervously asks if Ginger has a ______ foot.",
+    options: ["bionic", "smelly", "wooden"], answer: 0,
+    expl: "“Bionic” — artificial, electromechanical body parts. A sci-fi adjective at the worst possible dinner." },
+  { kind: "tf", text: "Phoebe stands her ground and rejects the partnership.", real: true,
+    expl: "REAL — “stand your ground” means holding your position firmly. Phoebe plants her feet and keeps the song." },
+  { kind: "mc", text: "“What a ______!” — Phoebe’s fake sympathy when Leslie gets fired.",
+    options: ["jingle", "bummer", "pager"], answer: 1,
+    expl: "“Bummer” — one word of (insincere) sympathy for a highly disappointing situation." }
+];
+var BONUS_PENALTY = 25;
+
+/* =========================================================
+   4. SHELL RENDERING — screens, HUD, map, modals
+========================================================= */
+var currentScene = null;
+
+function showScreen(name) {
+  $$(".screen").forEach(function (s) { s.classList.remove("active"); });
+  var el = $("#screen-" + name);
+  if (el) { el.classList.add("active"); }
+  SFX.whoosh();
+  window.scrollTo(0, 0);
+}
+
+function starsHTML(n, max) {
+  var out = "";
+  for (var i = 0; i < (max || 3); i++) {
+    out += '<span class="' + (i < n ? "on" : "off") + '" data-icon="star"></span>';
+  }
+  return out;
+}
+
+function updateHUD() {
+  $("#hud-score").textContent = "SCORE " + totalBest();
+  var cells = "";
+  SCENES.forEach(function (s) {
+    var p = levelProgress(s.id);
+    cells += '<span class="cell' + (p.stars > 0 ? " done" : "") + '" title="' +
+      s.title + (p.stars > 0 ? " — " + p.stars + "★" : " — not finished") + '">' + ICONS.star + "</span>";
+  });
+  $("#cells").innerHTML = cells;
+}
+
+function renderSound() {
+  var b = $("#btn-sound");
+  b.innerHTML = state.muted ? ICONS.sndOff : ICONS.sndOn;
+  b.setAttribute("aria-label", state.muted ? "Unmute sounds" : "Mute sounds");
+  b.setAttribute("aria-pressed", state.muted ? "true" : "false");
+}
+
+function renderCast() {
+  var html = SCENES.map(function (s) {
+    return '<span class="cast-chip"><span class="avatar" style="background:' + s.color + '">' +
+      s.char.charAt(0) + "</span>" + s.char + "</span>";
+  }).join("");
+  $("#cast-row").innerHTML = html;
+}
+
+function renderMap() {
+  var html = SCENES.map(function (s) {
+    var p = levelProgress(s.id);
+    return '<button type="button" class="reel" data-id="' + s.id + '" ' +
+      'aria-label="Tape ' + s.num + ": " + s.title.replace(/"/g, "&quot;") + " — " + s.tag +
+      (p.stars > 0 ? ", completed with " + p.stars + " stars, best score " + p.best : ", not completed yet") + '">' +
+      '<span class="reel-thumb" style="--c1:' + s.color + ";--c2:" + s.c2 + '">' +
+        '<span class="reel-initials" aria-hidden="true">' + s.char.charAt(0) + "</span>" +
+        '<img src="' + s.slide + '" alt="" loading="lazy" ' +
+          'onerror="this.style.display=\'none\'">' +
+        '<span class="reel-num">TAPE ' + s.num + "</span>" +
+        '<span class="reel-mech">' + s.tag + "</span>" +
+      "</span>" +
+      '<span class="reel-body">' +
+        '<span class="reel-title">' + s.title + "</span>" +
+        '<span class="reel-meta">' +
+          '<span class="reel-char"><span class="avatar" style="background:' + s.color + '">' + s.char.charAt(0) + "</span>" + s.char + "</span>" +
+          '<span class="reel-stats">BEST<br><b>' + p.best + "</b></span>" +
+        "</span>" +
+        '<span class="reel-stars">' + starsHTML(p.stars) + "</span>" +
+      "</span>" +
+    "</button>";
+  }).join("");
+  $("#map-grid").innerHTML = html;
+  $("#final-bar").hidden = !allLevelsDone();
+  refreshIcons();
+}
+
+/* ---- Modal ---- */
+var overlay = $("#overlay"), modal = $("#modal");
+function openModal(html) {
+  modal.innerHTML = html;
+  overlay.classList.add("open");
+  refreshIcons();
+  var focusable = modal.querySelector("button");
+  if (focusable) { focusable.focus(); }
+}
+function closeModal() {
+  overlay.classList.remove("open");
+  modal.innerHTML = "";
+}
+
+function openBriefing(scene) {
+  currentScene = scene;
+  modalMode = "briefing";
+  var p = levelProgress(scene.id);
+  var done = p.stars > 0;
+  var html =
+    '<span class="kicker">▸ TAPE ' + scene.num + " / 5 · " + scene.tag + (done ? " · CLEARED" + p.stars + "★" : "") + "</span>" +
+    '<h3 id="modal-title">' + scene.title + "</h3>" +
+    '<p><span class="chip" style="background:' + scene.color + ';color:#fff"><span class="avatar" style="width:22px;height:22px;font-size:.7rem;background:' + scene.color + ';border-width:1.5px">' + scene.char.charAt(0) + "</span> HOSTED BY " + scene.char.toUpperCase() + "</span></p>" +
+    '<div class="info-block"><b>Objective</b>' + scene.obj + "</div>" +
+    '<div class="info-block"><b>Tip</b>' + scene.tip + "</div>" +
+    '<p class="hand">' + scene.flavor + "</p>" +
+    '<div class="modal-row">' +
+      '<button type="button" class="btn btn-big" data-act="start-level">INSERT TAPE ▶</button>' +
+      '<button type="button" class="btn btn-ghost" data-act="close-modal">BACK TO MAP</button>' +
+    "</div>";
+  openModal(html);
+}
+
+function openResults(scene, score, stars, mistakes, isNewBest) {
+  modalMode = "results";
+  if (stars === 3) { spawnConfetti(140); SFX.fanfare(); }
+  else { SFX.cheer(); }
+  var lines = {
+    "Phoebe": "“You didn’t sell out! The song — I mean, the score — is safe.”",
+    "Chandler": "“Could your score BE any more final?”",
+    "Ross": "“W-E-N-T… well, actually we were ON a break from mistakes. Mostly.”",
+    "Monica": "“I checked the numbers twice. They’re organized. I’m so proud.”",
+    "Joey": "“How YOU doin’… with that score?”"
+  };
+  var html =
+    '<span class="kicker">▸ TAPE ' + scene.num + " RESULTS</span>" +
+    '<h3 id="modal-title">LEVEL CLEAR!</h3>' +
+    '<div class="result-stars">' + starsHTML(stars) + "</div>" +
+    '<p class="mono" style="font-size:1.3rem;font-weight:700;margin:.2rem 0">SCORE ' + score +
+      (isNewBest ? ' <span class="chip" style="background:var(--gold)">NEW BEST!</span>' : " · BEST " + levelProgress(scene.id).best) + "</p>" +
+    '<p class="scene-progress" style="margin:.3rem 0">MISTAKES: ' + mistakes +
+      (stars === 3 ? " — flawless, 3 stars!" : stars === 2 ? " — 2 stars. One clean run is out there." : " — 1 star. Rewind and go again!") + "</p>" +
+    '<div class="char-bubble"><span class="avatar" style="background:' + scene.color + '">' + scene.char.charAt(0) + "</span>" +
+      '<span class="say">' + (lines[scene.char] || "") + "</span></div>" +
+    '<div class="modal-row">' +
+      '<button type="button" class="btn" data-act="replay">REPLAY</button>' +
+      '<button type="button" class="btn btn-ghost" data-act="to-map">MAP</button>' +
+      (allLevelsDone() ? '<button type="button" class="btn btn-green" data-act="to-finale">FINALE ▶</button>' : "") +
+    "</div>";
+  openModal(html);
+}
+
+/* ---- Level lifecycle ---- */
+function startLevel(scene) {
+  runCleanups();
+  closeModal();
+  currentScene = scene;
+  /* swap in a listener-free clone of #game-root so restarted levels never stack handlers */
+  var oldRoot = $("#game-root");
+  var fresh = oldRoot.cloneNode(false);
+  oldRoot.parentNode.replaceChild(fresh, oldRoot);
+  $("#scene-tag").textContent = "TAPE " + scene.num + " · " + scene.tag;
+  $("#scene-tag").style.background = scene.color;
+  $("#scene-tag").style.color = "#fff";
+  $("#scene-progress").textContent = "";
+  $("#scene-score").textContent = "LEVEL SCORE 0";
+  $("#scene-banner").innerHTML =
+    '<span class="avatar" style="background:' + scene.color + '">' + scene.char.charAt(0) + "</span>" +
+    '<span><h2 class="scene-title" style="margin:0">' + scene.title + "</h2>" +
+    '<span class="kicker">HOSTED BY ' + scene.char.toUpperCase() + "</span></span>";
+  showScreen("scene");
+  ENGINE[scene.id](scene);
+}
+
+function finishLevel(scene, score, mistakes) {
+  var stars = mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1);
+  var isNewBest = score > levelProgress(scene.id).best;
+  saveLevelResult(scene.id, score, stars);
+  updateHUD();
+  openResults(scene, score, stars, mistakes, isNewBest && score > 0);
+  if (allLevelsDone() && $("#final-bar").hidden) {
+    renderMap();
+    toast("★ FINAL TAPE UNLOCKED — return to the map!");
+    spawnConfetti(80);
+  }
+}
+
+function goMap() {
+  runCleanups();
+  closeModal();
+  currentScene = null;
+  $("#tbar-wrap").hidden = true;
+  $("#tbar-label").hidden = true;
+  showScreen("map");
+  updateHUD();
+  renderMap();
+}
+
+/* =========================================================
+   5. ENGINE: FILL IN THE BLANKS (Level 1)
+========================================================= */
+var ENGINE = {};
+
+function streakMult(streak) { return clamp(1 + Math.floor(streak / 3), 1, 4); }
+function speedBonus(startTs) {
+  var el = (Date.now() - startTs) / 1000;
+  return el < 8 ? 50 : (el < 16 ? 25 : 0);
+}
+
+ENGINE.blanks = function (scene) {
+  var root = $("#game-root");
+  var items = shuffle(BLANKS_ITEMS);
+  var bank = shuffle(BLANKS_ITEMS.map(function (it) { return it.answer; }).concat(BLANKS_DECOYS));
+  var idx = 0, score = 0, mistakes = 0, streak = 0, armed = false, roundStart = Date.now();
+  var pending = null;
+
+  function updateSceneScore() { $("#scene-score").textContent = "LEVEL SCORE " + score; }
+
+  function render() {
+    armed = false;
+    roundStart = Date.now();
+    var it = items[idx];
+    var bankHtml = bank.map(function (w) {
+      var placed = bankPlaced(w);
+      return '<button type="button" class="bank-word' + (placed ? " used" : "") + '" data-word="' + w + '"' +
+        (placed ? " disabled" : "") + ">" + w + "</button>";
+    }).join("");
+    root.innerHTML =
+      '<div class="game-card">' +
+        '<span class="q-tag">SENTENCE ' + (idx + 1) + " OF " + items.length + '</span>' +
+        '<p class="sentence">' + it.before +
+          '<button type="button" class="blank" id="the-blank" aria-label="Empty blank — tap it, then choose a word from the bank">______</button>' +
+        it.after + "</p>" +
+        '<div class="bank" id="bank" role="group" aria-label="Word bank">' + bankHtml + "</div>" +
+      "</div>";
+    $("#scene-progress").textContent = "ROUND " + (idx + 1) + "/" + items.length;
+    updateSceneScore();
+  }
+
+  function bankPlaced(w) {
+    /* a word already locked into a previous sentence stays disabled in the bank */
+    for (var i = 0; i < idx; i++) { if (items[i].answer === w) { return true; } }
+    return false;
+  }
+
+  function place(word, wordBtn) {
+    var it = items[idx];
+    if (word === it.answer) {
+      streak += 1;
+      var pts = 100 + speedBonus(roundStart) * streakMult(streak);
+      score += pts;
+      var blank = $("#the-blank");
+      blank.textContent = word;
+      blank.classList.remove("armed");
+      blank.classList.add("filled");
+      blank.disabled = true;
+      if (wordBtn) { wordBtn.classList.add("used"); wordBtn.disabled = true; }
+      SFX.correct();
+      var r = blank.getBoundingClientRect();
+      popFloat(r.left + r.width / 2, r.top, "+" + pts, true);
+      updateSceneScore();
+      pending = setTimeout(function () {
+        idx += 1;
+        if (idx >= items.length) { finishLevel(scene, score, mistakes); }
+        else { render(); }
+      }, 750);
+    } else {
+      mistakes += 1; streak = 0;
+      score = Math.max(0, score - BLANKS_PENALTY);
+      SFX.wrong();
+      if (wordBtn) {
+        wordBtn.classList.add("bounce");
+        setTimeout(function () { wordBtn.classList.remove("bounce"); }, 520);
+      }
+      var b = $("#the-blank");
+      if (b) { b.classList.add("armed"); }
+      popFloat(window.innerWidth / 2, window.innerHeight / 2, "-" + BLANKS_PENALTY, false);
+      updateSceneScore();
+    }
+  }
+
+  root.addEventListener("click", function (e) {
+    var blank = e.target.closest("#the-blank");
+    if (blank && !blank.disabled) {
+      armed = !armed;
+      blank.classList.toggle("armed", armed);
+      SFX.click();
+      return;
+    }
+    var wordBtn = e.target.closest(".bank-word");
+    if (wordBtn && !wordBtn.disabled) {
+      if (!armed) { toast("Tap the blank first, then pick a word."); return; }
+      place(wordBtn.getAttribute("data-word"), wordBtn);
+    }
+  });
+
+  render();
+  setCleanup(function () { if (pending) { clearTimeout(pending); } });
+};
+
+/* =========================================================
+   6. ENGINE: REAL OR DELUSION (Level 2) — no auto-advance
+========================================================= */
+ENGINE.tf = function (scene) {
+  var root = $("#game-root");
+  var items = shuffle(TF_ITEMS);
+  var idx = 0, score = 0, mistakes = 0, streak = 0;
+  var deadline = 0, cardStart = 0, timerId = null, answered = false, lastTickSec = -1;
+
+  function updateSceneScore() { $("#scene-score").textContent = "LEVEL SCORE " + score; }
+  function fmt(sec) {
+    var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function startTimer() {
+    stopTimer();
+    deadline = Date.now() + TF_TIME * 1000;
+    cardStart = Date.now();
+    lastTickSec = -1;
+    $("#tbar-num").textContent = fmt(TF_TIME);
+    $("#tbar-wrap").hidden = false;
+    $("#tbar-label").hidden = false;
+    $("#tbar-hint").textContent = "TIME FOR THIS CARD";
+    timerId = setInterval(function () {
+      var left = Math.max(0, (deadline - Date.now()) / 1000);
+      var fill = $("#tbar-fill");
+      fill.style.width = (left / TF_TIME * 100) + "%";
+      fill.classList.toggle("warn", left <= 60 && left > 15);
+      fill.classList.toggle("danger", left <= 15);
+      var sec = Math.ceil(left);
+      $("#tbar-num").textContent = fmt(sec);
+      if (sec <= 30 && sec !== lastTickSec) { lastTickSec = sec; SFX.tick(); }
+      if (left <= 0) { answer(null); }
+    }, 250);
+  }
+  function stopTimer() {
+    if (timerId) { clearInterval(timerId); timerId = null; }
+  }
+
+  function renderCard() {
+    answered = false;
+    var it = items[idx];
+    root.innerHTML =
+      '<div class="game-card" id="tf-card">' +
+        '<span class="q-tag">STATEMENT ' + (idx + 1) + " OF " + items.length + (streak >= 3 ? '<span class="streak-flag">STREAK ' + streak + " ×" + streakMult(streak) + "</span>" : "") + "</span>" +
+        '<p class="q-text">' + it.text + "</p>" +
+        '<div class="opts" style="grid-template-columns:1fr 1fr" role="group" aria-label="Is this statement real or delusion?">' +
+          '<button type="button" class="opt" data-choice="real"><span class="key">←</span>REAL</button>' +
+          '<button type="button" class="opt" data-choice="delusion"><span class="key">→</span>DELUSION</button>' +
+        "</div>" +
+      "</div>";
+    $("#scene-progress").textContent = "ROUND " + (idx + 1) + "/" + items.length;
+    updateSceneScore();
+    startTimer();
+  }
+
+  function answer(choice) {
+    if (answered) { return; }
+    answered = true;
+    stopTimer();
+    var it = items[idx];
+    var correct = choice !== null && choice === it.real;
+    var pts = 0;
+    if (correct) {
+      streak += 1;
+      pts = (100 + speedBonus(cardStart)) * streakMult(streak);
+      score += pts;
+      SFX.correct();
+    } else {
+      mistakes += 1; streak = 0;
+      score = Math.max(0, score - 25);
+      SFX.wrong();
+    }
+    updateSceneScore();
+
+    var card = $("#tf-card");
+    $$(".opt", card).forEach(function (b) {
+      b.disabled = true;
+      var isReal = b.getAttribute("data-choice") === "real";
+      b.classList.add(isReal === it.real ? "correct" : "wrong");
+    });
+    var flag = '<span class="streak-flag" style="background:' + (correct ? "var(--green)" : "var(--red)") + '">' +
+      (correct ? "REAL DEAL +" + pts : (choice === null ? "TIME RAN OUT" : "DELUSIONAL −25")) + "</span>";
+    card.querySelector(".q-tag").innerHTML = "STATEMENT " + (idx + 1) + " OF " + items.length + " " + flag +
+      (streak >= 3 ? '<span class="streak-flag" style="background:var(--plum)">STREAK ' + streak + " ×" + streakMult(streak) + "</span>" : "");
+
+    var result = document.createElement("div");
+    result.innerHTML =
+      '<p class="expl ' + (correct ? "good" : "bad") + '">' + it.expl + "</p>" +
+      '<div class="next-row"><button type="button" class="btn" id="tf-next">' +
+        (idx === items.length - 1 ? "SEE RESULTS" : "NEXT") + " ▶</button></div>";
+    card.appendChild(result);
+    var nb = $("#tf-next");
+    nb.addEventListener("click", next);
+    nb.focus();
+  }
+
+  function next() {
+    idx += 1;
+    if (idx >= items.length) { finishLevel(scene, score, mistakes); }
+    else { renderCard(); }
+  }
+
+  function onKey(e) {
+    if (e.key === "ArrowLeft" && !answered) { e.preventDefault(); answer(true); }
+    else if (e.key === "ArrowRight" && !answered) { e.preventDefault(); answer(false); }
+    else if (e.key === "Enter" && answered) { e.preventDefault(); next(); }
+  }
+  document.addEventListener("keydown", onKey);
+
+  root.addEventListener("click", function (e) {
+    var b = e.target.closest(".opt");
+    if (b && !b.disabled) { answer(b.getAttribute("data-choice") === "real"); }
+  });
+
+  renderCard();
+  setCleanup(function () {
+    stopTimer();
+    document.removeEventListener("keydown", onKey);
+  });
+};
+
+/* =========================================================
+   7. ENGINE: MULTIPLE CHOICE (Level 3) — one attempt
+========================================================= */
+ENGINE.mc = function (scene) {
+  var root = $("#game-root");
+  var items = shuffle(MC_ITEMS);
+  var idx = 0, score = 0, mistakes = 0, streak = 0, answered = false, qStart = 0;
+
+  function updateSceneScore() { $("#scene-score").textContent = "LEVEL SCORE " + score; }
+
+  function render() {
+    answered = false;
+    qStart = Date.now();
+    var it = items[idx];
+    var opts = it.options.map(function (o, oi) {
+      return '<button type="button" class="opt" data-o="' + oi + '">' +
+        '<span class="key">' + (oi + 1) + "</span>" + o + "</button>";
+    }).join("");
+    root.innerHTML =
+      '<div class="game-card" id="mc-card">' +
+        '<span class="q-tag">QUESTION ' + (idx + 1) + " OF " + items.length + (streak >= 3 ? '<span class="streak-flag" style="background:var(--plum)">STREAK ' + streak + " ×" + streakMult(streak) + "</span>" : "") + "</span>" +
+        '<p class="q-text">' + it.text + "</p>" +
+        '<div class="opts" role="group" aria-label="Answer options — one attempt only">' + opts + "</div>" +
+      "</div>";
+    $("#scene-progress").textContent = "ROUND " + (idx + 1) + "/" + items.length;
+    updateSceneScore();
+  }
+
+  function pick(oi) {
+    if (answered) { return; }
+    answered = true;
+    var it = items[idx];
+    var correct = oi === it.answer;
+    var pts = 0;
+    if (correct) {
+      streak += 1;
+      pts = (100 + speedBonus(qStart)) * streakMult(streak);
+      score += pts;
+      SFX.correct();
+    } else {
+      mistakes += 1; streak = 0;
+      score = Math.max(0, score - MC_PENALTY);
+      SFX.wrong();
+    }
+    updateSceneScore();
+
+    var card = $("#mc-card");
+    $$(".opt", card).forEach(function (b) {
+      b.disabled = true;
+      var bOi = parseInt(b.getAttribute("data-o"), 10);
+      if (bOi === it.answer) { b.classList.add("correct"); }
+      else if (bOi === oi) { b.classList.add("wrong"); }
+    });
+    var wrap = document.createElement("div");
+    wrap.innerHTML =
+      '<div class="char-bubble"><span class="avatar" style="background:' + scene.color + '">' + scene.char.charAt(0) + "</span>" +
+        '<span class="say">' + (correct ? it.good : it.bad) + "</span></div>" +
+      '<div class="next-row"><button type="button" class="btn" id="mc-next">' +
+        (idx === items.length - 1 ? "SEE RESULTS" : "NEXT") + " ▶</button></div>";
+    card.appendChild(wrap);
+    $("#mc-next").addEventListener("click", next);
+  }
+
+  function next() {
+    idx += 1;
+    if (idx >= items.length) { finishLevel(scene, score, mistakes); }
+    else { render(); }
+  }
+
+  function onKey(e) {
+    if (!answered && e.key >= "1" && e.key <= "3") {
+      e.preventDefault();
+      pick(parseInt(e.key, 10) - 1);
+    } else if (answered && e.key === "Enter") { e.preventDefault(); next(); }
+  }
+  document.addEventListener("keydown", onKey);
+
+  root.addEventListener("click", function (e) {
+    var b = e.target.closest(".opt");
+    if (b && !b.disabled) { pick(parseInt(b.getAttribute("data-o"), 10)); }
+  });
+
+  render();
+  setCleanup(function () {
+    document.removeEventListener("keydown", onKey);
+  });
+};
+
+/* =========================================================
+   8. ENGINE: MATCH THE MEANING (Level 4)
+========================================================= */
+ENGINE.match = function (scene) {
+  var root = $("#game-root");
+  var pairs = shuffle(MATCH_PAIRS);
+  var words = shuffle(pairs.map(function (p) { return p.w; }));
+  var meanings = shuffle(pairs.map(function (p) { return p.m; }));
+  var found = 0, attempts = 0, mistakes = 0, score = 0, sel = null;
+
+  function countsHtml() {
+    return '<div class="match-counts">' +
+      '<span class="count-pill gold" id="cnt-pairs">PAIRS ' + found + "/" + pairs.length + "</span>" +
+      '<span class="count-pill" id="cnt-att">ATTEMPTS ' + attempts + "</span>" +
+      '<span class="count-pill">SCORE ' + score + "</span>" +
+    "</div>";
+  }
+
+  function render() {
+    var left = words.map(function (w) {
+      return '<button type="button" class="match-item" data-w="' + w.replace(/"/g, "&quot;") + '">' + w + "</button>";
+    }).join("");
+    var right = meanings.map(function (m) {
+      return '<button type="button" class="match-item" data-m="' + m.replace(/"/g, "&quot;") + '">' + m + "</button>";
+    }).join("");
+    root.innerHTML =
+      '<div class="game-card">' +
+        '<span class="q-tag">MATCH ALL ' + pairs.length + " PAIRS</span>" +
+        '<div class="match-example">HOW IT WORKS ▸ WORD · <b>' + MATCH_EXAMPLE.w + "</b> → MEANING · <b>" + MATCH_EXAMPLE.m + "</b></div>" +
+        '<div class="match-cols">' +
+          '<div class="match-col" role="group" aria-label="English words">' + left + "</div>" +
+          '<div class="match-col" role="group" aria-label="Meanings">' + right + "</div>" +
+        "</div>" +
+        countsHtml() +
+      "</div>";
+    $("#scene-progress").textContent = "PAIRS " + found + "/" + pairs.length;
+    $("#scene-score").textContent = "LEVEL SCORE " + score;
+  }
+
+  function updateCounts() {
+    $("#cnt-pairs").textContent = "PAIRS " + found + "/" + pairs.length;
+    $("#cnt-att").textContent = "ATTEMPTS " + attempts;
+    $("#scene-progress").textContent = "PAIRS " + found + "/" + pairs.length;
+    $("#scene-score").textContent = "LEVEL SCORE " + score;
+  }
+
+  function clearSel() {
+    if (sel) { sel.classList.remove("sel"); sel = null; }
+  }
+
+  root.addEventListener("click", function (e) {
+    var wordBtn = e.target.closest(".match-item[data-w]");
+    if (wordBtn && !wordBtn.disabled) {
+      clearSel();
+      sel = wordBtn;
+      wordBtn.classList.add("sel");
+      SFX.click();
+      return;
+    }
+    var meanBtn = e.target.closest(".match-item[data-m]");
+    if (meanBtn && !meanBtn.disabled) {
+      if (!sel) { toast("Pick a word on the left first, then its meaning."); return; }
+      attempts += 1;
+      var w = sel.getAttribute("data-w");
+      var m = meanBtn.getAttribute("data-m");
+      var pair = pairs.filter(function (p) { return p.w === w; })[0];
+      if (pair && pair.m === m) {
+        found += 1;
+        score += 100;
+        sel.classList.remove("sel");
+        sel.classList.add("locked"); sel.disabled = true;
+        meanBtn.classList.add("locked"); meanBtn.disabled = true;
+        sel = null;
+        SFX.match();
+        popFloat(e.clientX, e.clientY - 10, "+100", true);
+        updateCounts();
+        if (found === pairs.length) {
+          if (mistakes === 0) {
+            score += 100;
+            toast("FLAWLESS MATCHING BONUS +100!");
+          }
+          setTimeout(function () { finishLevel(scene, score, mistakes); }, 650);
+        }
+      } else {
+        mistakes += 1;
+        score = Math.max(0, score - MATCH_PENALTY);
+        SFX.wrong();
+        popFloat(e.clientX, e.clientY - 10, "-" + MATCH_PENALTY, false);
+        var oldSel = sel;
+        meanBtn.classList.add("wrongpick");
+        if (oldSel) { oldSel.classList.add("wrongpick"); }
+        clearSel();
+        setTimeout(function () {
+          meanBtn.classList.remove("wrongpick");
+          if (oldSel) { oldSel.classList.remove("wrongpick"); }
+        }, 480);
+        updateCounts();
+      }
+    }
+  });
+
+  render();
+  setCleanup(function () { /* no timers; root listeners die with the cloned node */ });
+};
+
+/* =========================================================
+   9. ENGINE: TIMED BONUS BLITZ (Level 5)
+========================================================= */
+ENGINE.bonus = function (scene) {
+  var root = $("#game-root");
+  var items = shuffle(BONUS_ITEMS);
+  var idx = 0, score = 0, mistakes = 0, streak = 0;
+  var deadline = 0, timerId = null, answered = false, qStart = 0, lastTickSec = -1, ended = false;
+
+  function updateSceneScore() { $("#scene-score").textContent = "LEVEL SCORE " + score; }
+  function fmt(sec) {
+    var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function startTimer() {
+    deadline = Date.now() + BONUS_TIME * 1000;
+    lastTickSec = -1;
+    $("#tbar-num").textContent = fmt(BONUS_TIME);
+    $("#tbar-wrap").hidden = false;
+    $("#tbar-label").hidden = false;
+    $("#tbar-hint").textContent = "TIME LEFT IN THE BLITZ";
+    timerId = setInterval(function () {
+      var left = Math.max(0, (deadline - Date.now()) / 1000);
+      var fill = $("#tbar-fill");
+      fill.style.width = (left / BONUS_TIME * 100) + "%";
+      fill.classList.toggle("warn", left <= 120 && left > 60);
+      fill.classList.toggle("danger", left <= 60);
+      var sec = Math.ceil(left);
+      $("#tbar-num").textContent = fmt(sec);
+      if (sec <= 10 && sec !== lastTickSec) { lastTickSec = sec; SFX.tick(); }
+      if (left <= 0 && !ended) { endRound(true); }
+    }, 250);
+  }
+
+  function render() {
+    answered = false;
+    qStart = Date.now();
+    var it = items[idx];
+    var body = "";
+    if (it.kind === "mc") {
+      body = '<div class="opts" role="group" aria-label="Answer options">' + it.options.map(function (o, oi) {
+        return '<button type="button" class="opt" data-o="' + oi + '"><span class="key">' + (oi + 1) + "</span>" + o + "</button>";
+      }).join("") + "</div>";
+    } else {
+      body = '<div class="opts" style="grid-template-columns:1fr 1fr" role="group" aria-label="Real or delusion?">' +
+        '<button type="button" class="opt" data-choice="real"><span class="key">←</span>REAL</button>' +
+        '<button type="button" class="opt" data-choice="delusion"><span class="key">→</span>DELUSION</button></div>';
+    }
+    root.innerHTML =
+      '<div class="game-card" id="bo-card">' +
+        '<span class="q-tag">BLITZ ' + (idx + 1) + " OF " + items.length +
+          (streak >= 3 ? '<span class="streak-flag" style="background:var(--plum)">STREAK ' + streak + " ×" + streakMult(streak) + "</span>" : "") + "</span>" +
+        '<p class="q-text">' + it.text + "</p>" + body +
+      "</div>";
+    $("#scene-progress").textContent = "ROUND " + (idx + 1) + "/" + items.length;
+    updateSceneScore();
+  }
+
+  function pickMc(oi) {
+    if (answered) { return; }
+    answered = true;
+    var it = items[idx];
+    var correct = oi === it.answer;
+    applyResult(correct, it.expl);
+    $$("#bo-card .opt").forEach(function (b) {
+      b.disabled = true;
+      var bOi = parseInt(b.getAttribute("data-o"), 10);
+      if (bOi === it.answer) { b.classList.add("correct"); }
+      else if (bOi === oi) { b.classList.add("wrong"); }
+    });
+  }
+
+  function pickTf(choice) {
+    if (answered) { return; }
+    answered = true;
+    var it = items[idx];
+    var correct = choice === it.real;
+    applyResult(correct, it.expl, "");
+    $$("#bo-card .opt").forEach(function (b) {
+      b.disabled = true;
+      var isReal = b.getAttribute("data-choice") === "real";
+      b.classList.add(isReal === it.real ? "correct" : "wrong");
+    });
+  }
+
+  function applyResult(correct, expl) {
+    var pts = 0;
+    if (correct) {
+      streak += 1;
+      pts = 100 * streakMult(streak) + speedBonus(qStart);
+      score += pts;
+      SFX.correct();
+    } else {
+      mistakes += 1; streak = 0;
+      score = Math.max(0, score - BONUS_PENALTY);
+      SFX.wrong();
+    }
+    updateSceneScore();
+    var card = $("#bo-card");
+    card.querySelector(".q-tag").innerHTML = "BLITZ " + (idx + 1) + " OF " + items.length +
+      ' <span class="streak-flag" style="background:' + (correct ? "var(--green)" : "var(--red)") + '">' +
+      (correct ? "+" + pts + (streakMult(streak) > 1 ? " (×" + streakMult(streak) + " STREAK)" : "") : "−" + BONUS_PENALTY) + "</span>" +
+      (streak >= 3 ? '<span class="streak-flag" style="background:var(--plum)">STREAK ' + streak + " ×" + streakMult(streak) + "</span>" : "");
+    var wrap = document.createElement("div");
+    wrap.innerHTML =
+      '<p class="expl ' + (correct ? "good" : "bad") + '"><b>' + (correct ? "NICE." : "OOPS.") + "</b> " + expl + "</p>" +
+      '<div class="next-row"><button type="button" class="btn" id="bo-next">' +
+        (idx === items.length - 1 ? "SEE RESULTS" : "NEXT") + " ▶</button></div>";
+    card.appendChild(wrap);
+    var nb = $("#bo-next");
+    if (nb) { nb.addEventListener("click", next); nb.focus(); }
+  }
+
+  function next() {
+    idx += 1;
+    if (idx >= items.length) { endRound(false); }
+    else { render(); }
+  }
+
+  function endRound(timeUp) {
+    if (ended) { return; }
+    ended = true;
+    stopTimer();
+    if (timeUp) { toast("TIME! The tape runs out — here is where you landed."); }
+    finishLevel(scene, score, mistakes);
+  }
+
+  function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+
+  function onKey(e) {
+    if (ended) { return; }
+    var it = items[idx];
+    if (!answered) {
+      if (it.kind === "mc" && e.key >= "1" && e.key <= "3") { e.preventDefault(); pickMc(parseInt(e.key, 10) - 1); }
+      else if (it.kind === "tf" && e.key === "ArrowLeft") { e.preventDefault(); pickTf(true); }
+      else if (it.kind === "tf" && e.key === "ArrowRight") { e.preventDefault(); pickTf(false); }
+    } else if (e.key === "Enter") { e.preventDefault(); next(); }
+  }
+  document.addEventListener("keydown", onKey);
+
+  root.addEventListener("click", function (e) {
+    var mc = e.target.closest('#bo-card .opt[data-o]');
+    if (mc && !mc.disabled) { pickMc(parseInt(mc.getAttribute("data-o"), 10)); return; }
+    var tf = e.target.closest('#bo-card .opt[data-choice]');
+    if (tf && !tf.disabled) { pickTf(tf.getAttribute("data-choice") === "real"); }
+  });
+
+  render();
+  startTimer();
+  setCleanup(function () {
+    stopTimer();
+    document.removeEventListener("keydown", onKey);
+  });
+};
+
+/* =========================================================
+   10. FINALE
+========================================================= */
+function rankFor(score) {
+  if (score >= 5000) { return "SMELLY CAT SUPERSTAR"; }
+  if (score >= 3800) { return "CENTRAL PERK REGULAR"; }
+  if (score >= 2500) { return "PROMISING INTERN"; }
+  if (score >= 1200) { return "COUCH WARMER"; }
+  return "TAPE REWINDER ROOKIE";
+}
+
+function renderFinale() {
+  $("#fin-total-score").textContent = totalBest();
+  $("#fin-total-stars").textContent = totalStars() + "/15";
+  $("#fin-rank").textContent = "RANK: " + rankFor(totalBest());
+  var rows = '<tr><th>Tape</th><th>Title</th><th>Stars</th><th>Best</th></tr>';
+  rows += SCENES.map(function (s) {
+    var p = levelProgress(s.id);
+    return "<tr><td><b>" + s.num + "</b></td><td>" + s.title + "</td>" +
+      '<td><span class="tstars">' + starsHTML(p.stars) + "</span></td>" +
+      '<td class="mono"><b>' + p.best + "</b></td></tr>";
+  }).join("");
+  $("#fin-table").innerHTML = rows;
+  refreshIcons();
+  spawnConfetti(160);
+  SFX.fanfare();
+}
+
+function openFinale() {
+  runCleanups();
+  closeModal();
+  currentScene = null;
+  showScreen("finale");
+  renderFinale();
+}
+
+var rewindArmed = false;
+$("#btn-rewind").addEventListener("click", function () {
+  if (!rewindArmed) {
+    rewindArmed = true;
+    this.classList.add("btn-red");
+    this.innerHTML = ICONS.rewind + ' REALLY ERASE ALL PROGRESS?';
+    setTimeout(function () {
+      rewindArmed = false;
+      var b = $("#btn-rewind");
+      b.classList.remove("btn-red");
+      b.innerHTML = ICONS.rewind + " REWIND THE TAPE";
+    }, 3500);
+    return;
+  }
+  state.levels = {};
+  saveState();
+  updateHUD();
+  renderMap();
+  renderFinale();
+  toast("BEEP. Tape rewound — every score erased. The arcades are yours again.");
+  SFX.rewind();
+});
+
+/* =========================================================
+   11. GLOBAL WIRING
+========================================================= */
+$("#btn-start").addEventListener("click", function () { goMap(); });
+$("#btn-map").addEventListener("click", function () { goMap(); });
+$("#btn-back-map").addEventListener("click", function () { goMap(); });
+$("#btn-final").addEventListener("click", openFinale);
+$("#btn-fin-map").addEventListener("click", function () { goMap(); });
+
+$("#btn-sound").addEventListener("click", function () {
+  state.muted = !state.muted;
+  saveState();
+  renderSound();
+  if (!state.muted) { SFX.click(); }
+  toast(state.muted ? "Sound off. Silent film mode." : "Sound on. The laugh track returns.");
+});
+
+$("#map-grid").addEventListener("click", function (e) {
+  var reel = e.target.closest(".reel");
+  if (!reel) { return; }
+  var scene = SCENES.filter(function (s) { return s.id === reel.getAttribute("data-id"); })[0];
+  if (scene) { SFX.flip(); openBriefing(scene); }
+});
+
+/* Modal actions (delegated) + close on backdrop click */
+var modalMode = "briefing";
+modal.addEventListener("click", function (e) {
+  var act = e.target.closest("[data-act]");
+  if (!act) { return; }
+  SFX.click();
+  var a = act.getAttribute("data-act");
+  if (a === "start-level" || a === "replay") { startLevel(currentScene); }
+  else if (a === "close-modal") { closeModal(); }
+  else if (a === "to-map") { goMap(); }
+  else if (a === "to-finale") { openFinale(); }
+});
+overlay.addEventListener("click", function (e) {
+  if (e.target !== overlay) { return; }
+  closeModal();
+  SFX.click();
+  if (modalMode === "results") { goMap(); }
+});
+
+/* Escape: close modal → leave level → leave finale */
+document.addEventListener("keydown", function (e) {
+  if (e.key !== "Escape") { return; }
+  if (overlay.classList.contains("open")) {
+    var wasResults = (modalMode === "results");
+    closeModal();
+    if (wasResults) { goMap(); }
+  } else if (currentScene) { goMap(); }
+  else if ($("#screen-finale").classList.contains("active")) { goMap(); }
+});
+
+/* =========================================================
+   12. PRELOADER — fake tape loading, PLAY, upward exit
+========================================================= */
+var loader = $("#loader"), fill = $("#loader-fill"), status = $("#loader-status");
+var ldProgress = 0, ldTimer = null;
+var LD_MSGS = ["REWINDING TAPE…", "TRACKING DRUMS…", "SP MODE SET…", "HI-FI STEREO ON…", "READY TO PLAY"];
+
+function loaderStep() {
+  ldProgress = Math.min(100, ldProgress + 9 + Math.random() * 17);
+  fill.style.width = ldProgress + "%";
+  var msgIdx = Math.min(LD_MSGS.length - 1, Math.floor(ldProgress / 25));
+  status.textContent = LD_MSGS[msgIdx];
+  if (ldProgress >= 100) {
+    clearInterval(ldTimer);
+    ldTimer = null;
+    loader.classList.add("ready");
+  }
+}
+ldTimer = setInterval(loaderStep, 170);
+
+$("#loader-play").addEventListener("click", function () {
+  initAudio();
+  if (actx && actx.state === "suspended") { actx.resume(); }
+  SFX.whoosh();
+  loader.classList.add("done");
+  setTimeout(function () { loader.classList.add("gone"); }, 800);
+  $("#btn-start").focus();
+});
+
+/* =========================================================
+   13. INIT
+========================================================= */
+loadState();
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+
+
+
+</script>
+</body>
+</html>
+
