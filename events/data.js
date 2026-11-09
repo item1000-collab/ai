@@ -7,7 +7,7 @@ const LESSONS = [
   { date: '2026-02-15', host: 'Peter', title: 'Maya Coffee Talk', url: './20260215-ai-maya-coffee/index.html' },
   { date: '2026-02-16', host: 'Anatoly', title: 'Moscow · Circling on May 2026', url: './20260216-moscow/index.html' },
   { date: '2026-04-24', host: 'Anatoly', title: 'Vietnam 2026: Nha Trang Cam Ranh', url: './20260424-vietnam/index.html' },
-  { date: '2026-05-03', host: 'Shi', title: 'Current Events · Weekly News Review · May 2026', url: './20260503/index.html' },
+  { date: '2026-05-03', host: 'Shi', title: 'News Clips - Banksy confirmed the resin statue', url: './20260503/index.html' },
   { date: '2026-05-10', host: 'Shi', title: 'News Analysis · Language & Nuance · Editorial Deep Dive', url: './20260510/index.html' },
   { date: '2026-05-17', host: 'Shi', title: 'Breaking News · Conversation Lab · Interactive Workshop', url: './20260517/index.html' },
   { date: '2026-05-24', host: 'Shi', title: 'World View · Today\'s Headlines · Global Perspectives', url: './20260524/index.html' },
