@@ -5,7 +5,7 @@ const LESSONS = [
   { date: '2024-02-28', host: 'Anatoly', title: 'Cuba', url: './20240228-cuba/index.html' },
   { date: '2026-01-24', host: 'Peter', title: 'AI: Moscow To-Manhattan', url: './20260124-ai-moscow-n-york/index.html' },
   { date: '2026-02-15', host: 'Peter', title: 'Maya Coffee Talk', url: './20260215-ai-maya-coffee/index.html' },
-  { date: '2026-02-16', host: 'Anatoly', title: 'Moscow', url: './20260216-moscow/index.html' },
+  { date: '2026-02-16', host: 'Anatoly', title: 'Moscow · Circling on May 2026', url: './20260216-moscow/index.html' },
   { date: '2026-04-24', host: 'Anatoly', title: 'Vietnam', url: './20260424-vietnam/index.html' },
   { date: '2026-05-03', host: 'Shi', title: 'Current Events · Weekly News Review · May 2026', url: './20260503/index.html' },
   { date: '2026-05-10', host: 'Shi', title: 'News Analysis · Language & Nuance · Editorial Deep Dive', url: './20260510/index.html' },
