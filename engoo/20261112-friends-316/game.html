@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friends Vocab Arcade — The Morning After (S3E16)</title>
+<meta name="description" content="A retro VHS-style vocabulary arcade built on the most famous breakup in Friends: five mini-games, 24 expressions, free-order levels.">
+<style>
+/* ============================================================
+   FRIENDS VOCAB ARCADE — warm 90s VHS arcade over Central Perk
+   Palette: paper #FAF3E4 · ink #2E2438 · teal #3E8E8C
+            red #D9433B · yellow #F2B33D · coffee #7A5230
+   ============================================================ */
+:root{
+  --paper:#FAF3E4;
+  --paper2:#F3E7CF;
+  --card:#FFFBF0;
+  --ink:#2E2438;
+  --ink-60:rgba(46,36,56,.62);
+  --ink-25:rgba(46,36,56,.25);
+  --teal:#3E8E8C;
+  --teal-soft:rgba(62,142,140,.16);
+  --red:#D9433B;
+  --red-soft:rgba(217,67,59,.14);
+  --yellow:#F2B33D;
+  --yellow-soft:rgba(242,179,61,.2);
+  --brown:#7A5230;
+  --shadow:0 6px 0 rgba(46,36,56,.22);
+  --shadow-hard:0 6px 0 var(--ink);
+  --f-disp:'Arial Black','Avenir Next Heavy',Impact,'Franklin Gothic Bold',sans-serif;
+  --f-mono:'Courier New',ui-monospace,'Cascadia Mono',Menlo,monospace;
+  --f-body:Georgia,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  min-height:100vh;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:16px;
+  line-height:1.6;
+  overflow-x:hidden;
+}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;border-radius:6px}
+.hidden{display:none !important}
+.mono{font-family:var(--f-mono);font-weight:700;letter-spacing:.5px}
+
+/* ===== film grain + CRT scanlines + vignette ===== */
+#grain,#scan,#vignette{position:fixed;inset:0;pointer-events:none}
+#grain{
+  z-index:90;opacity:.06;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grainShift 1.2s steps(4) infinite;
+}
+@keyframes grainShift{
+  0%{background-position:0 0}
+  25%{background-position:-40px 30px}
+  50%{background-position:30px -40px}
+  75%{background-position:-30px -30px}
+  100%{background-position:0 0}
+}
+#scan{z-index:91;opacity:.05;background:repeating-linear-gradient(transparent 0 2px,rgba(0,0,0,.55) 2px 4px)}
+#vignette{z-index:89;background:radial-gradient(ellipse at center,transparent 52%,rgba(46,36,56,.22))}
+
+/* ===== layout ===== */
+main{max-width:1080px;margin:0 auto;padding:86px 16px 60px}
+.scene{display:none}
+.scene.active{display:block;animation:sceneIn .45s cubic-bezier(.3,.8,.3,1) both}
+@keyframes sceneIn{
+  0%{opacity:0;transform:translateY(16px) scale(.995)}
+  100%{opacity:1;transform:none}
+}
+body.glitch main{animation:vhsGlitch .3s steps(3) both}
+@keyframes vhsGlitch{
+  0%{transform:translateX(0)}
+  30%{transform:translateX(-6px) skewX(.4deg)}
+  60%{transform:translateX(5px)}
+  100%{transform:translateX(0)}
+}
+
+/* ===== fixed header console ===== */
+#console{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  display:flex;align-items:center;gap:14px;
+  padding:10px 16px;
+  background:rgba(46,36,56,.96);
+  color:var(--paper);
+  box-shadow:0 4px 0 rgba(46,36,56,.35);
+  flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-weight:700;letter-spacing:2px;font-size:.8rem;color:var(--yellow);text-shadow:1px 1px 0 rgba(0,0,0,.5);white-space:nowrap}
+.brand svg{width:18px;height:18px}
+#hudDots{display:flex;gap:7px;align-items:center}
+.pip{
+  width:16px;height:16px;border-radius:5px;
+  border:2px solid rgba(250,243,228,.45);
+  background:transparent;
+}
+.pip.done{background:var(--yellow);border-color:var(--yellow);box-shadow:0 0 8px rgba(242,179,61,.7)}
+.hud-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.hud-score{font-family:var(--f-mono);font-weight:700;letter-spacing:1px;font-size:.95rem;color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,.55)}
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;border-radius:10px;
+  border:2px solid rgba(250,243,228,.5);
+  background:transparent;color:var(--paper);
+  cursor:pointer;transition:transform .12s ease,background .12s ease;
+}
+.icon-btn:hover{background:rgba(250,243,228,.12);transform:translateY(-1px)}
+.icon-btn:active{transform:translateY(2px)}
+.icon-btn svg{width:18px;height:18px}
+
+/* ===== buttons & chips ===== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.55rem;
+  font-family:var(--f-disp);font-size:1rem;letter-spacing:.6px;
+  padding:.8rem 1.6rem;border-radius:14px;
+  border:2px solid var(--ink);
+  background:var(--yellow);color:var(--ink);
+  box-shadow:var(--shadow-hard);
+  cursor:pointer;text-decoration:none;
+  transition:transform .12s ease,box-shadow .12s ease,background .12s ease;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 0 var(--ink)}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.btn-teal{background:var(--teal);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:transparent;box-shadow:0 4px 0 rgba(46,36,56,.35);color:var(--ink)}
+.btn-big{font-size:1.25rem;padding:1rem 2.4rem;border-radius:18px}
+.chip{
+  display:inline-block;font-family:var(--f-mono);font-weight:700;
+  font-size:.68rem;letter-spacing:2px;text-transform:uppercase;
+  padding:.22rem .7rem;border-radius:999px;
+  background:var(--ink);color:var(--paper);
+}
+.chip.gold{background:var(--yellow);color:var(--ink)}
+.chip.teal{background:var(--teal);color:#fff}
+.card{background:var(--card);border:2px solid var(--ink);border-radius:16px;box-shadow:var(--shadow)}
+
+/* ===== preloader ===== */
+#preloader{
+  position:fixed;inset:0;z-index:80;
+  background:linear-gradient(180deg,#241C30 0%,#2E2438 100%);
+  color:var(--paper);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .75s cubic-bezier(.6,.05,.4,1);
+}
+#preloader.done{transform:translateY(-100%)}
+.pl-inner{text-align:center;max-width:460px;padding:20px}
+.pl-inner .osd{color:var(--yellow)}
+.pl-bar{height:16px;border:2px solid var(--paper);border-radius:999px;overflow:hidden;margin:14px auto;background:rgba(250,243,228,.08)}
+.pl-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--yellow));transition:width .18s linear}
+#plPct{font-size:1.1rem;letter-spacing:2px;margin:.2rem 0 1.2rem}
+
+/* ===== VHS on-screen-display text ===== */
+.osd{
+  font-family:var(--f-mono);font-weight:700;letter-spacing:2px;
+  font-size:.78rem;text-transform:uppercase;
+  color:var(--brown);
+  text-shadow:1px 1px 0 rgba(46,36,56,.18);
+}
+.osd.dim{color:var(--ink-60)}
+.cursor{animation:blink 1s steps(2) infinite}
+@keyframes blink{0%{opacity:1}50%{opacity:0}100%{opacity:1}}
+
+/* ===== intro scene ===== */
+.intro-hero{position:relative;overflow:hidden;padding:0;min-height:520px;display:flex;align-items:flex-end}
+.intro-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.92)}
+.intro-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(46,36,56,.15) 0%,rgba(46,36,56,.82) 62%,rgba(46,36,56,.94) 100%)}
+.intro-inner{position:relative;padding:34px 30px;color:var(--paper);width:100%}
+.intro-inner .osd{color:var(--yellow)}
+.game-title{
+  margin:.4rem 0 .6rem;
+  font-family:var(--f-disp);
+  font-size:clamp(2.1rem,6vw,3.4rem);
+  line-height:1.02;letter-spacing:1px;
+  color:var(--yellow);
+  text-shadow:3px 3px 0 var(--ink),6px 6px 0 rgba(0,0,0,.35);
+}
+.intro-inner .lede{max-width:640px;font-size:1.02rem;color:#F3EAD5;margin:.6rem 0 1.1rem}
+.mech-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 1.3rem}
+.mech-chips .chip{background:rgba(250,243,228,.14);border:1px solid rgba(250,243,228,.45);color:var(--paper)}
+.intro-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.deck-link{
+  font-family:var(--f-mono);font-weight:700;font-size:.78rem;letter-spacing:1px;
+  color:var(--yellow);text-decoration:none;border-bottom:2px dotted var(--yellow);padding-bottom:2px;
+}
+.deck-link:hover{border-bottom-style:solid}
+.how-note{font-size:.9rem;color:var(--ink-60);max-width:720px;margin:1.1rem auto 0;text-align:center}
+
+/* ===== map scene ===== */
+.map-head{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:0 0 18px}
+.map-head h2{margin:0;font-family:var(--f-disp);font-size:1.7rem;letter-spacing:.5px}
+.map-head .mono{color:var(--brown)}
+#finalBtn{margin-left:auto}
+#mapGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px}
+.reel{
+  position:relative;text-align:left;padding:0;overflow:hidden;
+  background:var(--card);border:2px solid var(--ink);border-radius:18px;
+  box-shadow:var(--shadow);cursor:pointer;
+  transition:transform .16s ease,box-shadow .16s ease;
+  display:flex;flex-direction:column;
+}
+.reel:hover{transform:translateY(-5px);box-shadow:0 11px 0 rgba(46,36,56,.22)}
+.reel:active{transform:translateY(2px);box-shadow:0 3px 0 rgba(46,36,56,.22)}
+.reel-media{position:relative;display:block;aspect-ratio:16/9;background:var(--ink)}
+.reel-media img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(.95)}
+.reel-num{
+  position:absolute;top:10px;left:10px;
+  width:38px;height:38px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--yellow);border:2px solid var(--ink);
+  font-family:var(--f-disp);font-size:1.05rem;color:var(--ink);
+  box-shadow:0 3px 0 var(--ink);
+}
+.reel-body{display:flex;flex-direction:column;gap:8px;padding:14px 16px 16px}
+.reel-title{font-family:var(--f-disp);font-size:1.08rem;letter-spacing:.3px}
+.reel-char{display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-weight:700;font-size:.8rem;letter-spacing:1.5px;color:var(--brown)}
+.reel-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+.stars{display:inline-flex;gap:3px}
+.stars svg{width:19px;height:19px}
+.best{font-size:.72rem;color:var(--ink-60)}
+.map-foot{margin-top:22px;text-align:center;color:var(--ink-60);font-size:.9rem}
+.ava{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);flex:0 0 auto}
+
+/* ===== level scene ===== */
+.lvl-head{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:14px 18px;margin-bottom:18px}
+.lvl-id{flex:1 1 240px;min-width:200px}
+.lvl-id h2{margin:.3rem 0 .15rem;font-family:var(--f-disp);font-size:1.4rem;letter-spacing:.4px}
+.flavor{margin:0;font-style:italic;color:var(--ink-60);font-size:.9rem}
+.lvl-stats{display:flex;align-items:center;gap:18px}
+.stat{text-align:center;min-width:74px}
+.stat .mono{font-size:1.3rem;display:block}
+.stat label{font-family:var(--f-mono);font-size:.62rem;letter-spacing:2px;color:var(--ink-60)}
+.char-chip{display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-weight:700;font-size:.8rem;letter-spacing:1.5px;color:var(--brown)}
+.char-chip .ava{width:34px;height:34px}
+#levelBody{display:flex;flex-direction:column;gap:16px}
+.feedback{border-radius:14px;padding:.9rem 1.1rem;margin-top:.9rem;border:2px dashed var(--ink-25);background:var(--paper2)}
+.feedback.ok{border-color:var(--teal);background:var(--teal-soft)}
+.feedback.bad{border-color:var(--red);background:var(--red-soft)}
+.feedback .mono{font-size:.7rem;letter-spacing:2px;text-transform:uppercase}
+.feedback p{margin:.3rem 0}
+
+/* ===== timers ===== */
+.tbar{height:16px;border:2px solid var(--ink);border-radius:999px;overflow:hidden;background:#fff;box-shadow:inset 0 2px 0 rgba(46,36,56,.08)}
+.tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--teal),var(--yellow))}
+.tbar.hot i{background:var(--red);animation:flashRed .5s steps(2) infinite}
+@keyframes flashRed{0%{opacity:1}50%{opacity:.45}100%{opacity:1}}
+.trow{display:flex;align-items:center;gap:12px}
+.tclock{font-family:var(--f-mono);font-weight:700;font-size:1.05rem;letter-spacing:1px;min-width:64px;text-align:right}
+.tclock.hot{color:var(--red)}
+
+/* ===== engine: fill the blanks ===== */
+.story p{margin:.55rem 0;font-size:1.02rem}
+.gap{
+  font-family:var(--f-body);font-weight:700;
+  border:2px dashed var(--teal);border-radius:10px;
+  background:var(--teal-soft);color:var(--ink);
+  padding:.15rem .6rem;cursor:pointer;
+  transition:background .15s ease,transform .15s ease;
+}
+.gap:hover{transform:translateY(-1px)}
+.gap.sel{background:var(--yellow);border-style:solid;border-color:var(--ink);box-shadow:0 3px 0 var(--ink)}
+.gap.ok{background:var(--teal);border:2px solid var(--ink);color:#fff;cursor:default;box-shadow:none}
+.bank{padding:14px 16px}
+.bank-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.bankw{
+  font-family:var(--f-body);font-weight:700;font-size:.95rem;
+  border:2px solid var(--ink);border-radius:12px;
+  background:#fff;padding:.45rem .85rem;cursor:pointer;
+  box-shadow:0 3px 0 var(--ink-25);
+  transition:transform .12s ease,background .12s ease;
+}
+.bankw:hover{background:var(--yellow-soft);transform:translateY(-2px)}
+.bankw.used{opacity:.28;background:var(--teal);color:#fff;border-style:solid;cursor:default;box-shadow:none;text-decoration:line-through}
+.shakebad{animation:shake .45s ease}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-5px)}
+  80%{transform:translateX(5px)}
+}
+
+/* ===== engine: real / delusion ===== */
+.rd-card{padding:20px 22px}
+.rd-q{font-size:1.18rem;font-weight:700;line-height:1.5;margin:.6rem 0 1.2rem}
+.rd-btns{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rd-btns .btn{font-size:1.1rem;padding:1rem}
+.kbd-hint{font-family:var(--f-mono);font-size:.68rem;letter-spacing:1px;color:var(--ink-60);margin-top:.4rem;display:block}
+.btn.ok{background:var(--teal);border-color:var(--ink);color:#fff}
+.btn.badpick{background:var(--red);border-color:var(--ink);color:#fff}
+.streak-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--f-mono);font-weight:700;font-size:.8rem;letter-spacing:1px;
+  background:var(--yellow);border:2px solid var(--ink);border-radius:999px;
+  padding:.3rem .9rem;color:var(--ink);
+}
+.streak-chip.hot{background:var(--red);color:#fff;animation:pulse .6s ease infinite alternate}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.06)}}
+
+/* ===== engine: multiple choice ===== */
+.mc-q{font-size:1.15rem;font-weight:700;line-height:1.5;margin:.6rem 0 1rem}
+.mc-opts{display:grid;gap:10px}
+.mc-opt{
+  text-align:left;font-family:var(--f-body);font-size:1rem;line-height:1.45;
+  background:#fff;border:2px solid var(--ink);border-radius:12px;
+  padding:.7rem 1rem;cursor:pointer;box-shadow:0 3px 0 var(--ink-25);
+  transition:transform .12s ease,background .12s ease;
+}
+.mc-opt:hover:not(:disabled){background:var(--yellow-soft);transform:translateX(4px)}
+.mc-opt:disabled{cursor:default;opacity:.55}
+.mc-opt.ok{opacity:1;background:var(--teal);color:#fff;font-weight:700}
+.mc-opt.badpick{opacity:1;background:var(--red);color:#fff;font-weight:700}
+.react{display:flex;align-items:center;gap:12px;margin-top:.9rem}
+.react p{margin:0;font-style:italic;color:var(--brown)}
+.next-row{margin-top:14px;display:flex;justify-content:flex-end}
+
+/* ===== engine: match ===== */
+.match-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.match-col{display:flex;flex-direction:column;gap:10px}
+.mitem{
+  text-align:left;font-family:var(--f-body);font-size:.98rem;line-height:1.4;
+  background:#fff;border:2px solid var(--ink);border-radius:12px;
+  padding:.6rem .9rem;cursor:pointer;box-shadow:0 3px 0 var(--ink-25);
+  transition:transform .12s ease,background .12s ease;
+}
+.mitem .mono{font-size:.62rem;letter-spacing:2px;color:var(--brown);display:block;margin-bottom:2px}
+.mitem:hover:not(:disabled){transform:translateY(-2px);background:var(--yellow-soft)}
+.mitem.sel{background:var(--yellow);box-shadow:0 3px 0 var(--ink)}
+.mitem.lock{background:var(--teal);color:#fff;cursor:default;box-shadow:none}
+.mitem.lock .mono{color:rgba(255,255,255,.75)}
+.match-hud{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.match-example{
+  font-family:var(--f-mono);font-weight:700;font-size:.78rem;letter-spacing:.5px;
+  background:var(--paper2);border:2px dashed var(--ink-25);border-radius:10px;
+  padding:.5rem .8rem;color:var(--brown);
+}
+
+/* ===== engine: bonus ===== */
+.bonus-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 18px}
+.bonus-head .trow{flex:1 1 260px}
+
+/* ===== finale ===== */
+.fin-hero{position:relative;overflow:hidden;padding:0;min-height:460px;display:flex;align-items:flex-end}
+.fin-rel{position:relative;width:100%;padding:30px 26px;color:var(--paper)}
+.fin-rel .osd.dim{color:rgba(250,243,228,.78)}
+.fin-rel .rank-blurb{color:#E8DEC9}
+.fin-rel .fin-score{color:#7CD6D3;text-shadow:3px 3px 0 rgba(0,0,0,.4)}
+.fin-rel .rtable{border-color:rgba(250,243,228,.4)}
+.fin-rel .fin-actions .btn-ghost{color:var(--paper);border-color:rgba(250,243,228,.55);box-shadow:0 4px 0 rgba(0,0,0,.4)}
+.fin-rel .fin-actions .btn-ghost:hover{background:rgba(250,243,228,.12)}
+.fin-hero .intro-shade{background:linear-gradient(180deg,rgba(46,36,56,.25) 0%,rgba(46,36,56,.85) 58%,rgba(46,36,56,.96) 100%)}
+.fin-hero.text-top{text-align:center}
+.fin-hero .osd{margin-bottom:.4rem}
+.fin-score{font-family:var(--f-disp);font-size:clamp(2.6rem,9vw,4.4rem);color:var(--teal);line-height:1;text-shadow:3px 3px 0 rgba(46,36,56,.2);margin:.4rem 0}
+.fin-stars{display:flex;justify-content:center;gap:8px;margin:.5rem 0 1rem}
+.fin-stars svg{width:34px;height:34px}
+.rank-name{
+  display:inline-block;font-family:var(--f-disp);font-size:1.5rem;letter-spacing:1px;
+  background:var(--ink);color:var(--yellow);
+  padding:.55rem 1.6rem;border-radius:16px;box-shadow:var(--shadow);
+}
+.rank-blurb{color:var(--ink-60);font-style:italic;margin:.8rem auto 0;max-width:520px}
+.rtable{width:100%;border-collapse:collapse;margin-top:18px;background:var(--card);border:2px solid var(--ink);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.rtable th,.rtable td{padding:.6rem .8rem;border-bottom:2px solid var(--ink-25);text-align:left}
+.rtable th{font-family:var(--f-mono);font-size:.68rem;letter-spacing:2px;background:var(--paper2);color:var(--brown)}
+.rtable td{font-size:.95rem}
+.rtable tr:last-child td{border-bottom:none}
+.fin-actions{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:22px}
+
+/* ===== modal ===== */
+#modal{
+  position:fixed;inset:0;z-index:60;display:none;
+  align-items:center;justify-content:center;padding:18px;
+  background:rgba(36,27,48,.6);
+}
+#modal.open{display:flex}
+.modal-card{
+  position:relative;max-width:600px;width:100%;max-height:86vh;overflow:auto;
+  background:var(--card);border:2px solid var(--ink);border-radius:20px;
+  box-shadow:0 10px 0 rgba(46,36,56,.4);
+  padding:26px 26px 22px;
+  animation:modalIn .35s cubic-bezier(.3,.9,.3,1.2) both;
+}
+@keyframes modalIn{0%{opacity:0;transform:translateY(26px) scale(.94)}100%{opacity:1;transform:none}}
+.modal-x{position:absolute;top:12px;right:12px;border-color:var(--ink-25);color:var(--ink)}
+.modal-card h3{margin:.1rem 0 .5rem;font-family:var(--f-disp);font-size:1.4rem;letter-spacing:.4px}
+.modal-card .obj{margin:.7rem 0}
+.modal-card .tip{color:var(--ink-60);font-size:.92rem}
+.modal-card .stars-big{display:flex;gap:6px;justify-content:center;margin:.8rem 0}
+.modal-card .stars-big svg{width:38px;height:38px}
+.modal-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.modal-score{font-family:var(--f-disp);font-size:2.4rem;text-align:center;color:var(--teal);margin:.3rem 0}
+.brief-media{border-radius:14px;border:2px solid var(--ink);width:100%;aspect-ratio:16/7;object-fit:cover;display:block;margin-bottom:12px}
+.star-pop{animation:starIn .5s cubic-bezier(.3,1.4,.4,1) both}
+.star-pop:nth-child(2){animation-delay:.15s}
+.star-pop:nth-child(3){animation-delay:.3s}
+@keyframes starIn{0%{transform:scale(0) rotate(-40deg);opacity:0}70%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+
+/* ===== toasts & floating pops ===== */
+#toasts{position:fixed;top:64px;right:14px;z-index:65;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  font-family:var(--f-mono);font-weight:700;font-size:.8rem;letter-spacing:.5px;
+  background:var(--ink);color:var(--paper);
+  border-radius:12px;padding:.6rem 1rem;box-shadow:0 5px 0 rgba(0,0,0,.3);
+  animation:toastIn .3s ease both;max-width:280px;
+}
+.toast.out{opacity:0;transform:translateX(20px);transition:all .3s ease}
+@keyframes toastIn{0%{opacity:0;transform:translateX(30px)}100%{opacity:1;transform:none}}
+#popLayer{position:fixed;inset:0;z-index:66;pointer-events:none}
+.pop{
+  position:absolute;transform:translate(-50%,-50%);
+  font-family:var(--f-disp);font-size:1.3rem;
+  color:var(--teal);text-shadow:2px 2px 0 rgba(46,36,56,.35);
+  animation:floatUp .95s ease-out both;
+}
+.pop.pop-red{color:var(--red)}
+@keyframes floatUp{
+  0%{opacity:0;transform:translate(-50%,-30%) scale(.7)}
+  25%{opacity:1;transform:translate(-50%,-60%) scale(1.1)}
+  100%{opacity:0;transform:translate(-50%,-160%) scale(1)}
+}
+#fx{position:fixed;inset:0;z-index:70;pointer-events:none}
+
+/* ===== responsive ===== */
+@media (max-width:640px){
+  main{padding-top:110px}
+  .brand span{display:none}
+  .rd-btns{grid-template-columns:1fr}
+  .match-wrap{grid-template-columns:1fr}
+  .lvl-stats{gap:10px}
+  #finalBtn{margin-left:0}
+  .hud-score{font-size:.8rem}
+}
+
+/* ===== reduced motion ===== */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  html{scroll-behavior:auto}
+  #grain{animation:none}
+  .scene.active,.toast,.modal-card,.pop{opacity:1}
+}
+</style>
+</head>
+<body>
+
+<div id="grain" aria-hidden="true"></div>
+<div id="scan" aria-hidden="true"></div>
+<div id="vignette" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<!-- ===== preloader: VHS tracking screen with PLAY gate ===== -->
+<div id="preloader" role="dialog" aria-label="Loading screen">
+  <div class="pl-inner">
+    <p class="osd">▶ TRACKING · TAPE 316 · SP MODE</p>
+    <div class="pl-bar"><i id="plFill"></i></div>
+    <p id="plPct" class="mono">0%</p>
+    <button id="plPlay" class="btn btn-big hidden">PLAY ▶</button>
+    <p class="osd dim" style="margin-top:1rem">SOUND STARTS AFTER YOUR FIRST CLICK</p>
+  </div>
+</div>
+
+<!-- ===== fixed header console ===== -->
+<header id="console">
+  <div class="brand"><i data-icon="coffee"></i><span>FRIENDS&nbsp;VOCAB&nbsp;ARCADE</span></div>
+  <div id="hudDots" aria-label="Level progress indicator"></div>
+  <div class="hud-right">
+    <div id="hudScore" class="hud-score" aria-live="polite">SCORE 0</div>
+    <button id="soundBtn" class="icon-btn" type="button" aria-label="Toggle sound"></button>
+    <button id="mapBtn" class="icon-btn" type="button" aria-label="Open the level map"><i data-icon="map"></i></button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===== scene: intro ===== -->
+  <section id="scene-intro" class="scene active" aria-label="Introduction">
+    <div class="intro-hero card">
+      <img class="intro-bg" src="slide-001.jpg" data-initials="FA" data-c1="#3E8E8C" data-c2="#F2B33D" alt="Rainy New York coffee shop window with the lesson title The Morning After">
+      <div class="intro-shade" aria-hidden="true"></div>
+      <div class="intro-inner">
+        <p class="osd">TAPE 316 · SEASON 3 · EPISODE 16 · “THE ONE THE MORNING AFTER”</p>
+        <h1 class="game-title">FRIENDS<br>VOCAB ARCADE</h1>
+        <p class="osd dim">PREVIOUSLY ON: ONE BREAK · ONE MESSAGE · ONE DISASTER<span class="cursor">▌</span></p>
+        <p class="lede">The most famous breakup in sitcom history doubles as a full English course. Twenty-four expressions, five arcade machines, one rainy New York night. Play any tape in any order — the word bank remembers your best runs.</p>
+        <div class="mech-chips" aria-label="Game mechanics">
+          <span class="chip">FILL THE BLANKS</span>
+          <span class="chip">REAL OR DELUSION</span>
+          <span class="chip">COFFEE QUIZ</span>
+          <span class="chip">MATCH THE MEANING</span>
+          <span class="chip">BONUS TAPE</span>
+        </div>
+        <div class="intro-actions">
+          <button id="startBtn" class="btn btn-big" type="button">▶ OPEN THE LEVEL MAP</button>
+          <a class="deck-link" href="friends-316.pdf" target="_blank" rel="noopener noreferrer">📄 OPEN THE LESSON DECK (PDF)</a>
+        </div>
+      </div>
+    </div>
+    <p class="how-note">Free order: every level is unlocked from the start. Stars and best scores are stored per level in your browser, so you can jump between tapes, leave mid-level, and return without losing progress. The finale opens once all five tapes are cleared.</p>
+  </section>
+
+  <!-- ===== scene: level map ===== -->
+  <section id="scene-map" class="scene" aria-label="Level map">
+    <div class="map-head">
+      <h2>SELECT YOUR TAPE</h2>
+      <span id="mapDone" class="mono">0/5 CLEARED</span>
+      <button id="finalBtn" class="btn btn-teal hidden" type="button">🏆 OPEN THE FINALE</button>
+    </div>
+    <div id="mapGrid" aria-label="Level cards"></div>
+    <p class="map-foot">Every tape is playable in any order. Completed tapes keep their stars and best score — replays are always free.</p>
+  </section>
+
+  <!-- ===== scene: level ===== -->
+  <section id="scene-level" class="scene" aria-label="Level">
+    <div class="lvl-head card">
+      <button id="backBtn" class="btn btn-ghost" type="button">◀ MAP</button>
+      <div class="lvl-id">
+        <span id="lvlTag" class="chip gold">LEVEL</span>
+        <h2 id="lvlTitle">Level</h2>
+        <p id="lvlFlavor" class="flavor"></p>
+      </div>
+      <div class="lvl-stats">
+        <div class="stat"><span id="lvlScore" class="mono">0</span><label>SCORE</label></div>
+        <div class="stat"><span id="lvlMist" class="mono">0</span><label>MISTAKES</label></div>
+        <div id="lvlChar" class="char-chip"></div>
+      </div>
+    </div>
+    <div id="levelBody"></div>
+  </section>
+
+  <!-- ===== scene: finale ===== -->
+  <section id="scene-finale" class="scene" aria-label="Finale">
+    <div class="fin-hero card">
+      <img class="intro-bg" src="slide-015.jpg" data-initials="FA" data-c1="#7A5230" data-c2="#F2B33D" alt="Sunset over a New York apartment block from the lesson wrap-up board">
+      <div class="intro-shade" aria-hidden="true"></div>
+      <div class="fin-rel">
+        <p class="osd" style="color:var(--yellow)">END OF TAPE · REWIND COMPLETE</p>
+        <div id="finaleBody"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== modal ===== -->
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-card">
+    <button id="modalX" class="icon-btn modal-x" type="button" aria-label="Close dialog">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+<div id="popLayer" aria-hidden="true"></div>
+<script>
+(function(){
+"use strict";
+
+/* ===== constants: palette & storage ===== */
+var PAL = { paper:'#FAF3E4', ink:'#2E2438', teal:'#3E8E8C', red:'#D9433B', yellow:'#F2B33D', brown:'#7A5230' };
+var SAVE_KEY = 'friends_vocab_arcade_v1'; /* versioned localStorage key */
+var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+/* ===== icons: inline SVG set (no external icon CDN) ===== */
+var ICONS = {
+  star: '<svg viewBox="0 0 24 24" fill="#F2B33D" stroke="#2E2438" stroke-width="1.6" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.5 1.2 6.5L12 17.4 6.1 20.4l1.2-6.5L2.5 9.4l6.6-.9z"/></svg>',
+  starEmpty: '<svg viewBox="0 0 24 24" fill="none" stroke="rgba(46,36,56,.45)" stroke-width="1.6" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.5 1.2 6.5L12 17.4 6.1 20.4l1.2-6.5L2.5 9.4l6.6-.9z"/></svg>',
+  coffee: '<svg viewBox="0 0 24 24" fill="none" stroke="#F2B33D" stroke-width="2" aria-hidden="true"><path d="M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 9h2a3 3 0 0 1 0 6h-2"/><path d="M7 4c0 1-1 1.5-1 2.5M11 4c0 1-1 1.5-1 2.5"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  vol: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  volx: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4a3 3 0 0 0 3 4M17 5h3a3 3 0 0 1-3 4"/><path d="M12 14v4M8 21h8"/></svg>',
+  rewind: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>'
+};
+function refreshIcons(){
+  var nodes = document.querySelectorAll('[data-icon]');
+  for (var i = 0; i < nodes.length; i++){
+    var el = nodes[i];
+    el.innerHTML = ICONS[el.getAttribute('data-icon')] || '';
+  }
+}
+
+/* ===== vocabulary data (from the lesson deck) ===== */
+var WORDS = [
+  {w:'take a break', d:'to temporarily pause a romantic relationship'},
+  {w:'catalyst', d:'an event that causes a dramatic change'},
+  {w:'answering machine', d:'a retro device that records voice messages'},
+  {w:'one-night stand', d:'a single encounter with no expectation of a relationship'},
+  {w:'cover your tracks', d:'to hide evidence of what you have done'},
+  {w:'spill the beans', d:'to reveal a secret'},
+  {w:'word of mouth', d:'information passed verbally from person to person'},
+  {w:'keep it under wraps', d:'to keep something secret'},
+  {w:'eavesdrop', d:'to secretly listen to a conversation'},
+  {w:'break up', d:'to end a romantic relationship'},
+  {w:'make up', d:'to forgive each other and become friendly again after an argument'},
+  {w:'bail on', d:'to abandon someone when things get difficult'},
+  {w:'work out', d:'to resolve a problem'},
+  {w:'justify', d:'to prove something is right or reasonable'},
+  {w:'jeopardize', d:'to put something important at risk'},
+  {w:'technicality', d:'a small formal rule used to avoid a penalty, ignoring the moral reality'},
+  {w:'loophole', d:'an ambiguity in the rules that lets someone escape consequence'},
+  {w:'devastated', d:'completely destroyed or deeply shocked and saddened'},
+  {w:'unforgivable', d:'so bad that it cannot be pardoned or excused'},
+  {w:'agony', d:'extreme physical or mental suffering'},
+  {w:'threshold of pain', d:'the maximum level of pain a person can tolerate'},
+  {w:'pain-free', d:'a promise about zero pain — the deck calls it false advertising'},
+  {w:'awkward', d:'causing or feeling embarrassment or inconvenience'},
+  {w:'mood whiplash', d:'a rapid, extreme shift in tone'}
+];
+
+/* ===== scenes: the five level tapes ===== */
+var SCENES = [
+  { id:'gap',     num:1, title:'The Setup: Rewind',   char:'RACHEL',   color:'#3E8E8C', slide:'slide-002.jpg',
+    tag:'FILL THE BLANKS', obj:'Repair the torn script — put the missing words back into the story of the night everything changed.',
+    tip:'Click a gap, then click a word from the bank. Wrong words bounce back with a shake, and every bounce costs points.',
+    flavor:'Previously on... an argument about Mark, a pause that was not one, and a copy-center girl named Chloe.' },
+  { id:'reality', num:2, title:'REAL or DELUSION',    char:'CHANDLER', color:'#D9433B', slide:'slide-012.jpg',
+    tag:'TRUE / FALSE', obj:'Call out what really happened before the tape runs out. Streaks multiply your score up to ×5.',
+    tip:'Answer with the buttons or the ← / → arrow keys. After each answer the explanation appears — the tape only moves when you press NEXT.',
+    flavor:'Could I BE any more honest? The blackboard never lies. Well — except about Waxine.' },
+  { id:'coffee',  num:3, title:'Gossip Trail Quiz',   char:'GUNTHER',  color:'#F2B33D', slide:'slide-004.jpg',
+    tag:'MULTIPLE CHOICE', obj:'Five questions about the night the secret traveled the café. One attempt per question.',
+    tagColor:'', tip:'Three options, one shot. Fast answers feed the score, and Gunther reacts to every call you make.',
+    flavor:'“You should probably talk to my roommate…” — the café hears everything.' },
+  { id:'match',   num:4, title:'Match the Meaning',   char:'MONICA',   color:'#7A5230', slide:'slide-003.jpg',
+    tag:'MATCHING', obj:'Pair six words with their meanings. Precision is everything — Monica is watching.',
+    tip:'Click a word, then click a meaning. Correct pairs lock green and cannot be reused; wrong picks shake and clear the selection.',
+    flavor:'Organized. Precise. Zero tolerance for wrong pairs.' },
+  { id:'bonus',   num:5, title:'Bonus Tape: All-Nighter', char:'JOEY', color:'#2E2438', slide:'slide-014.jpg',
+    tag:'TIMED BONUS', obj:'750 seconds on the clock, mixed questions from every tape, and a streak × multiplier.',
+    tip:'Answer fast and keep the streak alive — the bar flashes red near the end, and the clock stops for nobody.',
+    flavor:'How you doin’? Ride the streak all the way to the credits.' }
+];
+
+/* ===== level 1 data: fill the blanks (story cloze from the deck) ===== */
+var GAP_STORY = [
+  { a:'take a break',      pre:'“Rachel suggested they ', post:' — to temporarily pause the relationship, not to end it.”' },
+  { a:'catalyst',          pre:'The board calls the argument about Mark the ', post:' — an event that causes a dramatic change.”' },
+  { a:'answering machine', pre:'“Rachel left a message on the ', post:' saying she wants to get back together!”' },
+  { a:'one-night stand',   pre:'“Ross’s night with Chloe was a ', post:' — a mistake with no expectation of anything more.”' },
+  { a:'cover your tracks', pre:'“Ross tried to ', post:' by hiding Chloe behind the door.”' },
+  { a:'word of mouth',     pre:'“The rumor traveled from Chloe to Isaac to Jasmine by ', post:'.”' },
+  { a:'spill the beans',   pre:'“Gunther ', post:' to Rachel before Ross could stop him. The secret is out.”' },
+  { a:'keep it under wraps', pre:'“Ross tried to ', post:', but failed — badly.”' }
+];
+var GAP_DECOYS = ['bail on', 'make up', 'eavesdrop', 'work out'];
+
+/* ===== level 2 data: REAL or DELUSION statements ===== */
+var REALITY_QS = [
+  { s:'Joey and Chandler advised Ross to tell Rachel the truth immediately.', a:false,
+    ex:'They told him to cover his tracks! The friends’ survival plan was to hide the evidence, not to confess.' },
+  { s:'Ross successfully stopped Gunther from telling Rachel.', a:false,
+    ex:'He was too late. Gunther spilled the beans, and the deck declares: “The secret is out.”' },
+  { s:'Waxine is described as a pain-free organic product.', a:true,
+    ex:'True — but it is a lie! The deck calls the promise “A false advertising promise!” and the screaming proves it.' },
+  { s:'Ross claims he used a loophole to hurt Rachel intentionally.', a:false,
+    ex:'He thought the relationship was truly over. The deck frames his defense as “a mistake driven by grief”, not malice.' },
+  { s:'The four friends left the bedroom because they were starving.', a:false,
+    ex:'They stayed trapped. Leaving meant revealing they were eavesdropping on the breakup — hunger lost to awkwardness.' },
+  { s:'Chandler and Joey rushed in with a frying pan and a tea kettle.', a:true,
+    ex:'The Waxine screams convinced them Monica and Phoebe were under attack. The deck keeps the props in the script.' },
+  { s:'Rachel ordered the pizza with extra anchovies chopped into the sauce.', a:true,
+    ex:'Ross asked for no anchovies. The deck reads the order as pure “Spite, Tension, and Retaliation” at 3:00 AM.' }
+];
+
+/* ===== level 3 data: multiple choice ===== */
+var COFFEE_QS = [
+  { q:'Where did Ross meet Chloe?',
+    opts:['At the copy center where she works','At Central Perk, on the couch','At Rachel’s office'],
+    a:0, react:'“The copy place,” Gunther says flatly, wiping a mug that is already clean.' },
+  { q:'Who is Isaac’s sister?',
+    opts:['Chloe','Jasmine','Monica'],
+    a:1, react:'“Isaac’s sister is Jasmine,” says the trail board. Gunther nods — he has heard everything anyway.' },
+  { q:'How did the secret reach Rachel before Ross could stop it?',
+    opts:['Ross confessed first','The answering machine played it in the café','By word of mouth: Chloe → Isaac → Jasmine → Gunther'],
+    a:2, react:'Gunther sighs. He knows exactly how rumors travel — one degree of separation is plenty.' },
+  { q:'What does “technicality” mean in the lesson?',
+    opts:['A small formal rule used to avoid a penalty','A type of coffee order at Central Perk','A legal document that ends a relationship'],
+    a:0, react:'“You think you’re gonna get out of this on a technicality?” Gunther quotes, impressed.' },
+  { q:'What does Rachel argue overrules technical definitions?',
+    opts:['Roommate agreements','Emotional betrayal','Coffeehouse etiquette'],
+    a:1, react:'Gunther slides the mug aside. Emotional betrayal overrules the rules — always has.' }
+];
+
+/* ===== level 5 data: bonus pool is assembled from all topics ===== */
+var BONUS_TF = [
+  { s:'Monica and Phoebe screamed so loudly that Chandler and Joey thought they were under attack.', a:true,
+    ex:'They grabbed a frying pan and a tea kettle and charged into the hallway.' },
+  { s:'Rachel’s message said she wanted to return the answering machine.', a:false,
+    ex:'She wanted to get back together! The message was the plot’s ticking bomb, not a receipt.' },
+  { s:'Joey’s “Take Notice Walk” was invented to make people look at him.', a:false,
+    ex:'He admits at the very end that he was just walking funny because of a potty emergency.' },
+  { s:'The deck calls the rumor’s journey “One Degree of Separation”.', a:true,
+    ex:'Chloe → Isaac → Jasmine → Gunther: in a sitcom coffee shop, secrets need only three links.' }
+];
+
+/* ===== audio engine: Web Audio synthesis, no files ===== */
+var actx = null;
+function audioInit(){
+  if (actx){ return; }
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC){ actx = new AC(); }
+  }catch(e){ actx = null; }
+}
+function tone(freq, dur, type, vol, when){
+  if (!actx || SAVE.sound === false){ return; }
+  try{
+    var t = actx.currentTime + (when || 0);
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g);
+    g.connect(actx.destination);
+    o.start(t);
+    o.stop(t + dur + 0.06);
+  }catch(e){}
+}
+function noiseBurst(dur, vol){
+  if (!actx || SAVE.sound === false){ return; }
+  try{
+    var n = Math.floor(actx.sampleRate * dur);
+    var buf = actx.createBuffer(1, n, actx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++){ d[i] = (Math.random() * 2 - 1) * (1 - i / n); }
+    var src = actx.createBufferSource();
+    var g = actx.createGain();
+    g.gain.value = vol || 0.15;
+    src.buffer = buf;
+    src.connect(g);
+    g.connect(actx.destination);
+    src.start();
+  }catch(e){}
+}
+var sfx = {
+  click:   function(){ tone(620, 0.06, 'square', 0.12); },
+  flip:    function(){ tone(440, 0.07, 'triangle', 0.12); tone(560, 0.07, 'triangle', 0.1, 0.06); },
+  correct: function(){ tone(523, 0.09, 'square', 0.14); tone(659, 0.09, 'square', 0.14, 0.08); tone(784, 0.14, 'square', 0.15, 0.16); },
+  wrong:   function(){ tone(200, 0.22, 'sawtooth', 0.16); tone(150, 0.26, 'sawtooth', 0.14, 0.1); },
+  match:   function(){ tone(880, 0.08, 'triangle', 0.14); tone(1174, 0.12, 'triangle', 0.13, 0.07); },
+  fanfare: function(){ tone(523, 0.12, 'square', 0.15); tone(659, 0.12, 'square', 0.15, 0.1); tone(784, 0.12, 'square', 0.15, 0.2); tone(1046, 0.3, 'square', 0.16, 0.3); noiseBurst(0.4, 0.1); },
+  tick:    function(){ tone(1000, 0.03, 'square', 0.08); },
+  cheer:   function(){ noiseBurst(0.6, 0.22); tone(523, 0.1, 'square', 0.12, 0.05); tone(659, 0.1, 'square', 0.12, 0.15); tone(880, 0.18, 'square', 0.13, 0.25); }
+};
+
+/* ===== utilities ===== */
+function $(sel){ return document.querySelector(sel); }
+function $$(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+function clamp(v, min, max){ return Math.min(max, Math.max(min, v)); }
+function shuffle(arr){
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+function fmtTime(sec){
+  var m = Math.floor(sec / 60);
+  var s = sec % 60;
+  return (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+}
+function avatar(color, name){
+  var initials = (name || 'FV').replace(/[^A-Z]/g, '').slice(0, 2) || 'FV';
+  var gid = 'g' + Math.floor(Math.random() * 1e9);
+  return '<svg class="ava" viewBox="0 0 48 48" aria-hidden="true">' +
+    '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0" stop-color="' + color + '"/><stop offset="1" stop-color="' + PAL.ink + '"/>' +
+    '</linearGradient></defs>' +
+    '<circle cx="24" cy="24" r="22" fill="url(#' + gid + ')" stroke="#2E2438" stroke-width="2.5"/>' +
+    '<text x="24" y="30" text-anchor="middle" font-family="Courier New,monospace" font-weight="700" font-size="16" fill="#FAF3E4">' + initials + '</text>' +
+    '</svg>';
+}
+function slideImg(src, alt, initials, c1, c2){
+  return '<img src="' + src + '" alt="' + alt + '" loading="lazy" data-initials="' + (initials || 'FV') + '" data-c1="' + (c1 || PAL.teal) + '" data-c2="' + (c2 || PAL.yellow) + '">';
+}
+function starsHTML(n){
+  var out = '';
+  for (var i = 0; i < 3; i++){ out += (i < n ? ICONS.star : ICONS.starEmpty); }
+  return out;
+}
+/* image fallback: swap broken slide references for generated SVG placeholders */
+window.addEventListener('error', function(e){
+  var t = e.target;
+  if (t && t.tagName === 'IMG' && !t.getAttribute('data-ph-done')){
+    t.setAttribute('data-ph-done', '1');
+    var c1 = t.getAttribute('data-c1') || PAL.teal;
+    var c2 = t.getAttribute('data-c2') || PAL.yellow;
+    var ini = t.getAttribute('data-initials') || 'FV';
+    t.src = 'data:image/svg+xml,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180">' +
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/>' +
+      '</linearGradient></defs>' +
+      '<rect width="320" height="180" fill="url(#g)"/>' +
+      '<circle cx="160" cy="80" r="42" fill="none" stroke="#2E2438" stroke-width="3"/>' +
+      '<text x="160" y="92" text-anchor="middle" font-family="Courier New,monospace" font-weight="700" font-size="30" fill="#2E2438">' + ini + '</text>' +
+      '<text x="160" y="152" text-anchor="middle" font-family="Courier New,monospace" font-size="13" letter-spacing="3" fill="#2E2438">TAPE MISSING</text>' +
+      '</svg>');
+  }
+}, true);
+
+/* ===== storage: versioned key + try/catch for private mode ===== */
+function loadSave(){
+  try{
+    var raw = localStorage.getItem(SAVE_KEY);
+    if (raw){
+      var d = JSON.parse(raw);
+      if (d && typeof d === 'object'){ return d; }
+    }
+  }catch(e){}
+  return { sound: true, bests: {} };
+}
+var SAVE = loadSave();
+if (!SAVE.bests){ SAVE.bests = {}; }
+if (typeof SAVE.sound !== 'boolean'){ SAVE.sound = true; }
+function persist(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){}
+}
+function totalScore(){
+  var t = 0;
+  for (var i = 0; i < SCENES.length; i++){
+    var b = SAVE.bests[SCENES[i].id];
+    if (b){ t += b.score; }
+  }
+  return t;
+}
+function totalStars(){
+  var t = 0;
+  for (var i = 0; i < SCENES.length; i++){
+    var b = SAVE.bests[SCENES[i].id];
+    if (b){ t += b.stars; }
+  }
+  return t;
+}
+
+/* ===== shell: scene switching ===== */
+function showScene(id){
+  runCleanups();
+  $$('.scene').forEach(function(s){
+    s.classList.toggle('active', s.id === 'scene-' + id);
+  });
+  document.body.classList.remove('glitch');
+  void document.body.offsetWidth;
+  document.body.classList.add('glitch');
+  window.scrollTo(0, 0);
+}
+
+/* ===== HUD ===== */
+function updateHUD(){
+  var pips = SCENES.map(function(s){
+    var b = SAVE.bests[s.id];
+    return '<span class="pip' + (b ? ' done' : '') + '" title="' + s.num + '. ' + s.title + (b ? ' · ' + b.stars + ' stars' : ' · not cleared yet') + '"></span>';
+  }).join('');
+  $('#hudDots').innerHTML = pips;
+  $('#hudScore').textContent = 'SCORE ' + totalScore();
+}
+function renderSound(){
+  var btn = $('#soundBtn');
+  btn.innerHTML = SAVE.sound ? ICONS.vol : ICONS.volx;
+  btn.setAttribute('aria-pressed', SAVE.sound ? 'false' : 'true');
+  btn.setAttribute('aria-label', SAVE.sound ? 'Mute sound' : 'Unmute sound');
+}
+
+/* ===== map rendering (free order, always unlocked) ===== */
+function renderMap(){
+  var done = 0;
+  var cards = SCENES.map(function(s){
+    var b = SAVE.bests[s.id];
+    if (b){ done++; }
+    var foot = b ? starsHTML(b.stars) + '<span class="mono best">BEST ' + b.score + '</span>'
+                 : starsHTML(0) + '<span class="mono best">NOT CLEARED YET</span>';
+    return '<button class="reel" type="button" data-level="' + s.id + '" aria-label="Open level ' + s.num + ': ' + s.title + '. ' + s.tag + (b ? '. Best score ' + b.score + ', ' + b.stars + ' stars.' : '. Not cleared yet.') + '">' +
+      '<span class="reel-media">' + slideImg(s.slide, s.title + ' board', s.char, s.color, PAL.yellow) + '<span class="reel-num" aria-hidden="true">' + s.num + '</span></span>' +
+      '<span class="reel-body">' +
+        '<span><span class="chip">' + s.tag + '</span></span>' +
+        '<strong class="reel-title">' + s.title + '</strong>' +
+        '<span class="reel-char">' + avatar(s.color, s.char) + s.char + '</span>' +
+        '<span class="reel-foot"><span class="stars" aria-hidden="true">' + foot + '</span></span>' +
+      '</span>' +
+    '</button>';
+  }).join('');
+  $('#mapGrid').innerHTML = cards;
+  $('#mapDone').textContent = done + '/5 CLEARED';
+  $('#finalBtn').classList.toggle('hidden', done < SCENES.length);
+}
+
+/* ===== modal ===== */
+var modalMode = 'close'; /* 'briefing' | 'results' | 'finale-note' */
+function openModal(html, mode){
+  modalMode = mode || 'close';
+  $('#modalContent').innerHTML = html;
+  $('#modal').classList.add('open');
+  refreshIcons();
+  var first = $('#modalContent').querySelector('button');
+  if (first){ first.focus(); }
+}
+function closeModal(){
+  $('#modal').classList.remove('open');
+  modalMode = 'close';
+}
+function handleModalClose(){
+  var wasOpen = $('#modal').classList.contains('open');
+  closeModal();
+  if (wasOpen && $('#scene-level').classList.contains('active')){
+    leaveLevel();
+  }
+}
+function briefingHTML(s){
+  return '<span class="chip gold">' + s.tag + '</span>' +
+    '<h3 id="modalTitle">' + s.num + '. ' + s.title + '</h3>' +
+    '<div class="brief-media">' + slideImg(s.slide, s.title + ' board', s.char, s.color, PAL.yellow) + '</div>' +
+    '<p class="obj"><strong>Mission:</strong> ' + s.obj + '</p>' +
+    '<p class="tip"><strong>How it works:</strong> ' + s.tip + '</p>' +
+    '<p class="tip"><em>' + s.flavor + '</em></p>' +
+    '<div class="modal-actions">' +
+      '<button class="btn btn-teal" type="button" data-act="start" data-level="' + s.id + '">▶ START LEVEL</button>' +
+      '<button class="btn btn-ghost" type="button" data-act="map">BACK TO MAP</button>' +
+    '</div>';
+}
+function resultsHTML(s, score, mistakes, stars, prevBest){
+  var note = prevBest && prevBest.score > score ? '<p class="tip">Your best on this tape stays at ' + prevBest.score + ' points.</p>' : '';
+  var blurb = stars === 3 ? 'Flawless run. The whole café applauds.' : (stars === 2 ? 'Solid tape with a couple of scratches.' : 'The morning after is always rough — replay any time.');
+  return '<span class="chip teal">TAPE ' + s.num + ' FINISHED</span>' +
+    '<h3 id="modalTitle">' + s.title + '</h3>' +
+    '<div class="stars-big" aria-label="' + stars + ' of 3 stars">' +
+      '<span class="star-pop">' + (stars >= 1 ? ICONS.star : ICONS.starEmpty) + '</span>' +
+      '<span class="star-pop">' + (stars >= 2 ? ICONS.star : ICONS.starEmpty) + '</span>' +
+      '<span class="star-pop">' + (stars >= 3 ? ICONS.star : ICONS.starEmpty) + '</span>' +
+    '</div>' +
+    '<div class="modal-score">' + score + '</div>' +
+    '<p class="tip" style="text-align:center">' + mistakes + ' mistake' + (mistakes === 1 ? '' : 's') + ' · ' + blurb + '</p>' + note +
+    '<div class="modal-actions">' +
+      '<button class="btn" type="button" data-act="replay" data-level="' + s.id + '">↺ REPLAY TAPE</button>' +
+      '<button class="btn btn-ghost" type="button" data-act="map">BACK TO MAP</button>' +
+    '</div>';
+}
+
+/* ===== toast + floating pop + confetti ===== */
+function toast(msg){
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  $('#toasts').appendChild(t);
+  setTimeout(function(){
+    t.classList.add('out');
+    setTimeout(function(){ t.remove(); }, 350);
+  }, 2400);
+}
+function popFloat(el, text, red){
+  if (!el || REDUCED.matches){ return; }
+  var r = el.getBoundingClientRect();
+  var p = document.createElement('div');
+  p.className = 'pop' + (red ? ' pop-red' : '');
+  p.textContent = text;
+  p.style.left = (r.left + r.width / 2) + 'px';
+  p.style.top = (r.top + r.height / 2) + 'px';
+  $('#popLayer').appendChild(p);
+  setTimeout(function(){ p.remove(); }, 980);
+}
+var FX = { parts: [], raf: 0 };
+function spawnConfetti(n){
+  if (REDUCED.matches){ return; }
+  var c = $('#fx');
+  var ctx = c.getContext('2d');
+  c.width = window.innerWidth;
+  c.height = window.innerHeight;
+  var cols = [PAL.yellow, PAL.teal, PAL.red, '#FFFBF0'];
+  for (var i = 0; i < n; i++){
+    FX.parts.push({
+      x: Math.random() * c.width,
+      y: -20 - Math.random() * c.height * 0.25,
+      vx: (Math.random() - 0.5) * 2.4,
+      vy: 2 + Math.random() * 2.6,
+      s: 4 + Math.random() * 6,
+      r: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.25,
+      col: cols[i % cols.length],
+      life: 170 + Math.random() * 80
+    });
+  }
+  if (!FX.raf){ fxLoop(c, ctx); }
+}
+function fxLoop(c, ctx){
+  ctx.clearRect(0, 0, c.width, c.height);
+  FX.parts = FX.parts.filter(function(p){ return p.life > 0 && p.y < c.height + 20; });
+  FX.parts.forEach(function(p){
+    p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life--;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.r);
+    ctx.fillStyle = p.col;
+    ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.7);
+    ctx.restore();
+  });
+  if (FX.parts.length){ FX.raf = requestAnimationFrame(function(){ fxLoop(c, ctx); }); }
+  else { FX.raf = 0; ctx.clearRect(0, 0, c.width, c.height); }
+}
+
+/* ===== level lifecycle ===== */
+var LVL = null;
+var CLEANUPS = [];
+function setCleanup(fn){ CLEANUPS.push(fn); }
+function runCleanups(){
+  CLEANUPS.forEach(function(fn){ try{ fn(); }catch(e){} });
+  CLEANUPS = [];
+}
+function startLevel(id){
+  var s = null;
+  for (var i = 0; i < SCENES.length; i++){ if (SCENES[i].id === id){ s = SCENES[i]; } }
+  if (!s || !ENGINES[id]){ return; }
+  runCleanups();
+  closeModal();
+  LVL = { id: id, num: s.num, score: 0, mistakes: 0 };
+  $('#lvlTag').textContent = s.tag;
+  $('#lvlTitle').textContent = s.num + '. ' + s.title;
+  $('#lvlFlavor').textContent = s.flavor;
+  $('#lvlChar').innerHTML = avatar(s.color, s.char) + '<span>' + s.char + '</span>';
+  updateLvlHUD();
+  showScene('level');
+  ENGINES[id]($('#levelBody'));
+  sfx.click();
+}
+function leaveLevel(){
+  runCleanups();
+  LVL = null;
+  updateHUD();
+  renderMap();
+  showScene('map');
+}
+function updateLvlHUD(){
+  if (!LVL){ return; }
+  $('#lvlScore').textContent = LVL.score;
+  $('#lvlMist').textContent = LVL.mistakes;
+}
+function addScore(pts){
+  if (!LVL){ return; }
+  LVL.score = Math.max(0, LVL.score + pts);
+  updateLvlHUD();
+}
+function addMistake(){
+  if (!LVL){ return; }
+  LVL.mistakes++;
+  updateLvlHUD();
+}
+/* stars: 0 mistakes = 3, 1-2 = 2, more = 1 */
+function starsFor(mistakes){
+  return mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1);
+}
+function finishLevel(){
+  if (!LVL){ return; }
+  var s = null;
+  for (var i = 0; i < SCENES.length; i++){ if (SCENES[i].id === LVL.id){ s = SCENES[i]; } }
+  var score = LVL.score;
+  var mistakes = LVL.mistakes;
+  var stars = starsFor(mistakes);
+  runCleanups();
+  var prevBest = SAVE.bests[LVL.id] || null;
+  var best = {
+    score: Math.max(score, prevBest ? prevBest.score : 0),
+    stars: Math.max(stars, prevBest ? prevBest.stars : 0)
+  };
+  SAVE.bests[LVL.id] = best;
+  persist();
+  LVL = null;
+  updateHUD();
+  renderMap();
+  if (stars === 3){ spawnConfetti(110); sfx.fanfare(); }
+  else { sfx.cheer(); }
+  openModal(resultsHTML(s, score, mistakes, stars, prevBest), 'results');
+}
+
+/* ===== rank table for the finale ===== */
+var RANKS = [
+  [6400, 'VOCAB ARCADE LEGEND', 'Rewind-proof. The morning after holds no secrets from you.'],
+  [4800, 'BREAKUP SCHOLAR', 'You could defend “we were on a break” in court — and lose with style.'],
+  [3200, 'GOSSIP WIRE EXPERT', 'Nothing travels faster than your word of mouth.'],
+  [1500, 'CENTRAL PERK REGULAR', 'The couch knows your name now.'],
+  [-Infinity, 'COFFEE TRAINEE', 'Every legend starts with one spilled cup of coffee.']
+];
+function rankFor(total){
+  for (var i = 0; i < RANKS.length; i++){
+    if (total >= RANKS[i][0]){ return RANKS[i]; }
+  }
+  return RANKS[RANKS.length - 1];
+}
+function renderFinale(){
+  var rows = SCENES.map(function(s){
+    var b = SAVE.bests[s.id];
+    return '<tr><td class="mono">' + s.num + '</td><td>' + s.title + '</td><td>' + s.char + '</td><td class="mono">' + (b ? b.score : 0) + '</td><td>' + (b ? starsHTML(b.stars) : '—') + '</td></tr>';
+  }).join('');
+  var total = totalScore();
+  var stars = totalStars();
+  var rank = rankFor(total);
+  $('#finaleBody').innerHTML =
+    '<div class="fin-stars" aria-label="' + stars + ' of 15 stars">' + starsHTML(0) + '</div>' +
+    '<div class="fin-score mono">' + total + '</div>' +
+    '<p class="osd dim">TOTAL POINTS ACROSS ALL TAPES · ' + stars + '/15 STARS</p>' +
+    '<div style="margin-top:1rem;text-align:center"><span class="rank-name">' + rank[1] + '</span></div>' +
+    '<p class="rank-blurb" style="text-align:center">' + rank[2] + '</p>' +
+    '<table class="rtable"><thead><tr><th>TAPE</th><th>LEVEL</th><th>HOST</th><th>BEST</th><th>STARS</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div class="fin-actions">' +
+      '<button class="btn btn-red" type="button" data-act="rewind">' + ICONS.rewind + ' REWIND THE TAPE</button>' +
+      '<button class="btn btn-ghost" type="button" data-act="map">BACK TO MAP</button>' +
+      '<a class="btn btn-ghost" href="friends-316.pdf" target="_blank" rel="noopener noreferrer">📄 LESSON DECK</a>' +
+    '</div>';
+  /* animate the star row manually: totalStars out of 15 */
+  var wrap = $('.fin-stars');
+  var svgs = '';
+  for (var i = 0; i < 15; i++){
+    svgs += (i < stars ? ICONS.star : ICONS.starEmpty);
+  }
+  wrap.innerHTML = svgs;
+  spawnConfetti(140);
+  sfx.fanfare();
+}
+
+/* ============================================================
+   ENGINES — one per level, each registers cleanup via setCleanup
+   ============================================================ */
+var ENGINES = {};
+
+/* ===== engine 1: fill the blanks ===== */
+ENGINES.gap = function(root){
+  var bank = shuffle(GAP_STORY.map(function(g){ return g.a; }).concat(GAP_DECOYS));
+  var sel = -1;
+  var done = 0;
+  var doneTimer = null;
+
+  var storyHTML = GAP_STORY.map(function(g, i){
+    return '<p>' + g.pre + '<button type="button" class="gap" data-gi="' + i + '" aria-label="Blank ' + (i + 1) + ' of ' + GAP_STORY.length + '" aria-pressed="false">______</button>' + g.post + '</p>';
+  }).join('');
+  var bankHTML = bank.map(function(w){
+    return '<button type="button" class="bankw" data-w="' + w + '">' + w + '</button>';
+  }).join('');
+
+  root.innerHTML =
+    '<div class="engine-root">' +
+    '<div class="card story" aria-label="Story with blanks">' +
+      '<span class="chip teal">THE STORY · 8 GAPS</span>' + storyHTML +
+    '</div>' +
+    '<div class="card bank" aria-label="Word bank">' +
+      '<strong>WORD BANK</strong><p class="tip" style="margin:.2rem 0 0;font-size:.85rem;color:var(--ink-60)">Click a gap, then click a word. Wrong words bounce back and cost 15 points.</p>' +
+      '<div class="bank-grid">' + bankHTML + '</div>' +
+    '</div>' +
+    '</div>';
+  var wrap = root.querySelector('.engine-root');
+
+  function clearSel(){
+    if (sel >= 0){
+      var prev = root.querySelector('.gap[data-gi="' + sel + '"]');
+      if (prev){
+        prev.classList.remove('sel');
+        prev.setAttribute('aria-pressed', 'false');
+      }
+    }
+    sel = -1;
+  }
+  function reShake(el){
+    el.classList.remove('shakebad');
+    void el.offsetWidth;
+    el.classList.add('shakebad');
+  }
+
+  wrap.addEventListener('click', function(e){
+    var gap = e.target.closest('.gap');
+    var wordBtn = e.target.closest('.bankw');
+    if (gap && !gap.classList.contains('ok')){
+      if (sel === Number(gap.getAttribute('data-gi'))){
+        clearSel();
+        sfx.flip();
+        return;
+      }
+      clearSel();
+      sel = Number(gap.getAttribute('data-gi'));
+      gap.classList.add('sel');
+      gap.setAttribute('aria-pressed', 'true');
+      sfx.flip();
+      return;
+    }
+    if (wordBtn && !wordBtn.classList.contains('used')){
+      if (sel < 0){
+        toast('PICK A GAP FIRST, THEN A WORD');
+        sfx.click();
+        return;
+      }
+      var gi = sel;
+      var gapEl = root.querySelector('.gap[data-gi="' + gi + '"]');
+      if (wordBtn.getAttribute('data-w') === GAP_STORY[gi].a){
+        gapEl.textContent = GAP_STORY[gi].a;
+        gapEl.classList.remove('sel');
+        gapEl.classList.add('ok');
+        gapEl.disabled = true;
+        gapEl.setAttribute('aria-pressed', 'false');
+        wordBtn.classList.add('used');
+        wordBtn.disabled = true;
+        clearSel();
+        done++;
+        addScore(100);
+        popFloat(gapEl, '+100');
+        sfx.match();
+        if (done === GAP_STORY.length){
+          doneTimer = setTimeout(finishLevel, 750);
+        }
+      } else {
+        reShake(wordBtn);
+        addScore(-15);
+        addMistake();
+        popFloat(wordBtn, '-15 BOUNCE', true);
+        sfx.wrong();
+        clearSel();
+      }
+    }
+  });
+
+  setCleanup(function(){
+    if (doneTimer){ clearTimeout(doneTimer); }
+  });
+};
+
+/* ===== engine 2: REAL or DELUSION (true / false with explanation gate) ===== */
+ENGINES.reality = function(root){
+  var i = 0;
+  var streak = 0;
+  var waiting = false;
+  var remaining = 600; /* ten minutes per card */
+  var timerId = null;
+  var paused = true;
+
+  root.innerHTML =
+    '<div class="card rd-card" aria-label="True or false round">' +
+      '<div class="trow"><div class="tbar" id="rdBar" aria-hidden="true"><i></i></div><span class="tclock mono" id="rdClock">10:00</span>' +
+      '<span class="streak-chip" id="rdStreak">STREAK ×1</span></div>' +
+      '<span class="chip" style="margin-top:14px">STATEMENT <span id="rdNum">1</span>/' + REALITY_QS.length + '</span>' +
+      '<p class="rd-q" id="rdQ"></p>' +
+      '<div class="rd-btns">' +
+        '<button type="button" class="btn btn-teal" id="rdReal">✔ REAL<span class="kbd-hint">← ARROW KEY</span></button>' +
+        '<button type="button" class="btn btn-red" id="rdFalse">✖ DELUSION<span class="kbd-hint">→ ARROW KEY</span></button>' +
+      '</div>' +
+      '<div class="feedback hidden" id="rdFeed" role="status"></div>' +
+      '<div class="next-row hidden" id="rdNextRow"><button type="button" class="btn" id="rdNext">NEXT STATEMENT ▶</button></div>' +
+    '</div>';
+
+  var bar = root.querySelector('#rdBar');
+  var clock = root.querySelector('#rdClock');
+  var streakEl = root.querySelector('#rdStreak');
+
+  function renderTimer(){
+    bar.querySelector('i').style.width = (remaining / 600 * 100) + '%';
+    clock.textContent = fmtTime(remaining);
+    var hot = remaining <= 60;
+    bar.classList.toggle('hot', hot);
+    clock.classList.toggle('hot', hot);
+  }
+  function startTimer(){
+    stopTimer();
+    remaining = 600;
+    paused = false;
+    renderTimer();
+    timerId = setInterval(function(){
+      if (paused){ return; }
+      remaining--;
+      renderTimer();
+      if (remaining <= 10 && remaining > 0){ sfx.tick(); }
+      if (remaining <= 0){ stopTimer(); onTimeout(); }
+    }, 1000);
+  }
+  function stopTimer(){
+    if (timerId){ clearInterval(timerId); timerId = null; }
+    paused = true;
+  }
+  function renderStreak(){
+    var mult = clamp(streak, 1, 5);
+    streakEl.textContent = 'STREAK ×' + mult;
+    streakEl.classList.toggle('hot', streak >= 3);
+  }
+  function renderQ(){
+    var q = REALITY_QS[i];
+    root.querySelector('#rdNum').textContent = (i + 1);
+    root.querySelector('#rdQ').textContent = q.s;
+    var feed = root.querySelector('#rdFeed');
+    feed.className = 'feedback hidden';
+    feed.innerHTML = '';
+    root.querySelector('#rdNextRow').classList.add('hidden');
+    root.querySelector('#rdReal').disabled = false;
+    root.querySelector('#rdFalse').disabled = false;
+    root.querySelector('#rdReal').classList.remove('ok', 'badpick');
+    root.querySelector('#rdFalse').classList.remove('ok', 'badpick');
+    renderStreak();
+  }
+  function reveal(ok, chosenEl){
+    var q = REALITY_QS[i];
+    waiting = true;
+    paused = true; /* the clock stops while the explanation is on screen */
+    var realBtn = root.querySelector('#rdReal');
+    var falseBtn = root.querySelector('#rdFalse');
+    realBtn.disabled = true;
+    falseBtn.disabled = true;
+    (q.a ? realBtn : falseBtn).classList.add('ok');
+    if (!ok && chosenEl){ chosenEl.classList.add('badpick'); }
+    if (ok){
+      streak++;
+      var mult = clamp(streak, 1, 5);
+      var pts = 120 * mult;
+      addScore(pts);
+      popFloat(root.querySelector('#rdQ'), '+' + pts);
+      sfx.correct();
+    } else {
+      streak = 0;
+      addMistake();
+      sfx.wrong();
+    }
+    renderStreak();
+    var feed = root.querySelector('#rdFeed');
+    feed.className = 'feedback ' + (ok ? 'ok' : 'bad');
+    feed.innerHTML = '<span class="mono">' + (ok ? (q.a ? 'REAL — CORRECT' : 'DELUSION — CORRECT') : (q.a ? 'WRONG — IT WAS REAL' : 'WRONG — IT WAS A DELUSION')) + '</span><p>' + q.ex + '</p>';
+    root.querySelector('#rdNext').textContent = (i === REALITY_QS.length - 1) ? '🏁 SEE RESULTS' : 'NEXT STATEMENT ▶';
+    root.querySelector('#rdNextRow').classList.remove('hidden');
+    root.querySelector('#rdNext').focus();
+  }
+  function onTimeout(){
+    if (waiting){ return; }
+    reveal(false, null); /* reveal() already adds the mistake and resets the streak */
+    var feed = root.querySelector('#rdFeed');
+    feed.insertAdjacentHTML('afterbegin', '<span class="mono">TIME RAN OUT ON THIS STATEMENT</span>');
+  }
+  function next(){
+    if (!waiting){ return; }
+    if (i === REALITY_QS.length - 1){ finishLevel(); return; }
+    i++;
+    waiting = false;
+    renderQ();
+    startTimer();
+  }
+
+  root.querySelector('#rdReal').addEventListener('click', function(){ if (!waiting){ reveal(true, this); } });
+  root.querySelector('#rdFalse').addEventListener('click', function(){ if (!waiting){ reveal(false, this); } });
+  root.querySelector('#rdNext').addEventListener('click', next);
+
+  function onKey(e){
+    if ($('#modal').classList.contains('open')){ return; }
+    if (e.key === 'ArrowLeft' && !waiting){
+      e.preventDefault();
+      reveal(true, root.querySelector('#rdReal'));
+    } else if (e.key === 'ArrowRight' && !waiting){
+      e.preventDefault();
+      reveal(false, root.querySelector('#rdFalse'));
+    } else if (e.key === 'Enter' && waiting && document.activeElement !== root.querySelector('#rdNext')){
+      e.preventDefault();
+      next();
+    }
+  }
+  document.addEventListener('keydown', onKey);
+
+  renderQ();
+  startTimer();
+  setCleanup(function(){
+    stopTimer();
+    document.removeEventListener('keydown', onKey);
+  });
+};
+
+/* ===== engine 3: multiple choice, one attempt, character reaction ===== */
+ENGINES.coffee = function(root){
+  var i = 0;
+  var t0 = 0;
+
+  root.innerHTML =
+    '<div class="engine-root">' +
+    '<div class="card rd-card" aria-label="Multiple choice quiz">' +
+      '<span class="chip">QUESTION <span id="mcNum">1</span>/' + COFFEE_QS.length + ' · ONE ATTEMPT</span>' +
+      '<p class="mc-q" id="mcQ"></p>' +
+      '<div class="mc-opts" id="mcOpts"></div>' +
+      '<div class="react hidden" id="mcReact"></div>' +
+      '<div class="feedback hidden" id="mcFeed" role="status"></div>' +
+      '<div class="next-row hidden" id="mcNextRow"><button type="button" class="btn" id="mcNext">NEXT QUESTION ▶</button></div>' +
+    '</div>' +
+    '</div>';
+  var wrap = root.querySelector('.engine-root');
+
+  function renderQ(){
+    var q = COFFEE_QS[i];
+    root.querySelector('#mcNum').textContent = (i + 1);
+    root.querySelector('#mcQ').textContent = q.q;
+    root.querySelector('#mcOpts').innerHTML = q.opts.map(function(o, j){
+      return '<button type="button" class="mc-opt" data-oi="' + j + '">' + o + '</button>';
+    }).join('');
+    root.querySelector('#mcReact').className = 'react hidden';
+    root.querySelector('#mcFeed').className = 'feedback hidden';
+    root.querySelector('#mcNextRow').classList.add('hidden');
+    t0 = performance.now();
+  }
+  function answer(btn){
+    var q = COFFEE_QS[i];
+    var oi = Number(btn.getAttribute('data-oi'));
+    var ok = oi === q.a;
+    var opts = root.querySelectorAll('.mc-opt');
+    for (var k = 0; k < opts.length; k++){
+      opts[k].disabled = true;
+      if (k === q.a){ opts[k].classList.add('ok'); }
+    }
+    if (!ok){ btn.classList.add('badpick'); }
+    var elapsed = (performance.now() - t0) / 1000;
+    if (ok){
+      var bonus = Math.round(clamp(50 - elapsed * 2.5, 0, 50));
+      var pts = 150 + bonus;
+      addScore(pts);
+      popFloat(btn, '+' + pts);
+      sfx.correct();
+    } else {
+      addMistake();
+      sfx.wrong();
+    }
+    var react = root.querySelector('#mcReact');
+    react.className = 'react';
+    react.innerHTML = avatar(PAL.yellow, 'GUNTHER') + '<p>' + q.react + '</p>';
+    var feed = root.querySelector('#mcFeed');
+    feed.className = 'feedback ' + (ok ? 'ok' : 'bad');
+    feed.innerHTML = ok
+      ? '<span class="mono">CORRECT · SPEED BONUS +' + Math.round(clamp(50 - elapsed * 2.5, 0, 50)) + '</span><p>The café nods in approval.</p>'
+      : '<span class="mono">WRONG — THE HIGHLIGHTED ANSWER IS CORRECT</span><p>One attempt per question, remember. The gossip trail forgives, the score does not.</p>';
+    root.querySelector('#mcNext').textContent = (i === COFFEE_QS.length - 1) ? '🏁 SEE RESULTS' : 'NEXT QUESTION ▶';
+    root.querySelector('#mcNextRow').classList.remove('hidden');
+    root.querySelector('#mcNext').focus();
+  }
+  function next(){
+    if (i === COFFEE_QS.length - 1){ finishLevel(); return; }
+    i++;
+    renderQ();
+  }
+
+  wrap.addEventListener('click', function(e){
+    var btn = e.target.closest('.mc-opt');
+    if (btn && !btn.disabled){ answer(btn); }
+  });
+  root.querySelector('#mcNext').addEventListener('click', next);
+
+  renderQ();
+};
+
+/* ===== engine 4: match the meaning ===== */
+ENGINES.match = function(root){
+  var pick = shuffle(WORDS).slice(0, 6);
+  var left = shuffle(pick);
+  var right = shuffle(pick);
+  var selKey = null;
+  var pairs = 0;
+  var attempts = 0;
+  var doneTimer = null;
+
+  root.innerHTML =
+    '<div class="engine-root">' +
+    '<div class="card" style="padding:16px 18px" aria-label="Matching round">' +
+      '<div class="match-hud">' +
+        '<span class="chip teal" id="mtPairs">PAIRS 0/6</span>' +
+        '<span class="chip" id="mtAtt">ATTEMPTS 0</span>' +
+        '<span class="match-example">HOW TO PLAY: WORD · <b>spill the beans</b> → MEANING · <b>reveal a secret</b></span>' +
+      '</div>' +
+      '<div class="match-wrap" style="margin-top:14px">' +
+        '<div class="match-col" id="mtLeft" aria-label="Words">' + left.map(function(w){
+          return '<button type="button" class="mitem" data-k="' + w.w + '"><span class="mono">WORD</span>' + w.w + '</button>';
+        }).join('') + '</div>' +
+        '<div class="match-col" id="mtRight" aria-label="Meanings">' + right.map(function(w){
+          return '<button type="button" class="mitem" data-k="' + w.w + '"><span class="mono">MEANING</span>' + w.d + '</button>';
+        }).join('') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '</div>';
+  var wrap = root.querySelector('.engine-root');
+
+  function hud(){
+    root.querySelector('#mtPairs').textContent = 'PAIRS ' + pairs + '/6';
+    root.querySelector('#mtAtt').textContent = 'ATTEMPTS ' + attempts;
+  }
+  function clearSel(){
+    if (selKey){
+      var b = root.querySelector('#mtLeft .mitem[data-k="' + selKey + '"]');
+      if (b){ b.classList.remove('sel'); }
+    }
+    selKey = null;
+  }
+  function reShake(el){
+    el.classList.remove('shakebad');
+    void el.offsetWidth;
+    el.classList.add('shakebad');
+  }
+
+  wrap.addEventListener('click', function(e){
+    var item = e.target.closest('.mitem');
+    if (!item || item.classList.contains('lock')){ return; }
+    var isWord = item.closest('#mtLeft') !== null;
+    if (isWord){
+      clearSel();
+      selKey = item.getAttribute('data-k');
+      item.classList.add('sel');
+      sfx.flip();
+      return;
+    }
+    if (!selKey){
+      toast('FIRST CLICK A WORD ON THE LEFT');
+      sfx.click();
+      return;
+    }
+    attempts++;
+    var wordBtn = root.querySelector('#mtLeft .mitem[data-k="' + selKey + '"]');
+    if (item.getAttribute('data-k') === selKey){
+      item.classList.add('lock');
+      item.disabled = true;
+      wordBtn.classList.add('lock');
+      wordBtn.disabled = true;
+      pairs++;
+      addScore(110);
+      popFloat(item, '+110 PAIRED');
+      sfx.match();
+      clearSel();
+      hud();
+      if (pairs === 6){
+        doneTimer = setTimeout(finishLevel, 750);
+      }
+    } else {
+      reShake(item);
+      reShake(wordBtn);
+      addScore(-10);
+      addMistake();
+      popFloat(item, '-10', true);
+      sfx.wrong();
+      clearSel();
+      hud();
+    }
+  });
+
+  hud();
+  setCleanup(function(){
+    if (doneTimer){ clearTimeout(doneTimer); }
+  });
+};
+
+/* ===== engine 5: timed bonus round (750 seconds, mixed pool) ===== */
+function buildBonusPool(){
+  var pool = [];
+  shuffle(REALITY_QS).slice(0, 3).forEach(function(q){
+    pool.push({ type: 'tf', s: q.s, a: q.a, ex: q.ex });
+  });
+  shuffle(BONUS_TF).slice(0, 2).forEach(function(q){
+    pool.push({ type: 'tf', s: q.s, a: q.a, ex: q.ex });
+  });
+  shuffle(COFFEE_QS).slice(0, 4).forEach(function(q){
+    pool.push({ type: 'mc', q: q.q, opts: q.opts, a: q.a });
+  });
+  shuffle(WORDS).slice(0, 5).forEach(function(w){
+    var others = shuffle(WORDS.filter(function(x){ return x.w !== w.w; })).slice(0, 2).map(function(x){ return x.w; });
+    var opts = shuffle([w.w].concat(others));
+    pool.push({ type: 'mc', q: 'Which term matches the definition: “' + w.d + '”?', opts: opts, a: opts.indexOf(w.w) });
+  });
+  return shuffle(pool);
+}
+ENGINES.bonus = function(root){
+  var pool = buildBonusPool();
+  var i = 0;
+  var streak = 0;
+  var remaining = 750; /* twelve and a half minutes of chaos */
+  var timerId = null;
+  var moving = false;
+  var moveTimer = null;
+
+  root.innerHTML =
+    '<div class="engine-root">' +
+    '<div class="card bonus-head" aria-label="Timed bonus round">' +
+      '<span class="chip gold">BONUS TAPE · ' + pool.length + ' QUESTIONS · STREAK × MULTIPLIER</span>' +
+      '<div class="trow"><div class="tbar" id="bnBar" aria-hidden="true"><i></i></div><span class="tclock mono" id="bnClock">12:30</span></div>' +
+      '<span class="streak-chip" id="bnStreak">STREAK ×1</span>' +
+    '</div>' +
+    '<div class="card rd-card" id="bnCard" aria-label="Bonus question"></div>' +
+    '<div class="feedback hidden" id="bnFeed" role="status"></div>' +
+    '</div>';
+  var wrap = root.querySelector('.engine-root');
+
+  var bar = root.querySelector('#bnBar');
+  var clock = root.querySelector('#bnClock');
+  var streakEl = root.querySelector('#bnStreak');
+
+  function renderTimer(){
+    bar.querySelector('i').style.width = (remaining / 750 * 100) + '%';
+    clock.textContent = fmtTime(remaining);
+    var hot = remaining <= 60;
+    bar.classList.toggle('hot', hot);
+    clock.classList.toggle('hot', hot);
+  }
+  function startTimer(){
+    timerId = setInterval(function(){
+      remaining--;
+      renderTimer();
+      if (remaining <= 10 && remaining > 0){ sfx.tick(); }
+      if (remaining <= 0){ stopTimer(); timeUp(); }
+    }, 1000);
+  }
+  function stopTimer(){
+    if (timerId){ clearInterval(timerId); timerId = null; }
+  }
+  function renderStreak(){
+    var mult = clamp(1 + Math.floor(streak / 3), 1, 4);
+    streakEl.textContent = 'STREAK ×' + mult;
+    streakEl.classList.toggle('hot', streak >= 3);
+  }
+  function renderQ(){
+    moving = false;
+    var q = pool[i];
+    var card = root.querySelector('#bnCard');
+    if (q.type === 'tf'){
+      card.innerHTML =
+        '<span class="chip">BONUS <span>' + (i + 1) + '</span>/' + pool.length + ' · REAL OR DELUSION</span>' +
+        '<p class="rd-q">' + q.s + '</p>' +
+        '<div class="rd-btns">' +
+          '<button type="button" class="btn btn-teal bn-ans" data-a="1">✔ REAL</button>' +
+          '<button type="button" class="btn btn-red bn-ans" data-a="0">✖ DELUSION</button>' +
+        '</div>';
+    } else {
+      card.innerHTML =
+        '<span class="chip">BONUS <span>' + (i + 1) + '</span>/' + pool.length + ' · QUIZ</span>' +
+        '<p class="mc-q">' + q.q + '</p>' +
+        '<div class="mc-opts">' + q.opts.map(function(o, j){
+          return '<button type="button" class="mc-opt bn-ans" data-a="' + j + '">' + o + '</button>';
+        }).join('') + '</div>';
+    }
+    root.querySelector('#bnFeed').className = 'feedback hidden';
+    renderStreak();
+  }
+  function brief(ok, q, picked){
+    moving = true;
+    var ansBtns = root.querySelectorAll('.bn-ans');
+    for (var k = 0; k < ansBtns.length; k++){
+      ansBtns[k].disabled = true;
+      var val = Number(ansBtns[k].getAttribute('data-a'));
+      var isRight = (q.type === 'tf') ? (val === (q.a ? 1 : 0)) : (val === q.a);
+      if (isRight){ ansBtns[k].classList.add('ok'); }
+      else if (ansBtns[k] === picked && !ok){ ansBtns[k].classList.add('badpick'); }
+    }
+    if (ok){
+      streak++;
+      var mult = clamp(1 + Math.floor(streak / 3), 1, 4);
+      var pts = 100 * mult;
+      addScore(pts);
+      popFloat(root.querySelector('#bnCard'), '+' + pts);
+      sfx.correct();
+    } else {
+      streak = 0;
+      addMistake();
+      sfx.wrong();
+    }
+    renderStreak();
+    var feed = root.querySelector('#bnFeed');
+    feed.className = 'feedback ' + (ok ? 'ok' : 'bad');
+    feed.innerHTML = '<span class="mono">' + (ok ? 'CORRECT · STREAK ' + streak : 'WRONG · STREAK RESET') + '</span><p>' + (q.ex || '') + '</p>';
+    moveTimer = setTimeout(next, ok ? 900 : 1400);
+  }
+  function timeUp(){
+    if (moving){ return; }
+    var q = pool[i];
+    brief(false, q, null);
+    var feed = root.querySelector('#bnFeed');
+    feed.insertAdjacentHTML('afterbegin', '<span class="mono">TIME IS UP — TAPE STOPPED</span>');
+  }
+  function next(){
+    if (i === pool.length - 1){
+      stopTimer();
+      finishLevel();
+      return;
+    }
+    i++;
+    renderQ();
+  }
+
+  wrap.addEventListener('click', function(e){
+    var btn = e.target.closest('.bn-ans');
+    if (!btn || moving || btn.disabled){ return; }
+    var q = pool[i];
+    var val = Number(btn.getAttribute('data-a'));
+    var ok = (q.type === 'tf') ? (val === (q.a ? 1 : 0)) : (val === q.a);
+    brief(ok, q, btn);
+  });
+
+  renderTimer();
+  renderQ();
+  startTimer();
+  setCleanup(function(){
+    stopTimer();
+    if (moveTimer){ clearTimeout(moveTimer); }
+  });
+};
+
+/* ===== finale helpers ===== */
+function rewindProgress(){
+  SAVE.bests = {};
+  persist();
+  updateHUD();
+  renderMap();
+  closeModal();
+  toast('TAPE REWOUND — ALL PROGRESS CLEARED');
+  sfx.flip();
+  showScene('map');
+}
+
+/* ===== init & global wiring ===== */
+(function init(){
+  /* preloader: fake tracking, then PLAY gate with an upward exit */
+  var pct = 0;
+  var plTimer = setInterval(function(){
+    pct = Math.min(100, pct + 4 + Math.floor(Math.random() * 9));
+    $('#plFill').style.width = pct + '%';
+    $('#plPct').textContent = pct + '%';
+    if (pct >= 100){
+      clearInterval(plTimer);
+      $('#plPlay').classList.remove('hidden');
+      $('#plPlay').focus();
+    }
+  }, 36);
+  $('#plPlay').addEventListener('click', function(){
+    audioInit();
+    sfx.correct();
+    var pl = $('#preloader');
+    pl.classList.add('done');
+    setTimeout(function(){ pl.remove(); }, 820);
+  });
+
+  /* header console */
+  $('#soundBtn').addEventListener('click', function(){
+    audioInit();
+    SAVE.sound = !SAVE.sound;
+    persist();
+    renderSound();
+    if (SAVE.sound){ sfx.click(); }
+    toast(SAVE.sound ? 'SOUND ON' : 'SOUND OFF');
+  });
+  $('#mapBtn').addEventListener('click', function(){
+    if ($('#scene-level').classList.contains('active')){ leaveLevel(); }
+    else { showScene('map'); }
+    sfx.click();
+  });
+  $('#backBtn').addEventListener('click', function(){
+    sfx.click();
+    leaveLevel();
+  });
+  $('#startBtn').addEventListener('click', function(){
+    sfx.click();
+    showScene('map');
+  });
+  $('#finalBtn').addEventListener('click', function(){
+    sfx.click();
+    renderFinale();
+    showScene('finale');
+  });
+
+  /* delegation: level map cards */
+  $('#mapGrid').addEventListener('click', function(e){
+    var card = e.target.closest('.reel[data-level]');
+    if (!card){ return; }
+    var id = card.getAttribute('data-level');
+    var s = null;
+    for (var i = 0; i < SCENES.length; i++){ if (SCENES[i].id === id){ s = SCENES[i]; } }
+    if (s){ openModal(briefingHTML(s), 'briefing'); sfx.click(); }
+  });
+
+  /* delegation: every [data-act] button (modals + finale) */
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-act]');
+    if (!el){ return; }
+    var act = el.getAttribute('data-act');
+    if (act === 'start' || act === 'replay'){ startLevel(el.getAttribute('data-level')); }
+    else if (act === 'map'){
+      closeModal();
+      if ($('#scene-level').classList.contains('active')){ leaveLevel(); }
+      else { showScene('map'); }
+      sfx.click();
+    }
+    else if (act === 'rewind'){ rewindProgress(); }
+  });
+  $('#modalX').addEventListener('click', function(){
+    sfx.click();
+    handleModalClose();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && $('#modal').classList.contains('open')){
+      handleModalClose();
+    }
+  });
+
+  /* image fallback needs data-c1 defaults for static intro hero too */
+  var hero = $('.intro-bg');
+  if (hero){ hero.setAttribute('data-initials', 'FA'); }
+
+  /* ===== boot ===== */
+  updateHUD();
+  renderMap();
+  renderSound();
+  refreshIcons();
+})();
+
+})();
+</script>
+</body>
+</html>
