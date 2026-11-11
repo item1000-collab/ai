@@ -132,4 +132,5 @@ const LESSONS = [
   { date: '2026-11-09', host: 'Katarina', title: 'Friends (S3E13)', url: './20261109-friends-313/index.html' },
   { date: '2026-11-10', host: 'Rosie', title: 'Friends (S3E14)', url: './20261110-friends-314/index.html' },
   { date: '2026-11-11', host: 'Rosie', title: 'Friends (S3E15)', url: './20261111-friends-315/index.html' }
+  { date: '2026-11-12', host: '', title: 'Friends (S3E16)', url: './20261112-friends-316/index.html' }
 ];
