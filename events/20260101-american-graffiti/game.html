@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>American Graffiti · The Last Great Night Arcade</title>
+<meta name="description" content="A retro drive-in arcade of five mini-games built on the American Graffiti presentation: fill the blanks, real or delusion, quick pick, match the meaning and the bonus reel.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Courier+Prime:wght@400;700&family=Nunito+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ===== design tokens ===== */
+:root{
+  --bg:#0d1420; --bg2:#131f33;
+  --panel:#f6edd8; --panel2:#fff9ea;
+  --ink:#26303b; --ink-soft:#5a6675;
+  --gold:#f5c542; --gold-deep:#d4a017; --gold-dark:#8a6a0c;
+  --coral:#e05d51; --red-deep:#a83c31;
+  --green:#3fae6e; --green-deep:#1d5c38;
+  --teal:#2f726c; --purple:#6b4f8a; --blue:#3b5b92;
+  --cream:#f6edd8;
+  --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --mono:'Courier Prime','Courier New',monospace;
+  --body:'Nunito Sans','Segoe UI',Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(1100px 480px at 50% -120px, rgba(245,197,66,.12), rgba(245,197,66,0) 62%),
+    linear-gradient(180deg,#0d1420 0%,#121b2c 55%,#0b0f19 100%);
+  color:var(--cream);
+  font-family:var(--body);
+  font-size:1rem;
+  line-height:1.6;
+  min-height:100vh;
+}
+[hidden]{display:none !important;}
+.mono{font-family:var(--mono);}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:6px;}
+
+/* ===== film grain + vignette ===== */
+.grain{position:fixed;inset:0;width:100vw;height:100vh;z-index:400;pointer-events:none;opacity:.06;mix-blend-mode:overlay;}
+#vignette{position:fixed;inset:0;z-index:390;pointer-events:none;background:radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 52%, rgba(3,7,14,.55) 100%);}
+
+/* ===== preloader ===== */
+#preloader{
+  position:fixed;inset:0;z-index:500;
+  background:radial-gradient(900px 480px at 50% 20%, rgba(245,197,66,.14), rgba(245,197,66,0) 60%), linear-gradient(180deg,#0c111c,#0d1420);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  text-align:center;padding:24px;
+  transition:transform .85s cubic-bezier(.7,0,.3,1), opacity .85s ease;
+}
+#preloader.exit{transform:translateY(-104%);opacity:.35;}
+.pre-reel{color:var(--gold);}
+.pre-reel svg{width:88px;height:88px;animation:spin 2.6s linear infinite;filter:drop-shadow(0 0 14px rgba(245,197,66,.45));}
+.pre-status{font-family:var(--mono);font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;color:#b9c6d6;margin:0;}
+.pre-title{
+  font-family:var(--display);font-weight:700;font-size:clamp(2.4rem,9vw,4.2rem);
+  line-height:1;margin:.05em 0 0;color:var(--gold);text-transform:uppercase;
+  text-shadow:0 0 24px rgba(245,197,66,.5), 0 3px 0 var(--gold-dark);
+}
+.pre-sub{font-family:var(--mono);letter-spacing:.3em;font-size:.85rem;color:var(--cream);margin:0;text-transform:uppercase;}
+.pre-hint{font-family:var(--mono);font-size:.75rem;color:#8fa0b5;margin:6px 0 0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===== header console ===== */
+#hdr{
+  position:fixed;top:0;left:0;right:0;height:58px;z-index:100;
+  display:flex;align-items:center;gap:12px;padding:0 14px;
+  background:linear-gradient(180deg,#111a2b,#0c1220);
+  border-bottom:2px solid var(--gold-deep);
+  box-shadow:0 4px 18px rgba(0,0,0,.45);
+}
+.brand{display:flex;align-items:center;gap:9px;min-width:0;}
+.brand-reel{color:var(--gold);display:flex;}
+.brand-reel svg{width:26px;height:26px;}
+.brand-name{font-family:var(--display);font-weight:700;font-size:1.15rem;letter-spacing:.06em;color:var(--cream);white-space:nowrap;}
+.brand-name b{color:var(--gold);}
+.cells{display:flex;gap:5px;flex:1;justify-content:center;}
+.cell{
+  width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:.72rem;font-weight:700;
+  border:1.5px solid rgba(246,237,216,.35);color:rgba(246,237,216,.5);
+}
+.cell.done{background:var(--gold);border-color:var(--gold);color:#231a03;}
+.cell.now{box-shadow:0 0 0 2px var(--gold);animation:pulse 1.6s ease infinite;}
+@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(245,197,66,.35);}}
+.hdr-right{display:flex;align-items:center;gap:9px;}
+.hud-score{font-family:var(--mono);font-weight:700;font-size:.9rem;letter-spacing:.05em;color:var(--gold);white-space:nowrap;}
+.icon-btn{
+  width:38px;height:38px;border-radius:10px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--cream);background:rgba(246,237,216,.08);border:1.5px solid rgba(246,237,216,.3);
+  cursor:pointer;transition:transform .12s ease, background .12s ease;
+}
+.icon-btn:hover{background:rgba(245,197,66,.18);}
+.icon-btn:active{transform:translateY(2px);}
+.icon-btn svg{width:20px;height:20px;}
+.hidden-btn{display:none;}
+
+/* ===== screens ===== */
+main{max-width:980px;margin:0 auto;padding:76px 16px 64px;}
+.screen{display:none;}
+.screen.active{display:block;animation:screenIn .45s ease both;}
+@keyframes screenIn{from{opacity:0;transform:translateY(16px);}}
+.scr-title{font-family:var(--display);font-weight:700;font-size:clamp(1.8rem,5vw,2.5rem);letter-spacing:.03em;color:var(--gold);margin:.2em 0 .15em;text-transform:uppercase;text-shadow:0 2px 0 rgba(0,0,0,.4);}
+.scr-sub{font-family:var(--mono);font-size:.85rem;color:#b9c6d6;margin:0 0 20px;}
+
+/* ===== buttons ===== */
+.btn{
+  font-family:var(--display);font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  font-size:1.02rem;color:var(--ink);
+  background:#fff;border:2px solid var(--ink);border-radius:12px;
+  padding:.6em 1.25em;cursor:pointer;
+  box-shadow:0 4px 0 var(--ink);
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.btn:hover{background:var(--panel2);}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink);}
+.btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold-deep));border-color:var(--gold-dark);box-shadow:0 4px 0 var(--gold-dark);}
+.btn-primary:hover{background:linear-gradient(135deg,#ffd25e,var(--gold-deep));}
+.btn-primary:active{box-shadow:0 1px 0 var(--gold-dark);}
+.btn-danger{background:rgba(224,93,81,.16);border-color:var(--red-deep);color:var(--red-deep);box-shadow:0 4px 0 var(--red-deep);}
+.btn-danger:active{box-shadow:0 1px 0 var(--red-deep);}
+.btn-ghost{background:transparent;border-color:rgba(38,48,59,.5);box-shadow:0 4px 0 rgba(38,48,59,.3);}
+.btn-big{font-size:1.3rem;padding:.72em 1.8em;border-radius:14px;}
+.btn-sm{font-size:.85rem;padding:.45em .85em;border-radius:10px;box-shadow:0 3px 0 rgba(38,48,59,.45);}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ===== intro ===== */
+.intro-hero{position:relative;border-radius:20px;overflow:hidden;border:2px solid var(--gold-deep);box-shadow:0 12px 34px rgba(0,0,0,.55);}
+.hero-img{width:100%;display:block;aspect-ratio:1376/768;object-fit:cover;}
+.hero-overlay{position:absolute;left:0;right:0;bottom:0;padding:20px 24px 18px;background:linear-gradient(180deg, rgba(8,12,22,0) 0%, rgba(8,12,22,.94) 55%);}
+.hero-overlay h1{
+  margin:0;font-family:var(--display);font-weight:700;text-transform:uppercase;line-height:1;
+  font-size:clamp(2rem,6.5vw,3.4rem);color:var(--gold);
+  text-shadow:0 0 22px rgba(245,197,66,.5), 0 3px 0 var(--gold-dark);
+}
+.hero-overlay h1 b{color:var(--cream);text-shadow:0 0 18px rgba(246,237,216,.35), 0 3px 0 rgba(246,237,216,.2);}
+.hero-tag{font-family:var(--mono);font-size:.85rem;letter-spacing:.14em;color:#d9e2ee;margin:.5em 0 0;text-transform:uppercase;}
+.panel{
+  background:var(--panel);color:var(--ink);
+  border:2px solid var(--ink);border-radius:18px;
+  box-shadow:0 8px 0 rgba(0,0,0,.4);
+  padding:20px 22px;
+}
+.intro-panel{margin-top:20px;}
+.intro-panel h2{font-family:var(--display);font-size:1.5rem;text-transform:uppercase;letter-spacing:.04em;margin:0 0 .4em;color:var(--red-deep);}
+.intro-panel p{margin:.5em 0;}
+.gl-title{font-family:var(--mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin:16px 0 0;}
+.gl-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.gl-chip{
+  font-family:var(--mono);font-size:.8rem;font-weight:700;
+  background:#fff;border:1.5px solid var(--gold-deep);border-radius:999px;
+  padding:.3em .8em;color:var(--ink);cursor:help;
+}
+.intro-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;}
+
+/* ===== level map ===== */
+.map-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:6px;}
+.reel-card{
+  background:var(--panel);border:2px solid var(--ink);border-radius:16px;overflow:hidden;
+  cursor:pointer;box-shadow:0 7px 0 rgba(0,0,0,.45);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.reel-card:hover{transform:translateY(-3px);box-shadow:0 10px 0 rgba(0,0,0,.45);}
+.reel-card:focus-visible{outline:3px solid var(--gold);outline-offset:3px;}
+.reel-preview{position:relative;}
+.reel-preview img{width:100%;display:block;aspect-ratio:16/9;object-fit:cover;}
+.reel-num{
+  position:absolute;top:8px;left:8px;
+  font-family:var(--mono);font-weight:700;font-size:.75rem;letter-spacing:.06em;
+  background:var(--gold);color:#231a03;border:1.5px solid #231a03;border-radius:8px;
+  padding:.15em .5em;
+}
+.reel-done{
+  position:absolute;top:8px;right:8px;
+  font-family:var(--mono);font-weight:700;font-size:.7rem;
+  background:var(--green);color:#0c2b1a;border:1.5px solid #0c2b1a;border-radius:8px;
+  padding:.15em .5em;text-transform:uppercase;
+}
+.reel-body{padding:12px 14px 14px;}
+.reel-body h3{font-family:var(--display);font-size:1.3rem;font-weight:700;margin:0;letter-spacing:.02em;color:var(--ink);}
+.reel-char{font-family:var(--mono);font-size:.8rem;color:var(--teal);margin:.3em 0 0;font-weight:700;}
+.reel-tag{
+  display:inline-block;margin-top:7px;
+  font-family:var(--mono);font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  background:rgba(211,73,61,.1);color:var(--red-deep);border:1.5px solid rgba(168,60,49,.45);
+  border-radius:7px;padding:.2em .55em;
+}
+.reel-meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px;}
+.stars{color:var(--gold-deep);font-size:1.1rem;letter-spacing:.14em;line-height:1;}
+.stars .off{color:rgba(38,48,59,.28);}
+.best{font-family:var(--mono);font-size:.78rem;font-weight:700;color:var(--ink-soft);}
+#map-foot{margin-top:22px;}
+.map-hint{font-family:var(--mono);font-size:.85rem;color:#b9c6d6;text-align:center;margin:0;}
+.btn-final{
+  display:block;width:100%;
+  font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  font-size:clamp(1.15rem,3.6vw,1.5rem);color:#231a03;
+  background:linear-gradient(135deg,var(--gold),var(--gold-deep));
+  border:2px solid var(--gold-dark);border-radius:16px;
+  padding:.85em 1em;cursor:pointer;
+  box-shadow:0 6px 0 var(--gold-dark), 0 0 26px rgba(245,197,66,.35);
+  animation:glow 2.2s ease infinite;
+}
+.btn-final:active{transform:translateY(4px);box-shadow:0 2px 0 var(--gold-dark);}
+@keyframes glow{50%{box-shadow:0 6px 0 var(--gold-dark), 0 0 40px rgba(245,197,66,.55);}}
+
+/* ===== scene ===== */
+.scene-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.scene-tag{
+  font-family:var(--mono);font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--gold);background:rgba(245,197,66,.12);border:1.5px solid rgba(245,197,66,.45);
+  border-radius:9px;padding:.35em .8em;
+}
+.scene-score{
+  margin-left:auto;font-family:var(--mono);font-weight:700;font-size:.95rem;color:var(--cream);
+  background:rgba(246,237,216,.08);border:1.5px solid rgba(246,237,216,.35);
+  border-radius:9px;padding:.35em .8em;
+}
+.scene-stage{min-height:340px;}
+.q-panel{position:relative;}
+.q-panel::before{content:"";position:absolute;top:7px;left:22px;right:22px;border-top:3px dotted rgba(212,160,23,.7);}
+.q-count{font-family:var(--mono);font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin:.5em 0 0;}
+.q-source{font-family:var(--mono);font-size:.85rem;font-style:italic;color:var(--ink-soft);margin:.4em 0 0;}
+.q-text{font-size:1.18rem;font-weight:700;line-height:1.55;margin:.6em 0 .2em;color:var(--ink);}
+.q-hint{font-size:.85rem;color:var(--ink-soft);margin:.9em 0 0;}
+
+/* fill the blanks */
+.blank{
+  font-family:var(--mono);font-weight:700;font-size:1.05rem;
+  background:#fff;border:2px dashed var(--gold-deep);border-radius:10px;
+  padding:.22em .8em;cursor:pointer;color:var(--ink-soft);margin-top:6px;
+}
+.blank.sel{border-style:solid;border-color:var(--teal);background:rgba(47,114,108,.12);color:var(--ink);}
+.blank.locked{border:2px solid var(--green);background:rgba(63,174,110,.16);color:var(--green-deep);cursor:default;display:inline-block;}
+.bank{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;background:var(--panel);border:2px solid var(--ink);border-radius:16px;padding:14px;box-shadow:0 6px 0 rgba(0,0,0,.4);}
+.chip{
+  font-family:var(--mono);font-weight:700;font-size:.95rem;
+  background:#fff;border:2px solid var(--ink);border-radius:999px;
+  padding:.32em .85em;cursor:pointer;box-shadow:0 3px 0 rgba(38,48,59,.6);
+  transition:background .12s ease;
+}
+.chip:hover{background:#fff3cf;}
+.chip:active{transform:translateY(2px);box-shadow:none;}
+.chip.shake{animation:shake .42s ease;}
+.chip.gone{visibility:hidden;}
+
+/* true / delusion */
+.tbar-wrap{display:flex;align-items:center;gap:10px;margin-top:14px;}
+.tbar{flex:1;height:12px;border-radius:999px;background:rgba(38,48,59,.14);border:1px solid rgba(38,48,59,.3);overflow:hidden;}
+.tfill{height:100%;width:100%;border-radius:999px;background:linear-gradient(90deg,var(--green),var(--gold) 55%,var(--coral));transition:width .25s linear;}
+.tfill.danger{background:var(--coral);animation:blinkRed .55s steps(2, start) infinite;}
+@keyframes blinkRed{50%{opacity:.45;}}
+.tlabel{font-family:var(--mono);font-weight:700;font-size:.9rem;min-width:56px;text-align:right;color:var(--ink);}
+.tf-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+.tf-real{background:rgba(63,174,110,.16);border-color:var(--green);box-shadow:0 4px 0 var(--green);color:var(--green-deep);}
+.tf-real:active{box-shadow:0 1px 0 var(--green);}
+.tf-real:hover{background:rgba(63,174,110,.26);}
+.tf-delu{background:rgba(224,93,81,.14);border-color:var(--coral);box-shadow:0 4px 0 var(--coral);color:#8c2f27;}
+.tf-delu:active{box-shadow:0 1px 0 var(--coral);}
+.tf-delu:hover{background:rgba(224,93,81,.24);}
+.v-card{margin-top:16px;border-radius:14px;padding:14px 16px;border-left:6px solid var(--ink);animation:screenIn .3s ease both;}
+.v-ok{border-color:var(--green);background:rgba(63,174,110,.13);}
+.v-bad{border-color:var(--coral);background:rgba(224,93,81,.11);}
+.v-head{font-family:var(--display);font-weight:700;font-size:1.15rem;text-transform:uppercase;letter-spacing:.05em;margin:0;color:var(--ink);}
+.v-pts{font-family:var(--mono);font-weight:700;font-size:.95rem;margin:.4em 0 0;color:var(--ink);}
+.v-expl{font-size:.95rem;margin:.5em 0 .2em;color:var(--ink);}
+.btn-next{margin-top:12px;}
+
+/* multiple choice */
+.opts{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+.opt{
+  text-align:left;font-family:var(--body);font-size:1rem;font-weight:700;
+  background:#fff;border:2px solid var(--ink);border-radius:12px;
+  padding:.6em .9em .6em 2.4em;cursor:pointer;position:relative;
+  box-shadow:0 3px 0 rgba(38,48,59,.55);color:var(--ink);
+}
+.opt::before{content:"";position:absolute;left:.85em;top:50%;width:.8em;height:.8em;transform:translateY(-50%);border-radius:50%;border:2px solid rgba(38,48,59,.5);}
+.opt:hover{background:#fff3cf;}
+.opt:active{transform:translateY(2px);box-shadow:none;}
+.opt.correct{border-color:var(--green);background:rgba(63,174,110,.18);color:var(--green-deep);}
+.opt.correct::before{background:var(--green);border-color:var(--green);}
+.opt.wrong{border-color:var(--coral);background:rgba(224,93,81,.15);color:#8c2f27;animation:shake .42s ease;}
+.opt.wrong::before{background:var(--coral);border-color:var(--coral);}
+.opt.dim{opacity:.45;}
+.opt.locked{cursor:default;pointer-events:none;}
+.react-line{display:flex;align-items:center;gap:10px;margin-top:14px;font-style:italic;font-size:.98rem;color:var(--ink);}
+.react-line svg{flex:none;}
+
+/* match the meaning */
+.match-example{
+  font-family:var(--mono);font-size:.85rem;font-weight:700;color:var(--ink);
+  background:rgba(245,197,66,.16);border:1.5px dashed var(--gold-deep);border-radius:10px;
+  padding:.5em .85em;margin-top:12px;display:inline-block;
+}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;}
+.m-col{display:flex;flex-direction:column;gap:8px;}
+.m-col-title{font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:2px;}
+.m-item{
+  text-align:left;font-family:var(--body);font-size:.95rem;font-weight:700;color:var(--ink);
+  background:#fff;border:2px solid var(--ink);border-radius:12px;
+  padding:.5em .8em;cursor:pointer;box-shadow:0 3px 0 rgba(38,48,59,.55);
+}
+.m-item:hover{background:#fff3cf;}
+.m-item.picked{border-color:var(--teal);background:rgba(47,114,108,.14);box-shadow:0 3px 0 var(--teal);}
+.m-item.locked{border-color:var(--green);background:rgba(63,174,110,.16);color:var(--green-deep);cursor:default;pointer-events:none;}
+.m-item.shake{animation:shake .42s ease;}
+.m-k{display:block;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;color:var(--ink-soft);text-transform:uppercase;}
+
+/* bonus reel */
+.bonus-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.bchip{
+  font-family:var(--mono);font-size:.8rem;font-weight:700;
+  background:rgba(211,73,61,.1);color:var(--red-deep);border:1.5px solid rgba(168,60,49,.45);
+  border-radius:9px;padding:.25em .7em;
+}
+.bchip.gold{background:rgba(245,197,66,.18);border-color:var(--gold-deep);color:#7a5c07;}
+.flash-verdict{font-family:var(--mono);font-weight:700;font-size:1rem;min-height:1.5em;margin-top:12px;color:var(--ink);}
+.flash-verdict.ok{color:var(--green-deep);}
+.flash-verdict.bad{color:#8c2f27;}
+
+/* ===== finale ===== */
+.finale-hero{position:relative;border-radius:20px;overflow:hidden;border:2px solid var(--gold-deep);margin-bottom:20px;}
+.finale-hero img{width:100%;display:block;aspect-ratio:1376/768;object-fit:cover;}
+.finale-hero .hero-overlay h1{font-size:clamp(2rem,7vw,3.6rem);}
+.fin-score{font-family:var(--display);font-weight:700;font-size:clamp(2.6rem,9vw,4rem);color:var(--red-deep);line-height:1;margin:.1em 0;}
+.fin-rank{
+  display:inline-block;font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  font-size:1.3rem;color:#231a03;background:linear-gradient(135deg,var(--gold),var(--gold-deep));
+  border:2px solid var(--gold-dark);border-radius:12px;padding:.35em .9em;
+  box-shadow:0 4px 0 var(--gold-dark);
+}
+.fin-rank-line{font-style:italic;color:var(--ink-soft);margin:.7em 0 0;}
+.table-scroll{overflow-x:auto;margin-top:8px;}
+.fin-table{width:100%;border-collapse:collapse;}
+.fin-table th,.fin-table td{border-bottom:1.5px solid rgba(38,48,59,.2);padding:.5em .6em;text-align:left;font-size:.95rem;}
+.fin-table th{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);}
+.fin-table td.stars{color:var(--gold-deep);letter-spacing:.12em;white-space:nowrap;}
+.fin-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;}
+
+/* ===== modal ===== */
+.modal-root{
+  position:fixed;inset:0;z-index:200;padding:18px;
+  background:rgba(5,9,16,.74);
+  display:flex;align-items:center;justify-content:center;
+}
+.modal-card{
+  background:var(--panel);color:var(--ink);
+  border:2px solid var(--ink);border-radius:18px;
+  max-width:620px;width:100%;max-height:88vh;overflow:auto;
+  padding:22px 24px;position:relative;
+  box-shadow:0 10px 0 rgba(0,0,0,.4);
+  animation:popIn .32s cubic-bezier(.3,1.4,.5,1) both;
+}
+@keyframes popIn{from{opacity:0;transform:scale(.9) translateY(14px);}}
+.modal-x{
+  position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:9px;
+  font-weight:700;font-size:1rem;color:var(--ink);
+  background:rgba(38,48,59,.08);border:1.5px solid rgba(38,48,59,.35);cursor:pointer;
+}
+.modal-title{
+  font-family:var(--display);font-weight:700;font-size:1.35rem;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--red-deep);margin:0 0 12px;padding-right:40px;
+}
+.modal-body p{margin:.5em 0;}
+.modal-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+.brief-head{display:flex;align-items:center;gap:12px;}
+.brief-head h4{margin:0;font-family:var(--display);font-size:1.25rem;letter-spacing:.03em;}
+.brief-title{margin:.1em 0 0;font-family:var(--mono);font-size:.8rem;color:var(--teal);font-weight:700;}
+.brief-slide{width:100%;display:block;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:2px solid var(--ink);margin-top:14px;}
+.brief-obj{margin-top:12px;}
+.brief-flavor{font-style:italic;color:var(--ink-soft);border-left:4px solid var(--gold);padding-left:10px;}
+.brief-best{font-family:var(--mono);font-size:.85rem;font-weight:700;color:var(--teal);}
+.res-stars{text-align:center;margin-top:6px;}
+.star-big{font-size:2.7rem;color:rgba(38,48,59,.22);margin:0 .1em;display:inline-block;animation:starPop .5s cubic-bezier(.3,1.6,.5,1) both;}
+.star-big.on{color:var(--gold-deep);text-shadow:0 3px 0 var(--gold-dark);}
+@keyframes starPop{from{transform:scale(0) rotate(-45deg);opacity:0;}}
+.res-score{font-family:var(--display);font-weight:700;font-size:2rem;text-align:center;margin:.15em 0 0;color:var(--ink);}
+.res-line{text-align:center;color:var(--ink);}
+.res-best{text-align:center;font-family:var(--mono);font-size:.85rem;font-weight:700;color:var(--teal);}
+
+/* ===== toasts / fx ===== */
+#toasts{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:300;
+  display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;
+  max-width:92vw;
+}
+.toast{
+  background:#101a2b;color:var(--cream);
+  border:1.5px solid var(--gold);border-radius:12px;
+  font-family:var(--mono);font-size:.85rem;font-weight:700;
+  padding:.5em 1.1em;box-shadow:0 8px 20px rgba(0,0,0,.45);
+  animation:toastIn .25s ease both;transition:opacity .3s ease, transform .3s ease;
+  text-align:center;
+}
+.toast.out{opacity:0;transform:translateY(10px);}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px);}}
+#fx-layer{position:fixed;inset:0;pointer-events:none;z-index:350;}
+.pop-float{
+  position:fixed;transform:translate(-50%,-50%);z-index:360;
+  font-family:var(--display);font-weight:700;font-size:1.35rem;letter-spacing:.05em;
+  color:var(--gold);text-shadow:0 2px 8px rgba(0,0,0,.65);
+  animation:floatUp .85s ease-out forwards;
+}
+.pop-float.bad{color:var(--coral);}
+@keyframes floatUp{to{transform:translate(-50%,-160%);opacity:0;}}
+.confetti{position:fixed;top:-14px;border-radius:2px;animation:confFall 1.4s ease-in forwards;}
+@keyframes confFall{to{transform:translate(var(--dx,0),106vh) rotate(var(--rot,360deg));opacity:.85;}}
+
+/* ===== responsive ===== */
+@media (max-width:900px){.map-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:640px){
+  .brand-name{font-size:1rem;}
+  .cells{gap:3px;}
+  .cell{width:20px;height:20px;font-size:.66rem;}
+  .hud-score{font-size:.78rem;}
+  main{padding:72px 12px 56px;}
+}
+@media (max-width:600px){
+  .map-grid{grid-template-columns:1fr;}
+  .match-grid{grid-template-columns:1fr;}
+  .tf-btns{grid-template-columns:1fr;}
+}
+
+/* ===== reduced motion ===== */
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important;transition:none !important;}
+}
+</style>
+</head>
+<body>
+
+<!-- film grain overlay -->
+<svg class="grain" aria-hidden="true" focusable="false">
+  <filter id="grainF"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+  <rect width="100%" height="100%" filter="url(#grainF)"></rect>
+</svg>
+<div id="vignette" aria-hidden="true"></div>
+
+<!-- ===== preloader ===== -->
+<div id="preloader" role="dialog" aria-label="Welcome screen for the arcade">
+  <div class="pre-reel" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="2.3"/><circle cx="12" cy="6.6" r="1.7"/><circle cx="16.9" cy="15" r="1.7"/><circle cx="7.1" cy="15" r="1.7"/></svg>
+  </div>
+  <p class="pre-status" id="pre-status">THREADING THE REEL…</p>
+  <h2 class="pre-title">American Graffiti</h2>
+  <p class="pre-sub">The Last Great Night · Arcade</p>
+  <button id="btn-play" class="btn btn-primary btn-big" disabled aria-label="Play the game">PLAY ▶</button>
+  <p class="pre-hint">Headphones recommended — the jukebox is loud.</p>
+</div>
+
+<!-- ===== fixed header console ===== -->
+<header id="hdr">
+  <div class="brand">
+    <span class="brand-reel" data-icon="reel" aria-hidden="true"></span>
+    <span class="brand-name">AG ’62 <b>ARCADE</b></span>
+  </div>
+  <div class="cells" id="cells" role="group" aria-label="Reel progress"></div>
+  <div class="hdr-right">
+    <span class="hud-score" id="hud-score" role="status" aria-label="Total score">SCORE 0</span>
+    <button class="icon-btn" id="btn-sound" type="button" aria-label="Toggle sound"></button>
+    <button class="icon-btn hidden-btn" id="btn-map" type="button" aria-label="Open the level map" data-icon="map"></button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===== screen: intro ===== -->
+  <section id="scr-intro" class="screen active" aria-label="Introduction">
+    <div class="intro-hero">
+      <img class="hero-img" src="slide-001.jpg" alt="A red hot rod on the neon-lit main drag at dusk, in front of Mel's Drive-In.">
+      <div class="hero-overlay">
+        <h1>The Last Great <b>Night Arcade</b></h1>
+        <p class="hero-tag">Five reels · five machines · one unforgettable night in 1962</p>
+      </div>
+    </div>
+    <div class="panel intro-panel">
+      <h2>📌 Welcome to Modesto, September 1962</h2>
+      <p>Four high-school buddies are about to spend one last night <strong>cruising</strong> the main drag before college — and the whole story is told on a visual deck called <em>Deconstructing American Graffiti: The Last Great Night of Youth</em>. This arcade turns that deck into five machines: repair the marquee sentences, judge the Wolfman’s broadcast, pick the right road, pair the chrome vocabulary, and survive the bonus reel at full throttle.</p>
+      <p>Every reel teaches the deck’s real vocabulary and facts — from <strong>“cold feet”</strong> and <strong>“a crown that is slipping”</strong> to <strong>diegetic soundtracks</strong> and the $777,000 gamble. Play the reels in any order you like, as many times as you like; your best results are saved in this browser.</p>
+      <p class="gl-title">Tonight’s glossary rides on the jukebox (hover a chip for its meaning)</p>
+      <div class="gl-chips" id="gl-chips"></div>
+      <div class="intro-actions">
+        <button id="btn-start" class="btn btn-primary btn-big" type="button">▶ START THE NIGHT</button>
+        <a class="btn btn-ghost" href="american-graffiti.pdf" target="_blank" rel="noopener noreferrer" aria-label="Open the American Graffiti presentation PDF in a new tab">📚 OPEN THE DECK (PDF)</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== screen: level map ===== -->
+  <section id="scr-map" class="screen" aria-label="Level map">
+    <h2 class="scr-title">🎞 Select Your Reel</h2>
+    <p class="scr-sub">FREE ORDER — every machine is switched on from the start. Replay anything, anytime.</p>
+    <div id="map-grid" class="map-grid"></div>
+    <div id="map-foot"></div>
+  </section>
+
+  <!-- ===== screen: game scene ===== -->
+  <section id="scr-scene" class="screen" aria-label="Game scene">
+    <div class="scene-top">
+      <button id="btn-backmap" class="btn btn-ghost btn-sm" type="button" aria-label="Leave the reel and return to the map">◀ MAP</button>
+      <span class="scene-tag" id="scene-tag">REEL</span>
+      <span class="scene-score" id="scene-score" role="status" aria-label="Score in this reel">SCORE 0</span>
+    </div>
+    <div id="scene-stage" class="scene-stage"></div>
+    <p class="sr-only" id="scene-live" aria-live="polite"></p>
+  </section>
+
+  <!-- ===== screen: finale ===== -->
+  <section id="scr-finale" class="screen" aria-label="Finale">
+    <div id="finale-wrap"></div>
+  </section>
+
+</main>
+
+<!-- ===== generic modal ===== -->
+<div id="modal-root" class="modal-root" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button class="modal-x" id="modal-x" type="button" aria-label="Close dialog">✕</button>
+    <h3 class="modal-title" id="modal-title"></h3>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ===== toasts + effects ===== -->
+<div id="toasts" aria-live="polite"></div>
+<div id="fx-layer" aria-hidden="true"></div>
+
+<script>
+(function () {
+"use strict";
+
+/* ============================== UTILITIES ============================== */
+function $(sel, root) { return (root || document).querySelector(sel); }
+function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* inline SVG icon set (no external libraries) */
+var ICONS = {
+  reel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="2.3"/><circle cx="12" cy="6.6" r="1.7"/><circle cx="16.9" cy="15" r="1.7"/><circle cx="7.1" cy="15" r="1.7"/></svg>',
+  volOn: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/><path d="M16 8a5 5 0 0 1 0 8M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  volOff: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  rewind: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 12l7.5-6.5v13L11.5 12zM3.5 12L11 5.5v13L3.5 12z"/></svg>',
+  trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 5H4a3 3 0 0 0 3.2 4M17 5h3A3 3 0 0 1 16.8 9"/><path d="M12 14v3M8 20h8M10 17h4l.8 3H9.2l.8-3z"/></svg>'
+};
+function refreshIcons() {
+  $$("[data-icon]").forEach(function (el) {
+    el.innerHTML = ICONS[el.getAttribute("data-icon")] || "";
+  });
+}
+
+/* floating "+points" text at screen coordinates */
+function popFloat(text, x, y, bad) {
+  if (REDUCED) { return; }
+  var el = document.createElement("div");
+  el.className = "pop-float" + (bad ? " bad" : "");
+  el.textContent = text;
+  el.style.left = clamp(x, 50, window.innerWidth - 50) + "px";
+  el.style.top = clamp(y, 30, window.innerHeight - 50) + "px";
+  $("#fx-layer").appendChild(el);
+  setTimeout(function () { el.remove(); }, 950);
+}
+/* transient toast notifications */
+function toast(msg) {
+  var box = $("#toasts");
+  var t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = msg;
+  box.appendChild(t);
+  while (box.children.length > 3) { box.removeChild(box.firstChild); }
+  setTimeout(function () {
+    t.classList.add("out");
+    setTimeout(function () { if (t.parentNode) { t.parentNode.removeChild(t); } }, 350);
+  }, 2400);
+}
+/* confetti burst for rewards */
+var CONF_COLORS = ["#f5c542", "#e05d51", "#3fae6e", "#2f726c", "#6b4f8a", "#f6edd8"];
+function spawnConfetti(count) {
+  if (REDUCED) { return; }
+  var layer = $("#fx-layer");
+  for (var i = 0; i < count; i++) {
+    var c = document.createElement("i");
+    c.className = "confetti";
+    var size = 6 + Math.random() * 8;
+    c.style.left = (Math.random() * 100) + "vw";
+    c.style.width = size + "px";
+    c.style.height = (size * 0.6) + "px";
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty("--dx", (Math.random() * 240 - 120) + "px");
+    c.style.setProperty("--rot", Math.round(Math.random() * 720 - 360) + "deg");
+    c.style.animationDuration = (1.1 + Math.random() * 0.9) + "s";
+    c.style.animationDelay = (Math.random() * 0.3) + "s";
+    layer.appendChild(c);
+    setTimeout(function (node) { return function () { if (node.parentNode) { node.parentNode.removeChild(node); } }; }(c), 2600);
+  }
+}
+
+/* ============================== GAME DATA ============================== */
+
+/* target vocabulary (20 items with definitions from the deck) */
+var WORDS = [
+  { w: "main drag", d: "the main street of a town, where everyone drives slowly to see and be seen" },
+  { w: "cruising", d: "driving slowly for pleasure — showing off the car, the style, the gang" },
+  { w: "cold feet", d: "a sudden loss of nerve right before a big step" },
+  { w: "hot rod", d: "an ordinary old car rebuilt with a powerful engine for speed and show" },
+  { w: "drag race", d: "a straight-line speed contest between two cars from a standing start" },
+  { w: "drive-in", d: "a cinema or diner you visit without leaving your car" },
+  { w: "status symbol", d: "a possession that announces your social rank" },
+  { w: "diegetic soundtrack", d: "music whose source lives inside the story world — car radios and jukeboxes" },
+  { w: "Greek chorus", d: "a voice above the action that comments on the story and steers the audience" },
+  { w: "epilogue", d: "a short final section that reveals what became of the characters" },
+  { w: "title cards", d: "sheets of printed text inserted into a film to deliver blunt news" },
+  { w: "unattainable", d: "impossible to reach or possess — forever one block ahead" },
+  { w: "on the precipice of", d: "standing at the very edge of a huge, irreversible change" },
+  { w: "punch above one’s weight class", d: "to perform beyond what your status or size should allow" },
+  { w: "a crown that is slipping", d: "fading supremacy — still the champion, but visibly losing the throne" },
+  { w: "time capsule", d: "something preserved on purpose so a future generation can visit the past" },
+  { w: "meager", d: "disappointingly small in size or amount" },
+  { w: "eschewed", d: "deliberately avoided as unfashionable or wrong" },
+  { w: "hinged upon", d: "depended on entirely, decided by" },
+  { w: "revelry", d: "lively, noisy celebration" }
+];
+
+/* five scenes (levels) — free order, each mapped to a deck slide */
+var SCENES = [
+  {
+    id: "s1", num: 1, title: "The Opening Marquee", char: "Curt Henderson", color: "#3b5b92",
+    slide: "slide-002.jpg", tag: "FILL THE BLANKS", runner: "blanks",
+    obj: "Six marquee sentences have lost their neon words. Click a blank, then click the right word from the bank below the sentence.",
+    tip: "Every missing word appears verbatim in the deck quote behind the sentence — read it first.",
+    flavor: "Where does the night begin? At the artifact itself — the ticket stub says August 11, 1973."
+  },
+  {
+    id: "s2", num: 2, title: "The Ethereal Navigator", char: "Wolfman Jack", color: "#2f726c",
+    slide: "slide-007.jpg", tag: "REAL OR DELUSION", runner: "truefalse",
+    obj: "The Wolfman broadcasts seven statements about the night. Some are straight from the deck, some are pure static. Judge each one before the needle runs out.",
+    tip: "Arrow keys answer instantly: LEFT for REAL, RIGHT for DELUSION. Enter reads the next broadcast.",
+    flavor: "Broadcasting over the airwaves — get your ears in gear, baby, and stay tuned."
+  },
+  {
+    id: "s3", num: 3, title: "Crisscrossing Choices", char: "Terry “The Toad” Fields", color: "#6b4f8a",
+    slide: "slide-004.jpg", tag: "QUICK PICK", runner: "multi",
+    obj: "Five forks in the road, three signs at each one. One attempt per question — the Toad is watching and he never lets a wrong turn slide.",
+    tip: "Read every option before you touch one. There is no second try on this machine.",
+    flavor: "Golly — I borrowed this quiz for the night, just like the Impala."
+  },
+  {
+    id: "s4", num: 4, title: "A Cast of Chrome", char: "John Milner", color: "#b9890f",
+    slide: "slide-008.jpg", tag: "MATCH THE MEANING", runner: "match",
+    obj: "Six words idle on the left, six meanings purr on the right. Click a word, then click its meaning, and pair them without a scratch.",
+    tip: "Wrong pairs shake off and cost points — count your attempts like a mechanic counts wrenches.",
+    flavor: "The fastest vocabulary in the valley — and this crown is not slipping tonight."
+  },
+  {
+    id: "s5", num: 5, title: "Paradise Road", char: "Bob Falfa", color: "#a83c31",
+    slide: "slide-009.jpg", tag: "BONUS REEL", runner: "bonus",
+    obj: "One round, one clock: everything the night taught you, at full throttle. Streaks multiply the take — a wrong answer dumps the streak in the ditch.",
+    tip: "Chase the multiplier, not the clock: the clock is generous, the ditch is not.",
+    flavor: "Out-of-town challenger, huh? I came here to dethrone the king."
+  }
+];
+var SCENES_BY_ID = {};
+SCENES.forEach(function (s) { SCENES_BY_ID[s.id] = s; });
+
+/* reel 1 — fill the blanks */
+var BLANKS = [
+  { text: "Directed by George Lucas and produced by Francis Ford Coppola, American Graffiti opened to ___ expectations.", answer: "modest", quote: "An Autocine Artifact" },
+  { text: "Four high school buddies spend one last night ___ before college.", answer: "cruising", quote: "The Premise" },
+  { text: "Tribal acceptance or rejection hinged upon success or failure in the ___ arena of the main drag.", answer: "asphalt", quote: "The Asphalt Arena" },
+  { text: "The golden boy who gets ___ and stays for his high-school sweetheart, Laurie.", answer: "cold feet", quote: "Crisscrossing Choices" },
+  { text: "She functions as the film’s ultimate symbol of the ___ — beauty always glimpsed at the next intersection.", answer: "unattainable", quote: "The Illusions of the Night" },
+  { text: "1962 captures American society standing on the exact ___ of massive, irreversible cultural trauma.", answer: "precipice", quote: "September 1962" }
+];
+var BLANK_DISTRACTORS = ["roaring", "endless", "velvet", "golden", "wooden", "pavement", "warm hands", "loose change", "big dreams", "unstoppable", "pinnacle", "electric"];
+
+/* reel 2 — real or delusion (statements about the deck) */
+var TF_ITEMS = [
+  {
+    text: "The film is set in Modesto, California, on Sunday, September 2, 1962.",
+    real: true,
+    expl: "The deck states it directly: “Set in Modesto, California, on Sunday, September 2, 1962, the film captures a fleeting cultural instant.”"
+  },
+  {
+    text: "American Graffiti used a traditional orchestral score recorded after filming.",
+    real: false,
+    expl: "Delusion. The deck says the film “eschewed a traditional orchestral score” and built a revolutionary diegetic soundtrack — music the characters themselves hear."
+  },
+  {
+    text: "Clearing the licensing rights for the songs cost over 10% of the film’s entire budget.",
+    real: true,
+    expl: "Real. “Clearing the licensing rights cost approximately $90,000 — over 10% of the film’s entire budget.”"
+  },
+  {
+    text: "Harrison Ford plays Curt Henderson, the boy who leaves for college.",
+    real: false,
+    expl: "Delusion. Harrison Ford plays Bob Falfa, the out-of-town challenger in the black ’55 Chevy. Curt is “the reluctant intellect who finally boards the plane.”"
+  },
+  {
+    text: "The film ends with blunt title cards revealing the characters’ fates.",
+    real: true,
+    expl: "Real. “The film famously ends with sudden, blunt title cards detailing the male characters’ fates” — John killed by a drunk driver in 1964, Terry missing in action in 1965."
+  },
+  {
+    text: "American Graffiti flopped at the box office and nearly bankrupted its studio.",
+    real: false,
+    expl: "Delusion. The deck calls it “one of the most profitable films in cinematic history” — over $140M initially, adjusting to over $500M today."
+  },
+  {
+    text: "The profits from American Graffiti later helped fund Star Wars (1977).",
+    real: true,
+    expl: "Real. “The profits allowed Lucas to establish his own creative empire and fund his passion project, Star Wars (1977).”"
+  }
+];
+
+/* reel 3 — quick pick (multiple choice, one attempt) */
+var MULTI_QS = [
+  {
+    q: "What advice does Wolfman Jack give Curt at the radio station?",
+    options: ["“Stay on the main drag forever”", "“Get your ass in gear” and see the world", "“Sell your car and buy a guitar”"],
+    answer: 1
+  },
+  {
+    q: "Which car does Terry “The Toad” Fields borrow for the night?",
+    options: ["The yellow ’32 deuce coupe", "The black ’55 Chevy", "The white ’58 Impala"],
+    answer: 2
+  },
+  {
+    q: "Who drives the black ’55 Chevy?",
+    options: ["Bob Falfa (Harrison Ford)", "John Milner", "Steve Bolander"],
+    answer: 0
+  },
+  {
+    q: "What happens on Paradise Road at dawn?",
+    options: ["The race is cancelled by the police", "Milner wins and buys a new car", "Falfa’s tire blows out and the ’55 Chevy rolls into a fiery ditch"],
+    answer: 2
+  },
+  {
+    q: "Where was the film shot after San Rafael revoked permits on day two?",
+    options: ["Petaluma, CA", "Modesto, CA", "Hollywood, CA"],
+    answer: 0
+  }
+];
+var REACT_OK = [
+  "Golly — you’re smarter than the whole bunch of us!",
+  "Hot dog! That’s the one!",
+  "Wow — even the Toad is impressed."
+];
+var REACT_NO = [
+  "Aw, shucks — even I knew that one.",
+  "Hmm, that chrome was fooling you.",
+  "Wrong turn, pal — the ditch is that way."
+];
+
+/* reel 4 — match the meaning (word → meaning, 6 pairs) */
+var MATCH_PAIRS = [
+  { w: "hot rod", d: "an old car rebuilt for speed and show" },
+  { w: "main drag", d: "the town’s central cruising street" },
+  { w: "cold feet", d: "last-second nerves before a big step" },
+  { w: "epilogue", d: "the final section revealing the fates" },
+  { w: "meager", d: "disappointingly small" },
+  { w: "time capsule", d: "a preserved snapshot of an era" }
+];
+
+/* reel 5 — bonus reel (rapid mixed questions) */
+var BONUS_QS = [
+  { q: "“Cruising” means…", options: ["driving slowly to see and be seen", "a style of dance"], a: 0 },
+  { q: "The DJ who guides the night is…", options: ["Wolfman Sam", "Wolfman Jack"], a: 1 },
+  { q: "“On the precipice of” = ", options: ["at the very edge of", "in the middle of"], a: 0 },
+  { q: "The film was released in…", options: ["1962", "1973"], a: 1 },
+  { q: "“A crown that is slipping” describes…", options: ["John Milner’s fading reign", "Steve’s new job"], a: 0 },
+  { q: "The music budget share was…", options: ["over 10%", "under 1%"], a: 0 },
+  { q: "“Punch above your weight class” = ", options: ["perform beyond your status", "start a street fight"], a: 0 },
+  { q: "The Thunderbird is…", options: ["white", "black"], a: 0 },
+  { q: "Curt’s final decision is to…", options: ["board the plane", "stay as an insurance agent"], a: 0 },
+  { q: "“Eschewed” means…", options: ["eagerly embraced", "deliberately avoided"], a: 1 }
+];
+
+/* finale ranks by total best score (theoretical max ≈ 5300) */
+var RANKS = [
+  { min: 4300, name: "KING OF THE VALLEY", line: "The whole main drag tips its chrome to you." },
+  { min: 3200, name: "DRAG-RACE CHAMPION", line: "Falfa wants a rematch — and you will win that one too." },
+  { min: 2000, name: "MAIN DRAG CRUISER", line: "Smooth ride, neon shine — one more lap and the crown is yours." },
+  { min: 0, name: "ROOKIE GREASER", line: "Every legend starts with one borrowed car. Rewind the tape and ride again." }
+];
+
+/* ============================== SOUND ENGINE ============================== */
+var AC = null, master = null;
+function ensureAudio() {
+  try {
+    if (!AC) {
+      var Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) { return; }
+      AC = new Ctor();
+      master = AC.createGain();
+      master.gain.value = state.muted ? 0 : 0.5;
+      master.connect(AC.destination);
+    }
+    if (AC.state === "suspended") { AC.resume(); }
+  } catch (e) { AC = null; }
+}
+/* basic oscillator with an attack/decay envelope */
+function tone(freq, dur, type, vol, when) {
+  if (!AC) { return; }
+  var t0 = AC.currentTime + (when || 0);
+  var o = AC.createOscillator();
+  var g = AC.createGain();
+  o.type = type || "sine";
+  o.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol || 0.2, t0 + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(master);
+  o.start(t0); o.stop(t0 + dur + 0.06);
+}
+/* white noise burst (applause, cymbal wash) */
+function noiseBurst(dur, vol, when) {
+  if (!AC) { return; }
+  var t0 = AC.currentTime + (when || 0);
+  var len = Math.max(1, Math.floor(AC.sampleRate * dur));
+  var buf = AC.createBuffer(1, len, AC.sampleRate);
+  var data = buf.getChannelData(0);
+  for (var i = 0; i < len; i++) { data[i] = Math.random() * 2 - 1; }
+  var src = AC.createBufferSource();
+  src.buffer = buf;
+  var g = AC.createGain();
+  g.gain.setValueAtTime(vol || 0.15, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(g); g.connect(master);
+  src.start(t0);
+}
+/* ready-made presets */
+var SFX = {
+  click: function () { tone(660, 0.07, "square", 0.1); },
+  flip: function () { tone(330, 0.09, "triangle", 0.14); tone(494, 0.12, "triangle", 0.11, 0.06); },
+  correct: function () { tone(523, 0.1, "square", 0.15); tone(659, 0.1, "square", 0.15, 0.09); tone(784, 0.16, "square", 0.16, 0.18); },
+  wrong: function () { tone(196, 0.22, "sawtooth", 0.18); tone(147, 0.28, "sawtooth", 0.16, 0.1); },
+  match: function () { tone(587, 0.1, "triangle", 0.15); tone(880, 0.14, "triangle", 0.13, 0.08); },
+  fanfare: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.14, "square", 0.16, i * 0.11); }); tone(1319, 0.32, "triangle", 0.18, 0.44); noiseBurst(0.35, 0.08, 0.44); },
+  tick: function () { tone(1180, 0.03, "square", 0.07); },
+  cheer: function () { noiseBurst(0.55, 0.16); noiseBurst(0.5, 0.12, 0.28); [659, 880, 1047].forEach(function (f, i) { tone(f, 0.2, "triangle", 0.11, 0.1 + i * 0.13); }); }
+};
+function renderSound() {
+  var b = $("#btn-sound");
+  b.setAttribute("data-icon", state.muted ? "volOff" : "volOn");
+  b.setAttribute("aria-label", state.muted ? "Sound is off — turn it on" : "Sound is on — mute it");
+  b.setAttribute("aria-pressed", state.muted ? "true" : "false");
+  refreshIcons();
+}
+function toggleMute() {
+  state.muted = !state.muted;
+  saveState();
+  ensureAudio();
+  if (master) { master.gain.value = state.muted ? 0 : 0.5; }
+  renderSound();
+  if (!state.muted) { SFX.click(); }
+  toast(state.muted ? "🔇 Jukebox muted" : "🔊 Jukebox on");
+}
+
+/* ============================== STORAGE ============================== */
+var STORE_KEY = "ag62arcade_v1";
+function freshLevel() { return { score: 0, stars: 0, mistakes: 0, done: false }; }
+function freshState() {
+  var s = { v: 1, muted: false, levels: {} };
+  SCENES.forEach(function (sc) { s.levels[sc.id] = freshLevel(); });
+  return s;
+}
+function loadState() {
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      var s = JSON.parse(raw);
+      if (s && s.v === 1 && s.levels && s.levels.s1) { return s; }
+    }
+  } catch (e) { /* private mode / disabled storage — play in memory */ }
+  return freshState();
+}
+function saveState() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch (e) { /* storage unavailable — keep playing in memory */ }
+}
+var state = loadState();
+
+/* ============================== ROUTER + CLEANUP ============================== */
+var cleanups = [];
+function setCleanup(fn) { cleanups.push(fn); }
+function runCleanups() {
+  cleanups.forEach(function (fn) { try { fn(); } catch (e) { /* one leaky handler never blocks the rest */ } });
+  cleanups = [];
+}
+var currentScene = "intro";
+var activeLevel = null;
+function show(id) {
+  runCleanups();
+  currentScene = id;
+  $$(".screen").forEach(function (s) { s.classList.remove("active"); });
+  var scr = $("#scr-" + id);
+  if (scr) { scr.classList.add("active"); }
+  $("#btn-map").classList.toggle("hidden-btn", id === "map" || id === "intro");
+  updateHUD();
+  window.scrollTo(0, 0);
+}
+
+/* ============================== HUD ============================== */
+function totalBest() {
+  var t = 0;
+  SCENES.forEach(function (s) { t += state.levels[s.id].score; });
+  return t;
+}
+function allDone() {
+  return SCENES.every(function (s) { return state.levels[s.id].done; });
+}
+function updateHUD() {
+  $("#hud-score").textContent = "SCORE " + totalBest();
+  var cells = $("#cells");
+  cells.innerHTML = "";
+  SCENES.forEach(function (s) {
+    var c = document.createElement("span");
+    c.className = "cell" + (state.levels[s.id].done ? " done" : "") + (currentScene === "scene" && activeLevel === s.id ? " now" : "");
+    c.textContent = s.num;
+    cells.appendChild(c);
+  });
+}
+
+/* ============================== LEVEL MAP ============================== */
+function starsHtml(n) {
+  var out = "";
+  for (var i = 1; i <= 3; i++) { out += i <= n ? "★" : "<span class=\"off\">★</span>"; }
+  return out;
+}
+function renderMap() {
+  var grid = $("#map-grid");
+  var html = "";
+  SCENES.forEach(function (s) {
+    var lv = state.levels[s.id];
+    var starsTxt = lv.done ? (lv.stars + " of 3 stars") : "not completed yet";
+    html += '<article class="reel-card" data-scene="' + s.id + '" tabindex="0" role="button" aria-label="Reel ' + s.num + ": " + s.title + " — " + s.tag + ". " + starsTxt + '">'
+      + '<div class="reel-preview"><img src="' + s.slide + '" alt="Preview of reel ' + s.num + ' from the presentation">'
+      + '<span class="reel-num">REEL ' + s.num + "</span>"
+      + (lv.done ? '<span class="reel-done">CLEARED</span>' : "")
+      + "</div>"
+      + '<div class="reel-body"><h3>' + s.title + "</h3>"
+      + '<p class="reel-char">🎭 ' + s.char + "</p>"
+      + '<span class="reel-tag">' + s.tag + "</span>"
+      + '<div class="reel-meta"><span class="stars" aria-hidden="true">' + starsHtml(lv.stars) + "</span>"
+      + '<span class="best">' + (lv.done ? "BEST " + lv.score : "—") + "</span></div>"
+      + "</div></article>";
+  });
+  grid.innerHTML = html;
+  var foot = $("#map-foot");
+  if (allDone()) {
+    foot.innerHTML = '<button id="btn-final" class="btn-final" type="button" aria-label="All reels cleared — open the premiere results">🎬 THE PREMIERE IS READY — SEE YOUR TOTAL ▶</button>';
+  } else {
+    var left = SCENES.filter(function (s) { return !state.levels[s.id].done; }).length;
+    foot.innerHTML = '<p class="map-hint">Finish every reel to unlock <b>THE PREMIERE</b> — ' + left + " reel" + (left > 1 ? "s" : "") + " to go.</p>";
+  }
+}
+/* delegation: cards + final button + keyboard */
+$("#map-grid").addEventListener("click", function (e) {
+  var card = e.target.closest(".reel-card");
+  if (card) { SFX.flip(); startLevel(card.getAttribute("data-scene")); }
+});
+$("#map-grid").addEventListener("keydown", function (e) {
+  if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") { return; }
+  var card = e.target.closest(".reel-card");
+  if (card) {
+    e.preventDefault();
+    SFX.flip();
+    startLevel(card.getAttribute("data-scene"));
+  }
+});
+$("#map-foot").addEventListener("click", function (e) {
+  if (e.target.closest("#btn-final")) { SFX.fanfare(); openFinale(); }
+});
+
+/* ============================== MODALS ============================== */
+var lastFocus = null;
+function openModal(opts) {
+  lastFocus = document.activeElement;
+  $("#modal-title").textContent = opts.title || "";
+  $("#modal-body").innerHTML = opts.body || "";
+  var acts = $("#modal-actions");
+  acts.innerHTML = "";
+  (opts.actions || []).forEach(function (a) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn " + (a.primary ? "btn-primary" : (a.danger ? "btn-danger" : "btn-ghost"));
+    b.textContent = a.label;
+    if (a.aria) { b.setAttribute("aria-label", a.aria); }
+    b.addEventListener("click", function () {
+      closeModal();
+      if (a.cb) { a.cb(); }
+    });
+    acts.appendChild(b);
+  });
+  $("#modal-root").hidden = false;
+  var f = $("#modal-actions .btn") || $("#modal-x");
+  if (f) { f.focus(); }
+}
+function closeModal() {
+  $("#modal-root").hidden = true;
+  if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) { /* element may be gone */ } }
+}
+$("#modal-x").addEventListener("click", function () { SFX.click(); closeModal(); });
+function modalOpen() { return !$("#modal-root").hidden; }
+
+/* avatar placeholder — initials on a gradient disc */
+function initials(name) {
+  var words = name.replace(/[“”"]/g, "").split(/\s+/).filter(Boolean);
+  return ((words[0] || "?").charAt(0) + (words.length > 1 ? words[words.length - 1].charAt(0) : "")).toUpperCase();
+}
+function avatarSVG(scene, size) {
+  size = size || 52;
+  return '<svg viewBox="0 0 52 52" width="' + size + '" height="' + size + '" role="img" aria-label="Avatar of ' + scene.char + '">'
+    + '<circle cx="26" cy="26" r="24" fill="' + scene.color + '" stroke="#26303b" stroke-width="2"/>'
+    + '<circle cx="26" cy="26" r="24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="3"/>'
+    + '<text x="26" y="33" text-anchor="middle" font-family="Barlow Condensed, Arial, sans-serif" font-size="19" font-weight="700" fill="#fff7e0">' + initials(scene.char) + "</text></svg>";
+}
+
+/* ============================== LEVEL FLOW ============================== */
+function updateRunScore(n) { $("#scene-score").textContent = "SCORE " + n; }
+function announce(msg) { $("#scene-live").textContent = msg; }
+
+function startLevel(id) {
+  var s = SCENES_BY_ID[id];
+  var lv = state.levels[id];
+  openModal({
+    title: "REEL " + s.num + " · " + s.tag,
+    body: '<div class="brief">'
+      + '<div class="brief-head">' + avatarSVG(s, 54)
+      + "<div><h4>" + s.char + "</h4><p class=\"brief-title\">" + s.title + " · REEL " + s.num + " OF 5</p></div></div>"
+      + '<img class="brief-slide" src="' + s.slide + '" alt="Slide preview for reel ' + s.num + '">'
+      + '<p class="brief-obj"><b>🎯 Objective:</b> ' + s.obj + "</p>"
+      + '<p class="brief-tip"><b>💡 Tip:</b> ' + s.tip + "</p>"
+      + '<p class="brief-flavor">“' + s.flavor + '” — ' + s.char.split(" ")[0] + "</p>"
+      + (lv.done ? '<p class="brief-best">BEST ON THIS REEL: ' + lv.score + " · " + lv.stars + " OF 3 STARS</p>" : '<p class="brief-best">FIRST RIDE — NO STARS YET</p>')
+      + "</div>",
+    actions: [
+      { label: "▶ START REEL", primary: true, cb: function () { runLevel(id); } },
+      { label: "Not yet", cb: function () { } }
+    ]
+  });
+  SFX.click();
+}
+function runLevel(id) {
+  activeLevel = id;
+  var s = SCENES_BY_ID[id];
+  $("#scene-tag").textContent = "REEL " + s.num + " · " + s.tag;
+  updateRunScore(0);
+  show("scene");
+  var stage = $("#scene-stage");
+  stage.innerHTML = "";
+  LEVEL_RUNNERS[s.runner](stage, s, function (runScore, mistakes) {
+    finishLevel(id, runScore, mistakes);
+  });
+  updateHUD();
+}
+function finishLevel(id, runScore, mistakes) {
+  runScore = clamp(Math.round(runScore), 0, 999999);
+  var stars = mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1);
+  var lv = state.levels[id];
+  var isBest = runScore > lv.score;
+  lv.score = Math.max(lv.score, runScore);
+  lv.stars = Math.max(lv.stars, stars);
+  lv.mistakes = mistakes;
+  lv.done = true;
+  activeLevel = null;
+  saveState();
+  updateHUD();
+  renderMap();
+  var s = SCENES_BY_ID[id];
+  var wasLastUnlock = allDone();
+  if (stars === 3) { spawnConfetti(90); SFX.cheer(); } else { SFX.fanfare(); }
+  toast("REEL " + s.num + " CLEARED — " + stars + " OF 3 STARS");
+  if (isBest) { setTimeout(function () { toast("💾 NEW BEST SCORE SAVED"); }, 800); }
+  if (wasLastUnlock) { setTimeout(function () { toast("🎬 THE PREMIERE IS READY ON THE MAP"); }, 1600); }
+  resultsModal(s, runScore, mistakes, stars, lv);
+}
+function resultsModal(s, runScore, mistakes, stars, lv) {
+  var starHtml = "";
+  for (var i = 1; i <= 3; i++) {
+    starHtml += '<span class="star-big' + (i <= stars ? " on" : "") + '" style="animation-delay:' + (0.12 * i) + 's">★</span>';
+  }
+  var actions = [
+    { label: "↻ REPLAY REEL", cb: function () { startLevel(s.id); } },
+    { label: "🗺 BACK TO MAP", primary: true, cb: function () { show("map"); } }
+  ];
+  if (allDone()) {
+    actions.push({ label: "🎬 THE PREMIERE", primary: true, cb: function () { openFinale(); } });
+  }
+  openModal({
+    title: "REEL " + s.num + " RESULTS",
+    body: '<div class="res-stars">' + starHtml + "</div>"
+      + '<p class="res-score">+' + runScore + " points</p>"
+      + '<p class="res-line">' + (mistakes === 0
+        ? "A flawless run — not a single scratch on the chrome."
+        : "Mistakes this run: " + mistakes + " — the crown is still yours to polish.") + "</p>"
+      + '<p class="res-best">BEST ON THIS REEL: ' + lv.score + " · " + lv.stars + " OF 3 STARS</p>",
+    actions: actions
+  });
+}
+
+/* ============================== FINALE ============================== */
+function rankFor(total) {
+  for (var i = 0; i < RANKS.length; i++) { if (total >= RANKS[i].min) { return RANKS[i]; } }
+  return RANKS[RANKS.length - 1];
+}
+function openFinale() {
+  var total = totalBest();
+  var stars = 0;
+  SCENES.forEach(function (s) { stars += state.levels[s.id].stars; });
+  var rank = rankFor(total);
+  var rows = "";
+  SCENES.forEach(function (s) {
+    var lv = state.levels[s.id];
+    rows += "<tr><td>REEL " + s.num + "</td><td>" + s.title + "</td><td>" + lv.score + "</td>"
+      + '<td class="stars" aria-label="' + lv.stars + ' of 3 stars">' + starsHtml(lv.stars) + "</td><td>" + lv.mistakes + "</td></tr>";
+  });
+  $("#finale-wrap").innerHTML =
+    '<div class="finale-hero"><img src="slide-015.jpg" alt="The closing frame of the presentation: a glowing tuning dial under the words The Last Great Night.">'
+    + '<div class="hero-overlay"><h1>🎬 THE <b>PREMIERE</b></h1><p class="hero-tag">Every reel complete — roll the credits</p></div></div>'
+    + '<div class="panel">'
+    + '<h2 style="font-family:var(--display);text-transform:uppercase;letter-spacing:.04em;margin:0 0 .2em;color:var(--red-deep);">Final Cut</h2>'
+    + '<p class="fin-score">' + total + ' <span style="font-size:1.1rem;color:var(--ink-soft);">points</span></p>'
+    + '<p style="font-family:var(--mono);font-weight:700;color:var(--teal);margin:.1em 0 0;">' + stars + " OF 15 STARS COLLECTED</p>"
+    + '<p style="margin-top:14px;"><span class="fin-rank">' + rank.name + "</span></p>"
+    + '<p class="fin-rank-line">' + rank.line + "</p>"
+    + '<div class="table-scroll"><table class="fin-table"><thead><tr><th>Reel</th><th>Title</th><th>Best score</th><th>Stars</th><th>Mistakes</th></tr></thead><tbody>' + rows + "</tbody></table></div>"
+    + '<div class="fin-actions">'
+    + '<button id="btn-rewind" class="btn btn-danger" type="button">↺ REWIND THE TAPE</button>'
+    + '<button id="btn-tomap" class="btn btn-primary" type="button">🗺 BACK TO MAP</button>'
+    + '<a class="btn btn-ghost" href="american-graffiti.pdf" target="_blank" rel="noopener noreferrer">📚 RE-READ THE DECK (PDF)</a>'
+    + "</div></div>";
+  show("finale");
+  spawnConfetti(120);
+  SFX.cheer();
+  $("#btn-rewind").addEventListener("click", rewindTape);
+  $("#btn-tomap").addEventListener("click", function () { SFX.click(); show("map"); });
+}
+function rewindTape() {
+  openModal({
+    title: "REWIND THE TAPE?",
+    body: "<p>This wipes every score, star and best result saved in this browser and starts the night over. The film itself stays wonderful.</p>",
+    actions: [
+      { label: "YES — REWIND IT", danger: true, cb: function () {
+        state = freshState();
+        saveState();
+        updateHUD();
+        renderMap();
+        toast("↺ TAPE REWOUND — PROGRESS CLEARED");
+        show("map");
+      } },
+      { label: "Keep playing", primary: true, cb: function () { } }
+    ]
+  });
+}
+
+/* ============================== MINI-GAME 1 · FILL THE BLANKS ============================== */
+function runBlanks(stage, scene, done) {
+  var runScore = 0, mistakes = 0, step = 0;
+  var selected = false, busy = false, finished = false;
+  var bankPool = [];
+  BLANKS.forEach(function (b) { bankPool.push({ word: b.answer, correct: true, used: false }); });
+  BLANK_DISTRACTORS.forEach(function (w) { bankPool.push({ word: w, correct: false, used: false }); });
+  var bank = shuffle(bankPool);
+
+  function bankHtml() {
+    var h = "";
+    bank.forEach(function (it, i) {
+      if (!it.used) { h += '<button type="button" class="chip" data-bi="' + i + '">' + it.word + "</button>"; }
+    });
+    return h;
+  }
+  function render() {
+    selected = false;
+    busy = false;
+    var b = BLANKS[step];
+    var blankBtn = '<button type="button" class="blank" aria-pressed="false" aria-label="Empty blank — click me, then click a word from the bank">___</button>';
+    stage.innerHTML =
+      '<div class="panel q-panel">'
+      + '<p class="q-count">SENTENCE ' + (step + 1) + " / " + BLANKS.length + '</p>'
+      + '<p class="q-source">from the deck: “' + b.quote + '”</p>'
+      + '<p class="q-text">' + b.text.replace("___", blankBtn) + "</p>"
+      + '<p class="q-hint">Click the blank, then click a word from the bank. A wrong word bounces back and costs 10 points.</p>'
+      + "</div>"
+      + '<div class="bank" id="bank">' + bankHtml() + "</div>";
+    announce("Sentence " + (step + 1) + " of " + BLANKS.length + ". Fill the blank.");
+  }
+  function onStageClick(e) {
+    if (busy || finished) { return; }
+    var blankEl = e.target.closest(".blank");
+    if (blankEl) {
+      selected = !selected;
+      blankEl.classList.toggle("sel", selected);
+      blankEl.setAttribute("aria-pressed", selected ? "true" : "false");
+      SFX.click();
+      return;
+    }
+    var chip = e.target.closest(".chip");
+    if (!chip) { return; }
+    if (!selected) { toast("📌 Pick a blank first, then a word"); SFX.click(); return; }
+    var it = bank[parseInt(chip.dataset.bi, 10)];
+    var bl = $(".blank", stage);
+    if (it.correct) {
+      it.used = true;
+      var rect = bl.getBoundingClientRect();
+      busy = true;
+      bl.outerHTML = '<span class="blank locked" aria-label="Correctly filled">' + it.word + "</span>";
+      runScore += 100;
+      updateRunScore(runScore);
+      SFX.correct();
+      popFloat("+100", rect.left + rect.width / 2, rect.top);
+      announce("Correct. Plus 100 points.");
+      step++;
+      setTimeout(function () {
+        busy = false;
+        if (step < BLANKS.length) { render(); }
+        else { finished = true; done(runScore, mistakes); }
+      }, 640);
+    } else {
+      var crect = chip.getBoundingClientRect();
+      mistakes++;
+      runScore = Math.max(0, runScore - 10);
+      updateRunScore(runScore);
+      SFX.wrong();
+      chip.classList.add("shake");
+      setTimeout(function () { chip.classList.remove("shake"); }, 460);
+      selected = false;
+      if (bl) { bl.classList.remove("sel"); bl.setAttribute("aria-pressed", "false"); }
+      popFloat("−10", crect.left + crect.width / 2, crect.top, true);
+      announce("Wrong word. It bounced back — minus 10 points.");
+    }
+  }
+  stage.addEventListener("click", onStageClick);
+  setCleanup(function () { stage.removeEventListener("click", onStageClick); });
+  render();
+}
+
+/* ============================== MINI-GAME 2 · REAL OR DELUSION ============================== */
+function runTrueFalse(stage, scene, done) {
+  var TF_TIME = 600; /* seconds per statement (spec value) — change here for faster pacing */
+  var runScore = 0, mistakes = 0, idx = 0, streak = 0;
+  var answered = false, finished = false;
+  var deadline = 0, timerInt = null, lastTick = null;
+
+  function stopTimer() { if (timerInt) { clearInterval(timerInt); timerInt = null; } }
+  function multNow() { return Math.min(3, 1 + 0.25 * streak); }
+  function tick() {
+    var rem = Math.max(0, (deadline - Date.now()) / 1000);
+    var bar = $(".tfill", stage), tl = $(".tlabel", stage);
+    if (bar) {
+      bar.style.width = (rem / TF_TIME * 100) + "%";
+      if (rem <= 30) { bar.classList.add("danger"); }
+    }
+    if (tl) { tl.textContent = Math.ceil(rem) + "s"; }
+    var sec = Math.ceil(rem);
+    if (sec <= 10 && sec > 0 && sec !== lastTick) { lastTick = sec; SFX.tick(); }
+    if (rem <= 0) { stopTimer(); answer(null, true); }
+  }
+  function startTimer() {
+    stopTimer();
+    answered = false;
+    deadline = Date.now() + TF_TIME * 1000;
+    lastTick = null;
+    var bar = $(".tfill", stage);
+    if (bar) { bar.classList.remove("danger"); }
+    timerInt = setInterval(tick, 250);
+    tick();
+  }
+  function render() {
+    var q = TF_ITEMS[idx];
+    stage.innerHTML =
+      '<div class="panel q-panel">'
+      + '<p class="q-count">STATEMENT ' + (idx + 1) + " / " + TF_ITEMS.length + " · STREAK " + streak + " · NEXT ×" + multNow().toFixed(2) + "</p>"
+      + '<p class="q-source">from the Wolfman’s broadcast</p>'
+      + '<p class="q-text">“' + q.text + '”</p>'
+      + '<div class="tbar-wrap"><div class="tbar"><div class="tfill"></div></div><span class="tlabel mono">…</span></div>'
+      + '<div class="tf-btns">'
+      + '<button type="button" class="btn tf-real" data-v="real" aria-label="Answer REAL">✓ REAL</button>'
+      + '<button type="button" class="btn tf-delu" data-v="delu" aria-label="Answer DELUSION">✗ DELUSION</button>'
+      + "</div>"
+      + '<div class="verdict" id="verdict"></div>'
+      + '<p class="q-hint">Arrow keys answer instantly: ← REAL · → DELUSION. The timer pauses while the explanation is open. Enter reads on.</p>'
+      + "</div>";
+    startTimer();
+    announce("Statement " + (idx + 1) + " of " + TF_ITEMS.length + ". Left arrow for real, right arrow for delusion.");
+  }
+  function answer(v, timedOut) {
+    if (answered || finished) { return; }
+    answered = true;
+    stopTimer(); /* the clock stops while the explanation is on screen */
+    var q = TF_ITEMS[idx];
+    var ok = !timedOut && ((v === "real") === q.real);
+    var streakBefore = streak;
+    var mult = 1, pts = 0;
+    if (ok) {
+      streak = streakBefore + 1;
+      mult = Math.min(3, 1 + 0.25 * streakBefore);
+      pts = Math.round(100 * mult);
+      runScore += pts;
+      SFX.correct();
+    } else {
+      streak = 0;
+      mistakes++;
+      runScore = Math.max(0, runScore - 15);
+      pts = -15;
+      SFX.wrong();
+    }
+    updateRunScore(runScore);
+    var head = timedOut
+      ? "⏰ TIME RAN OUT — IT WAS " + (q.real ? "REAL" : "DELUSION")
+      : (ok ? "✓ CORRECT — IT IS " + (q.real ? "REAL" : "DELUSION") : "✗ WRONG — IT IS " + (q.real ? "REAL" : "DELUSION"));
+    var ptsLine = ok
+      ? "+" + pts + " POINTS · STREAK " + streak + " · NEXT ×" + multNow().toFixed(2)
+      : (timedOut ? "NO ANSWER — STREAK RESET" : "−15 POINTS · STREAK RESET");
+    var verdict = $("#verdict", stage);
+    verdict.innerHTML = '<div class="v-card ' + (ok ? "v-ok" : "v-bad") + '">'
+      + '<p class="v-head">' + head + "</p>"
+      + '<p class="v-pts">' + ptsLine + "</p>"
+      + '<p class="v-expl">' + q.expl + "</p>"
+      + '<button type="button" class="btn btn-primary btn-next" id="btn-next" aria-label="Continue">' + (idx === TF_ITEMS.length - 1 ? "SEE RESULTS ▶" : "NEXT ▶") + "</button>"
+      + "</div>";
+    $$(".tf-btns .btn", stage).forEach(function (b) { b.disabled = true; });
+    var nb = $("#btn-next", stage);
+    if (nb) { nb.focus(); }
+    announce(head + ". " + q.expl);
+  }
+  function next() {
+    if (!answered || finished) { return; }
+    idx++;
+    if (idx < TF_ITEMS.length) { render(); }
+    else { finished = true; stopTimer(); done(runScore, mistakes); }
+  }
+  function onClick(e) {
+    if (finished) { return; }
+    var b = e.target.closest("[data-v]");
+    if (b) { answer(b.getAttribute("data-v"), false); return; }
+    if (e.target.closest("#btn-next")) { SFX.click(); next(); }
+  }
+  function onKey(e) {
+    if (finished || modalOpen()) { return; }
+    if (!answered) {
+      if (e.key === "ArrowLeft") { e.preventDefault(); answer("real", false); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); answer("delu", false); }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      next();
+    }
+  }
+  stage.addEventListener("click", onClick);
+  document.addEventListener("keydown", onKey);
+  setCleanup(function () {
+    stopTimer();
+    stage.removeEventListener("click", onClick);
+    document.removeEventListener("keydown", onKey);
+  });
+  render();
+}
+
+/* ============================== MINI-GAME 3 · QUICK PICK (MULTIPLE CHOICE) ============================== */
+function runMulti(stage, scene, done) {
+  var runScore = 0, mistakes = 0, idx = 0;
+  var answered = false, finished = false;
+  function render() {
+    answered = false;
+    var q = MULTI_QS[idx];
+    var opts = "";
+    q.options.forEach(function (o, i) {
+      opts += '<button type="button" class="opt" data-oi="' + i + '" aria-label="Option ' + (i + 1) + '">' + o + "</button>";
+    });
+    stage.innerHTML =
+      '<div class="panel q-panel">'
+      + '<p class="q-count">QUESTION ' + (idx + 1) + " / " + MULTI_QS.length + ' · ONE ATTEMPT</p>'
+      + '<p class="q-text">' + q.q + "</p>"
+      + '<div class="opts">' + opts + "</div>"
+      + '<div class="verdict" id="verdict"></div>'
+      + '<p class="q-hint">One attempt only — the Toad is watching.</p>'
+      + "</div>";
+    announce("Question " + (idx + 1) + " of " + MULTI_QS.length + ". Three options, one attempt.");
+  }
+  function pick(oi) {
+    if (answered || finished) { return; }
+    answered = true;
+    var q = MULTI_QS[idx];
+    var ok = oi === q.answer;
+    if (ok) { runScore += 120; SFX.correct(); }
+    else { mistakes++; SFX.wrong(); }
+    updateRunScore(runScore);
+    $$(".opt", stage).forEach(function (b, i) {
+      b.classList.add("locked");
+      if (i === q.answer) { b.classList.add("correct"); }
+      else if (i === oi) { b.classList.add("wrong"); }
+      else { b.classList.add("dim"); }
+    });
+    var react = ok ? REACT_OK[idx % REACT_OK.length] : REACT_NO[idx % REACT_NO.length];
+    var verdict = $("#verdict", stage);
+    verdict.innerHTML = '<div class="v-card ' + (ok ? "v-ok" : "v-bad") + '">'
+      + '<div class="react-line">' + avatarSVG(scene, 42) + "<span>" + react + " <b>(" + (ok ? "+120" : "+0") + ")</b></span></div>"
+      + '<button type="button" class="btn btn-primary btn-next" id="btn-next" aria-label="Continue">' + (idx === MULTI_QS.length - 1 ? "SEE RESULTS ▶" : "NEXT ▶") + "</button>"
+      + "</div>";
+    var nb = $("#btn-next", stage);
+    if (nb) { nb.focus(); }
+    announce((ok ? "Correct. " : "Wrong. ") + react);
+  }
+  function next() {
+    if (!answered || finished) { return; }
+    idx++;
+    if (idx < MULTI_QS.length) { render(); }
+    else { finished = true; done(runScore, mistakes); }
+  }
+  function onClick(e) {
+    if (finished) { return; }
+    var opt = e.target.closest(".opt");
+    if (opt) { pick(parseInt(opt.dataset.oi, 10)); return; }
+    if (e.target.closest("#btn-next")) { SFX.click(); next(); }
+  }
+  function onKey(e) {
+    if (finished || modalOpen()) { return; }
+    if (answered && e.key === "Enter") { e.preventDefault(); next(); }
+  }
+  stage.addEventListener("click", onClick);
+  document.addEventListener("keydown", onKey);
+  setCleanup(function () {
+    stage.removeEventListener("click", onClick);
+    document.removeEventListener("keydown", onKey);
+  });
+  render();
+}
+
+/* ============================== MINI-GAME 4 · MATCH THE MEANING ============================== */
+function runMatch(stage, scene, done) {
+  var runScore = 0, mistakes = 0, pairs = 0, attempts = 0;
+  var pickedW = -1, finished = false;
+  var words = shuffle(MATCH_PAIRS.map(function (p, i) { return { i: i, w: p.w }; }));
+  var defs = shuffle(MATCH_PAIRS.map(function (p, i) { return { i: i, d: p.d }; }));
+
+  function colHtml(list, kind) {
+    var h = '<div class="m-col"><p class="m-col-title">' + (kind === "w" ? "WORDS — click one" : "MEANINGS — then its pair") + "</p>";
+    list.forEach(function (it) {
+      h += '<button type="button" class="m-item" data-mi="' + it.i + '" data-kind="' + kind + '">'
+        + (kind === "w" ? '<span class="m-k">WORD</span>' + it.w : '<span class="m-k">MEANING</span>' + it.d)
+        + "</button>";
+    });
+    return h + "</div>";
+  }
+  function updateCounter() {
+    var c = $("#m-count", stage);
+    if (c) { c.textContent = "PAIRS " + pairs + "/6 · ATTEMPTS " + attempts; }
+  }
+  stage.innerHTML =
+    '<div class="panel q-panel">'
+    + '<p class="q-count" id="m-count">PAIRS 0/6 · ATTEMPTS 0</p>'
+    + '<p class="match-example">WORD · meager → MEANING · disappointingly small</p>'
+    + '<div class="match-grid">' + colHtml(words, "w") + colHtml(defs, "d") + "</div>"
+    + '<p class="q-hint">Click a word, then its meaning. Correct pairs lock green for good; wrong picks shake off and cost 10 points.</p>'
+    + "</div>";
+  announce("Match six words with six meanings.");
+
+  function onStageClick(e) {
+    if (finished) { return; }
+    var item = e.target.closest(".m-item");
+    if (!item || item.classList.contains("locked")) { return; }
+    var kind = item.getAttribute("data-kind");
+    var mi = parseInt(item.getAttribute("data-mi"), 10);
+    if (kind === "w") {
+      $$(".m-item.picked", stage).forEach(function (x) { x.classList.remove("picked"); });
+      if (pickedW === mi) { pickedW = -1; SFX.click(); return; }
+      pickedW = mi;
+      item.classList.add("picked");
+      SFX.flip();
+      return;
+    }
+    if (pickedW < 0) { toast("📌 Pick a word on the left first"); SFX.click(); return; }
+    attempts++;
+    var rect = item.getBoundingClientRect();
+    if (mi === pickedW) {
+      pairs++;
+      runScore += 120;
+      updateRunScore(runScore);
+      updateCounter();
+      SFX.match();
+      popFloat("+120", rect.left + rect.width / 2, rect.top);
+      announce("Match found. " + pairs + " of 6.");
+      $$('.m-item[data-mi="' + mi + '"]', stage).forEach(function (x) {
+        x.classList.remove("picked");
+        x.classList.add("locked");
+      });
+      pickedW = -1;
+      if (pairs === 6) {
+        if (mistakes === 0) {
+          runScore += 60;
+          updateRunScore(runScore);
+          toast("✨ PERFECT MATCH — +60 BONUS");
+        }
+        finished = true;
+        setTimeout(function () { done(runScore, mistakes); }, 750);
+      }
+    } else {
+      mistakes++;
+      runScore = Math.max(0, runScore - 10);
+      updateRunScore(runScore);
+      updateCounter();
+      SFX.wrong();
+      popFloat("−10", rect.left + rect.width / 2, rect.top, true);
+      item.classList.add("shake");
+      var wordEl = $('.m-item[data-kind="w"][data-mi="' + pickedW + '"]', stage);
+      if (wordEl) { wordEl.classList.add("shake"); }
+      setTimeout(function () {
+        item.classList.remove("shake");
+        if (wordEl) { wordEl.classList.remove("shake"); wordEl.classList.remove("picked"); }
+      }, 460);
+      pickedW = -1;
+      announce("Wrong pair — it shakes off. Minus 10 points.");
+    }
+  }
+  stage.addEventListener("click", onStageClick);
+  setCleanup(function () { stage.removeEventListener("click", onStageClick); });
+}
+
+/* ============================== MINI-GAME 5 · BONUS REEL ============================== */
+function runBonus(stage, scene, done) {
+  var BONUS_TIME = 750; /* round seconds (spec value) — change here for faster pacing */
+  var runScore = 0, mistakes = 0, streak = 0, idx = 0;
+  var answered = false, finished = false;
+  var deadline = 0, timerInt = null, lastTick = null;
+
+  function stopTimer() { if (timerInt) { clearInterval(timerInt); timerInt = null; } }
+  function tick() {
+    var rem = Math.max(0, (deadline - Date.now()) / 1000);
+    var bar = $(".tfill", stage), tl = $(".tlabel", stage);
+    if (bar) {
+      bar.style.width = (rem / BONUS_TIME * 100) + "%";
+      if (rem <= 75) { bar.classList.add("danger"); }
+    }
+    if (tl) { tl.textContent = Math.ceil(rem) + "s"; }
+    var sec = Math.ceil(rem);
+    if (sec <= 10 && sec > 0 && sec !== lastTick) { lastTick = sec; SFX.tick(); }
+    if (rem <= 0) { finish(true); }
+  }
+  function startRound() {
+    stopTimer();
+    deadline = Date.now() + BONUS_TIME * 1000;
+    timerInt = setInterval(tick, 250);
+    tick();
+  }
+  function render() {
+    answered = false;
+    var q = BONUS_QS[idx];
+    var opts = "";
+    q.options.forEach(function (o, i) {
+      opts += '<button type="button" class="opt" data-oi="' + i + '" aria-label="Option ' + (i + 1) + '">' + o + "</button>";
+    });
+    stage.innerHTML =
+      '<div class="panel q-panel">'
+      + '<p class="q-count">BONUS Q ' + (idx + 1) + " / " + BONUS_QS.length + "</p>"
+      + '<p class="q-text">' + q.q + "</p>"
+      + '<div class="tbar-wrap"><div class="tbar"><div class="tfill"></div></div><span class="tlabel mono">…</span></div>'
+      + '<div class="bonus-chips"><span class="bchip gold">STREAK ' + streak + "</span>"
+      + '<span class="bchip">MULT ×' + Math.min(3, 1 + 0.25 * streak).toFixed(2) + "</span>"
+      + '<span class="bchip">RUN SCORE ' + runScore + "</span></div>"
+      + '<div class="opts">' + opts + "</div>"
+      + '<p class="flash-verdict" id="fv"></p>'
+      + '<p class="q-hint">Rapid fire — the round clock never stops. Wrong answers dump the streak in the ditch.</p>'
+      + "</div>";
+    announce("Bonus question " + (idx + 1) + " of " + BONUS_QS.length + ".");
+  }
+  function pick(oi) {
+    if (answered || finished) { return; }
+    answered = true;
+    var q = BONUS_QS[idx];
+    var ok = oi === q.a;
+    var fv = $("#fv", stage);
+    if (ok) {
+      var pts = 100 + 25 * Math.min(8, streak);
+      streak++;
+      runScore += pts;
+      SFX.correct();
+      fv.textContent = "✓ +" + pts + " · STREAK " + streak + " · NEXT ×" + Math.min(3, 1 + 0.25 * streak).toFixed(2);
+      fv.className = "flash-verdict ok";
+    } else {
+      mistakes++;
+      streak = 0;
+      runScore = Math.max(0, runScore - 10);
+      SFX.wrong();
+      fv.textContent = "✗ WRONG · −10 · STREAK RESET";
+      fv.className = "flash-verdict bad";
+    }
+    updateRunScore(runScore);
+    $$(".opt", stage).forEach(function (b, i) {
+      b.classList.add("locked");
+      if (i === q.a) { b.classList.add("correct"); }
+      else if (i === oi) { b.classList.add("wrong"); }
+      else { b.classList.add("dim"); }
+    });
+    setTimeout(function () {
+      if (finished) { return; }
+      idx++;
+      if (idx < BONUS_QS.length) { render(); }
+      else { finish(false); }
+    }, 750);
+  }
+  function finish(byTime) {
+    if (finished) { return; }
+    finished = true;
+    stopTimer();
+    if (byTime) { toast("⏰ BONUS CLOCK RAN OUT"); }
+    setTimeout(function () { done(runScore, mistakes); }, 550);
+  }
+  function onClick(e) {
+    if (finished) { return; }
+    var opt = e.target.closest(".opt");
+    if (opt) { pick(parseInt(opt.dataset.oi, 10)); }
+  }
+  stage.addEventListener("click", onClick);
+  setCleanup(function () { stopTimer(); stage.removeEventListener("click", onClick); });
+  render();
+  startRound();
+}
+
+/* runner registry: scene.runner → controller */
+var LEVEL_RUNNERS = { blanks: runBlanks, truefalse: runTrueFalse, multi: runMulti, match: runMatch, bonus: runBonus };
+
+/* ============================== INIT ============================== */
+function exitToMap() { activeLevel = null; SFX.click(); show("map"); }
+$("#btn-backmap").addEventListener("click", exitToMap);
+$("#btn-map").addEventListener("click", function () { if (currentScene !== "map") { SFX.click(); show("map"); } });
+$("#btn-sound").addEventListener("click", function () { ensureAudio(); toggleMute(); });
+$("#btn-start").addEventListener("click", function () { ensureAudio(); SFX.fanfare(); show("map"); });
+
+/* the AudioContext wakes up on the player's first click anywhere */
+document.addEventListener("pointerdown", function () { ensureAudio(); }, { capture: true });
+
+/* preloader: thread the reel, then PLAY lifts the curtain upward */
+window.setTimeout(function () {
+  $("#pre-status").textContent = "REEL THREADED — READY";
+  var b = $("#btn-play");
+  b.disabled = false;
+}, 750);
+$("#btn-play").addEventListener("click", function () {
+  ensureAudio();
+  SFX.fanfare();
+  var p = $("#preloader");
+  p.classList.add("exit");
+  p.setAttribute("aria-hidden", "true");
+  setTimeout(function () { if (p.parentNode) { p.parentNode.removeChild(p); } }, 950);
+});
+
+/* global Escape: close a dialog, or leave the reel for the map */
+document.addEventListener("keydown", function (e) {
+  if (e.key !== "Escape") { return; }
+  if (modalOpen()) { closeModal(); }
+  else if (currentScene === "scene") { exitToMap(); }
+});
+
+/* glossary chips on the intro screen (hover a chip for its meaning) */
+(function renderGlossary() {
+  var picks = ["main drag", "cruising", "cold feet", "hot rod", "diegetic soundtrack", "Greek chorus", "a crown that is slipping", "on the precipice of", "punch above one’s weight class", "meager"];
+  var html = "";
+  WORDS.forEach(function (w) {
+    if (picks.indexOf(w.w) >= 0) {
+      html += '<span class="gl-chip" title="' + w.d + '">' + w.w + "</span>";
+    }
+  });
+  $("#gl-chips").innerHTML = html;
+})();
+
+/* boot sequence */
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+</script>
+</body>
+</html>
