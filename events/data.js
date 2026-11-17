@@ -62,7 +62,7 @@ const LESSONS = [
   { date: '2026-08-27', host: 'Anatoly', title: 'DPRK Script of Titan of thoughts (russian)', url: './20260827-dprk/index.html' },
   { date: '2026-08-28', host: 'Hernan', title: 'LEN Debates · Beacons in the Storm', url: './20260828-len-debates/index.html' },
   { date: '2026-09-04', host: 'Hernan', title: 'LEN Debates · Cassiopeias Vanity', url: './20260904-len-debates/index.html' },
-  { date: '2026-09-06', host: 'Ai', title: 'News Clips: Redrawing the World: Africa', url: './20260906/index.html' },
+  { date: '2026-09-06', host: 'AI', title: 'News Clips: Redrawing the World: Africa', url: './20260906/index.html' },
   { date: '2026-09-06', host: 'Peter', title: 'Miles · Pizza', url: './20260906-peter-miles-pizza/index.html' },
   { date: '2026-09-11', host: 'Hernan', title: 'LEN Debates · Queen Cassiopeia Punished Upside Down in the Sky', url: './20260911-len-debates/index.html' },
   { date: '2026-09-18', host: 'Hernan', title: 'LEN Debates · Origins of the Amazons', url: './20260918-len-debates/index.html' },
