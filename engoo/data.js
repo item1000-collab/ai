@@ -2,6 +2,7 @@ const LESSONS = [
   { date: '2026-01-01', host: '', title: 'Mind Your Language (104)', url: './20260101-mind-104/index.html' },
   { date: '2026-01-01', host: '', title: 'Roman Holiday', url: './20260101-roman-holiday/index.html' },
   { date: '2026-01-01', host: '', title: 'Priceless', url: './20260101-priceless/index.html' },
+  { date: '2026-01-01', host: '', title: 'Love Actually', url: './20260101-love-actually/index.html' },
   { date: '2026-04-29', host: 'Nkhala', title: 'Lesotho', url: './20260429-lesotho/index.html' },
   { date: '2026-05-02', host: 'Maddie', title: 'Titanic (1997)', url: './20260502-titanic/index.html' },
   { date: '2026-05-04', host: 'Jelena', title: 'Friends (S1E2-4)', url: './20260504-friends-s1e2-4/index.html' },
