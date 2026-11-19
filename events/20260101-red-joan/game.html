@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Red Joan — The Fractured File Arcade</title>
+<meta name="description" content="A retro-dossier vocabulary arcade built on the visual dossier Red Joan: The Fractured Dossier. Six reels, five mechanics, one grey verdict.">
+<meta name="theme-color" content="#F3EADA">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ===== palette and base ===== */
+:root{
+  --paper:#F3EADA; --paper-2:#FBF6EA; --paper-3:#EFE4CE;
+  --ink:#26211A; --ink-2:#4A4234; --line:#D9C9A4;
+  --crimson:#A33D2E; --crimson-2:#7E2A1E; --gold:#C9971C; --gold-2:#8A6410;
+  --green:#3E8E5A; --red:#B23B2E; --slate:#4F6B78; --plum:#7D4A6C;
+  --mono:'Courier Prime',ui-monospace,'SFMono-Regular',Consolas,monospace;
+  --serif:'Lora',Georgia,serif; --display:'Playfair Display',Georgia,serif;
+  --hard:0 6px 0 rgba(38,33,26,.14);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--serif); font-size:1.02rem; line-height:1.65;
+  overflow-x:hidden; -webkit-font-smoothing:antialiased;
+}
+/* film grain over everything */
+#grain{position:fixed;inset:0;z-index:78;pointer-events:none;mix-blend-mode:multiply;opacity:.9}
+/* vignette */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:77;
+  background:radial-gradient(ellipse at 50% 38%, transparent 52%, rgba(38,33,26,.18) 100%)}
+button{font:inherit;color:inherit}
+img{max-width:100%}
+:focus-visible{outline:3px dashed var(--gold);outline-offset:3px;border-radius:4px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ===== header console ===== */
+#hud{
+  position:fixed;top:0;left:0;right:0;z-index:60;height:58px;
+  display:flex;align-items:center;gap:.7rem;padding:0 .8rem;
+  background:rgba(243,234,218,.94);backdrop-filter:blur(5px);
+  border-bottom:2px solid var(--ink);
+}
+.hud-brand{display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-weight:700;letter-spacing:.08em;font-size:.85rem;white-space:nowrap}
+.hud-brand .ic{width:26px;height:26px;color:var(--crimson)}
+.hud-cells{display:flex;gap:5px;margin-left:.2rem}
+.cell{
+  width:26px;height:20px;border:2px solid var(--ink);border-radius:5px;background:var(--paper-2);
+  font-family:var(--mono);font-size:.72rem;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;padding:0;color:var(--ink-2);transition:transform .12s
+}
+.cell:hover{transform:translateY(-2px)}
+.cell.done{background:var(--gold);color:var(--ink);border-color:var(--gold-2)}
+.hud-score{font-family:var(--mono);font-weight:700;letter-spacing:.1em;font-size:.9rem;margin-left:auto;white-space:nowrap}
+.hud-btn{
+  width:40px;height:38px;border:2px solid var(--ink);border-radius:9px;background:var(--paper-2);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 0 var(--ink);
+  transition:transform .1s,box-shadow .1s
+}
+.hud-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.hud-btn .ic{width:18px;height:18px}
+@media (max-width:560px){ .hud-brand span{display:none} .hud-score{font-size:.78rem} }
+
+/* ===== screens ===== */
+main{padding-top:58px}
+.screen{display:none;min-height:calc(100vh - 58px);position:relative}
+.screen.active{display:block;animation:screenIn .45s ease both}
+@keyframes screenIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.wrap{max-width:1020px;margin:0 auto;padding:clamp(1rem,3.5vw,2rem)}
+
+/* ===== stamps and decorations ===== */
+.stamp{
+  display:inline-block;font-family:var(--mono);font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  border:3px solid var(--crimson);color:var(--crimson);border-radius:7px;padding:.2rem .6rem;
+  transform:rotate(-7deg);background:rgba(251,246,234,.72);opacity:.9;font-size:.8rem
+}
+.stamp.gold{border-color:var(--gold);color:var(--gold-2)}
+.stamp-corner{position:absolute;font-family:var(--mono);font-weight:700;font-size:.9rem;letter-spacing:.18em;
+  border:3px solid rgba(163,61,46,.4);color:rgba(163,61,46,.4);border-radius:7px;padding:.3rem .8rem;
+  transform:rotate(9deg);pointer-events:none;user-select:none}
+
+/* ===== buttons ===== */
+.btn{
+  font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;font-weight:700;
+  display:inline-flex;align-items:center;gap:.5rem;
+  border:2px solid var(--ink);background:var(--paper-2);color:var(--ink);
+  padding:.62rem 1.15rem;border-radius:11px;box-shadow:0 4px 0 var(--ink);cursor:pointer;
+  transition:transform .09s,box-shadow .09s,background .15s;text-decoration:none
+}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn .ic{width:16px;height:16px}
+.btn-primary{background:var(--crimson);border-color:var(--crimson-2);color:var(--paper-2);box-shadow:0 4px 0 var(--crimson-2)}
+.btn-primary:active{box-shadow:0 1px 0 var(--crimson-2)}
+.btn-gold{background:var(--gold);border-color:var(--gold-2);color:var(--ink);box-shadow:0 4px 0 var(--gold-2)}
+.btn-gold:active{box-shadow:0 1px 0 var(--gold-2)}
+.btn-real{background:#E7F4EA;border-color:var(--green);color:#1E5631;box-shadow:0 4px 0 #2E6B44}
+.btn-real:active{box-shadow:0 1px 0 #2E6B44}
+.btn-del{background:#F8E7E2;border-color:var(--red);color:#7E2018;box-shadow:0 4px 0 #8E2318}
+.btn-del:active{box-shadow:0 1px 0 #8E2318}
+.btn-big{font-size:1.02rem;padding:.85rem 1.5rem}
+.btn-ghost{background:transparent;box-shadow:none;border-style:dashed}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+
+/* ===== preloader ===== */
+#screen-preloader{
+  position:fixed;inset:0;z-index:110;background:var(--paper);display:flex;align-items:center;justify-content:center;
+  transition:transform .65s cubic-bezier(.6,0,.4,1),opacity .65s
+}
+#screen-preloader.up{transform:translateY(-112%);opacity:0;pointer-events:none}
+.pre-box{text-align:center;max-width:520px;padding:1rem;position:relative}
+.pre-stamp{width:96px;height:96px;color:var(--crimson);margin:0 auto 1rem;animation:stampIn .5s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes stampIn{from{transform:scale(2.2) rotate(-18deg);opacity:0}to{transform:none;opacity:1}}
+.pre-line{font-family:var(--mono);letter-spacing:.1em;font-size:.9rem;color:var(--ink-2);min-height:1.4em}
+.pre-bar{height:12px;border:2px solid var(--ink);border-radius:99px;background:var(--paper-2);overflow:hidden;margin:1rem auto 1.4rem;max-width:340px}
+.pre-bar i{display:block;height:100%;width:0;background:var(--gold);transition:width 1.4s ease}
+#play-btn{opacity:0;pointer-events:none;transform:translateY(8px);transition:.35s}
+#play-btn.show{opacity:1;pointer-events:auto;transform:none}
+.pre-hint{font-family:var(--mono);font-size:.74rem;color:var(--ink-2);margin-top:1rem;letter-spacing:.08em}
+
+/* ===== intro ===== */
+.hero{padding:clamp(2rem,6vw,4rem) 0 1rem;position:relative}
+.hero h1{font-family:var(--display);font-weight:900;font-size:clamp(2rem,6vw,3.4rem);line-height:1.08;margin:.6rem 0 .4rem}
+.hero .sub{font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--crimson);font-size:.85rem;margin:0 0 1rem}
+.hero .lead{max-width:44rem;font-size:1.1rem}
+.chips-row{display:flex;flex-wrap:wrap;gap:.5rem;margin:1.2rem 0 1.6rem}
+.chip-info{font-family:var(--mono);font-size:.76rem;letter-spacing:.08em;border:2px solid var(--line);border-radius:999px;padding:.28rem .8rem;background:var(--paper-2)}
+.hero-img{position:relative;border:2px solid var(--ink);border-radius:14px;overflow:hidden;box-shadow:var(--hard);margin:1.6rem 0}
+.hero-img img{display:block;width:100%;height:auto}
+.hero-img .stamp{position:absolute;right:14px;top:12px;font-size:.95rem}
+.intro-actions{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin-top:1.4rem}
+.intro-note{font-family:var(--mono);font-size:.78rem;color:var(--ink-2);margin-top:1.2rem}
+
+/* ===== level map ===== */
+.map-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:.8rem;margin:1rem 0 1.2rem}
+.map-head h2{font-family:var(--display);font-weight:900;font-size:clamp(1.6rem,4.5vw,2.4rem);margin:0}
+.map-head .tot{font-family:var(--mono);font-weight:700;letter-spacing:.1em;color:var(--crimson)}
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.1rem}
+.reel{
+  position:relative;text-align:left;border:2px solid var(--ink);border-radius:14px;overflow:hidden;
+  background:var(--paper-2);box-shadow:var(--hard);cursor:pointer;padding:0;display:flex;flex-direction:column;
+  transition:transform .16s,box-shadow .16s;font:inherit
+}
+.reel:hover{transform:translateY(-4px);box-shadow:0 10px 0 rgba(38,33,26,.14)}
+.reel:active{transform:translateY(0);box-shadow:0 3px 0 rgba(38,33,26,.14)}
+.reel .pin{position:absolute;top:8px;left:8px;width:12px;height:12px;border-radius:50%;background:var(--crimson);border:2px solid var(--crimson-2);z-index:3;box-shadow:0 2px 3px rgba(0,0,0,.3)}
+.reel-preview{position:relative;display:block;height:118px;overflow:hidden;border-bottom:none}
+.reel-preview img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(.92)}
+.reel-preview .stamp{position:absolute;right:8px;bottom:8px;transform:rotate(-4deg);font-size:.62rem;padding:.12rem .45rem;border-width:2px}
+.sprock{height:14px;background-color:var(--ink);background-image:radial-gradient(circle at 8px 7px, var(--paper) 3px, transparent 3.6px);background-size:16px 14px;background-repeat:repeat-x}
+.reel-body{padding:.75rem .85rem .85rem;display:flex;flex-direction:column;gap:.28rem;flex:1}
+.reel-num{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;color:var(--paper-2);background:var(--acc,var(--crimson));align-self:flex-start;border-radius:5px;padding:.1rem .5rem;font-weight:700}
+.reel-title{font-family:var(--display);font-weight:800;font-size:1.12rem;line-height:1.2}
+.reel-char{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;color:var(--ink-2);text-transform:uppercase}
+.reel-stars{display:flex;gap:.2rem;margin-top:.25rem}
+.reel-stars .ic{width:18px;height:18px;color:#D8C89E}
+.reel-stars .ic.on{color:var(--gold);filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
+.reel-best{font-family:var(--mono);font-size:.76rem;letter-spacing:.06em;color:var(--ink-2);margin-top:.15rem}
+.final-wrap{margin:1.8rem 0 .6rem;text-align:center;display:none}
+.final-wrap.show{display:block;animation:screenIn .5s both}
+.map-foot{font-family:var(--mono);font-size:.74rem;color:var(--ink-2);text-align:center;margin:2rem 0 1rem;letter-spacing:.06em}
+
+/* ===== scene ===== */
+#screen-scene{padding-bottom:2.5rem}
+.scene-backdrop{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.scene-backdrop img{width:100%;height:100%;object-fit:cover;filter:blur(3px) saturate(.8);opacity:.16}
+.scene-backdrop::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(243,234,218,.5),var(--paper))}
+.scene-inner{position:relative;z-index:2}
+.scene-head{display:flex;flex-wrap:wrap;align-items:center;gap:.7rem;margin:1rem 0 .6rem}
+.scene-title{font-family:var(--display);font-weight:900;font-size:clamp(1.5rem,4.5vw,2.2rem);margin:0;line-height:1.15}
+.tag-chip{font-family:var(--mono);font-size:.7rem;font-weight:700;letter-spacing:.14em;background:var(--acc,var(--crimson));color:var(--paper-2);border-radius:6px;padding:.22rem .6rem}
+.char-line{
+  border-left:4px solid var(--acc,var(--crimson));background:var(--paper-2);border-radius:0 12px 12px 0;
+  padding:.85rem 1rem;margin:.9rem 0 1.3rem;font-style:italic;box-shadow:0 4px 0 rgba(38,33,26,.08)
+}
+.char-line b{font-family:var(--mono);font-style:normal;font-size:.76rem;letter-spacing:.14em;color:var(--acc,var(--crimson));display:block;margin-bottom:.2rem}
+.type-cursor::after{content:"▌";animation:blink 1s steps(1) infinite;color:var(--gold-2)}
+@keyframes blink{50%{opacity:0}}
+#game-area{position:relative}
+
+/* ===== shared game widgets ===== */
+.gbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between;margin:.6rem 0 .9rem}
+.counter{font-family:var(--mono);font-weight:700;letter-spacing:.08em;font-size:.86rem;color:var(--ink-2);background:var(--paper-2);border:2px dashed var(--line);border-radius:9px;padding:.35rem .7rem}
+.streak-badge{font-family:var(--mono);font-weight:700;letter-spacing:.1em;background:var(--gold);border:2px solid var(--gold-2);border-radius:9px;padding:.3rem .7rem;font-size:.86rem}
+.tbar{height:12px;border:2px solid var(--ink);border-radius:99px;background:var(--paper-3);overflow:hidden}
+.tbar i{display:block;height:100%;width:100%;background:var(--gold);border-radius:99px}
+.timer-num{font-family:var(--mono);font-weight:700;letter-spacing:.12em;font-size:1rem;min-width:72px;text-align:center;background:var(--ink);color:var(--paper-2);border-radius:8px;padding:.22rem .5rem}
+.timer-num.warn{background:var(--red)}
+.timer-num.danger,.tbar.danger i{animation:blinkRed .5s steps(2) infinite}
+.tbar.danger i{background:var(--red)}
+@keyframes blinkRed{50%{opacity:.35}}
+.gcard{
+  background:var(--paper-2);border:2px solid var(--ink);border-radius:16px;box-shadow:var(--hard);
+  padding:clamp(1rem,3vw,1.6rem);transition:border-color .25s
+}
+.gcard.good{border-color:var(--green)}
+.gcard.bad{border-color:var(--red)}
+.gcard p{margin:0;font-size:1.12rem;line-height:1.6}
+.fb{margin-top:1rem;background:var(--paper-2);border:2px solid var(--line);border-left:6px solid var(--slate);border-radius:12px;padding:1rem 1.1rem;animation:screenIn .3s both}
+.fb.good{border-left-color:var(--green)}
+.fb.bad{border-left-color:var(--red)}
+.fb .verdict{font-family:var(--mono);font-weight:700;letter-spacing:.1em;margin:0 0 .4rem;font-size:.95rem}
+.fb.good .verdict{color:var(--green)}
+.fb.bad .verdict{color:var(--red)}
+.fb .expl{margin:0 0 .8rem;font-size:.98rem}
+.fb .btn-row{display:flex;justify-content:flex-end}
+
+/* ===== match the meaning ===== */
+.m-ex{font-family:var(--mono);font-size:.8rem;color:var(--ink-2);background:var(--paper-2);border:2px dashed var(--line);border-radius:10px;padding:.55rem .8rem;margin-bottom:.9rem}
+.m-note{font-style:italic;font-size:.92rem;color:var(--ink-2);background:var(--paper-2);border-left:4px solid var(--gold);border-radius:0 10px 10px 0;padding:.5rem .8rem;margin:.8rem 0;min-height:2.4em}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.6rem}
+@media (max-width:680px){.match-grid{grid-template-columns:1fr}}
+.m-col-label{font-family:var(--mono);font-size:.7rem;letter-spacing:.16em;color:var(--slate);margin:0 0 .4rem}
+.m-item{
+  display:block;width:100%;text-align:left;border:2px solid var(--line);border-radius:10px;background:var(--paper-2);
+  padding:.58rem .75rem;margin:0 0 .5rem;cursor:pointer;transition:border-color .15s,background .15s;line-height:1.4
+}
+.m-item:hover{border-color:var(--gold)}
+.m-item.sel{background:#F7E7BF;border-color:var(--gold-2)}
+.m-item.lock{background:#E7F4EA;border-color:var(--green);color:#1E5631;cursor:default;pointer-events:none;font-weight:600}
+.shake{animation:shake .45s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+
+/* ===== fill the blanks ===== */
+.fill-line{font-size:1.06rem;line-height:2.05;margin:.4rem 0 1.1rem}
+.blank{
+  display:inline-block;min-width:120px;text-align:center;border:none;border-bottom:3px dotted var(--ink);
+  background:rgba(201,151,28,.12);font-family:var(--mono);font-weight:700;font-size:.95rem;padding:.05rem .5rem;border-radius:8px 8px 0 0;cursor:pointer;transition:background .15s
+}
+.blank.sel{background:rgba(201,151,28,.35);outline:2px dashed var(--gold-2)}
+.blank.done{background:#E7F4EA;border-bottom-style:solid;border-color:var(--green);color:#1E5631;cursor:default;outline:none}
+.chips{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1rem}
+.bank-label{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;color:var(--slate);margin:1.1rem 0 .5rem}
+.chip{
+  font-family:var(--mono);font-weight:700;font-size:.92rem;border:2px solid var(--ink);border-radius:999px;
+  background:var(--paper-2);padding:.4rem .95rem;cursor:pointer;box-shadow:0 3px 0 rgba(38,33,26,.35);
+  transition:transform .1s,box-shadow .1s,background .15s
+}
+.chip:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(38,33,26,.35)}
+.chip.sel{background:var(--gold);border-color:var(--gold-2)}
+.chip.used{display:none}
+
+/* ===== options (choice + bonus) ===== */
+.opts{display:grid;gap:.6rem;margin-top:1rem}
+.opt{
+  text-align:left;border:2px solid var(--line);border-radius:11px;background:var(--paper-2);
+  padding:.7rem .95rem;cursor:pointer;font-size:1rem;line-height:1.5;transition:border-color .15s,background .15s
+}
+.opt:hover{border-color:var(--gold)}
+.opt.correct{background:#E7F4EA;border-color:var(--green);color:#1E5631;font-weight:600}
+.opt.wrong{background:#F8E7E2;border-color:var(--red);color:#7E2018;font-weight:600}
+.opt:disabled{cursor:default}
+.opt.dim{opacity:.45}
+
+/* ===== modal ===== */
+.mo{position:fixed;inset:0;z-index:120;background:rgba(38,33,26,.55);display:flex;align-items:center;justify-content:center;padding:1rem}
+.mo-panel{
+  max-width:600px;width:100%;max-height:88vh;overflow:auto;background:var(--paper-2);
+  border:2px solid var(--ink);border-radius:18px;box-shadow:0 12px 0 rgba(38,33,26,.3);
+  padding:clamp(1.1rem,3vw,1.7rem);animation:popIn .32s cubic-bezier(.3,1.4,.5,1) both;position:relative
+}
+@keyframes popIn{from{transform:scale(.85) translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.mo-kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;color:var(--crimson);margin:0 0 .3rem}
+.mo h3{font-family:var(--display);font-weight:900;font-size:1.6rem;margin:.1rem 0 .6rem;line-height:1.2}
+.mo .obj{margin:0 0 .5rem}
+.mo .tip{font-family:var(--mono);font-size:.82rem;color:var(--ink-2);background:var(--paper-3);border-radius:9px;padding:.55rem .75rem;margin:.7rem 0}
+.mo-actions{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.1rem;justify-content:flex-end}
+.stars-row{display:flex;gap:.5rem;justify-content:center;margin:.8rem 0 1rem}
+.stars-row .ic{width:44px;height:44px;color:#D8C89E}
+.stars-row .ic.on{color:var(--gold);animation:starPop .5s cubic-bezier(.3,1.8,.5,1) both}
+.stars-row .ic.on:nth-child(2){animation-delay:.18s}
+.stars-row .ic.on:nth-child(3){animation-delay:.36s}
+@keyframes starPop{from{transform:scale(0) rotate(-90deg)}to{transform:none}}
+.score-big{font-family:var(--display);font-weight:900;font-size:clamp(2.2rem,8vw,3.4rem);text-align:center;line-height:1;color:var(--crimson)}
+.score-sub{text-align:center;font-family:var(--mono);letter-spacing:.1em;font-size:.82rem;color:var(--ink-2);margin:.4rem 0 0}
+.quip{text-align:center;font-style:italic;color:var(--ink-2);margin:.8rem 0 0}
+
+/* ===== results table / finale ===== */
+.rt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.86rem;margin:.6rem 0 1rem}
+.rt th{text-align:left;letter-spacing:.1em;font-size:.72rem;color:var(--slate);border-bottom:2px solid var(--ink);padding:.4rem .5rem}
+.rt td{border-bottom:1px dashed var(--line);padding:.5rem}
+.rt .num{font-weight:700;color:var(--crimson)}
+.rt .st .ic{width:15px;height:15px;color:#D8C89E;vertical-align:-2px}
+.rt .st .ic.on{color:var(--gold)}
+.finale-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.2rem 0}
+@media (max-width:620px){.finale-grid{grid-template-columns:1fr}}
+.finale-card{background:var(--paper-2);border:2px solid var(--ink);border-radius:14px;box-shadow:var(--hard);padding:1.1rem;text-align:center}
+.finale-card .big{font-family:var(--display);font-weight:900;font-size:clamp(1.9rem,7vw,2.8rem);color:var(--crimson);line-height:1}
+.finale-card .lbl{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;color:var(--ink-2)}
+.rank-badge{display:inline-block;font-family:var(--mono);font-weight:700;letter-spacing:.14em;font-size:1rem;border:3px solid var(--crimson);color:var(--crimson);border-radius:10px;padding:.5rem 1.1rem;transform:rotate(-3deg);margin:.6rem 0;background:rgba(163,61,46,.07)}
+
+/* ===== toast / popfloat / confetti ===== */
+#toast-root{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:130;display:flex;flex-direction:column;gap:.5rem;align-items:center;pointer-events:none}
+.toast{
+  font-family:var(--mono);font-weight:700;letter-spacing:.08em;font-size:.85rem;
+  background:var(--ink);color:var(--paper);border-radius:10px;padding:.6rem 1.05rem;
+  box-shadow:0 8px 22px rgba(0,0,0,.3);display:flex;gap:.5rem;align-items:center;
+  animation:toastIn .3s both,toastOut .35s 2.5s forwards
+}
+.toast .ic{width:15px;height:15px;color:var(--gold)}
+@keyframes toastIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-10px)}}
+.pf{position:fixed;z-index:125;font-family:var(--mono);font-weight:700;font-size:1rem;letter-spacing:.06em;pointer-events:none;color:var(--green);animation:pfUp 1s ease both;text-shadow:0 1px 0 rgba(251,246,234,.8)}
+.pf.bad{color:var(--red)}
+@keyframes pfUp{0%{opacity:0;transform:translateY(4px) scale(.9)}18%{opacity:1;transform:translateY(0) scale(1.08)}70%{opacity:1}100%{opacity:0;transform:translateY(-46px)}}
+.cf{position:fixed;top:-18px;width:10px;height:15px;z-index:126;pointer-events:none;animation:cfFall linear both}
+@keyframes cfFall{to{transform:translateY(108vh) rotate(760deg);opacity:.9}}
+
+/* ===== responsive and reduced motion ===== */
+@media (max-width:560px){
+  .tf-btns{flex-direction:column}
+  .tf-btns .btn{width:100%;justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  .type-cursor::after{content:""}
+}
+</style>
+</head>
+<body>
+<!-- SVG film grain texture over everything -->
+<svg id="grain" aria-hidden="true" focusable="false"><filter id="grainF"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.06"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#grainF)"/></svg>
+
+<!-- header console -->
+<header id="hud">
+  <span class="hud-brand"><i class="ic" data-icon="stamp" aria-hidden="true"></i><span>FRACTURED FILE ARCADE</span></span>
+  <div class="hud-cells" id="hud-cells" role="group" aria-label="Level progress"></div>
+  <span class="hud-score" id="hud-score" aria-live="polite">SCORE 0</span>
+  <button type="button" class="hud-btn" id="hud-sound" aria-label="Toggle sound"><i class="ic" data-icon="sound" aria-hidden="true"></i></button>
+  <button type="button" class="hud-btn" id="hud-map" aria-label="Back to level map"><i class="ic" data-icon="map" aria-hidden="true"></i></button>
+</header>
+
+<!-- preloader overlay (fixed, exits upward after PLAY) -->
+<section id="screen-preloader" aria-label="Loading screen">
+  <div class="pre-box">
+    <svg class="pre-stamp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>
+    <p class="pre-line" id="pre-line">OPENING</p>
+    <div class="pre-bar" aria-hidden="true"><i id="pre-fill"></i></div>
+    <button type="button" class="btn btn-primary btn-big" id="play-btn"><i class="ic" data-icon="play" aria-hidden="true"></i> PLAY ▶</button>
+    <p class="pre-hint">HEADPHONES RECOMMENDED · KEYBOARD READY · PROGRESS SAVES LOCALLY</p>
+  </div>
+</section>
+
+<main>
+  <!-- intro screen -->
+  <section class="screen active" id="screen-intro" aria-label="Intro">
+    <span class="stamp-corner" style="top:70px;right:4vw" aria-hidden="true">TOP SECRET</span>
+    <div class="wrap hero">
+      <p class="sub">MI5 Evidentiary File 1999 · Cross-ref 1938</p>
+      <h1>Red Joan — The Fractured File Arcade</h1>
+      <p class="lead">In 1992 an eighty-seven-year-old grandmother from Bexleyheath was named the KGB’s longest-serving British spy. Six reels of her fractured file now lie open on this desk. The job is simple to state and hard to do: pass through every reel — matching words, restoring intercepted quotes, sorting the real from the delusion — before the grey verdict closes the case.</p>
+      <div class="chips-row">
+        <span class="chip-info">6 REELS</span>
+        <span class="chip-info">5 MECHANICS</span>
+        <span class="chip-info">FREE ORDER — ANY REEL, ANY TIME</span>
+        <span class="chip-info">3-STAR RANKS</span>
+        <span class="chip-info">STREAK MULTIPLIERS</span>
+      </div>
+      <div class="hero-img">
+        <img src="slide-001.jpg" alt="The Red Joan dossier cover: a weathered MI5 evidentiary file stamped Top Secret" width="1376" height="768">
+        <span class="stamp" aria-hidden="true">CLASSIFIED</span>
+      </div>
+      <div class="intro-actions">
+        <button type="button" class="btn btn-primary btn-big" id="intro-open"><i class="ic" data-icon="play" aria-hidden="true"></i> OPEN THE FILE</button>
+        <a class="btn" href="red-joan.pdf" target="_blank" rel="noopener noreferrer"><i class="ic" data-icon="file" aria-hidden="true"></i> SOURCE DOSSIER (PDF)</a>
+      </div>
+      <p class="intro-note">Keyboard: ← → answer in the REAL/DELUSION reel · Enter confirms · Escape leaves a screen. Progress saves in this browser. Sound synthesizes live — no files, no network.</p>
+    </div>
+  </section>
+
+  <!-- level map screen -->
+  <section class="screen" id="screen-map" aria-label="Level map">
+    <div class="wrap">
+      <div class="map-head">
+        <h2>The Reel Index</h2>
+        <span class="tot" id="map-total">0 / 6 REELS CLOSED</span>
+      </div>
+      <div class="map-grid" id="map-grid" aria-label="Reels"></div>
+      <div class="final-wrap" id="final-wrap">
+        <button type="button" class="btn btn-gold btn-big" id="final-btn"><i class="ic" data-icon="file" aria-hidden="true"></i> THE FINAL FILE — OPEN THE FINALE</button>
+      </div>
+      <p class="map-foot">FREE ORDER · REPLAY ANY REEL · BEST RESULTS SAVED IN THIS BROWSER</p>
+    </div>
+  </section>
+
+  <!-- scene screen -->
+  <section class="screen" id="screen-scene" aria-label="Level scene">
+    <div class="scene-backdrop" aria-hidden="true"><img id="scene-bg" src="slide-001.jpg" alt=""></div>
+    <div class="wrap scene-inner">
+      <div class="scene-head">
+        <button type="button" class="btn" id="scene-back"><i class="ic" data-icon="back" aria-hidden="true"></i> MAP</button>
+        <span class="tag-chip" id="scene-tag">TAG</span>
+      </div>
+      <h2 class="scene-title" id="scene-title">Title</h2>
+      <div class="char-line"><b id="scene-char">CHARACTER</b><span id="scene-flavor"></span></div>
+      <div id="game-area"></div>
+    </div>
+  </section>
+
+  <!-- finale screen -->
+  <section class="screen" id="screen-finale" aria-label="Finale">
+    <span class="stamp-corner" style="top:70px;right:4vw" aria-hidden="true">CASE CLOSED</span>
+    <div class="wrap">
+      <p style="font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--crimson);font-size:.85rem;margin:1.4rem 0 .3rem">The Final Interrogation &amp; The Grey</p>
+      <h2 class="scene-title" style="margin-top:0">The File Closes — For Now</h2>
+      <div class="finale-grid">
+        <div class="finale-card"><div class="lbl">TOTAL SCORE</div><div class="big" id="fin-score">0</div></div>
+        <div class="finale-card"><div class="lbl">TOTAL STARS</div><div class="big" id="fin-stars">0 / 18</div></div>
+      </div>
+      <div style="text-align:center"><span class="rank-badge" id="fin-rank">JUNIOR CLERK</span></div>
+      <p class="quip" id="fin-rank-note"></p>
+      <table class="rt" id="fin-table" aria-label="Results by reel"></table>
+      <div class="intro-actions">
+        <button type="button" class="btn" id="fin-map"><i class="ic" data-icon="map" aria-hidden="true"></i> BACK TO THE MAP</button>
+        <button type="button" class="btn btn-del" id="fin-rewind"><i class="ic" data-icon="rewind" aria-hidden="true"></i> REWIND THE TAPE</button>
+        <a class="btn btn-ghost" href="red-joan.pdf" target="_blank" rel="noopener noreferrer"><i class="ic" data-icon="file" aria-hidden="true"></i> RE-READ THE DOSSIER (PDF)</a>
+      </div>
+      <p class="map-foot">“The old woman admits nothing and everything at once.” — the file stays grey, and the archive stays open.</p>
+    </div>
+  </section>
+</main>
+
+<div id="toast-root" aria-live="polite"></div>
+<script>
+(function () {
+'use strict';
+
+/* ===== utilities ===== */
+var $ = function (sel) { return document.querySelector(sel); };
+var $$ = function (sel) { return Array.from(document.querySelectorAll(sel)); };
+var clamp = function (v, min, max) { return Math.max(min, Math.min(max, v)); };
+var shuffle = function (arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+};
+var REDUCED = function () {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+};
+
+/* inline SVG icon set (no icon CDN needed) */
+var ICONS = {
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  sound: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+  mute: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="M22 9l-6 6M16 9l6 6"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17l-6.1 3.6 1.4-6.8L2.2 9.1l6.9-.8z"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>',
+  rewind: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 12V5L2 12l9 7v-7zM22 12V5l-9 7 9 7v-7z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+  stamp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
+  zap: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>',
+  toast: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4z"/></svg>'
+};
+function refreshIcons() {
+  $$('[data-icon]').forEach(function (el) {
+    el.innerHTML = ICONS[el.getAttribute('data-icon')] || '';
+  });
+}
+function starsSvg(n) {
+  var out = '';
+  for (var i = 0; i < 3; i++) {
+    out += '<i class="ic' + (i < n ? ' on' : '') + '" aria-hidden="true">' + ICONS.star + '</i>';
+  }
+  return out;
+}
+
+/* toast notification */
+function toast(msg, icon) {
+  var root = $('#toast-root');
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = '<i class="ic" aria-hidden="true">' + (ICONS[icon || 'check'] || '') + '</i>' + msg;
+  root.appendChild(t);
+  setTimeout(function () { if (t.parentNode) { t.parentNode.removeChild(t); } }, 3000);
+}
+
+/* floating point label (+100 / -25) */
+function popFloat(text, x, y, bad) {
+  if (REDUCED()) { return; }
+  var el = document.createElement('span');
+  el.className = 'pf' + (bad ? ' bad' : '');
+  el.textContent = text;
+  el.style.left = clamp(x, 8, window.innerWidth - 90) + 'px';
+  el.style.top = clamp(y, 60, window.innerHeight - 60) + 'px';
+  document.body.appendChild(el);
+  setTimeout(function () { if (el.parentNode) { el.parentNode.removeChild(el); } }, 1050);
+}
+
+/* paper-scrap confetti in palette colors */
+function spawnConfetti(n) {
+  if (REDUCED()) { return; }
+  var colors = ['#A33D2E', '#C9971C', '#3E8E5A', '#4F6B78', '#26211A'];
+  for (var i = 0; i < n; i++) {
+    var p = document.createElement('i');
+    p.className = 'cf';
+    p.style.left = (Math.random() * 100) + 'vw';
+    p.style.background = colors[i % colors.length];
+    p.style.transform = 'rotate(' + Math.floor(Math.random() * 360) + 'deg)';
+    p.style.animationDuration = (2.4 + Math.random() * 1.8) + 's';
+    p.style.animationDelay = (Math.random() * 0.6) + 's';
+    p.style.width = (6 + Math.random() * 8) + 'px';
+    p.style.height = (10 + Math.random() * 10) + 'px';
+    document.body.appendChild(p);
+    (function (node) {
+      setTimeout(function () { if (node.parentNode) { node.parentNode.removeChild(node); } }, 4800);
+    })(p);
+  }
+}
+
+/* typewriter reveal for character lines */
+function typewrite(el, text) {
+  if (REDUCED()) { el.textContent = text; return; }
+  el.textContent = '';
+  el.classList.add('type-cursor');
+  var i = 0;
+  var iv = setInterval(function () {
+    i += 2;
+    el.textContent = text.slice(0, i);
+    if (i >= text.length) {
+      clearInterval(iv);
+      el.classList.remove('type-cursor');
+      el.textContent = text;
+    }
+  }, 18);
+  setCleanup(function () { clearInterval(iv); });
+}
+
+/* ===== audio engine (Web Audio API, no files) ===== */
+var AC = null;
+var MUTED_KEY = 'rj_arcade_v1_mute';
+var muted = false;
+try { muted = localStorage.getItem(MUTED_KEY) === '1'; } catch (e) { muted = false; }
+
+function ensureAudio() {
+  if (!AC) {
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; }
+  }
+  if (AC && AC.state === 'suspended') { AC.resume(); }
+}
+document.addEventListener('pointerdown', ensureAudio);
+
+/* basic enveloped oscillator */
+function tone(freq, dur, type, vol, when) {
+  if (muted || !AC) { return; }
+  try {
+    var t0 = AC.currentTime + (when || 0);
+    var o = AC.createOscillator();
+    var g = AC.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.18, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 0.15));
+    o.connect(g); g.connect(AC.destination);
+    o.start(t0); o.stop(t0 + (dur || 0.15) + 0.05);
+  } catch (e) { /* audio unavailable in this context */ }
+}
+/* white-noise burst (applause texture) */
+function noiseBurst(dur, vol) {
+  if (muted || !AC) { return; }
+  try {
+    var t0 = AC.currentTime;
+    var len = Math.floor(AC.sampleRate * (dur || 0.4));
+    var buf = AC.createBuffer(1, len, AC.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i / len); }
+    var src = AC.createBufferSource();
+    var g = AC.createGain();
+    g.gain.setValueAtTime(vol || 0.15, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 0.4));
+    src.buffer = buf; src.connect(g); g.connect(AC.destination);
+    src.start(t0);
+  } catch (e) { /* audio unavailable */ }
+}
+/* ready-made presets */
+function sClick() { tone(520, 0.06, 'square', 0.10); }
+function sFlip() { tone(300, 0.08, 'sine', 0.14); tone(470, 0.09, 'sine', 0.12, 0.06); }
+function sCorrect() { tone(523, 0.1, 'sine', 0.16); tone(659, 0.1, 'sine', 0.16, 0.08); tone(784, 0.14, 'sine', 0.16, 0.16); }
+function sWrong() { tone(150, 0.26, 'sawtooth', 0.16); tone(110, 0.3, 'sawtooth', 0.12, 0.05); }
+function sMatch() { tone(660, 0.09, 'sine', 0.16); tone(880, 0.13, 'sine', 0.16, 0.09); }
+function sFanfare() {
+  tone(523, 0.12, 'square', 0.12); tone(659, 0.12, 'square', 0.12, 0.11);
+  tone(784, 0.12, 'square', 0.12, 0.22); tone(1046, 0.24, 'square', 0.14, 0.33);
+  noiseBurst(0.5, 0.1);
+}
+function sTick() { tone(950, 0.03, 'square', 0.05); }
+function sCheer() { noiseBurst(0.6, 0.16); sCorrect(); tone(1046, 0.2, 'sine', 0.12, 0.2); }
+
+/* ===== cleanup registry (timers + listeners per game) ===== */
+var cleanupFns = [];
+function setCleanup(fn) { cleanupFns.push(fn); }
+function cleanupAll() {
+  cleanupFns.forEach(function (fn) { try { fn(); } catch (e) { /* ignore */ } });
+  cleanupFns = [];
+}
+/* timeout that is automatically cancelled when the game exits */
+function safeTimeout(fn, ms) {
+  var t = setTimeout(fn, ms);
+  setCleanup(function () { clearTimeout(t); });
+  return t;
+}
+
+/* ===== DATA: scenes (levels) ===== */
+var SCENES = [
+  {
+    id: 'match1', num: 1, mech: 'match', title: 'The File Opens',
+    char: 'THE ARCHIVIST', color: '#A33D2E', slide: 'slide-001.jpg', tag: 'MATCH THE MEANING',
+    obj: 'Match all 6 dossier expressions to their file meanings. Wrong attempts cost points and are counted as mistakes.',
+    tip: 'Click a WORD on the left, then the MEANING on the right that matches it. Locked pairs reveal evidence quotes.',
+    flavor: 'Every classified file begins with vocabulary. Match each expression to its record — the archive is watching.'
+  },
+  {
+    id: 'fill1', num: 2, mech: 'fill', title: 'The Seduction',
+    char: 'LEO GALICH', color: '#4F6B78', slide: 'slide-004.jpg', tag: 'FILL IN THE BLANKS',
+    obj: 'Restore 8 intercepted sentences from the file. Each wrong word bounces back to the bank and costs points.',
+    tip: 'Click a blank, then click a word from the bank — or pick the word first. Trust the quotes you have read.',
+    flavor: 'My little comrade, the words were scattered on purpose. Place them back where they belong.'
+  },
+  {
+    id: 'tf1', num: 3, mech: 'tf', title: 'Two Joans',
+    char: 'THE DOUBLE', color: '#C9971C', slide: 'slide-003.jpg', tag: 'REAL / DELUSION',
+    obj: '8 statements from the dossier. Sort the real from the delusion. A 600-second timer runs for every card and stops while you read.',
+    tip: 'Use ← for REAL and → for DELUSION. The next statement appears only when you press NEXT — take your time with the explanation.',
+    flavor: 'Sixty years, two faces, one mind. I will show you fragments — you will tell me what is true.'
+  },
+  {
+    id: 'choice1', num: 4, mech: 'choice', title: 'Tube Alloys',
+    char: 'PROFESSOR MAX DAVIS', color: '#3E8E5A', slide: 'slide-006.jpg', tag: 'MULTIPLE CHOICE',
+    obj: '8 questions with 3 options each and one attempt. Your colleague reacts to every answer.',
+    tip: 'Eliminate the impossible first. A streak of 3 correct answers doubles your points.',
+    flavor: 'A brilliant mind in a room full of men. Physics rarely offers a second attempt, and neither will I.'
+  },
+  {
+    id: 'fill2', num: 5, mech: 'fill', title: 'The Real Granny Spy',
+    char: 'THE FIELD OFFICER', color: '#7D4A6C', slide: 'slide-008.jpg', tag: 'FILL IN THE BLANKS',
+    obj: 'Complete the historical record of Melita Norwood, 1912–2005. The truth is stranger than the film.',
+    tip: 'The real file is dated, named and numbered. Look for the precise fact, not the plausible one.',
+    flavor: 'Forget the script. The real file on Norwood is open on my desk — fill its blanks.'
+  },
+  {
+    id: 'bonus', num: 6, mech: 'bonus', title: 'The Grey File',
+    char: 'THE GHOST', color: '#26211A', slide: 'slide-012.jpg', tag: 'TIMED BONUS ROUND',
+    obj: '750 seconds for the whole round. Mixed questions from every reel. Streak up to ×3 and a speed bonus for fast answers.',
+    tip: 'Speed counts. The clock flashes red near the end — bank your points before the file closes.',
+    flavor: 'Everything you have learned, against the clock. When the file closes, the grey decides your rank.'
+  }
+];
+
+/* ===== DATA: reel 1 — match the meaning ===== */
+var MATCH1_SET = [
+  { w: 'butter wouldn’t melt', m: 'deceptively prim and innocent', note: '“…a woman in whose mouth butter wouldn’t melt — masking a steely resolve.”' },
+  { w: 'steely resolve', m: 'unbreakable determination', note: 'The iron will hidden beneath the grandmother performance.' },
+  { w: 'vilified', m: 'savaged publicly by the press', note: '“Vilified by the tabloid press as ‘Red Joan’.”' },
+  { w: 'doddery', m: 'shaky and feeble with age', note: '“Projects a doddery, bemused facade…” — a staged old age.' },
+  { w: 'smokescreen', m: 'something that hides the truth', note: '“…acted as a smokescreen, masking the long-term dangers of Soviet loyalty.”' },
+  { w: 'unassuming', m: 'modest and easy to overlook', note: '“The Unassuming Woman” — the KGB’s caption for the quiet secretary from Bexleyheath.' }
+];
+
+/* ===== DATA: reel 2 — fill in the blanks (the seduction) ===== */
+var FILL1_SET = {
+  items: [
+    { t: 'Sonia climbs into Joan’s room with movie-star glamour, {{}} strict curfews and opening Joan’s world to radicalism.', a: 'bypassing' },
+    { t: '“Intense, intellectual, and {{}}.”', a: 'patronizing' },
+    { t: 'Joan is {{}} by ideas of societal justice and her own budding sexuality.', a: 'swept away' },
+    { t: 'A {{}} but genius physics student, seduced by radical politics.', a: 'green' },
+    { t: 'Intellectual seduction and the immediate threat of fascism acted as a {{}}, masking the long-term dangers of Soviet loyalty.', a: 'smokescreen' },
+    { t: '“My little {{}}.”', a: 'comrade' },
+    { t: 'The atomic bombings of Hiroshima and Nagasaki {{}} Joan’s theoretical detachment from her physics research.', a: 'shatter' },
+    { t: 'Leo reappears in Montreal, urging Joan to spy. She repeatedly refuses, until history {{}} her hand.', a: 'forces' }
+  ],
+  bank: ['bypassing', 'patronizing', 'swept away', 'green', 'smokescreen', 'comrade', 'shatter', 'forces', 'glamour', 'rallies']
+};
+
+/* ===== DATA: reel 4 — multiple choice ===== */
+var CHOICE1_SET = {
+  char: 'PROFESSOR MAX DAVIS',
+  right: [
+    'Exactly the kind of thinking this room needs.',
+    'Correct. I would put you in front of the blackboard with confidence.',
+    'Sharp work. The mathematics agrees with you.'
+  ],
+  wrong: [
+    'Even the coffee machine in this building understands physics better.',
+    'No. The equations will not sign off on that answer.',
+    'I expected better from someone in this room — read the file again.'
+  ],
+  items: [
+    { q: 'Inside the film, “Tube Alloys” is the codename of…', opts: ['the top-secret British/American nuclear research programme', 'a brand of ration tea', 'the Cambridge spy ring'], ans: 0, e: 'The dossier sets the second timeline in the “Top-secret British/American nuclear research facility” of Tube Alloys.' },
+    { q: 'Why does Joan finally hand over the intelligence?', opts: ['To earn a KGB pension of £20 a month', 'To equalize the information between superpowers', 'To help Max Davis secure a divorce'], ans: 1, e: 'The dossier names her sole motive: “If superpowers are balanced, mutually assured destruction prevents the weapons from ever being used again.”' },
+    { q: 'Which event shatters Joan’s theoretical detachment from her research?', opts: ['The Cambridge Five scandal', 'The German surrender', 'The atomic bombings of Hiroshima and Nagasaki'], ans: 2, e: 'The “Pivot” of August 1945: the bombings turn abstract physics into photographs and ash.' },
+    { q: 'Who is Professor Max Davis in Joan’s story?', opts: ['Her MI5 interrogator', 'Her boss and eventual lover', 'Her KGB handler'], ans: 1, e: 'The complication card: “Joan’s boss and eventual lover… muddled by his inability to secure a divorce.”' },
+    { q: 'Where does Leo reappear, urging Joan to spy?', opts: ['Montreal', 'Bexleyheath', 'Berlin'], ans: 0, e: '“Leo reappears in Montreal, urging Joan to spy.”' },
+    { q: 'How does Joan first respond to the KGB request?', opts: ['She demands money first', 'She repeatedly refuses', 'She reports Leo to MI5'], ans: 1, e: '“She repeatedly refuses, until history forces her hand.”' },
+    { q: 'The final page of the dossier leaves the case stamped…', opts: ['CASE CLOSED', 'CASE DISMISSED', 'CASE PENDING'], ans: 2, e: 'The closing image is a string-tied file stamped “Case Pending” — a story that refuses to close.' },
+    { q: 'What does the MI5 field notebook call Joan’s gender?', opts: ['Her primary defense mechanism', 'Her greatest liability', 'Her only weakness'], ans: 0, e: '“The Cloaking Device: Joan’s gender acted as her primary defense mechanism.”' }
+  ]
+};
+
+/* ===== DATA: reel 5 — fill in the blanks (the real file) ===== */
+var FILL2_SET = {
+  items: [
+    { t: 'Melita Norwood lived in a suburban semi in {{}}, keeping her secret for decades.', a: 'Bexleyheath' },
+    { t: 'Every day she drank {{}} tea and handed out the Morning Star.', a: 'Co-op' },
+    { t: 'Her KGB codename was {{}}.', a: 'HOLA' },
+    { t: 'She was awarded a KGB pension of £20 a {{}}.', a: 'month' },
+    { t: 'She was recruited in {{}} by Andrew Rothstein, long before Hiroshima.', a: '1935' },
+    { t: 'Her secrets brought the Soviet nuclear weapons program ahead by two {{}}.', a: 'years' }
+  ],
+  bank: ['Bexleyheath', 'Co-op', 'HOLA', 'month', '1935', 'years', '1958', 'week', 'Coffee']
+};
+
+/* ===== DATA: reel 3 — real / delusion ===== */
+var TF1_SET = [
+  { s: 'Judi Dench plays the young Joan in 1938.', a: 0, e: 'The presentation pairs Judi Dench with the year 2000 — “Guarded Stillness”. Sophie Cookson carries the 1938 timeline with “Restless Idealism”.' },
+  { s: 'The older Joan projects “a doddery, bemused facade” masking “a steely resolve”.', a: 1, e: 'That is the dossier’s exact description of Dench’s 80-something grandmother living a quiet suburban life.' },
+  { s: 'Leo Galich introduces Joan to communist rallies against Hitler.', a: 1, e: 'His card reads: “Intense, intellectual, and patronizing. Introduces Joan to communist rallies against Hitler.”' },
+  { s: 'Joan accepts Leo’s Montreal offer the moment he makes it.', a: 0, e: 'The KGB pressure note states: “She repeatedly refuses, until history forces her hand.”' },
+  { s: 'The atomic bombings of Hiroshima and Nagasaki shatter Joan’s theoretical detachment.', a: 1, e: 'That is the “Pivot” of August 1945 — her physics stops being abstract and becomes photographs and ash.' },
+  { s: 'Joan’s sole motive for spying was a KGB pension of £20 a month.', a: 0, e: 'Her sole motive is “equalizing the information”. The £20 pension and the Order of the Red Banner belong to the real Norwood’s reward file.' },
+  { s: 'The locket’s left side carries romantic love; its right side carries high treason.', a: 1, e: 'The evidence page calls the locket “the ultimate metaphor of her double life”.' },
+  { s: 'The film refuses a clean resolution.', a: 1, e: 'The presentation states it directly: “The line between loyalty and betrayal dissolves entirely into grey.”' }
+];
+
+/* ===== DATA: reel 6 — timed bonus, questions from all reels ===== */
+var BONUS_SET = [
+  { q: 'What does the idiom “butter wouldn’t melt” suggest?', opts: ['deceptively prim and innocent', 'physically cold', 'unable to speak'], ans: 0 },
+  { q: '“Vilified by the tabloid press” means Joan was…', opts: ['praised in headlines', 'attacked savagely in public', 'ignored completely'], ans: 1 },
+  { q: 'A “green” physics student is…', opts: ['environmentally conscious', 'inexperienced', 'jealous'], ans: 1 },
+  { q: 'A “smokescreen” hides…', opts: ['a military canteen', 'the truth', 'a film camera'], ans: 1 },
+  { q: 'Who is “The Unassuming Woman” on the Cambridge page?', opts: ['Sonia', 'Melita Norwood', 'Joan’s mother'], ans: 1 },
+  { q: 'The Mitrokhin Archive described Norwood as…', opts: ['“committed, reliable and disciplined”', '“reckless but charming”', '“aristocratic and visible”'], ans: 0 },
+  { q: 'What did Norwood display in her window?', opts: ['A Union Jack', '“Stop Trident” CND posters', 'A portrait of the Queen'], ans: 1 },
+  { q: 'Which composer scored the film?', opts: ['George Fenton', 'Hans Zimmer', 'Ennio Morricone'], ans: 0 },
+  { q: '“Restrained Strings” in the score represent…', opts: ['the ghost of Leo Galich', 'tightly wound secrets and Cold War paranoia', 'the son’s forgiveness'], ans: 1 },
+  { q: 'In 1992 Norwood was finally exposed by…', opts: ['a tabloid sting', 'KGB archivist Vasili Mitrokhin', 'a confession letter'], ans: 1 },
+  { q: 'Why was Norwood never prosecuted?', opts: ['She fled to Moscow', 'Her age and the potential political embarrassment', 'She held diplomatic immunity'], ans: 1 },
+  { q: '“On equal footing” means…', opts: ['in a position of equal status', 'on unstable ground', 'in second place'], ans: 0 }
+];
+
+/* ===== DATA: ranks and quips ===== */
+var RANKS = [
+  { min: 0, title: 'JUNIOR CLERK', note: 'The desk in the corner is yours. The archive has noticed you.' },
+  { min: 1500, title: 'FILE CLERK', note: 'Steady hands on the carbon paper. The reels barely smudge.' },
+  { min: 3000, title: 'FIELD AGENT', note: 'You read the grey fluently. The KGB would have valued you.' },
+  { min: 4500, title: 'CASE OFFICER', note: 'Notorious among clerks, reliable among spies.' },
+  { min: 6000, title: 'DIRECTOR-GENERAL', note: 'The whole file, every star, every stamp. The archive salutes you.' }
+];
+var STAR_QUIPS = {
+  3: 'Impeccable. The file closes without a single smudge.',
+  2: 'Solid work — one or two stains on the carbon paper.',
+  1: 'The record survives, but the stamps are smudged. Try the reel again.'
+};
+
+/* ===== state / progress (localStorage with version key) ===== */
+var LS_KEY = 'rj_arcade_v1';
+var S = { best: {} };
+try {
+  var raw = localStorage.getItem(LS_KEY);
+  if (raw) { S = JSON.parse(raw); }
+  if (!S || !S.best) { S = { best: {} }; }
+} catch (e) { S = { best: {} }; }
+function saveProgress() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { /* private mode */ } }
+function totalScore() {
+  return SCENES.reduce(function (a, sc) { var b = S.best[sc.id]; return a + (b ? b.score : 0); }, 0);
+}
+function totalStars() {
+  return SCENES.reduce(function (a, sc) { var b = S.best[sc.id]; return a + (b ? b.stars : 0); }, 0);
+}
+function allDone() { return SCENES.every(function (sc) { return !!S.best[sc.id]; }); }
+
+/* ===== shell: screens, modal, HUD ===== */
+function showScreen(id) {
+  $$('.screen').forEach(function (s) { s.classList.toggle('active', s.id === id); });
+  window.scrollTo(0, 0);
+}
+var modalEl = null, modalOnClose = null;
+function openModal(html, onClose) {
+  closeModal(true);
+  modalOnClose = onClose || null;
+  modalEl = document.createElement('div');
+  modalEl.className = 'mo';
+  modalEl.innerHTML = '<div class="mo-panel" role="dialog" aria-modal="true" tabindex="-1">' + html + '</div>';
+  document.body.appendChild(modalEl);
+  modalEl.querySelector('.mo-panel').focus();
+  modalEl.addEventListener('click', function (e) { if (e.target === modalEl) { closeModal(); } });
+}
+function closeModal(silent) {
+  if (modalEl) { modalEl.remove(); modalEl = null; }
+  var cb = modalOnClose; modalOnClose = null;
+  if (cb && !silent) { cb(); }
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') { return; }
+  if (modalEl) { e.preventDefault(); closeModal(); return; }
+  if ($('#screen-scene').classList.contains('active')) {
+    e.preventDefault(); cleanupAll(); showScreen('screen-map');
+  } else if ($('#screen-finale').classList.contains('active')) {
+    e.preventDefault(); showScreen('screen-map');
+  }
+});
+
+function updateHUD() {
+  $('#hud-score').textContent = 'SCORE ' + totalScore();
+  $('#hud-cells').innerHTML = SCENES.map(function (sc) {
+    var b = S.best[sc.id];
+    return '<button type="button" class="cell' + (b ? ' done' : '') + '" data-cell="' + sc.id + '" aria-label="Reel ' + sc.num + ': ' + sc.title + (b ? ' — ' + b.stars + ' stars' : ' — not played') + '">' + (b ? b.stars : '·') + '</button>';
+  }).join('');
+}
+function renderSound() {
+  $('#hud-sound').innerHTML = '<i class="ic" aria-hidden="true">' + (muted ? ICONS.mute : ICONS.sound) + '</i>';
+}
+
+/* ===== level map ===== */
+function renderMap() {
+  var cards = SCENES.map(function (sc) {
+    var b = S.best[sc.id], done = !!b;
+    return '<button type="button" class="reel" data-level="' + sc.id + '" style="--acc:' + sc.color + '" aria-label="Reel ' + sc.num + ': ' + sc.title + '. ' + sc.tag + '. ' + (done ? 'Completed with ' + b.stars + ' stars, best score ' + b.score + '.' : 'Not played yet.') + '">' +
+      '<span class="pin" aria-hidden="true"></span>' +
+      '<span class="reel-preview"><img src="' + sc.slide + '" alt="" loading="lazy"><span class="stamp" aria-hidden="true">' + sc.tag + '</span></span>' +
+      '<span class="sprock" aria-hidden="true"></span>' +
+      '<span class="reel-body">' +
+        '<span class="reel-num">REEL ' + sc.num + '</span>' +
+        '<span class="reel-title">' + sc.title + '</span>' +
+        '<span class="reel-char">' + sc.char + '</span>' +
+        '<span class="reel-stars" aria-hidden="true">' + starsSvg(b ? b.stars : 0) + '</span>' +
+        '<span class="reel-best">' + (done ? 'BEST ' + b.score : 'NOT PLAYED YET') + '</span>' +
+      '</span></button>';
+  }).join('');
+  $('#map-grid').innerHTML = cards;
+  $('#map-total').textContent = SCENES.filter(function (sc) { return !!S.best[sc.id]; }).length + ' / ' + SCENES.length + ' REELS CLOSED';
+  $('#final-wrap').classList.toggle('show', allDone());
+}
+
+/* ===== scene shell ===== */
+var currentScene = null;
+function openLevel(id) {
+  var sc = SCENES.find(function (s) { return s.id === id; });
+  if (!sc) { return; }
+  currentScene = sc;
+  cleanupAll();
+  closeModal(true);
+  showScreen('screen-scene');
+  $('#scene-bg').src = sc.slide;
+  $('#scene-tag').textContent = sc.tag;
+  $('#scene-title').textContent = sc.num + '. ' + sc.title;
+  $('#scene-char').textContent = sc.char;
+  $('#screen-scene').style.setProperty('--acc', sc.color);
+  typewrite($('#scene-flavor'), '“' + sc.flavor + '”');
+  openModal(
+    '<p class="mo-kicker">BRIEFING · REEL ' + sc.num + ' · ' + sc.tag + '</p>' +
+    '<h3>' + sc.title + '</h3>' +
+    '<p class="obj">' + sc.obj + '</p>' +
+    '<p class="tip">TIP — ' + sc.tip + '</p>' +
+    '<div class="mo-actions"><button type="button" class="btn btn-primary btn-big" id="m-start"><i class="ic" data-icon="play" aria-hidden="true"></i> START</button></div>',
+    function () { showScreen('screen-map'); }
+  );
+  refreshIcons();
+  $('#m-start').addEventListener('click', function () { sClick(); closeModal(true); runGame(sc); });
+}
+function runGame(sc) {
+  cleanupAll();
+  var area = $('#game-area');
+  area.innerHTML = '';
+  if (sc.mech === 'match') { runMatch(sc); }
+  else if (sc.mech === 'fill') { runFill(sc); }
+  else if (sc.mech === 'tf') { runTF(sc); }
+  else if (sc.mech === 'choice') { runChoice(sc); }
+  else if (sc.mech === 'bonus') { runBonus(sc); }
+}
+
+/* ===== level completion, stars, results modal ===== */
+function finishLevel(sc, score, mistakes, extraNote) {
+  cleanupAll();
+  var stars = mistakes <= 0 ? 3 : mistakes <= 2 ? 2 : 1;
+  var prev = S.best[sc.id];
+  var record = !prev || score > prev.score;
+  var wasAll = allDone();
+  S.best[sc.id] = {
+    score: Math.max(score, prev ? prev.score : 0),
+    stars: Math.max(stars, prev ? prev.stars : 0),
+    mistakes: Math.min(mistakes, prev ? prev.mistakes : 99)
+  };
+  saveProgress();
+  updateHUD();
+  renderMap();
+  var html =
+    '<p class="mo-kicker">RESULT · REEL ' + sc.num + ' · ' + sc.tag + '</p>' +
+    '<h3>' + sc.title + '</h3>' +
+    '<div class="stars-row" role="img" aria-label="' + stars + ' of 3 stars">' + starsSvg(stars) + '</div>' +
+    '<div class="score-big">' + score + '</div>' +
+    '<p class="score-sub">MISTAKES ' + mistakes + (record ? ' · NEW BEST' : ' · BEST ' + S.best[sc.id].score) + (extraNote ? ' · ' + extraNote : '') + '</p>' +
+    '<p class="quip">' + STAR_QUIPS[stars] + '</p>' +
+    '<div class="mo-actions">' +
+      '<button type="button" class="btn" id="m-map"><i class="ic" data-icon="map" aria-hidden="true"></i> MAP</button>' +
+      '<button type="button" class="btn btn-primary" id="m-replay"><i class="ic" data-icon="rewind" aria-hidden="true"></i> REPLAY</button>' +
+    '</div>';
+  openModal(html, null);
+  refreshIcons();
+  if (stars === 3) { sFanfare(); spawnConfetti(70); toast('THREE STARS — REEL ' + sc.num + ' SEALED', 'star'); }
+  else if (record) { sCheer(); toast('NEW BEST SCORE', 'check'); }
+  else { sCorrect(); }
+  if (!wasAll && allDone()) { sFanfare(); spawnConfetti(130); toast('ALL REELS CLOSED — THE FINAL FILE UNLOCKED', 'file'); }
+  $('#m-map').addEventListener('click', function () { sClick(); closeModal(true); showScreen('screen-map'); });
+  $('#m-replay').addEventListener('click', function () { sClick(); closeModal(true); runGame(sc); });
+}
+
+/* ===== mini-game 1: match the meaning ===== */
+function runMatch(sc) {
+  var pairs = MATCH1_SET;
+  var left = shuffle(pairs.map(function (_, i) { return i; }));
+  var right = shuffle(pairs.map(function (_, i) { return i; }));
+  var area = $('#game-area');
+  area.innerHTML =
+    '<div class="m-ex">HOW TO PLAY — click a <b>WORD</b>, then its <b>MEANING</b>. Example: <b>WORD</b> · boasts → <b>MEANING</b> · “proudly has”</div>' +
+    '<div class="gbar"><span class="counter" id="m-count">PAIRS 0/6 · ATTEMPTS 0</span></div>' +
+    '<div class="match-grid">' +
+      '<div><p class="m-col-label">WORD</p>' + left.map(function (pi) { return '<button type="button" class="m-item" data-side="w" data-pi="' + pi + '">' + pairs[pi].w + '</button>'; }).join('') + '</div>' +
+      '<div><p class="m-col-label">MEANING</p>' + right.map(function (pi) { return '<button type="button" class="m-item" data-side="m" data-pi="' + pi + '">' + pairs[pi].m + '</button>'; }).join('') + '</div>' +
+    '</div>' +
+    '<div class="m-note" id="m-note">FILE NOTE — each correct pair reveals its evidence quote.</div>';
+  var selW = null, selM = null, found = 0, attempts = 0, score = 0;
+  function updateCount() {
+    $('#m-count').textContent = 'PAIRS ' + found + '/' + pairs.length + ' · ATTEMPTS ' + attempts;
+  }
+  area.addEventListener('click', function (e) {
+    var b = e.target.closest('.m-item');
+    if (!b || b.classList.contains('lock')) { return; }
+    sFlip();
+    var side = b.dataset.side, pi = +b.dataset.pi;
+    if (side === 'w') {
+      if (selW === pi) { selW = null; b.classList.remove('sel'); }
+      else { selW = pi; $$('#game-area .m-item[data-side="w"]').forEach(function (x) { x.classList.remove('sel'); }); b.classList.add('sel'); }
+    } else {
+      if (selM === pi) { selM = null; b.classList.remove('sel'); }
+      else { selM = pi; $$('#game-area .m-item[data-side="m"]').forEach(function (x) { x.classList.remove('sel'); }); b.classList.add('sel'); }
+    }
+    if (selW !== null && selM !== null) {
+      var w = selW, m = selM;
+      attempts++;
+      if (w === m) {
+        found++; score += 100; sMatch();
+        $$('#game-area .m-item').forEach(function (x) {
+          if (+x.dataset.pi === w) { x.classList.remove('sel'); x.classList.add('lock'); x.disabled = true; }
+        });
+        $('#m-note').textContent = 'FILE NOTE — ' + pairs[w].note;
+        popFloat('+100', e.clientX, e.clientY - 12);
+      } else {
+        score = Math.max(0, score - 25); sWrong();
+        $$('#game-area .m-item').forEach(function (x) {
+          if (+x.dataset.pi === w || +x.dataset.pi === m) {
+            x.classList.add('shake');
+            var node = x; setTimeout(function () { node.classList.remove('shake'); }, 500);
+          }
+        });
+        popFloat('-25', e.clientX, e.clientY - 12, true);
+      }
+      selW = null; selM = null;
+      $$('#game-area .m-item.sel').forEach(function (x) { x.classList.remove('sel'); });
+      updateCount();
+      if (found === pairs.length) { safeTimeout(function () { finishLevel(sc, score, attempts); }, 700); }
+    }
+  });
+}
+
+/* ===== mini-game 2: fill in the blanks ===== */
+function runFill(sc) {
+  var data = sc.id === 'fill1' ? FILL1_SET : FILL2_SET;
+  var items = data.items;
+  var bank = shuffle(data.bank);
+  var area = $('#game-area');
+  var lines = items.map(function (it, i) {
+    var parts = it.t.split('{{}}');
+    return '<p class="fill-line">' + parts[0] +
+      '<button type="button" class="blank" data-b="' + i + '" aria-label="Blank ' + (i + 1) + '">______</button>' +
+      (parts[1] || '') + '</p>';
+  }).join('');
+  area.innerHTML =
+    '<div class="gbar"><span class="counter" id="f-count">BLANKS 0/' + items.length + ' · RETURNS 0</span></div>' +
+    '<div id="fill-lines">' + lines + '</div>' +
+    '<p class="bank-label">WORD BANK — wrong words bounce back and cost points</p>' +
+    '<div class="chips" id="f-bank">' + bank.map(function (w) { return '<button type="button" class="chip" data-w="' + w + '">' + w + '</button>'; }).join('') + '</div>';
+  var selB = null, selW = null, filled = 0, returns = 0, score = 0;
+  function updateCount() {
+    $('#f-count').textContent = 'BLANKS ' + filled + '/' + items.length + ' · RETURNS ' + returns;
+  }
+  function tryPlace(bi, word, evt) {
+    var btn = area.querySelector('.blank[data-b="' + bi + '"]');
+    if (!btn || btn.classList.contains('done')) { return; }
+    var chip = area.querySelector('.chip[data-w="' + word + '"]');
+    if (items[bi].a === word) {
+      filled++; score += 150; sCorrect();
+      btn.textContent = word; btn.classList.add('done'); btn.classList.remove('sel');
+      if (chip) { chip.classList.add('used'); chip.classList.remove('sel'); }
+      popFloat('+150', evt.clientX, evt.clientY - 12);
+      selB = null; selW = null;
+      updateCount();
+      if (filled === items.length) { safeTimeout(function () { finishLevel(sc, score, returns); }, 650); }
+    } else {
+      returns++; score = Math.max(0, score - 25); sWrong();
+      btn.classList.add('shake'); var b1 = btn; setTimeout(function () { b1.classList.remove('shake'); }, 500);
+      if (chip) { chip.classList.add('shake'); chip.classList.remove('sel'); var c1 = chip; setTimeout(function () { c1.classList.remove('shake'); }, 500); }
+      popFloat('-25', evt.clientX, evt.clientY - 12, true);
+      selB = null; selW = null;
+      updateCount();
+    }
+  }
+  area.addEventListener('click', function (e) {
+    var blank = e.target.closest('.blank');
+    var chip = e.target.closest('.chip');
+    if (blank && !blank.classList.contains('done')) {
+      sClick();
+      if (selB === +blank.dataset.b) { selB = null; blank.classList.remove('sel'); }
+      else {
+        selB = +blank.dataset.b;
+        $$('#game-area .blank.sel').forEach(function (x) { x.classList.remove('sel'); });
+        blank.classList.add('sel');
+      }
+      if (selB !== null && selW !== null) { tryPlace(selB, selW, e); }
+      return;
+    }
+    if (chip && !chip.classList.contains('used')) {
+      sClick();
+      if (selW === chip.dataset.w) { selW = null; chip.classList.remove('sel'); }
+      else {
+        selW = chip.dataset.w;
+        $$('#game-area .chip.sel').forEach(function (x) { x.classList.remove('sel'); });
+        chip.classList.add('sel');
+      }
+      if (selB !== null && selW !== null) { tryPlace(selB, selW, e); }
+    }
+  });
+}
+
+/* ===== mini-game 3: real / delusion (no auto-advance) ===== */
+function runTF(sc) {
+  var data = TF1_SET;
+  var LIMIT = 600; /* seconds per card */
+  var area = $('#game-area');
+  area.innerHTML =
+    '<div class="gbar">' +
+      '<div class="tbar" style="flex:1;min-width:140px"><i id="tf-bar"></i></div>' +
+      '<span class="timer-num" id="tf-time">10:00</span>' +
+      '<span class="streak-badge" id="tf-streak">STREAK ×1</span>' +
+    '</div>' +
+    '<div class="gcard" id="tf-card"><p id="tf-text"></p></div>' +
+    '<div class="tf-btns" style="display:flex;gap:.8rem;margin-top:1rem">' +
+      '<button type="button" class="btn btn-real btn-big" id="tf-real">◀ REAL</button>' +
+      '<button type="button" class="btn btn-del btn-big" id="tf-del">DELUSION ▶</button>' +
+    '</div>' +
+    '<div class="fb" id="tf-fb" hidden></div>';
+  var idx = 0, score = 0, mistakes = 0, streak = 0, answered = false, t0 = 0, iv = null;
+  function mult() { return streak >= 6 ? 3 : streak >= 3 ? 2 : 1; }
+  function stopTimer() { if (iv) { clearInterval(iv); iv = null; } }
+  function startTimer() {
+    stopTimer(); t0 = Date.now();
+    iv = setInterval(tick, 250);
+    setCleanup(function () { stopTimer(); });
+    tick();
+  }
+  function tick() {
+    var remain = Math.max(0, LIMIT - (Date.now() - t0) / 1000);
+    $('#tf-bar').style.width = (remain / LIMIT * 100) + '%';
+    var mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
+    $('#tf-time').textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
+    if (remain <= 0) { stopTimer(); handle(null); }
+  }
+  function renderCard() {
+    answered = false;
+    $('#tf-card').classList.remove('good', 'bad');
+    $('#tf-text').textContent = data[idx].s;
+    $('#tf-fb').hidden = true;
+    $('#tf-real').disabled = false;
+    $('#tf-del').disabled = false;
+    $('#tf-streak').textContent = 'STREAK ×' + mult();
+    startTimer();
+  }
+  function handle(choice) { /* true=REAL, false=DELUSION, null=timeout */
+    if (answered) { return; }
+    answered = true;
+    stopTimer();
+    var item = data[idx];
+    var ok = choice !== null && ((choice ? 1 : 0) === item.a);
+    $('#tf-real').disabled = true;
+    $('#tf-del').disabled = true;
+    if (ok) {
+      streak++;
+      var gained = 100 * mult();
+      score += gained;
+      $('#tf-card').classList.add('good');
+      sCorrect();
+      popFloat('+' + gained, window.innerWidth / 2 - 40, window.innerHeight / 2 - 80);
+    } else {
+      mistakes++; streak = 0;
+      $('#tf-card').classList.add('bad');
+      sWrong();
+      popFloat(choice === null ? 'TIME UP' : 'WRONG', window.innerWidth / 2 - 40, window.innerHeight / 2 - 80, true);
+    }
+    $('#tf-streak').textContent = 'STREAK ×' + mult();
+    var truth = item.a === 1 ? 'REAL' : 'DELUSION';
+    var verdict = ok
+      ? '✓ CORRECT — IT WAS ' + truth
+      : (choice === null ? '⏱ TIME UP — IT WAS ' + truth : '✗ WRONG — IT WAS ' + truth);
+    var last = idx === data.length - 1;
+    var fb = $('#tf-fb');
+    fb.className = 'fb ' + (ok ? 'good' : 'bad');
+    fb.innerHTML =
+      '<p class="verdict">' + verdict + '</p>' +
+      '<p class="expl">' + item.e + '</p>' +
+      '<div class="btn-row"><button type="button" class="btn ' + (last ? 'btn-gold' : 'btn-primary') + ' btn-big" id="tf-next">' + (last ? 'SEE RESULTS' : 'NEXT ▶') + '</button></div>';
+    fb.hidden = false;
+    $('#tf-next').focus();
+    $('#tf-next').addEventListener('click', next);
+  }
+  function next() {
+    sClick();
+    idx++;
+    if (idx >= data.length) { finishLevel(sc, score, mistakes); return; }
+    renderCard();
+    $('#tf-card').scrollIntoView({ behavior: REDUCED() ? 'auto' : 'smooth', block: 'start' });
+  }
+  $('#tf-real').addEventListener('click', function () { handle(true); });
+  $('#tf-del').addEventListener('click', function () { handle(false); });
+  var onKey = function (e) {
+    if (answered) {
+      if (e.key === 'Enter') { e.preventDefault(); next(); }
+      return;
+    }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); handle(true); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); handle(false); }
+  };
+  document.addEventListener('keydown', onKey);
+  setCleanup(function () { document.removeEventListener('keydown', onKey); stopTimer(); });
+  renderCard();
+}
+
+/* ===== mini-game 4: multiple choice, one attempt ===== */
+function runChoice(sc) {
+  var data = CHOICE1_SET;
+  var area = $('#game-area');
+  area.innerHTML =
+    '<div class="gbar"><span class="counter" id="c-count">Q 0/' + data.items.length + ' · SCORE 0</span><span class="streak-badge" id="c-streak">STREAK ×1</span></div>' +
+    '<div class="gcard" id="c-card"><p id="c-text"></p></div>' +
+    '<div class="opts" id="c-opts"></div>' +
+    '<div class="fb" id="c-fb" hidden></div>';
+  var idx = 0, score = 0, mistakes = 0, streak = 0, answered = false;
+  function mult() { return streak >= 6 ? 3 : streak >= 3 ? 2 : 1; }
+  function renderQ() {
+    answered = false;
+    var item = data.items[idx];
+    $('#c-card').classList.remove('good', 'bad');
+    $('#c-text').textContent = item.q;
+    $('#c-opts').innerHTML = item.opts.map(function (o, i) {
+      return '<button type="button" class="opt" data-o="' + i + '">' + o + '</button>';
+    }).join('');
+    $('#c-fb').hidden = true;
+    $('#c-count').textContent = 'Q ' + idx + '/' + data.items.length + ' · SCORE ' + score;
+    $('#c-streak').textContent = 'STREAK ×' + mult();
+  }
+  $('#c-opts').addEventListener('click', function (e) {
+    var b = e.target.closest('.opt');
+    if (!b || answered) { return; }
+    answered = true;
+    var item = data.items[idx];
+    var oi = +b.dataset.o;
+    var ok = oi === item.ans;
+    $$('#c-opts .opt').forEach(function (x, i) {
+      x.disabled = true;
+      if (i === item.ans) { x.classList.add('correct'); }
+      else if (i === oi) { x.classList.add('wrong'); }
+      else { x.classList.add('dim'); }
+    });
+    var line;
+    if (ok) {
+      streak++;
+      var gained = 150 * mult();
+      score += gained; sCorrect();
+      $('#c-card').classList.add('good');
+      popFloat('+' + gained, e.clientX, e.clientY - 14);
+      line = data.right[(streak - 1) % data.right.length];
+    } else {
+      mistakes++; streak = 0; sWrong();
+      $('#c-card').classList.add('bad');
+      popFloat('WRONG', e.clientX, e.clientY - 14, true);
+      line = data.wrong[(mistakes - 1) % data.wrong.length];
+    }
+    $('#c-streak').textContent = 'STREAK ×' + mult();
+    $('#c-count').textContent = 'Q ' + (idx + 1) + '/' + data.items.length + ' · SCORE ' + score;
+    var last = idx === data.items.length - 1;
+    var fb = $('#c-fb');
+    fb.className = 'fb ' + (ok ? 'good' : 'bad');
+    fb.innerHTML =
+      (ok ? '' : '<p class="verdict">✗ WRONG — THE ANSWER WAS: ' + item.opts[item.ans] + '</p><p class="expl">' + item.e + '</p>') +
+      '<p class="verdict">' + data.char + ': “' + line + '”</p>' +
+      '<div class="btn-row"><button type="button" class="btn ' + (last ? 'btn-gold' : 'btn-primary') + '" id="c-next">' + (last ? 'SEE RESULTS' : 'NEXT ▶') + '</button></div>';
+    fb.hidden = false;
+    $('#c-next').focus();
+    $('#c-next').addEventListener('click', function () {
+      sClick(); idx++;
+      if (idx >= data.items.length) { finishLevel(sc, score, mistakes); return; }
+      renderQ();
+      $('#c-card').scrollIntoView({ behavior: REDUCED() ? 'auto' : 'smooth', block: 'start' });
+    });
+  });
+  renderQ();
+}
+
+/* ===== mini-game 5: timed bonus round ===== */
+function runBonus(sc) {
+  var LIMIT = 750; /* seconds for the whole round */
+  var data = shuffle(BONUS_SET);
+  var area = $('#game-area');
+  area.innerHTML =
+    '<div class="gbar">' +
+      '<span class="timer-num" id="b-time">12:30</span>' +
+      '<div class="tbar" style="flex:1;min-width:120px"><i id="b-bar"></i></div>' +
+      '<span class="streak-badge" id="b-streak">STREAK ×1</span>' +
+    '</div>' +
+    '<div class="gcard" id="b-card"><p id="b-text"></p></div>' +
+    '<div class="opts" id="b-opts"></div>' +
+    '<div class="m-ex" style="margin-top:1rem">Correct answers under 3 seconds earn a SPEED +50 bonus. Wrong answers reset the streak. The clock flashes red near the end.</div>';
+  var idx = 0, score = 0, mistakes = 0, streak = 0, finished = false;
+  var t0 = Date.now(), qT0 = Date.now(), iv = null, lastWhole = 999;
+  function mult() { return streak >= 6 ? 3 : streak >= 3 ? 2 : 1; }
+  function stop() { if (iv) { clearInterval(iv); iv = null; } }
+  function endRound(note) {
+    if (finished) { return; }
+    finished = true; stop();
+    finishLevel(sc, score, mistakes, note);
+  }
+  function tick() {
+    var remain = Math.max(0, LIMIT - (Date.now() - t0) / 1000);
+    var tn = $('#b-time');
+    if (!tn) { stop(); return; }
+    var mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
+    tn.textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
+    $('#b-bar').style.width = (remain / LIMIT * 100) + '%';
+    tn.classList.toggle('warn', remain <= 60);
+    tn.classList.toggle('danger', remain <= 15);
+    $('#b-bar').classList.toggle('danger', remain <= 15);
+    if (remain <= 10 && Math.floor(remain) !== lastWhole) { sTick(); }
+    lastWhole = Math.floor(remain);
+    if (remain <= 0) { endRound('TIME EXPIRED'); }
+  }
+  iv = setInterval(tick, 250);
+  setCleanup(function () { stop(); });
+  function renderQ() {
+    if (finished) { return; }
+    qT0 = Date.now();
+    var item = data[idx];
+    $('#b-card').classList.remove('good', 'bad');
+    $('#b-text').textContent = item.q;
+    $('#b-opts').innerHTML = item.opts.map(function (o, i) {
+      return '<button type="button" class="opt" data-o="' + i + '">' + o + '</button>';
+    }).join('');
+    $('#b-streak').textContent = 'STREAK ×' + mult();
+  }
+  $('#b-opts').addEventListener('click', function (e) {
+    if (finished) { return; }
+    var b = e.target.closest('.opt');
+    if (!b) { return; }
+    var item = data[idx];
+    var oi = +b.dataset.o;
+    var ok = oi === item.ans;
+    $$('#b-opts .opt').forEach(function (x, i) {
+      x.disabled = true;
+      if (i === item.ans) { x.classList.add('correct'); }
+      else if (i === oi) { x.classList.add('wrong'); }
+      else { x.classList.add('dim'); }
+    });
+    var dt = (Date.now() - qT0) / 1000;
+    if (ok) {
+      streak++;
+      var gained = 100 * mult();
+      score += gained; sCorrect();
+      $('#b-card').classList.add('good');
+      popFloat('+' + gained, e.clientX, e.clientY - 14);
+      if (dt < 3) { score += 50; popFloat('SPEED +50', e.clientX, e.clientY - 48); }
+    } else {
+      mistakes++; streak = 0; sWrong();
+      $('#b-card').classList.add('bad');
+      popFloat('WRONG', e.clientX, e.clientY - 14, true);
+    }
+    $('#b-streak').textContent = 'STREAK ×' + mult();
+    idx++;
+    if (idx >= data.length) {
+      var remain = Math.max(0, LIMIT - (Date.now() - t0) / 1000);
+      var tb = Math.floor(remain * 5);
+      score += tb;
+      safeTimeout(function () { endRound('TIME BONUS +' + tb); }, 550);
+    } else {
+      safeTimeout(renderQ, 850);
+    }
+  });
+  renderQ();
+}
+
+/* ===== finale ===== */
+function renderFinale() {
+  $('#fin-score').textContent = totalScore();
+  $('#fin-stars').textContent = totalStars() + ' / ' + (SCENES.length * 3);
+  var rank = RANKS[0];
+  RANKS.forEach(function (r) { if (totalScore() >= r.min) { rank = r; } });
+  $('#fin-rank').textContent = rank.title;
+  $('#fin-rank-note').textContent = rank.note;
+  var rows = SCENES.map(function (sc) {
+    var b = S.best[sc.id];
+    return '<tr><td class="num">R' + sc.num + '</td><td>' + sc.title + '</td>' +
+      '<td class="st" role="img" aria-label="' + (b ? b.stars : 0) + ' of 3 stars">' + starsSvg(b ? b.stars : 0) + '</td>' +
+      '<td>' + (b ? b.score : 0) + '</td>' +
+      '<td><button type="button" class="btn" style="padding:.28rem .7rem" data-level="' + sc.id + '" aria-label="Replay reel ' + sc.num + '">REPLAY</button></td></tr>';
+  }).join('');
+  $('#fin-table').innerHTML =
+    '<thead><tr><th>REEL</th><th>TITLE</th><th>STARS</th><th>BEST</th><th></th></tr></thead><tbody>' + rows + '</tbody>';
+}
+function rewindTape() {
+  sFlip();
+  S = { best: {} };
+  saveProgress();
+  updateHUD();
+  renderMap();
+  showScreen('screen-map');
+  toast('TAPE REWOUND — ALL REELS RESET', 'rewind');
+}
+
+/* ===== wiring ===== */
+$('#intro-open').addEventListener('click', function () { sClick(); showScreen('screen-map'); });
+$('#hud-map').addEventListener('click', function () { sClick(); cleanupAll(); closeModal(true); showScreen('screen-map'); });
+$('#scene-back').addEventListener('click', function () { sClick(); cleanupAll(); showScreen('screen-map'); });
+$('#hud-sound').addEventListener('click', function () {
+  muted = !muted;
+  try { localStorage.setItem(MUTED_KEY, muted ? '1' : '0'); } catch (e) { /* private mode */ }
+  renderSound();
+  if (!muted) { ensureAudio(); sClick(); }
+});
+$('#hud-cells').addEventListener('click', function (e) {
+  var c = e.target.closest('.cell');
+  if (c) { sClick(); openLevel(c.dataset.cell); }
+});
+$('#map-grid').addEventListener('click', function (e) {
+  var r = e.target.closest('.reel');
+  if (r) { sClick(); openLevel(r.dataset.level); }
+});
+$('#final-btn').addEventListener('click', function () {
+  sClick(); renderFinale(); showScreen('screen-finale'); sFanfare(); spawnConfetti(60);
+});
+$('#fin-map').addEventListener('click', function () { sClick(); showScreen('screen-map'); });
+$('#fin-rewind').addEventListener('click', rewindTape);
+$('#fin-table').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-level]');
+  if (b) { sClick(); openLevel(b.dataset.level); }
+});
+
+/* ===== preloader: load, then PLAY with an upward exit ===== */
+(function runPreloader() {
+  var pre = $('#screen-preloader');
+  var lineEl = $('#pre-line');
+  var msg = 'OPENING EVIDENTIARY FILE 1999 … CROSS-REF 1938 … DECRYPTING VOCABULARY … ';
+  var i = 0;
+  var iv = setInterval(function () {
+    i += 1;
+    lineEl.textContent = msg.slice(0, i);
+    if (i >= msg.length) { clearInterval(iv); }
+  }, 24);
+  setCleanup(function () { clearInterval(iv); });
+  setTimeout(function () { $('#pre-fill').style.width = '100%'; }, 80);
+  setTimeout(function () { $('#play-btn').classList.add('show'); }, 1600);
+  $('#play-btn').addEventListener('click', function () {
+    ensureAudio();
+    sFlip();
+    pre.classList.add('up');
+    setTimeout(function () { if (pre.parentNode) { pre.parentNode.removeChild(pre); } }, 750);
+  });
+})();
+
+/* ===== boot ===== */
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+})();
+</script>
+</body>
+</html>
