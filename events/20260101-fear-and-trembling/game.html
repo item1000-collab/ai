@@ -1,0 +1,2083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Fear and Trembling — The Yumimoto Vocab Arcade. A single-file retro-arcade learning game after Alain Corneau's 2003 film.">
+<meta name="color-scheme" content="dark">
+<title>Fear &amp; Trembling — The Yumimoto Vocab Arcade</title>
+<style>
+/* ============================================================
+   FEAR & TREMBLING — THE YUMIMOTO VOCAB ARCADE
+   A single-file, offline, no-framework educational game based on
+   the uploaded slide deck (Alain Corneau, "Fear and Trembling", 2003).
+   Palette: warm dusk-office parchment on deep umber; hard arcade shadows.
+   ============================================================ */
+
+/* ===== design tokens ===== */
+:root{
+  --bg0:#171009;
+  --bg1:#221812;
+  --panel:#2B1F15;
+  --panel2:#33261A;
+  --paper:#F1E5CC;
+  --paper2:#E3D2B2;
+  --ink:#2C2014;
+  --ink-soft:#7A6248;
+  --line:rgba(241,229,204,.16);
+  --gold:#D9A441;
+  --gold-soft:#B98A35;
+  --wax:#A64632;
+  --sage:#5F7C52;
+  --err:#B03A2E;
+  --blue:#3E5E8C;
+  --shadow:rgba(8,5,2,.55);
+  --serif:Georgia,"Times New Roman",Times,serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+}
+
+/* ===== reset & base ===== */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{height:100%}
+body{
+  min-height:100%;
+  background:linear-gradient(180deg,var(--bg1) 0%,var(--bg0) 55%,#0E0B08 100%);
+  color:var(--paper);
+  font-family:var(--serif);
+  font-size:16px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:var(--serif);line-height:1.2;margin:0 0 .5em}
+p{margin:.4em 0}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+a{color:var(--gold)}
+img,svg{max-width:100%;height:auto}
+.mono{font-family:var(--mono);letter-spacing:.03em}
+.hidden{display:none !important}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ===== accessibility: focus ===== */
+:focus{outline:none}
+:focus-visible{
+  outline:3px solid var(--gold);
+  outline-offset:3px;
+  border-radius:6px;
+}
+::selection{background:rgba(217,164,65,.35)}
+
+/* ===== film grain + candle/dusk glow + fx canvas ===== */
+#grain{
+  position:fixed;inset:0;z-index:9990;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 0.86 0 0 0 0 0.62 0 0 0 0.05 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+  opacity:.75;
+  mix-blend-mode:overlay;
+}
+#glow{
+  position:fixed;inset:0;z-index:9989;pointer-events:none;
+  background:
+    radial-gradient(60% 42% at 50% 0%,rgba(217,164,65,.13),transparent 70%),
+    radial-gradient(120% 90% at 50% 115%,rgba(10,7,4,.6),transparent 60%);
+  animation:flicker 5.2s ease-in-out infinite alternate;
+}
+@keyframes flicker{
+  from{opacity:.9}
+  to{opacity:.72}
+}
+#fx{position:fixed;inset:0;z-index:9995;pointer-events:none}
+
+/* ===== shared button language ===== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5em;
+  padding:.62em 1.25em;
+  background:var(--paper);
+  color:var(--ink);
+  border:2px solid var(--ink);
+  border-radius:12px;
+  font-weight:bold;
+  text-decoration:none;
+  box-shadow:0 5px 0 var(--shadow);
+  transition:transform .12s ease,box-shadow .12s ease,background .12s ease;
+  -webkit-user-select:none;user-select:none;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 0 var(--shadow)}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--shadow)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none;box-shadow:0 5px 0 var(--shadow)}
+.btn-primary{background:var(--gold);border-color:#5E4415}
+.btn-danger{background:var(--wax);color:var(--paper);border-color:#5C2419}
+.btn-ghost{background:transparent;color:var(--paper);border-color:var(--line);box-shadow:none}
+.btn-ghost:hover{border-color:var(--gold)}
+.btn .icn{width:1em;height:1em;display:inline-block}
+.icn{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.18em}
+.icn svg{width:100%;height:100%;display:block}
+
+/* ===== preloader ===== */
+#preloader{
+  position:fixed;inset:0;z-index:10000;
+  background:linear-gradient(180deg,#1C130C 0%,#120D08 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+  text-align:center;padding:24px;
+  transition:transform .8s cubic-bezier(.72,0,.28,1),opacity .8s ease;
+}
+#preloader.exit{transform:translateY(-100%);opacity:.4}
+#preloader .pre-reel{width:76px;height:76px;color:var(--gold);animation:spin 2.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#preloader .pre-title{
+  font-size:clamp(1.5rem,6vw,2.6rem);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  margin:0;
+  color:var(--paper);
+}
+#preloader .pre-sub{
+  margin:0;color:var(--ink-soft);
+  font-style:italic;font-size:clamp(.85rem,3vw,1rem);
+  max-width:34em;
+}
+.pre-track{
+  width:min(320px,72vw);height:10px;border-radius:6px;
+  background:rgba(241,229,204,.12);overflow:hidden;
+}
+.pre-track i{
+  display:block;height:100%;width:0;border-radius:6px;
+  background:linear-gradient(90deg,var(--gold-soft),var(--gold));
+  animation:preload 1.15s ease-out forwards;
+}
+@keyframes preload{0%{width:0}62%{width:68%}100%{width:100%}}
+#playBtn{
+  margin-top:6px;font-size:1.2rem;padding:.7em 2em;letter-spacing:.18em;
+  opacity:0;transform:translateY(8px);pointer-events:none;
+  transition:opacity .45s ease .1s,transform .45s ease .1s;
+}
+#preloader.ready #playBtn{opacity:1;transform:none;pointer-events:auto}
+#preloader.ready #playBtn .icn{animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+.pre-foot{color:var(--ink-soft);font-size:.78rem;letter-spacing:.06em}
+
+/* ===== HUD (fixed header console) ===== */
+#hud{
+  position:fixed;top:0;left:0;right:0;z-index:900;
+  display:flex;align-items:center;gap:12px;
+  padding:8px clamp(10px,3vw,26px);
+  background:linear-gradient(180deg,rgba(23,16,9,.97),rgba(23,16,9,.88));
+  border-bottom:1px solid var(--line);
+  backdrop-filter:blur(6px);
+}
+#hud .brand{
+  display:flex;align-items:center;gap:10px;min-width:0;
+  background:none;border:none;padding:2px;
+}
+#hud .brand .seal{width:36px;height:36px;flex:none;filter:drop-shadow(0 2px 0 rgba(0,0,0,.4))}
+#hud .brand .b-title{
+  font-weight:bold;letter-spacing:.1em;font-size:.85rem;text-transform:uppercase;
+  color:var(--paper);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#hud .brand .b-sub{display:block;font-size:.62rem;letter-spacing:.22em;color:var(--ink-soft);font-weight:normal}
+#hudDots{display:flex;gap:7px;align-items:center;margin-left:4px}
+.dot{
+  width:16px;height:16px;border-radius:5px;
+  border:2px solid rgba(241,229,204,.35);
+  background:transparent;padding:0;
+  transition:background .2s,border-color .2s,transform .2s;
+}
+.dot.done{background:var(--gold);border-color:var(--gold)}
+.dot.cur{border-color:var(--gold);transform:scale(1.2);animation:dotPulse 1.6s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{box-shadow:0 0 0 0 rgba(217,164,65,.4)}50%{box-shadow:0 0 0 5px rgba(217,164,65,0)}}
+#hud .spacer{flex:1}
+#hudScoreWrap{
+  display:flex;align-items:baseline;gap:7px;
+  padding:.25em .8em;border:1px solid var(--line);border-radius:10px;
+  background:rgba(43,31,21,.7);
+}
+#hudScoreWrap .lbl{font-size:.6rem;letter-spacing:.2em;color:var(--ink-soft)}
+#hudScore{font-family:var(--mono);font-size:1rem;color:var(--gold);min-width:3.4em;text-align:right}
+.hud-btn{
+  width:40px;height:40px;border-radius:11px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--panel);color:var(--paper);
+  border:2px solid var(--line);
+  box-shadow:0 3px 0 var(--shadow);
+  transition:transform .12s,box-shadow .12s,border-color .12s;
+}
+.hud-btn:hover{transform:translateY(-1px);border-color:var(--gold)}
+.hud-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--shadow)}
+.hud-btn .icn{width:19px;height:19px}
+/* ===== stage & screens ===== */
+#stage{max-width:1080px;margin:0 auto;padding:74px clamp(12px,4vw,36px) 60px}
+.screen{display:none}
+.screen.active{display:block;animation:screenIn .45s ease both}
+@keyframes screenIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ===== panel (paper card) ===== */
+.panel{
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:0 8px 0 rgba(8,5,2,.4);
+  padding:clamp(14px,3vw,26px);
+}
+
+/* ===== intro ===== */
+.intro-hero{text-align:center;padding:clamp(10px,4vw,30px) 0 6px}
+.intro-seal{width:clamp(74px,14vw,104px);filter:drop-shadow(0 6px 0 rgba(8,5,2,.5))}
+.intro-title{
+  font-size:clamp(1.9rem,8.5vw,4rem);
+  letter-spacing:.1em;text-transform:uppercase;margin:.25em 0 .1em;
+  color:var(--paper);
+  text-shadow:0 3px 0 rgba(8,5,2,.6);
+}
+.intro-kicker{font-size:.68rem;letter-spacing:.4em;color:var(--gold);text-transform:uppercase;margin:0 0 .4em}
+.intro-sub{font-style:italic;color:var(--ink-soft);font-size:clamp(.9rem,3vw,1.05rem);margin:0 auto 1.2em;max-width:44em}
+.intro-cols{display:grid;grid-template-columns:1.2fr .9fr;gap:18px;margin-top:18px}
+.intro-narr{font-size:.98rem}
+.intro-narr .drop{
+  float:left;font-size:2.6em;line-height:.85;padding:.04em .12em 0 0;
+  color:var(--gold);font-weight:bold;
+}
+.howto{display:grid;gap:10px;margin-top:14px}
+.howto .row{
+  display:flex;gap:12px;align-items:flex-start;
+  background:rgba(241,229,204,.05);
+  border:1px solid var(--line);border-radius:12px;padding:10px 14px;
+}
+.howto .icn{color:var(--gold);flex:none;margin-top:.15em}
+.howto b{color:var(--gold)}
+.lex-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.lex-grid{
+  margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;
+  font-size:.88rem;
+}
+.lex-grid .lw{color:var(--gold);font-weight:bold;white-space:nowrap}
+.lex-grid .ld{color:var(--paper2)}
+.lex-grid li{margin:0 0 4px}
+.intro-cta{text-align:center;margin-top:22px}
+#introCta{font-size:1.15rem;padding:.8em 1.9em;letter-spacing:.1em}
+#introProgress{color:var(--ink-soft);font-style:italic;margin-top:10px}
+.intro-foot{color:var(--ink-soft);font-size:.75rem;text-align:center;margin-top:20px;letter-spacing:.05em}
+
+/* ===== level map (the tower) ===== */
+.map-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.map-title{font-size:clamp(1.3rem,5vw,1.9rem);letter-spacing:.06em;margin:0}
+.map-note{color:var(--ink-soft);font-style:italic;margin:0;font-size:.9rem}
+.map-elevator{
+  display:flex;align-items:center;gap:8px;color:var(--gold);
+  font-family:var(--mono);font-size:.8rem;letter-spacing:.14em;
+  border:1px dashed rgba(217,164,65,.45);border-radius:12px;padding:6px 12px;
+}
+#mapGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.reel{
+  text-align:left;padding:0;overflow:hidden;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  color:var(--paper);
+  border:2px solid var(--line);border-radius:16px;
+  box-shadow:0 6px 0 var(--shadow);
+  transition:transform .15s ease,box-shadow .15s ease,border-color .15s;
+  display:flex;flex-direction:column;
+}
+.reel:hover{transform:translateY(-3px);box-shadow:0 9px 0 var(--shadow);border-color:rgba(217,164,65,.6)}
+.reel:active{transform:translateY(2px);box-shadow:0 3px 0 var(--shadow)}
+.reel-slide{display:block;line-height:0}
+.reel-slide svg{width:100%;height:auto;border-radius:13px 13px 0 0;display:block}
+.reel-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:5px;flex:1;position:relative}
+.reel-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.reel-num{
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;color:var(--gold);
+  border:1px solid rgba(217,164,65,.5);border-radius:8px;padding:2px 8px;
+}
+.reel-tag{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+.reel-title{font-size:1.12rem;font-weight:bold;letter-spacing:.02em}
+.reel-char{font-style:italic;color:var(--ink-soft);font-size:.85rem}
+.reel-meta{
+  margin-top:auto;padding-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  border-top:1px dashed var(--line);
+}
+.reel-stars{display:flex;gap:2px}
+.reel-stars .icn{width:17px;height:17px;color:rgba(241,229,204,.22)}
+.reel-stars .icn.on{color:var(--gold)}
+.reel-best{font-family:var(--mono);font-size:.8rem;color:var(--paper2)}
+.reel-stamp{
+  position:absolute;top:10px;right:10px;z-index:2;
+  transform:rotate(-8deg);
+  background:var(--wax);color:var(--paper);
+  font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;
+  padding:3px 9px;border-radius:6px;border:1.5px solid rgba(247,236,217,.6);
+  box-shadow:0 2px 0 rgba(8,5,2,.45);
+}
+.final-wrap{text-align:center;margin-top:26px}
+#finalBtn{
+  font-size:1.15rem;padding:.85em 2em;letter-spacing:.1em;
+  background:linear-gradient(180deg,#C2851F,#A64632);color:var(--paper);
+  border-color:#5C2419;
+  animation:finalGlow 2.2s ease-in-out infinite;
+}
+@keyframes finalGlow{
+  0%,100%{box-shadow:0 5px 0 var(--shadow),0 0 0 0 rgba(217,164,65,.0)}
+  50%{box-shadow:0 5px 0 var(--shadow),0 0 24px 2px rgba(217,164,65,.35)}
+}
+#finalCap{color:var(--ink-soft);font-style:italic;margin-top:10px}
+
+/* ===== scene screen ===== */
+.scene-head{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+.scene-avatar{width:76px;height:76px;flex:none;filter:drop-shadow(0 4px 0 rgba(8,5,2,.5))}
+.scene-id{flex:1;min-width:220px}
+.sc-chip{
+  display:inline-block;font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;
+  color:var(--gold);border:1px solid rgba(217,164,65,.5);border-radius:8px;padding:2px 9px;margin-bottom:6px;
+}
+#scTitle{font-size:clamp(1.4rem,5.5vw,2rem);margin:0 0 .15em}
+#scChar{color:var(--ink-soft);font-style:italic;margin:0}
+#scFlavor{
+  margin:8px 0 0;padding:8px 14px;border-left:3px solid var(--gold);
+  color:var(--paper2);font-style:italic;font-size:.92rem;
+  background:rgba(241,229,204,.05);border-radius:0 10px 10px 0;
+}
+#gameArea{margin-top:6px}
+.g-lead{color:var(--paper2);margin:.2em 0 .8em;font-size:.95rem}
+.g-keys{color:var(--ink-soft);font-size:.78rem;margin-top:12px}
+.g-note{color:var(--ink-soft);font-size:.8rem;font-style:italic;margin:10px 0 0}
+.g-root{animation:screenIn .35s ease both}
+
+/* ===== blanks game ===== */
+.blank-progress{font-family:var(--mono);font-size:.8rem;letter-spacing:.14em;color:var(--gold);margin-bottom:10px}
+.quote-list{display:grid;gap:10px}
+.quote-item{
+  background:var(--paper);color:var(--ink);
+  border-radius:12px;padding:12px 16px;
+  border:1px solid rgba(44,32,20,.35);
+  box-shadow:0 4px 0 rgba(8,5,2,.4);
+}
+.quote-text{margin:0;font-size:.98rem;line-height:1.7}
+.quote-src{display:block;color:var(--ink-soft);font-size:.72rem;font-style:italic;margin-top:4px}
+.blank{
+  display:inline-block;min-width:118px;padding:.05em .5em;margin:0 .1em;
+  background:rgba(217,164,65,.16);
+  border:none;border-bottom:2px dashed var(--gold-soft);
+  border-radius:6px;color:var(--ink);
+  font-family:var(--mono);font-size:.92em;text-align:center;vertical-align:baseline;
+  transition:background .15s,border-color .15s;
+}
+.blank:hover{background:rgba(217,164,65,.3)}
+.blank.sel{background:rgba(217,164,65,.45);border-bottom-style:solid}
+.blank.filled{
+  background:rgba(95,124,82,.28);border-bottom:2px solid var(--sage);
+  min-width:0;cursor:default;font-weight:bold;
+}
+.bank{
+  margin-top:16px;display:flex;flex-wrap:wrap;gap:9px;
+  background:rgba(241,229,204,.05);border:1px dashed var(--line);
+  border-radius:14px;padding:14px;
+}
+.chip{
+  padding:.42em 1.05em;border-radius:999px;
+  background:var(--paper);color:var(--ink);
+  border:2px solid var(--ink);
+  font-weight:bold;font-size:.92rem;
+  box-shadow:0 3px 0 var(--shadow);
+  transition:transform .12s,box-shadow .12s,opacity .15s;
+}
+.chip:hover{transform:translateY(-2px)}
+.chip:active{transform:translateY(2px);box-shadow:0 1px 0 var(--shadow)}
+.chip.used{opacity:.32;pointer-events:none;text-decoration:line-through}
+
+/* ===== timer bar (tf & bonus) ===== */
+.timer{
+  position:relative;height:22px;border-radius:11px;overflow:hidden;
+  background:rgba(241,229,204,.1);border:1px solid var(--line);
+  margin:8px 0 14px;
+}
+.timer-bar{
+  height:100%;width:100%;
+  background:linear-gradient(90deg,var(--gold-soft),var(--gold));
+  transition:width 1s linear;
+}
+.timer.warn .timer-bar{background:linear-gradient(90deg,#7E1F14,var(--err));animation:barFlash .9s steps(2,start) infinite}
+@keyframes barFlash{0%{opacity:1}50%{opacity:.55}100%{opacity:1}}
+.timer-label{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;
+  color:var(--paper);text-shadow:0 1px 2px rgba(0,0,0,.7);
+}
+.timer.warn .timer-label{color:#FFD9CF}
+
+/* ===== true/false (real / delusion) & mc ===== */
+.tf-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tf-counter{font-family:var(--mono);font-size:.8rem;letter-spacing:.16em;color:var(--gold)}
+.tf-streak{
+  font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;color:var(--paper2);
+  border:1px solid var(--line);border-radius:9px;padding:3px 10px;
+}
+.tf-streak.hot{color:var(--gold);border-color:rgba(217,164,65,.6)}
+.tf-card{
+  background:var(--paper);color:var(--ink);
+  border-radius:16px;padding:clamp(14px,3vw,24px);
+  border:2px solid rgba(44,32,20,.4);
+  box-shadow:0 6px 0 rgba(8,5,2,.4);
+  margin-top:12px;
+}
+.tf-q{font-family:var(--mono);font-size:.7rem;letter-spacing:.26em;color:var(--wax);margin:0 0 .5em}
+.tf-s{font-size:clamp(1rem,3.4vw,1.25rem);line-height:1.5;margin:.2em 0 1em}
+.tf-btns{display:flex;gap:12px;flex-wrap:wrap}
+.tf-btn{flex:1;min-width:130px;font-size:1.05rem;letter-spacing:.14em;padding:.7em 1em}
+.tf-btn.real{background:var(--sage);color:var(--paper);border-color:#31492B}
+.tf-btn.delu{background:var(--wax);color:var(--paper);border-color:#5C2419}
+.tf-btn.sel{outline:3px solid var(--ink);outline-offset:2px}
+.tf-btn.good{background:#3F6A38}
+.tf-btn.bad{background:#7E1F14}
+.tf-btn:disabled{cursor:default;opacity:1}
+.mc-opts{display:grid;gap:10px;margin-top:4px}
+.mc-opt{justify-content:flex-start;text-align:left;padding:.7em 1em;font-weight:normal}
+.mc-opt .mc-key{
+  font-family:var(--mono);font-size:.75rem;font-weight:bold;
+  border:1.5px solid currentColor;border-radius:6px;padding:1px 7px;margin-right:10px;flex:none;
+}
+.explain{
+  margin-top:14px;padding:12px 16px;border-radius:12px;
+  background:rgba(44,32,20,.08);
+  border-left:4px solid var(--gold);
+  font-size:.95rem;
+  animation:screenIn .3s ease both;
+}
+.explain .verdict{font-weight:bold;letter-spacing:.06em;margin:0 0 .3em}
+.explain .why{margin:.2em 0 0;color:#4A3826}
+.explain .pts{font-family:var(--mono);font-size:.8rem;color:var(--ink-soft);margin:.5em 0 0}
+.tf-next{margin-top:14px;width:100%;font-size:1rem;letter-spacing:.12em}
+.flash-good{animation:goodFlash .5s ease}
+.flash-bad{animation:badFlash .5s ease}
+@keyframes goodFlash{0%{box-shadow:0 0 0 3px var(--sage)}100%{box-shadow:0 6px 0 rgba(8,5,2,.4)}}
+@keyframes badFlash{0%{box-shadow:0 0 0 3px var(--err)}100%{box-shadow:0 6px 0 rgba(8,5,2,.4)}}
+
+/* ===== match the meaning ===== */
+.match-example{
+  font-family:var(--mono);font-size:.8rem;letter-spacing:.04em;
+  color:var(--gold);background:rgba(217,164,65,.1);
+  border:1px dashed rgba(217,164,65,.5);border-radius:10px;
+  padding:8px 14px;margin-bottom:12px;overflow-x:auto;white-space:nowrap;
+}
+.match-top{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.match-col{display:grid;gap:8px;align-content:start}
+.match-col .col-lbl{
+  font-family:var(--mono);font-size:.66rem;letter-spacing:.26em;color:var(--ink-soft);
+  padding-left:4px;
+}
+.mt-item{
+  text-align:left;padding:.6em .9em;border-radius:10px;
+  background:var(--paper);color:var(--ink);
+  border:2px solid rgba(44,32,20,.45);
+  font-size:.92rem;line-height:1.35;
+  box-shadow:0 3px 0 rgba(8,5,2,.4);
+  transition:transform .12s,box-shadow .12s,background .15s;
+}
+.mt-item em{color:var(--ink-soft);font-size:.8rem}
+.mt-item:hover{transform:translateY(-2px)}
+.mt-item.sel{outline:3px solid var(--gold);outline-offset:1px}
+.mt-item.locked{
+  background:#DCE4D2;border-color:var(--sage);color:#2F3D28;
+  pointer-events:none;font-weight:bold;
+}
+.mt-item.locked em{color:#54644A}
+
+/* ===== shake & pop animations ===== */
+.shake{animation:shakeX .45s ease}
+@keyframes shakeX{
+  0%,100%{transform:translateX(0)}
+  18%{transform:translateX(-7px)}38%{transform:translateX(6px)}
+  58%{transform:translateX(-4px)}78%{transform:translateX(3px)}
+}
+.pop{
+  position:fixed;z-index:9996;pointer-events:none;
+  font-family:var(--mono);font-weight:bold;font-size:1rem;
+  color:var(--gold);text-shadow:0 2px 3px rgba(0,0,0,.6);
+  animation:popUp .95s ease-out forwards;transform:translate(-50%,-120%);
+}
+.pop.neg{color:#FF9C8B}
+@keyframes popUp{from{opacity:0;margin-top:6px}20%{opacity:1}to{opacity:0;margin-top:-52px}}
+
+/* ===== modal ===== */
+#modalRoot{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;padding:18px}
+#modalRoot .backdrop{
+  position:absolute;inset:0;background:rgba(10,7,4,.72);backdrop-filter:blur(3px);
+  animation:fadeIn .25s ease both;
+}
+@keyframes fadeIn{from{opacity:0}}
+.modal{
+  position:relative;width:min(560px,100%);max-height:88vh;overflow:auto;
+  background:var(--paper);color:var(--ink);
+  border:2px solid rgba(44,32,20,.5);border-radius:18px;
+  box-shadow:0 12px 0 rgba(8,5,2,.5);
+  padding:clamp(16px,4vw,28px);
+  animation:modalIn .3s cubic-bezier(.2,1.4,.4,1) both;
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(22px) scale(.96)}}
+.modal h3{margin:.1em 0 .2em;font-size:1.35rem;letter-spacing:.04em}
+.m-kicker{font-family:var(--mono);font-size:.66rem;letter-spacing:.26em;color:var(--wax);margin:0 0 .4em}
+.m-head{display:flex;gap:14px;align-items:center;margin-bottom:10px}
+.m-head .scene-avatar{width:60px;height:60px}
+.m-char{font-style:italic;color:var(--ink-soft);margin:0;font-size:.9rem}
+.m-obj{margin:.6em 0}
+.m-tip{
+  background:rgba(217,164,65,.16);border:1px dashed rgba(185,138,53,.7);
+  border-radius:12px;padding:10px 14px;font-size:.9rem;margin:.8em 0;
+}
+.m-tip b{color:var(--gold-soft)}
+.m-tip .icn{color:var(--gold-soft);margin-right:.3em}
+.m-flavor{font-style:italic;color:var(--ink-soft);border-left:3px solid var(--gold);padding-left:12px;margin:.9em 0;font-size:.92rem}
+.m-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.m-primary{flex:1;min-width:180px}
+/* results modal */
+.big-stars{display:flex;gap:10px;justify-content:center;margin:10px 0 14px}
+.big-stars .icn{width:44px;height:44px;color:rgba(44,32,20,.18);transition:transform .3s,color .3s}
+.big-stars .icn.on{color:var(--gold-soft)}
+.big-stars .icn.on svg{filter:drop-shadow(0 2px 0 rgba(120,86,20,.4))}
+.big-stars .icn.twist{animation:starTwist .5s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes starTwist{from{transform:rotate(-140deg) scale(.2);opacity:0}to{transform:none;opacity:1}}
+.res-line{display:flex;justify-content:space-between;gap:10px;padding:.45em .2em;border-bottom:1px dashed rgba(44,32,20,.25);font-size:.95rem}
+.res-line b{font-family:var(--mono)}
+.badge-new{
+  display:inline-block;background:var(--sage);color:var(--paper);
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;
+  padding:2px 9px;border-radius:7px;margin-left:8px;vertical-align:middle;
+}
+
+/* ===== toasts ===== */
+#toasts{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+  z-index:9800;display:flex;flex-direction:column;gap:8px;align-items:center;
+  width:max-content;max-width:92vw;pointer-events:none;
+}
+.toast{
+  background:rgba(23,16,9,.95);color:var(--paper);
+  border:1px solid var(--line);border-left:4px solid var(--gold);
+  border-radius:12px;padding:.55em 1.1em;font-size:.9rem;
+  box-shadow:0 4px 0 rgba(8,5,2,.5);
+  animation:toastIn .28s ease both;max-width:92vw;
+}
+.toast.err{border-left-color:var(--err)}
+.toast.ok{border-left-color:var(--sage)}
+.toast.out{animation:toastOut .3s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(8px)}}
+
+/* ===== finale ===== */
+.finale-hero{text-align:center;padding:10px 0 4px}
+.finale-kicker{font-family:var(--mono);font-size:.7rem;letter-spacing:.4em;color:var(--gold);margin:0 0 .6em}
+.finale-title{font-size:clamp(1.7rem,7vw,3rem);letter-spacing:.08em;margin:0 0 .2em}
+.fin-quote{font-style:italic;color:var(--ink-soft);max-width:38em;margin:.4em auto .2em}
+.fin-quote cite{display:block;font-style:normal;font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;margin-top:.4em;color:var(--gold)}
+.fin-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:22px 0}
+.fin-stat{
+  background:rgba(241,229,204,.05);border:1px solid var(--line);border-radius:14px;
+  padding:14px;text-align:center;
+}
+.fin-stat .v{font-family:var(--mono);font-size:clamp(1.4rem,5vw,2rem);color:var(--gold)}
+.fin-stat .k{font-size:.66rem;letter-spacing:.24em;color:var(--ink-soft);text-transform:uppercase;margin-top:2px}
+.rank-box{
+  display:flex;gap:16px;align-items:center;flex-wrap:wrap;
+  background:linear-gradient(180deg,rgba(166,70,50,.2),rgba(166,70,50,.08));
+  border:1.5px solid rgba(166,70,50,.65);border-radius:16px;
+  padding:16px 20px;margin:8px 0 20px;
+}
+.rank-seal{width:70px;height:70px;flex:none;filter:drop-shadow(0 4px 0 rgba(8,5,2,.5))}
+.rank-name{font-size:clamp(1.15rem,4.5vw,1.6rem);margin:0;color:var(--paper)}
+.rank-line{color:var(--paper2);font-style:italic;margin:.2em 0 0}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+table.results{width:100%;border-collapse:collapse;font-size:.92rem;min-width:460px}
+table.results th,table.results td{padding:.6em .8em;text-align:left;border-bottom:1px solid var(--line)}
+table.results th{
+  font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;color:var(--ink-soft);
+  text-transform:uppercase;background:rgba(241,229,204,.05);
+}
+table.results td.num{font-family:var(--mono)}
+table.results tr.total td{font-weight:bold;color:var(--gold);border-bottom:none}
+table.results .icn{width:15px;height:15px;color:rgba(241,229,204,.22)}
+table.results .icn.on{color:var(--gold)}
+.fin-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:20px}
+
+/* ===== scene footer ===== */
+.scene-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+.scene-foot .hint{color:var(--ink-soft);font-style:italic;font-size:.82rem}
+
+/* ===== responsive ===== */
+@media (max-width:820px){
+  .intro-cols{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  #hud{gap:8px}
+  #hud .b-title{display:none}
+  #hudDots{margin-left:auto}
+  #hud .spacer{display:none}
+  .lex-grid{grid-template-columns:1fr}
+  .tf-btn{min-width:112px;font-size:.98rem}
+  .match-grid{gap:8px}
+  .mt-item{font-size:.84rem}
+  .scene-head{gap:12px}
+  .scene-avatar{width:60px;height:60px}
+  .rank-box{padding:14px}
+  #toasts{bottom:12px}
+}
+@media (max-width:400px){
+  #hudScoreWrap .lbl{display:none}
+  .tf-btns{flex-direction:column}
+}
+
+/* ===== reduced motion ===== */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  #preloader .pre-reel{animation:none}
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:2rem;text-align:center">This game is a single-file JavaScript experience — please enable JavaScript to open the Yumimoto elevator.</p></noscript>
+
+<!-- ===== atmosphere layers ===== -->
+<div id="grain" aria-hidden="true"></div>
+<div id="glow" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<!-- ===== preloader shell ===== -->
+<div id="preloader" role="dialog" aria-label="Loading — press play">
+  <svg class="pre-reel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="7" r="1.7"/><circle cx="16.6" cy="14.5" r="1.7"/><circle cx="7.4" cy="14.5" r="1.7"/></svg>
+  <h1 class="pre-title">Fear &amp; Trembling</h1>
+  <p class="pre-sub">The Yumimoto Vocab Arcade — five floors of vocabulary between the dream and the sub-basement.</p>
+  <div class="pre-track" aria-hidden="true"><i id="preBar"></i></div>
+  <button id="playBtn" class="btn btn-primary" type="button"><span class="icn" data-icon="play" aria-hidden="true"></span>PLAY</button>
+  <p class="pre-foot mono">REEL 1 OF 1 · 1990s TOKYO · SOUND ON RECOMMENDED</p>
+</div>
+
+<!-- ===== HUD console ===== -->
+<header id="hud">
+  <button class="brand" id="brandBtn" type="button" aria-label="Fear and Trembling arcade — open the intro screen">
+    <svg class="seal" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#A64632"/><circle cx="20" cy="20" r="14.5" fill="none" stroke="rgba(247,236,217,.55)" stroke-width="1.4" stroke-dasharray="2 3"/><text x="20" y="25.5" text-anchor="middle" font-size="12" font-family="Georgia,serif" font-style="italic" fill="#F7ECD9">F&amp;T</text></svg>
+    <span class="b-title">Fear &amp; Trembling<span class="b-sub">YUMIMOTO VOCAB ARCADE</span></span>
+  </button>
+  <nav id="hudDots" aria-label="Reel progress"></nav>
+  <span class="spacer"></span>
+  <div id="hudScoreWrap" title="Total score (best of every completed reel)"><span class="lbl">SCORE</span><span id="hudScore" class="mono">0</span></div>
+  <button class="hud-btn" id="soundBtn" type="button" aria-label="Toggle sound" aria-pressed="true"><span class="icn" data-icon="sound-on"></span></button>
+  <button class="hud-btn" id="mapBtn" type="button" aria-label="Back to the tower map"><span class="icn" data-icon="map"></span></button>
+</header>
+<main id="stage">
+
+  <!-- ===== screen 1 · intro ===== -->
+  <section id="screen-intro" class="screen active" aria-label="Introduction">
+    <div class="intro-hero">
+      <svg class="intro-seal" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="37" fill="#A64632"/><circle cx="40" cy="40" r="30" fill="none" stroke="rgba(247,236,217,.5)" stroke-width="2" stroke-dasharray="3 4"/><text x="40" y="51" text-anchor="middle" font-size="24" font-family="Georgia,serif" font-style="italic" fill="#F7ECD9">F&amp;T</text></svg>
+      <p class="intro-kicker">The Yumimoto Vocab Arcade</p>
+      <h2 class="intro-title">Fear &amp; Trembling</h2>
+      <p class="intro-sub">after Alain Corneau&rsquo;s film (2003) &mdash; hierarchy, alienation, and the absurdity of corporate humiliation, played as a five-reel vocabulary descent</p>
+    </div>
+
+    <div class="intro-cols">
+      <div class="panel intro-narr">
+        <span class="drop">T</span>
+        <p>okyo. Am&eacute;lie &mdash; born in Kobe in 1967, raised in the West &mdash; returns at twenty-two and signs a one-year fixed contract as interpreter at the Yumimoto Corporation. She carries a Japanophile&rsquo;s dream of a poetic homeland. The building answers with concrete: <em>&ldquo;The film opens on a fracture between memory and reality.&rdquo;</em></p>
+        <p>Yumimoto operates on an almost military hierarchical chain of command, and every manager survives by projecting pressure downward. Five floors of vocabulary stand between Am&eacute;lie&rsquo;s dream and the sub-basement. The elevator is yours: take the floors in <strong>any order</strong>, leave and return as you please &mdash; your best work on each reel stays saved. Finish all five, and the <strong>Inner Escape</strong> opens: one window, one city, one flight over the rooftops.</p>
+        <div class="howto" role="list">
+          <div class="row" role="listitem"><span class="icn" data-icon="map" aria-hidden="true"></span><span><b>Free order.</b> Every reel is unlocked from the start. A completed reel shows its stars and best score &mdash; replay it whenever you like.</span></div>
+          <div class="row" role="listitem"><span class="icn" data-icon="star" aria-hidden="true"></span><span><b>Stars.</b> No slips: 3 &middot; one or two slips: 2 &middot; more: 1. Wrong words, rushed claims and bad pairs all cost points.</span></div>
+          <div class="row" role="listitem"><span class="icn" data-icon="sound-on" aria-hidden="true"></span><span><b>Sound.</b> Every tone is synthesized in your browser &mdash; no files, no network. Mute anytime from the console.</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="lex-head">
+          <h3 style="margin:0">The Lexicon</h3>
+          <span class="mono" style="font-size:.7rem;color:var(--ink-soft);letter-spacing:.2em">20 WORDS OF THE DESCENT</span>
+        </div>
+        <ul class="lex-grid" id="lexList" style="list-style:none;padding:0;margin:12px 0 0">
+          <!-- filled by renderLexicon() -->
+        </ul>
+      </div>
+    </div>
+
+    <div class="intro-cta">
+      <button id="introCta" class="btn btn-primary" type="button"><span class="icn" data-icon="reel" aria-hidden="true"></span>OPEN THE ELEVATOR</button>
+      <p id="introProgress"></p>
+    </div>
+    <p class="intro-foot">progress is saved on this device &middot; all images are drawn in code &middot; all sounds are synthesized live</p>
+  </section>
+
+  <!-- ===== screen 2 · level map (the tower) ===== -->
+  <section id="screen-map" class="screen" aria-label="Level map — the tower of Yumimoto">
+    <div class="map-head">
+      <div>
+        <h2 class="map-title">The Tower of Yumimoto</h2>
+        <p class="map-note">Pick a floor. Free order &mdash; every reel is open, and the elevator never asks why.</p>
+      </div>
+      <div class="map-elevator" aria-hidden="true"><span class="icn" data-icon="reel"></span><span id="elevCount">0 / 5 REELS CLEARED</span></div>
+    </div>
+    <div id="mapGrid"><!-- reel cards rendered by renderMap() --></div>
+    <div class="final-wrap">
+      <button id="finalBtn" class="btn" type="button" hidden><span class="icn" data-icon="trophy" aria-hidden="true"></span>THE INNER ESCAPE</button>
+      <p id="finalCap"></p>
+    </div>
+  </section>
+
+  <!-- ===== screen 3 · scene (a reel) ===== -->
+  <section id="screen-scene" class="screen" aria-label="Reel scene">
+    <div class="scene-head">
+      <div class="scene-avatar" id="scAvatar" aria-hidden="true"></div>
+      <div class="scene-id">
+        <span class="sc-chip mono" id="scChip">REEL 1</span>
+        <h2 id="scTitle">The Contract</h2>
+        <p id="scChar">with Mr. Haneda</p>
+        <p id="scFlavor"></p>
+      </div>
+    </div>
+    <div id="gameArea" aria-live="polite"><!-- mini-game rendered by the runner --></div>
+    <div class="scene-foot">
+      <button id="btnBackMap" class="btn btn-ghost" type="button"><span class="icn" data-icon="arrow-left" aria-hidden="true"></span>BACK TO THE TOWER</button>
+      <span class="hint">leaving never erases a cleared reel &mdash; your best stays on file</span>
+    </div>
+  </section>
+
+  <!-- ===== screen 4 · finale (the inner escape) ===== -->
+  <section id="screen-finale" class="screen" aria-label="Finale — the inner escape">
+    <div class="finale-hero">
+      <p class="finale-kicker">ALL FIVE REELS CLEARED</p>
+      <h2 class="finale-title">The Inner Escape</h2>
+      <p class="fin-quote">&ldquo;Continue to work out your salvation with fear and trembling.&rdquo;<cite>PHILIPPIANS 2:12 &mdash; THE TITLE&rsquo;S ORIGIN</cite></p>
+    </div>
+    <div class="fin-stats">
+      <div class="fin-stat"><div class="v" id="finScore">0</div><div class="k">Total score</div></div>
+      <div class="fin-stat"><div class="v" id="finStars">0 / 15</div><div class="k">Total stars</div></div>
+      <div class="fin-stat"><div class="v" id="finReels">0 / 5</div><div class="k">Reels cleared</div></div>
+    </div>
+    <div class="rank-box">
+      <svg class="rank-seal" id="rankSeal" viewBox="0 0 80 80" aria-hidden="true"></svg>
+      <div>
+        <h3 style="margin:.05em 0">FINAL RANK</h3>
+        <p class="rank-name" id="finRank">&mdash;</p>
+        <p class="rank-line" id="finRankLine"></p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="results" aria-label="Results by reel">
+        <thead><tr><th>Reel</th><th>Floor</th><th>Best score</th><th>Stars</th><th>Slips</th></tr></thead>
+        <tbody id="finTableBody"></tbody>
+      </table>
+    </div>
+    <div class="fin-actions">
+      <button id="rewindBtn" class="btn btn-danger" type="button"><span class="icn" data-icon="rewind" aria-hidden="true"></span>REWIND THE TAPE</button>
+      <button id="finBack" class="btn btn-ghost" type="button"><span class="icn" data-icon="map" aria-hidden="true"></span>BACK TO THE TOWER</button>
+    </div>
+  </section>
+</main>
+
+<!-- ===== modal root ===== -->
+<div id="modalRoot" class="hidden">
+  <div class="backdrop" id="modalBackdrop"></div>
+  <div class="modal" id="modalBox" role="dialog" aria-modal="true" aria-labelledby="modalBoxTitle"></div>
+</div>
+
+<!-- ===== toasts ===== -->
+<div id="toasts" aria-live="polite"></div>
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   0. ICONS — tiny inline SVG set (no CDN, works offline)
+   ============================================================ */
+var ICONS={
+  "play":"<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M7.5 4.8v14.4L19.6 12z' fill='currentColor'/></svg>",
+  "sound-on":"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 9.6v4.8h3.4L12 18.4V5.6L7.4 9.6H4z' fill='currentColor' stroke='none'/><path d='M15 9.2c1 .8 1.5 1.7 1.5 2.8s-.5 2-1.5 2.8'/><path d='M17.6 6.6c1.7 1.3 2.6 3.2 2.6 5.4s-.9 4.1-2.6 5.4'/></svg>",
+  "sound-off":"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 9.6v4.8h3.4L12 18.4V5.6L7.4 9.6H4z' fill='currentColor' stroke='none'/><path d='M15.5 9.5l5 5'/><path d='M20.5 9.5l-5 5'/></svg>",
+  "map":"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 4L3.6 6v14L9 18l6 2 5.4-2V4L15 6 9 4z'/><path d='M9 4v14M15 6v14'/></svg>",
+  "star":"<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M12 2.9l2.7 5.7 6.2.7-4.6 4.3 1.2 6.1L12 16.7l-5.5 3 1.2-6.1L3.1 9.3l6.2-.7z' fill='currentColor'/></svg>",
+  "arrow-left":"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M19 12H5'/><path d='M11 6l-6 6 6 6'/></svg>",
+  "rewind":"<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M3 5.4v13.2' stroke='currentColor' stroke-width='2.4' stroke-linecap='round'/><path d='M11.6 12L20 6.2v11.6L11.6 12z' fill='currentColor'/><path d='M3.8 12l8-5.8v11.6l-8-5.8z' fill='currentColor'/></svg>",
+  "check":"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4.5 12.6l5 5L19.5 6.6'/></svg>",
+  "info":"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' aria-hidden='true'><circle cx='12' cy='12' r='9'/><path d='M12 11v5'/><path d='M12 7.6v.2'/></svg>",
+  "reel":"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'><circle cx='12' cy='12' r='9'/><circle cx='12' cy='12' r='1.8'/><circle cx='12' cy='7.2' r='1.7'/><circle cx='16.4' cy='14.4' r='1.7'/><circle cx='7.6' cy='14.4' r='1.7'/><path d='M12 21v-3.2'/></svg>",
+  "trophy":"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M7 4h10v5a5 5 0 0 1-10 0V4z'/><path d='M7 6H4.4a2.6 2.6 0 0 0 2.8 4M17 6h2.6a2.6 2.6 0 0 1-2.8 4'/><path d='M12 14v3'/><path d='M8.5 20h7'/><path d='M9.5 17h5'/></svg>",
+  "x":"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' aria-hidden='true'><path d='M6 6l12 12'/><path d='M18 6L6 18'/></svg>"
+};
+
+/* ============================================================
+   1. GAME DATA — built strictly from the uploaded slide deck
+      (Alain Corneau, "Fear and Trembling / Stupeur et Tremblements", 2003)
+   ============================================================ */
+var LS_KEY="ftArcadeV1";
+
+/* The five reels. Fields per spec: id, num, title, char, color, slide, tag, obj, tip, flavor
+   (+ floor + initials + game for rendering and routing). */
+var SCENES=[
+  { id:"contract", num:1, game:"blanks", floor:"44", initials:"MH",
+    title:"The Contract", char:"Mr. Haneda", color:"#3E5E8C",
+    slide:"FLOOR 44 · PRESIDENT", tag:"Fill the Blanks",
+    obj:"Amélie signs on the 44th floor. The President speaks in perfect sentences — but some words have slipped out of the dossier. Restore every gap with the word that belongs there.",
+    tip:"Click a blank, then click a word from the bank. Wrong words bounce back with a shake — and each return costs 20 points.",
+    flavor:"“The film opens on a fracture between memory and reality.”" },
+  { id:"hierarchy", num:2, game:"tf", floor:"37", initials:"MO",
+    title:"The Hierarchy", char:"Mr. Omochi", color:"#A64632",
+    slide:"FLOOR 37 · VICE PRESIDENT", tag:"Real / Delusion",
+    obj:"Mr. Omochi shouts nine claims about Yumimoto. Judge each one: has the deck really said it — or is it a delusion? He never advances without you.",
+    tip:"Pick REAL or DELUSION. Arrow keys choose, Enter confirms. After each answer the explanation appears — the next claim comes ONLY when you press NEXT.",
+    flavor:"“Terrifying, loud; the enforcer of the corporate will.”" },
+  { id:"transgression", num:3, game:"mc", floor:"21", initials:"MS",
+    title:"The First Transgression", char:"Mr. Saito", color:"#8C5A2B",
+    slide:"FLOOR 21 · SECTION OFFICE", tag:"Three Doors",
+    obj:"Five questions, three doors each — only one opens. One attempt per door, and the Manager is watching. Competence outside your designated rank is a punishable offense.",
+    tip:"Choose one of three options. Keys 1–3 or Arrow keys + Enter also work. After the answer, Saito reacts — then continue.",
+    flavor:"“Anxious, rigid, strictly obedient to his superiors.”" },
+  { id:"descent", num:4, game:"match", floor:"13", initials:"FM",
+    title:"The Descent", char:"Miss Fubuki Mori", color:"#5F7C52",
+    slide:"FLOOR 13 · ACCOUNTING", tag:"Match the Meaning",
+    obj:"Accounting wants its vocabulary back. Pair six hard words from the deck with their meanings — the Direct Supervisor is watching every slip.",
+    tip:"Click a word, then click its meaning. Correct pairs lock green and cannot be reused; wrong picks shake and clear the selection — and cost points.",
+    flavor:"“Glacial, beautiful, sadistic; survives by kicking down.”" },
+  { id:"basement", num:5, game:"bonus", floor:"B2", initials:"AM",
+    title:"The Basement", char:"Amélie", color:"#D9A441",
+    slide:"B2 · BATHROOM DUTY", tag:"Bonus Reel",
+    obj:"The last reel: twelve quick questions from every floor above, against one master clock. Endure — and find the perverse peace at the bottom.",
+    tip:"750 seconds on the master clock. Answer fast for speed points; a streak builds a ×2…×4 multiplier. When the bar flashes red, the reel is almost out.",
+    flavor:"“She endures with a smile, finding a perverse peace in the depths of the labyrinth.”" }
+];
+
+/* The 20 target words of the lexicon — all drawn from the deck's own language. */
+var LEXICON=[
+  {w:"hierarchy", d:"a system of persons or things ranked one above another"},
+  {w:"alienation", d:"the state of being made a stranger; cut off from belonging"},
+  {w:"humiliation", d:"the painful loss of dignity in the eyes of others"},
+  {w:"obedience", d:"compliance with the commands of a superior"},
+  {w:"paramount", d:"of the highest importance; supreme"},
+  {w:"eclipsed", d:"overshadowed; thrown into obscurity"},
+  {w:"infraction", d:"a breaking of a rule; an offense"},
+  {w:"anarchy", d:"the absence of order or authority"},
+  {w:"mistranslation", d:"a wrong rendering from one language or culture to another"},
+  {w:"diligence", d:"careful and persistent effort"},
+  {w:"irrepressible", d:"impossible to restrain or crush"},
+  {w:"glacial", d:"icy; extremely cold and motionless in manner"},
+  {w:"naive", d:"artlessly simple; lacking experience of the world"},
+  {w:"demotion", d:"a reduction in rank or position"},
+  {w:"abasement", d:"the lowering of oneself in rank, dignity, or worth"},
+  {w:"complicit", d:"sharing responsibility for a wrong; helping it happen"},
+  {w:"limpid", d:"perfectly clear and transparent"},
+  {w:"verticality", d:"an emphasis on height and the up-and-down axis"},
+  {w:"abyss", d:"a deep, immeasurable space; a bottomless void"},
+  {w:"counterpoint", d:"an element set in deliberate contrast to another"}
+];
+
+/* Reel 1 — fill in the blanks (verbatim deck sentences, one word removed). */
+var BLANKS=[
+  { pre:"Amélie's Japanophile dream of a poetic homeland is immediately ", a:"eclipsed",
+    post:" by the demanding, cooperative, and intense Japanese work culture.", src:"slide 2 · The Contract" },
+  { pre:"…a system where the waste of human resources and absolute ", a:"obedience",
+    post:" are paramount.", src:"slide 2 · The Contract" },
+  { pre:"Competence outside one's designated rank is not an asset; it is a punishable ", a:"offense",
+    post:".", src:"slide 5 · The First Transgression" },
+  { pre:"Amélie's attempt to win through merit and hard work is the ultimate cultural ", a:"mistranslation",
+    post:".", src:"slide 6 · Initiative as Anarchy" },
+  { pre:"The corporate machine demands passive ", a:"complicity",
+    post:".", src:"slide 6 · Initiative as Anarchy" },
+  { pre:"The music provides a gentle, tragicomic rhythm to a ", a:"descent",
+    post:" into madness.", src:"slide 10 · The Soundtrack of Unraveling" }
+];
+/* Word bank = all six answers plus five decoys from the lexicon. */
+var BLANK_BANK=["eclipsed","obedience","offense","mistranslation","complicity","descent","hierarchy","abasement","limpid","demotion","glacial"];
+
+/* Reel 2 — REAL / DELUSION. The timer is 600s (ten minutes) per card. */
+var TF_ITEMS=[
+  { s:"Amélie signs a one-year fixed contract as interpreter at the Yumimoto Corporation in Tokyo.", real:true,
+    why:"Slide two, “The Contract”: role — interpreter, Yumimoto Corporation (Tokyo); term — 1-year fixed contract; employee — Amélie, born in Kobe in 1967, returning at age 22." },
+  { s:"Mr. Omochi, the Vice President, is described as eerily polite, with absolute, unquestioned power.", real:false,
+    why:"That is Mr. Haneda, the President. The deck's Omochi is “terrifying, loud; the enforcer of the corporate will.”" },
+  { s:"Every manager at Yumimoto is trapped in their own corporate hell, surviving only by projecting pressure downward.", real:true,
+    why:"The hierarchy slide: Yumimoto runs an almost military chain of command — and each level survives by pressing the level below." },
+  { s:"The “Extreme Verticality” of the cinematography celebrates the individual's triumph over the institution.", real:false,
+    why:"The opposite: the 44th-floor architecture visually reinforces the insignificance of the individual against the institution, and the negative space is the void between bosses and workers." },
+  { s:"Western female employees are hired to function as mute pieces of eye candy.", real:true,
+    why:"“The First Transgression” slide lists this as the cultural expectation — which Amélie's tactlessly perfect Japanese shattered. Her verdict line: “My competence is an insult.”" },
+  { s:"For her overseas dairy report, Amélie is formally praised for initiative.", real:false,
+    why:"She is accused of stealing work, breaking the absolute chain of command, and dragging colleagues into anarchy — initiative reads as anarchy." },
+  { s:"Miss Fubuki Mori survives by taking sadistic pleasure in belittling the foreigner who flouts the rules she herself suffers under.", real:true,
+    why:"“The Mirror of Expectations”: Fubuki is the tragic embodiment of the system's demands on Japanese women; Amélie's irrepressible inner freedom threatens her hard-won perfection." },
+  { s:"The final step of the demotion is Calendar Adjuster — the absurd repetitive task designed to break the mind.", real:false,
+    why:"Calendar Adjuster is Step 3. One step lower waits: Bathroom Attendant — total abasement, stripping away all linguistic and intellectual utility." },
+  { s:"Amélie refuses to break her contract early, because quitting would mean losing face — a massive cultural defeat.", real:true,
+    why:"“The Final Assessment”: the ultimate victory in the Yumimoto system is not succeeding, but enduring. She accepts the bathroom duties with a polite smile." }
+];
+
+/* Reel 3 — multiple choice, one attempt, Saito reacts. */
+var MC_ITEMS=[
+  { q:"What exactly was Amélie's “first transgression” at Yumimoto?",
+    opts:["Speaking tactlessly perfect, fluent Japanese during an inter-company deal meeting","Photocopying the President's private calendar","Refusing the tea ceremony on Floor 44"], ans:0,
+    ok:"“My competence is an insult.” Precisely.",
+    bad:"Wrong door. The infraction was her fluency — and the verdict was demotion.",
+    why:"The Infraction line: speaking tactlessly perfect, fluent Japanese during an inter-company deal meeting. In a system built on rigid face-saving, unexpected skill disrupts the established order." },
+  { q:"Which job is the LAST step of the mechanics of demotion?",
+    opts:["Calendar Adjuster","Bathroom Attendant","Accounting Assistant"], ans:1,
+    ok:"Correct. Total abasement, below the last floor.",
+    bad:"One step lower than that. Read the explanation.",
+    why:"Step 4 is Bathroom Attendant — total abasement, stripping away all linguistic and intellectual utility. Translator → Accounting Assistant → Calendar Adjuster → Bathroom Attendant." },
+  { q:"Whose methodology is “absolute adherence to unspoken rules” — flawless self-control, glacial stillness?",
+    opts:["Amélie","Mr. Tenshi","Miss Fubuki Mori"], ans:2,
+    ok:"Glacial stillness. Correct.",
+    bad:"The mirror cracks. Read why.",
+    why:"Fubuki: flawless self-control, perfect beauty, glacial stillness. Amélie is her opposite — gangly limbs, irrepressible smiles, naive optimism." },
+  { q:"Which music serves as the film's searing, ironic counterpoint?",
+    opts:["Bach's Goldberg Variations on harpsichord, performed by Pierre Hantaï","A thunderous taiko drum suite","Tokyo synth-pop on cassette"], ans:0,
+    ok:"Crystalline order against collapse. Correct.",
+    bad:"The variations disagree. Read why.",
+    why:"The soundtrack slide: the precise, crystalline, mathematical order of Bach's variations against the total collapse of Amélie's professional dignity — a gentle, tragicomic rhythm." },
+  { q:"Why does Amélie serve out her contract to the end?",
+    opts:["She hopes to be promoted to Vice President","Quitting early would mean losing face — a massive cultural defeat","She has lost her passport"], ans:1,
+    ok:"Endurance is the victory. Correct.",
+    bad:"Not the Yumimoto way. Read why.",
+    why:"“The Final Assessment”: the ultimate victory in the Yumimoto system is not succeeding, but enduring — denying Fubuki the satisfaction of a broken will." }
+];
+
+/* Reel 4 — match the meaning (six pairs). */
+var MATCH_PAIRS=[
+  { w:"hierarchy", m:"a system of ranks, one above another" },
+  { w:"abasement", m:"the lowering of oneself; utter humiliation" },
+  { w:"limpid", m:"perfectly clear and transparent" },
+  { w:"irrepressible", m:"impossible to hold back or crush" },
+  { w:"glacial", m:"ice-cold and motionless in manner" },
+  { w:"complicit", m:"helping a wrong to happen" }
+];
+var MATCH_EXAMPLE="WORD · boasts → MEANING · proudly has";
+
+/* Reel 5 — bonus: mixed quick questions, 750s master clock. */
+var BONUS_ITEMS=[
+  { t:"word", pre:"…the waste of human resources and absolute ", post:" are paramount.", opts:["obedience","anarchy","victory"], ans:0 },
+  { t:"word", pre:"Her Japanophile dream was immediately ", post:" by the demanding work culture.", opts:["polished","eclipsed","renewed"], ans:1 },
+  { t:"word", pre:"Competence outside one's designated rank is a punishable ", post:".", opts:["offense","bonus","verse"], ans:0 },
+  { t:"word", pre:"A demotion designed to break the mind: the ", post:" repetitive task.", opts:["absurd","gentle","limpid"], ans:0 },
+  { t:"tf", s:"Yumimoto's chain of command is described as almost military.", real:true, why:"The hierarchy slide — “an almost military hierarchical chain of command.”" },
+  { t:"tf", s:"Amélie jumps out the window to end her life.", real:false, why:"She jumps to fly over the city — an internal ascent into magical realism against her physical descent." },
+  { t:"tf", s:"In the depths of the labyrinth, Amélie finds a perverse peace.", real:true, why:"The closing slide — she endures with a smile, and the corporation cannot touch that core." },
+  { t:"tf", s:"Fubuki rewards Amélie with a promotion to Manager.", real:false, why:"The system rewards endurance, not merit — and Fubuki survives by kicking down." },
+  { t:"mc", q:"verticality means…", opts:["an emphasis on height and the up-and-down axis","a fondness for velvet curtains","a type of invoice"], ans:0 },
+  { t:"mc", q:"abyss means…", opts:["a deep, immeasurable void","a yearly audit","a small office plant"], ans:0 },
+  { t:"mc", q:"endurance means…", opts:["the power to bear hardship to the end","a signing bonus","a kind of envelope"], ans:0 },
+  { t:"mc", q:"mistranslation means…", opts:["a wrong rendering across languages or cultures","a fast elevator","a second coffee break"], ans:0 }
+];
+
+/* Finale ranks by total score — Yumimoto titles, ascending. */
+var RANKS=[
+  { min:0, name:"Temporary Contract", line:"One year, fixed term. The building is patient." },
+  { min:1800, name:"Interpreter", line:"You find the right words — this time." },
+  { min:3200, name:"Section Chief", line:"Pressure flows through you now, but you know where it comes from." },
+  { min:4600, name:"Vice President of Vocabulary", line:"Terrifying, loud; the enforcer of the corporate lexicon." },
+  { min:5800, name:"Eerily Polite President", line:"Absolute, unquestioned power over the arcade. The 44th floor is yours." }
+];
+/* ============================================================
+   2. STATE & STORAGE — localStorage with version key, try/catch
+   ============================================================ */
+function loadState(){
+  var def={ v:1, sound:true, levels:{} };
+  try{
+    var raw=localStorage.getItem(LS_KEY);
+    if(raw){
+      var o=JSON.parse(raw);
+      if(o && o.v===1 && o.levels) return o;
+    }
+  }catch(e){ /* private mode or blocked storage — fall through to defaults */ }
+  return def;
+}
+function saveState(){
+  try{ localStorage.setItem(LS_KEY,JSON.stringify(S)); }
+  catch(e){ /* storage unavailable — the run still plays, it just won't persist */ }
+}
+function levelRec(id){
+  if(!S.levels[id]) S.levels[id]={ done:false, score:0, stars:0, mistakes:0 };
+  return S.levels[id];
+}
+var S=loadState();
+var run=null;          // current run: { sceneId, score, mistakes, streak }
+var cleanupFns=[];
+var RM=window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ===== cleanup contract: every mini-game registers timers/listeners here ===== */
+function setCleanup(fn){ cleanupFns.push(fn); }
+function clearCleanup(){
+  for(var i=cleanupFns.length-1;i>=0;i--){
+    try{ cleanupFns[i](); }catch(e){ /* a cleanup must never break the exit */ }
+  }
+  cleanupFns=[];
+}
+
+/* ============================================================
+   3. UTILITIES
+   ============================================================ */
+function $(sel){ return document.querySelector(sel); }
+function $$(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function shuffle(arr){
+  var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var t=a[i]; a[i]=a[j]; a[j]=t;
+  }
+  return a;
+}
+function refreshIcons(){
+  $$("[data-icon]").forEach(function(el){
+    var n=el.getAttribute("data-icon");
+    if(el._icon!==n){ el._icon=n; el.innerHTML=ICONS[n]||""; }
+  });
+}
+function toast(msg,kind){
+  var box=$("#toasts");
+  while(box.children.length>=3){ box.removeChild(box.firstChild); }
+  var t=document.createElement("div");
+  t.className="toast"+(kind?" "+kind:"");
+  t.textContent=msg;
+  box.appendChild(t);
+  setTimeout(function(){
+    t.classList.add("out");
+    setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },320);
+  },2300);
+}
+function popFloat(text,x,y,neg){
+  var el=document.createElement("div");
+  el.className="pop"+(neg?" neg":"");
+  el.textContent=text;
+  if(typeof x!=="number"){ x=Math.round(window.innerWidth/2); y=Math.round(window.innerHeight*0.4); }
+  el.style.left=clamp(x,44,window.innerWidth-44)+"px";
+  el.style.top=clamp(y,64,window.innerHeight-24)+"px";
+  document.body.appendChild(el);
+  setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); },1000);
+}
+
+/* ===== confetti on canvas ===== */
+var fxCanvas=$("#fx"), fxCtx=fxCanvas.getContext?fxCanvas.getContext("2d"):null, fxParts=[], fxRaf=0;
+var CONF_COLORS=["#D9A441","#A64632","#5F7C52","#F1E5CC","#3E5E8C"];
+function sizeFx(){
+  var d=Math.min(window.devicePixelRatio||1,2);
+  fxCanvas.width=Math.round(innerWidth*d); fxCanvas.height=Math.round(innerHeight*d);
+  fxCanvas.style.width=innerWidth+"px"; fxCanvas.style.height=innerHeight+"px";
+  if(fxCtx) fxCtx.setTransform(d,0,0,d,0,0);
+}
+window.addEventListener("resize",sizeFx);
+function spawnConfetti(n){
+  if(RM||!fxCtx) return;
+  n=n||120;
+  for(var i=0;i<n;i++){
+    fxParts.push({
+      x:Math.random()*innerWidth, y:-20-Math.random()*innerHeight*0.3,
+      vx:(Math.random()-0.5)*2.6, vy:2+Math.random()*3.4,
+      rot:Math.random()*Math.PI, vr:(Math.random()-0.5)*0.25,
+      s:5+Math.random()*7, c:CONF_COLORS[i%CONF_COLORS.length], sq:Math.random()<0.5
+    });
+  }
+  if(!fxRaf) fxRaf=requestAnimationFrame(fxStep);
+}
+function fxStep(){
+  if(!fxCtx) return;
+  fxCtx.clearRect(0,0,innerWidth,innerHeight);
+  fxParts=fxParts.filter(function(p){ return p.y<innerHeight+30; });
+  fxParts.forEach(function(p){
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.03; p.rot+=p.vr;
+    fxCtx.save(); fxCtx.translate(p.x,p.y); fxCtx.rotate(p.rot);
+    fxCtx.fillStyle=p.c; fxCtx.globalAlpha=0.9;
+    if(p.sq){ fxCtx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62); }
+    else{ fxCtx.beginPath(); fxCtx.arc(0,0,p.s*0.42,0,6.29); fxCtx.fill(); }
+    fxCtx.restore();
+  });
+  if(fxParts.length){ fxRaf=requestAnimationFrame(fxStep); }
+  else{ fxRaf=0; fxCtx.clearRect(0,0,innerWidth,innerHeight); }
+}
+
+/* ============================================================
+   4. SOUND — Web Audio synthesis, no files
+   ============================================================ */
+var actx=null;
+function ac(){
+  if(!actx){
+    try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }
+    catch(e){ actx=null; }
+  }
+  if(actx && actx.state==="suspended") actx.resume();
+  return actx;
+}
+function tone(freq,dur,type,vol,when){
+  if(!S.sound) return;
+  var c=ac(); if(!c) return;
+  type=type||"sine"; vol=vol==null?0.15:vol; when=when||0;
+  var t0=c.currentTime+when;
+  var o=c.createOscillator(), g=c.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq,t0);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(Math.max(vol,0.001),t0+0.014);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+Math.max(dur,0.05));
+  o.connect(g); g.connect(c.destination);
+  o.start(t0); o.stop(t0+Math.max(dur,0.05)+0.06);
+}
+function noiseBurst(dur,vol,when){
+  if(!S.sound) return;
+  var c=ac(); if(!c) return;
+  dur=dur||0.5; vol=vol==null?0.2:vol; when=when||0;
+  var t0=c.currentTime+when;
+  var len=Math.max(1,Math.floor(c.sampleRate*dur));
+  var buf=c.createBuffer(1,len,c.sampleRate);
+  var d=buf.getChannelData(0);
+  for(var i=0;i<len;i++){ d[i]=(Math.random()*2-1)*(1-i/len); }
+  var src=c.createBufferSource(); src.buffer=buf;
+  var g=c.createGain();
+  g.gain.setValueAtTime(vol,t0);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  var f=c.createBiquadFilter(); f.type="lowpass"; f.frequency.value=1500;
+  src.connect(f); f.connect(g); g.connect(c.destination);
+  src.start(t0);
+}
+/* ready-made presets */
+function sClick(){ tone(640,0.05,"square",0.05); }
+function sFlip(){ tone(440,0.07,"triangle",0.08); tone(580,0.07,"triangle",0.08,0.06); }
+function sCorrect(){ tone(523,0.09,"triangle",0.12); tone(659,0.09,"triangle",0.12,0.07); tone(784,0.16,"triangle",0.12,0.14); }
+function sWrong(){ tone(196,0.2,"sawtooth",0.09); tone(147,0.26,"sawtooth",0.08,0.07); }
+function sMatch(){ tone(880,0.12,"sine",0.1); tone(1320,0.2,"sine",0.08,0.08); }
+function sFanfare(){ tone(523,0.11,"square",0.07); tone(659,0.11,"square",0.07,0.11); tone(784,0.11,"square",0.07,0.22); tone(1046,0.3,"square",0.08,0.33); }
+function sTick(){ tone(1250,0.03,"square",0.045); }
+function sCheer(){ noiseBurst(0.9,0.16); tone(660,0.14,"sine",0.07,0.1); tone(880,0.16,"sine",0.07,0.26); tone(1046,0.22,"sine",0.07,0.42); }
+function unlockAudio(){ ac(); }
+window.addEventListener("pointerdown",unlockAudio,{ once:true });
+window.addEventListener("keydown",unlockAudio,{ once:true });
+
+/* ============================================================
+   5. HUD, screens & map
+   ============================================================ */
+var curScreen="intro";
+function totalScore(){ var t=0; SCENES.forEach(function(s){ t+=levelRec(s.id).score; }); return t; }
+function totalStars(){ var t=0; SCENES.forEach(function(s){ t+=levelRec(s.id).stars; }); return t; }
+function updateHUD(){
+  $("#hudScore").textContent=String(totalScore()+(run?run.score:0));
+  renderDots();
+}
+function renderDots(){
+  var html="";
+  SCENES.forEach(function(s){
+    var rec=levelRec(s.id);
+    var cls="dot"+(rec.done?" done":"")+((run&&run.sceneId===s.id)?" cur":"");
+    html+="<button class='"+cls+"' type='button' data-dot='"+s.id+"' aria-label='Reel "+s.num+" — "+s.title+(rec.done?" — cleared":" — not yet cleared")+"'></button>";
+  });
+  $("#hudDots").innerHTML=html;
+}
+function renderSound(){
+  var b=$("#soundBtn"), on=!!S.sound;
+  var span=b.querySelector(".icn");
+  span.setAttribute("data-icon",on?"sound-on":"sound-off");
+  refreshIcons();
+  b.setAttribute("aria-pressed",String(on));
+  b.setAttribute("aria-label",on?"Sound on — press to mute":"Sound off — press to unmute");
+}
+function showScreen(name){
+  curScreen=name;
+  $$(".screen").forEach(function(el){ el.classList.remove("active"); });
+  $("#screen-"+name).classList.add("active");
+  window.scrollTo({ top:0, behavior:RM?"auto":"smooth" });
+  renderDots();
+}
+function starRow(n){
+  var s="";
+  for(var i=0;i<3;i++){ s+="<span class='icn"+(i<n?" on":"")+"'>"+ICONS.star+"</span>"; }
+  return s;
+}
+function avatarSVG(sc){
+  var g="av"+sc.num;
+  return "<svg class='scene-avatar' width='80' height='80' viewBox='0 0 80 80' role='img' aria-label='Portrait placeholder — "+sc.char+"'>"+
+    "<defs><linearGradient id='"+g+"' x1='0' y1='0' x2='1' y2='1'>"+
+    "<stop offset='0' stop-color='"+sc.color+"'/><stop offset='1' stop-color='#191009'/></linearGradient></defs>"+
+    "<circle cx='40' cy='40' r='38' fill='url(#"+g+")'/>"+
+    "<circle cx='40' cy='40' r='38' fill='none' stroke='#D9A441' stroke-width='2'/>"+
+    "<text x='40' y='50' text-anchor='middle' font-size='26' font-family='Georgia,serif' fill='#F2E6CF'>"+sc.initials+"</text></svg>";
+}
+function slideSVG(sc){
+  var g="sl"+sc.num, sp="", x;
+  for(x=10;x<=300;x+=26){ sp+="<rect x='"+x+"' y='5' width='12' height='6' rx='2' fill='rgba(241,229,204,.16)'/>"; }
+  for(x=22;x<=296;x+=26){ sp+="<rect x='"+x+"' y='107' width='12' height='6' rx='2' fill='rgba(241,229,204,.16)'/>"; }
+  return "<svg viewBox='0 0 320 118' role='img' aria-label='Slide placeholder — "+sc.slide+"'>"+
+    "<defs><linearGradient id='"+g+"' x1='0' y1='0' x2='1' y2='1'>"+
+    "<stop offset='0' stop-color='"+sc.color+"'/><stop offset='1' stop-color='#191009'/></linearGradient></defs>"+
+    "<rect width='320' height='118' fill='url(#"+g+")'/>"+sp+
+    "<circle cx='44' cy='59' r='22' fill='none' stroke='rgba(241,229,204,.4)' stroke-width='1.6'/>"+
+    "<circle cx='44' cy='59' r='4' fill='rgba(241,229,204,.4)'/>"+
+    "<circle cx='44' cy='48' r='3.4' fill='rgba(241,229,204,.4)'/>"+
+    "<circle cx='54' cy='64' r='3.4' fill='rgba(241,229,204,.4)'/>"+
+    "<circle cx='34' cy='64' r='3.4' fill='rgba(241,229,204,.4)'/>"+
+    "<text x='86' y='78' font-size='46' font-family='Georgia,serif' fill='rgba(14,9,5,.5)'>"+sc.initials+"</text>"+
+    "<text x='306' y='34' text-anchor='end' font-size='12' letter-spacing='2' font-family='monospace' fill='rgba(245,230,205,.92)'>"+sc.slide+"</text>"+
+    "<text x='306' y='96' text-anchor='end' font-size='10' letter-spacing='1.5' font-family='monospace' fill='rgba(245,230,205,.55)'>REEL "+sc.num+" · "+sc.tag.toUpperCase()+"</text>"+
+    "</svg>";
+}
+function renderMap(){
+  var html="";
+  SCENES.forEach(function(sc){
+    var rec=levelRec(sc.id);
+    html+="<button class='reel' type='button' data-scene='"+sc.id+"' aria-label='Reel "+sc.num+" — "+sc.title+" — "+sc.tag+" — "+(rec.done?rec.stars+" stars, best score "+rec.score+". Replay":"not yet played")+"'>"+
+      "<span class='reel-slide'>"+slideSVG(sc)+"</span>"+
+      (rec.done?"<span class='reel-stamp' aria-hidden='true'>CLEARED</span>":"")+
+      "<span class='reel-body'>"+
+      "<span class='reel-top'><span class='reel-num'>REEL "+sc.num+" · F"+sc.floor+"</span><span class='reel-tag'>"+sc.tag+"</span></span>"+
+      "<span class='reel-title'>"+sc.title+"</span>"+
+      "<span class='reel-char'>with "+sc.char+"</span>"+
+      "<span class='reel-meta'><span class='reel-stars' aria-hidden='true'>"+starRow(rec.stars)+"</span>"+
+      "<span class='reel-best'>"+(rec.done?"BEST "+rec.score:"—")+"</span></span>"+
+      "</span></button>";
+  });
+  $("#mapGrid").innerHTML=html;
+  var done=SCENES.filter(function(s){ return levelRec(s.id).done; }).length;
+  $("#elevCount").textContent=done+" / 5 REELS CLEARED";
+  var fb=$("#finalBtn"), fc=$("#finalCap");
+  if(done===SCENES.length){ fb.hidden=false; fc.textContent="Every reel is on file. The window is open — fly."; }
+  else{ fb.hidden=true; fc.textContent="The Inner Escape unlocks when all five reels are cleared · "+done+" of 5 done."; }
+}
+function renderLexicon(){
+  var html="";
+  LEXICON.forEach(function(e){
+    html+="<li><span class='lw'>"+e.w+"</span> — <span class='ld'>"+e.d+"</span></li>";
+  });
+  $("#lexList").innerHTML=html;
+}
+function renderIntroProgress(){
+  var done=SCENES.filter(function(s){ return levelRec(s.id).done; }).length;
+  $("#introProgress").textContent = done===0
+    ? "The elevator is warm. No reels on file yet."
+    : (done===SCENES.length
+        ? "All five reels are on file — the Inner Escape waits in the tower."
+        : "Reels on file: "+done+" of 5. The elevator remembers.");
+}
+
+/* ============================================================
+   6. MODALS — briefing before a reel, results after
+   ============================================================ */
+var modalKind="briefing";
+var modalTimers=[];
+function modalOpen(){ return !$("#modalRoot").classList.contains("hidden"); }
+function openModal(html,kind){
+  modalKind=kind||"briefing";
+  var box=$("#modalBox");
+  box.innerHTML=html;
+  box.setAttribute("tabindex","-1");
+  $("#modalRoot").classList.remove("hidden");
+  var p=box.querySelector(".m-primary");
+  setTimeout(function(){ if(p) p.focus(); else box.focus(); },70);
+}
+function closeModal(){
+  $("#modalRoot").classList.add("hidden");
+  $("#modalBox").innerHTML="";
+  modalTimers.forEach(clearTimeout);
+  modalTimers=[];
+}
+function openBriefing(sc){
+  sFlip();
+  var html="<p class='m-kicker'>BRIEFING · REEL "+sc.num+" OF 5 · "+sc.tag.toUpperCase()+"</p>"+
+    "<div class='m-head'>"+avatarSVG(sc)+
+    "<div><h3 id='modalBoxTitle' style='margin:.1em 0 .1em'>"+sc.title+"</h3><p class='m-char'>"+sc.char+" — "+sc.slide+"</p></div></div>"+
+    "<p class='m-obj'>"+sc.obj+"</p>"+
+    "<div class='m-tip'><span class='icn'>"+ICONS.info+"</span><b>HOW IT WORKS —</b> "+sc.tip+"</div>"+
+    "<p class='m-flavor'>"+sc.flavor+"</p>"+
+    "<div class='m-actions'><button class='btn btn-primary m-primary' type='button' id='mStart'><span class='icn'>"+ICONS.play+"</span>START REEL "+sc.num+"</button>"+
+    "<button class='btn' type='button' id='mBack'>Not yet</button></div>";
+  openModal(html,"briefing");
+  $("#mStart").addEventListener("click",function(){ sClick(); closeModal(); startScene(sc.id); });
+  $("#mBack").addEventListener("click",function(){ sClick(); closeModal(); });
+}
+function openResults(sc,score,mistakes,stars,newBest){
+  var rec=levelRec(sc.id);
+  var comment = stars===3 ? "Flawless. The building did not touch you."
+              : stars===2 ? "A few slips — the stairwell is steep."
+              : "You endured. That too is a victory.";
+  var html="<p class='m-kicker'>REEL "+sc.num+" CLEARED · "+sc.tag.toUpperCase()+"</p>"+
+    "<div class='m-head'>"+avatarSVG(sc)+
+    "<div><h3 id='modalBoxTitle' style='margin:.1em 0 .1em'>"+sc.title+"</h3><p class='m-char'>"+sc.char+" reviews the reel</p></div></div>"+
+    "<div class='big-stars' aria-label='"+stars+" of 3 stars'>"+starRow(0)+"</div>"+
+    "<div class='res-line'><span>Score</span><b>"+score+(newBest?"<span class='badge-new'>NEW BEST</span>":"")+"</b></div>"+
+    "<div class='res-line'><span>Best on file</span><b>"+rec.score+"</b></div>"+
+    "<div class='res-line'><span>Slips</span><b>"+mistakes+"</b></div>"+
+    "<p class='m-flavor' style='margin-top:12px'>"+comment+"</p>"+
+    "<div class='m-actions'><button class='btn btn-primary m-primary' type='button' id='mReplay'>Replay reel</button>"+
+    "<button class='btn' type='button' id='mMap'>Back to the tower</button></div>";
+  openModal(html,"results");
+  var starEls=$$("#modalBox .big-stars .icn");
+  for(var i=0;i<stars;i++){
+    (function(k){
+      modalTimers.push(setTimeout(function(){
+        if(starEls[k]){ starEls[k].classList.add("on","twist"); sMatch(); }
+      },380+k*330));
+    })(i);
+  }
+  if(stars===3){ modalTimers.push(setTimeout(function(){ spawnConfetti(150); sCheer(); },950)); }
+  else{ modalTimers.push(setTimeout(sFanfare,950)); }
+  $("#mReplay").addEventListener("click",function(){ sClick(); closeModal(); startScene(sc.id); });
+  $("#mMap").addEventListener("click",function(){ sClick(); closeModal(); leaveScene(); });
+}
+function onModalDismiss(){
+  if(!modalOpen()) return;
+  var wasResults=(modalKind==="results");
+  closeModal();
+  if(wasResults) leaveScene();
+}
+
+/* ============================================================
+   7. SCENE RUNNER — start, leave, finish a reel
+   ============================================================ */
+var GAMES={}; // populated by the mini-game modules below
+function startScene(id){
+  clearCleanup();
+  var sc=null;
+  SCENES.forEach(function(s){ if(s.id===id) sc=s; });
+  run={ sceneId:id, score:0, mistakes:0, streak:0 };
+  levelRec(id);
+  $("#scAvatar").innerHTML=avatarSVG(sc);
+  $("#scChip").textContent="REEL "+sc.num+" OF 5 · "+sc.slide;
+  $("#scTitle").textContent=sc.title;
+  $("#scChar").textContent="with "+sc.char+" · "+sc.tag;
+  $("#scFlavor").textContent=sc.flavor;
+  showScreen("scene");
+  updateHUD();
+  GAMES[sc.game](sc);
+}
+function leaveScene(){
+  clearCleanup();
+  run=null;
+  updateHUD();
+  showScreen("map");
+  renderMap();
+}
+function starsFor(mistakes){ return mistakes===0?3:(mistakes<=2?2:1); }
+function endRun(){
+  if(!run) return; // a queued finish-timer may fire after the player left the reel
+  var sc=null;
+  SCENES.forEach(function(s){ if(s.id===run.sceneId) sc=s; });
+  var score=run.score, mistakes=run.mistakes;
+  var stars=starsFor(mistakes);
+  var rec=levelRec(sc.id);
+  var newBest=score>rec.score;
+  if(newBest){ rec.score=score; rec.mistakes=mistakes; }
+  if(stars>rec.stars){ rec.stars=stars; }
+  rec.done=true;
+  saveState();
+  run=null;
+  updateHUD();
+  openResults(sc,score,mistakes,stars,newBest);
+}
+/* helper shared by tf / mc / bonus: streak bonus on base points */
+function streakBonus(){ return 15*clamp(run.streak-1,0,4); }
+/* ============================================================
+   8. MINI-GAME · REEL 1 — FILL IN THE BLANKS
+      Click blank → click word. Wrong words bounce back (−20).
+   ============================================================ */
+GAMES.blanks=function(sc){
+  var items=BLANKS;
+  var bank=shuffle(BLANK_BANK);
+  var filled=items.map(function(){ return false; });
+  var tried=items.map(function(){ return false; });
+  var sel=-1;
+  var quotesHtml="";
+  items.forEach(function(it,i){
+    quotesHtml+="<div class='quote-item'><p class='quote-text'>"+it.pre+
+      "<button class='blank' type='button' data-blank='"+i+"' aria-label='Blank "+(i+1)+" of "+items.length+"'>·······</button>"+it.post+
+      "</p><span class='quote-src'>— deck, "+it.src+"</span></div>";
+  });
+  var bankHtml="";
+  bank.forEach(function(w){ bankHtml+="<button class='chip' type='button' data-word='"+w+"'>"+w+"</button>"; });
+  var root=document.createElement("div");
+  root.className="g-root";
+  root.innerHTML="<p class='g-lead'>Six sentences lifted from the dossier, one gap each. Click a blank, then click the word that belongs there.</p>"+
+    "<div class='blank-progress' id='bProg' aria-live='polite'>0 / "+items.length+" RESTORED</div>"+
+    "<div class='quote-list'>"+quotesHtml+"</div>"+
+    "<div class='bank' id='bBank' aria-label='Word bank'>"+bankHtml+"</div>";
+  $("#gameArea").innerHTML="";
+  $("#gameArea").appendChild(root);
+
+  function updateProg(){
+    var n=0;
+    filled.forEach(function(f){ if(f) n++; });
+    $("#bProg").textContent=n+" / "+items.length+" RESTORED";
+  }
+  root.addEventListener("click",function(e){
+    var bl=e.target.closest(".blank");
+    var chip=e.target.closest(".chip");
+    if(bl){
+      var i=parseInt(bl.getAttribute("data-blank"),10);
+      if(filled[i]){ toast("That blank is already restored."); return; }
+      var blanks=$$(".blank");
+      blanks.forEach(function(b){ b.classList.remove("sel"); });
+      sel=i;
+      bl.classList.add("sel");
+      sClick();
+      return;
+    }
+    if(chip){
+      if(chip.classList.contains("used")) return;
+      if(sel<0){ toast("Select a blank first — then choose a word.","err"); return; }
+      var w=chip.getAttribute("data-word");
+      var blEl=$$(".blank")[sel];
+      if(w===items[sel].a){
+        filled[sel]=true;
+        chip.classList.add("used");
+        var first=!tried[sel];
+        var pts=first?(100+15*clamp(run.streak,0,4)):50;
+        if(first) run.streak++;
+        run.score+=pts;
+        var r=blEl.getBoundingClientRect();
+        blEl.outerHTML="<span class='blank filled'>"+w+"</span>";
+        var blanks2=$$(".blank");
+        blanks2.forEach(function(b){ b.classList.remove("sel"); });
+        sel=-1;
+        sCorrect();
+        popFloat("+"+pts,Math.round(r.left+r.width/2),Math.round(r.top));
+        updateProg(); updateHUD();
+        if(filled.every(function(f){ return f; })){
+          toast("Dossier restored. Floor 44 signs off.","ok");
+          sFanfare();
+          var t=setTimeout(endRun,950);
+          setCleanup(function(){ clearTimeout(t); });
+        }
+      }else{
+        tried[sel]=true;
+        run.mistakes++;
+        run.streak=0;
+        run.score=Math.max(0,run.score-20);
+        sWrong();
+        chip.classList.add("shake");
+        blEl.classList.add("shake");
+        setTimeout(function(){ chip.classList.remove("shake"); blEl.classList.remove("shake"); },480);
+        var r2=blEl.getBoundingClientRect();
+        popFloat("−20",Math.round(r2.left+r2.width/2),Math.round(r2.top),true);
+        toast("Wrong word — it bounces back (−20).","err");
+        updateHUD();
+      }
+    }
+  });
+};
+
+/* ============================================================
+   9. MINI-GAME · REEL 2 — REAL / DELUSION
+      600s per card. After an answer: explanation + NEXT button.
+      NO auto-advance — the next claim comes only on demand.
+   ============================================================ */
+GAMES.tf=function(sc){
+  var TOTAL=600; // ten minutes per card, per the reel's contract
+  var items=TF_ITEMS;
+  var idx=0, left=TOTAL, answered=false, selPick=null, qShown=0, timer=0;
+  var root=document.createElement("div");
+  root.className="g-root";
+  root.innerHTML=
+    "<div class='tf-top'><div class='tf-counter' id='tfCount'>CLAIM 1 / "+items.length+"</div>"+
+    "<div class='tf-streak' id='tfStreak'>STREAK 0</div></div>"+
+    "<div class='timer' id='tfTimer'><div class='timer-bar' id='tfBar'></div><div class='timer-label' id='tfTime'></div></div>"+
+    "<div class='tf-card' id='tfCard'>"+
+      "<p class='tf-q'>HAS THE DECK REALLY SAID IT?</p>"+
+      "<p class='tf-s' id='tfS'></p>"+
+      "<div class='tf-btns'>"+
+        "<button class='btn tf-btn real' type='button' id='btnReal'>REAL</button>"+
+        "<button class='btn tf-btn delu' type='button' id='btnDelu'>DELUSION</button>"+
+      "</div>"+
+      "<div class='explain hidden' id='tfWhy' aria-live='polite'></div>"+
+      "<button class='btn btn-primary tf-next hidden' type='button' id='tfNext'>NEXT CLAIM</button>"+
+    "</div>"+
+    "<p class='g-keys'>Keys — ← REAL · → DELUSION · Enter confirm, then Enter again for NEXT</p>";
+  $("#gameArea").innerHTML="";
+  $("#gameArea").appendChild(root);
+
+  var bar=$("#tfBar"), tEl=$("#tfTimer"), tLbl=$("#tfTime"), sEl=$("#tfS"),
+      bR=$("#btnReal"), bD=$("#btnDelu"), why=$("#tfWhy"), next=$("#tfNext"), stk=$("#tfStreak");
+
+  function fmt(s){ var m=Math.floor(s/60), r=s%60; return m+":"+(r<10?"0":"")+r; }
+  function syncSel(){
+    bR.classList.toggle("sel",selPick==="real");
+    bD.classList.toggle("sel",selPick==="delu");
+  }
+  function renderStreak(){ stk.textContent="STREAK "+run.streak; stk.classList.toggle("hot",run.streak>=2); }
+  function startTimer(){
+    left=TOTAL; answered=false; selPick=null;
+    tEl.classList.remove("warn");
+    bar.style.width="100%";
+    tLbl.textContent=fmt(left);
+    clearInterval(timer);
+    qShown=Date.now();
+    timer=setInterval(tick,1000);
+  }
+  function tick(){
+    left--;
+    bar.style.width=(left/TOTAL*100)+"%";
+    tLbl.textContent=fmt(Math.max(left,0));
+    if(left<=60) tEl.classList.add("warn");
+    if(left<=30 && left>0 && left%2===0) sTick();
+    if(left<=0){ clearInterval(timer); timeUp(); }
+  }
+  function renderItem(){
+    sEl.textContent=items[idx].s;
+    $("#tfCount").textContent="CLAIM "+(idx+1)+" / "+items.length;
+    bR.disabled=false; bD.disabled=false;
+    bR.classList.remove("sel","good","bad");
+    bD.classList.remove("sel","good","bad");
+    why.classList.add("hidden"); why.innerHTML="";
+    next.classList.add("hidden");
+    renderStreak();
+    startTimer();
+  }
+  function finishAnswer(html,goodBtn,badBtn){
+    if(goodBtn) goodBtn.classList.add("good");
+    if(badBtn) badBtn.classList.add("bad");
+    why.innerHTML=html;
+    why.classList.remove("hidden");
+    next.textContent=(idx===items.length-1)?"SEE RESULTS":"NEXT CLAIM";
+    next.classList.remove("hidden");
+    next.focus();
+    renderStreak(); updateHUD();
+  }
+  function submit(){
+    if(answered||!selPick) return;
+    answered=true;
+    clearInterval(timer);
+    var it=items[idx];
+    var correct=(selPick==="real")===it.real;
+    bR.disabled=true; bD.disabled=true;
+    var goodBtn=it.real?bR:bD;
+    if(correct){
+      run.streak++;
+      var el=(Date.now()-qShown)/1000;
+      var sp=el<=10?40:(el<=25?20:0);
+      var pts=100+streakBonus()+sp;
+      run.score+=pts;
+      sCorrect();
+      var cr=$("#tfCard").getBoundingClientRect();
+      popFloat("+"+pts,Math.round(innerWidth/2),Math.round(cr.top+70));
+      finishAnswer("<p class='verdict'>REALITY HOLDS · +"+pts+" PTS"+(sp?" · SPEED +"+sp:"")+"</p><p class='why'>"+it.why+"</p>",selPick==="real"?bR:bD,null);
+    }else{
+      run.mistakes++; run.streak=0;
+      run.score=Math.max(0,run.score-30);
+      sWrong();
+      finishAnswer("<p class='verdict'>DELUSION CAUGHT · IT WAS "+(it.real?"REAL":"A DELUSION")+"</p><p class='why'>"+it.why+"</p><p class='pts'>−30 PTS · SLIP "+run.mistakes+"</p>",goodBtn,selPick==="real"?bR:bD);
+    }
+  }
+  function timeUp(){
+    if(answered) return;
+    answered=true;
+    run.mistakes++; run.streak=0;
+    run.score=Math.max(0,run.score-30);
+    bR.disabled=true; bD.disabled=true;
+    sWrong();
+    finishAnswer("<p class='verdict'>THE CLOCK RAN OUT ON THIS CLAIM</p><p class='why'>"+items[idx].why+"</p><p class='pts'>−30 PTS · SLIP "+run.mistakes+"</p>",items[idx].real?bR:bD,null);
+  }
+  function onNext(){
+    if(!answered) return;
+    sClick();
+    idx++;
+    if(idx<items.length){ renderItem(); }
+    else{ endRun(); }
+  }
+  bR.addEventListener("click",function(){ if(answered) return; selPick="real"; syncSel(); submit(); });
+  bD.addEventListener("click",function(){ if(answered) return; selPick="delu"; syncSel(); submit(); });
+  next.addEventListener("click",onNext);
+  function onKey(e){
+    if(modalOpen()) return;
+    if(e.key==="ArrowLeft"){ e.preventDefault(); if(!answered){ selPick="real"; syncSel(); sClick(); } }
+    else if(e.key==="ArrowRight"){ e.preventDefault(); if(!answered){ selPick="delu"; syncSel(); sClick(); } }
+    else if(e.key==="Enter"){
+      if(!answered){ if(selPick) submit(); }
+      else{ e.preventDefault(); onNext(); }
+    }
+  }
+  document.addEventListener("keydown",onKey);
+  setCleanup(function(){
+    clearInterval(timer);
+    document.removeEventListener("keydown",onKey);
+  });
+  renderItem();
+};
+
+/* ============================================================
+   10. MINI-GAME · REEL 3 — MULTIPLE CHOICE (one attempt)
+   ============================================================ */
+GAMES.mc=function(sc){
+  var items=MC_ITEMS;
+  var idx=0, answered=false, qShown=0, selIdx=-1;
+  var root=document.createElement("div");
+  root.className="g-root";
+  root.innerHTML=
+    "<div class='tf-top'><div class='tf-counter' id='mcCount'>DOOR 1 / "+items.length+"</div>"+
+    "<div class='tf-streak' id='mcStreak'>STREAK 0</div></div>"+
+    "<div class='tf-card' id='mcCard'>"+
+      "<p class='tf-q'>THREE DOORS — ONE OPENS</p>"+
+      "<p class='tf-s' id='mcQ'></p>"+
+      "<div class='mc-opts' id='mcOpts'></div>"+
+      "<div class='explain hidden' id='mcWhy' aria-live='polite'></div>"+
+      "<button class='btn btn-primary tf-next hidden' type='button' id='mcNext'>NEXT DOOR</button>"+
+    "</div>"+
+    "<p class='g-keys'>Keys — 1 / 2 / 3 or ↑ ↓ to aim, Enter to choose · one attempt per door</p>";
+  $("#gameArea").innerHTML="";
+  $("#gameArea").appendChild(root);
+
+  function renderItem(){
+    answered=false; selIdx=-1;
+    var it=items[idx];
+    $("#mcCount").textContent="DOOR "+(idx+1)+" / "+items.length;
+    $("#mcQ").textContent=it.q;
+    var oh="";
+    it.opts.forEach(function(o,i){
+      oh+="<button class='btn mc-opt' type='button' data-i='"+i+"'><span class='mc-key'>"+(i+1)+"</span><span>"+o+"</span></button>";
+    });
+    $("#mcOpts").innerHTML=oh;
+    $("#mcWhy").classList.add("hidden"); $("#mcWhy").innerHTML="";
+    $("#mcNext").classList.add("hidden");
+    $("#mcStreak").textContent="STREAK "+run.streak;
+    qShown=Date.now();
+  }
+  function pick(i){
+    if(answered) return;
+    answered=true;
+    var it=items[idx];
+    var opts=$$("#mcOpts .mc-opt");
+    opts.forEach(function(b){ b.disabled=true; b.classList.remove("sel"); });
+    var correct=(i===it.ans);
+    if(correct){
+      run.streak++;
+      var pts=130+streakBonus();
+      run.score+=pts;
+      opts[i].classList.add("good");
+      sCorrect();
+      var cr=$("#mcCard").getBoundingClientRect();
+      popFloat("+"+pts,Math.round(innerWidth/2),Math.round(cr.top+60));
+      $("#mcWhy").innerHTML="<p class='verdict'>THE DOOR OPENS · +"+pts+" PTS</p><p class='why'>"+it.why+"</p><p class='pts'>"+it.ok+"</p>";
+    }else{
+      run.mistakes++; run.streak=0;
+      opts[i].classList.add("bad");
+      opts[it.ans].classList.add("good");
+      sWrong();
+      $("#mcWhy").innerHTML="<p class='verdict'>THE DOOR STAYS SHUT · SLIP "+run.mistakes+"</p><p class='why'>"+it.why+"</p><p class='pts'>"+it.bad+"</p>";
+    }
+    $("#mcStreak").textContent="STREAK "+run.streak;
+    updateHUD();
+    $("#mcWhy").classList.remove("hidden");
+    var nx=$("#mcNext");
+    nx.textContent=(idx===items.length-1)?"SEE RESULTS":"NEXT DOOR";
+    nx.classList.remove("hidden");
+    nx.focus();
+  }
+  function onNext(){
+    sClick();
+    idx++;
+    if(idx<items.length){ renderItem(); }
+    else{ endRun(); }
+  }
+  $("#mcOpts").addEventListener("click",function(e){
+    var b=e.target.closest(".mc-opt");
+    if(b && !answered) pick(parseInt(b.getAttribute("data-i"),10));
+  });
+  $("#mcNext").addEventListener("click",function(){ if(answered) onNext(); });
+  function onKey(e){
+    if(modalOpen()) return;
+    if(answered){
+      if(e.key==="Enter"){ e.preventDefault(); onNext(); }
+      return;
+    }
+    if(e.key>="1" && e.key<="3"){ pick(parseInt(e.key,10)-1); }
+    else if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+      e.preventDefault();
+      var opts=$$("#mcOpts .mc-opt");
+      if(!opts.length) return;
+      selIdx=e.key==="ArrowDown"?(selIdx+1)%opts.length:(selIdx-1+opts.length)%opts.length;
+      opts.forEach(function(b,i){ b.classList.toggle("sel",i===selIdx); });
+      sClick();
+    }
+    else if(e.key==="Enter"&&selIdx>=0){ pick(selIdx); }
+  }
+  document.addEventListener("keydown",onKey);
+  setCleanup(function(){ document.removeEventListener("keydown",onKey); });
+  renderItem();
+};
+
+/* ============================================================
+   11. MINI-GAME · REEL 4 — MATCH THE MEANING
+      Words ↔ meanings; correct pairs lock green, wrong shake.
+   ============================================================ */
+GAMES.match=function(sc){
+  var words=shuffle(MATCH_PAIRS);
+  var means=shuffle(MATCH_PAIRS);
+  var sel={ side:null, pid:null };
+  var found=0, attempts=0;
+  var wEls={}, mEls={};
+  function col(list,side){
+    var html="";
+    list.forEach(function(p){
+      html+="<button class='mt-item' type='button' data-side='"+side+"' data-pid='"+p.w+"'>"+
+        (side==="w"?p.w:"<em>"+p.m+"</em>")+"</button>";
+    });
+    return html;
+  }
+  var root=document.createElement("div");
+  root.className="g-root";
+  root.innerHTML=
+    "<div class='match-example'>HOW IT WORKS — "+MATCH_EXAMPLE+"</div>"+
+    "<div class='match-top'><div class='tf-counter' id='mtFound'>PAIRS 0 / "+MATCH_PAIRS.length+"</div>"+
+    "<div class='tf-counter' id='mtTries'>ATTEMPTS 0</div></div>"+
+    "<div class='match-grid'>"+
+      "<div class='match-col' id='mtWords'><div class='col-lbl'>WORD</div>"+col(words,"w")+"</div>"+
+      "<div class='match-col' id='mtMeans'><div class='col-lbl'>MEANING</div>"+col(means,"m")+"</div>"+
+    "</div>"+
+    "<p class='g-note'>Click a word, then its meaning — either order works. Locked pairs turn green and leave the board.</p>";
+  $("#gameArea").innerHTML="";
+  $("#gameArea").appendChild(root);
+  $$("#mtWords .mt-item").forEach(function(b){ wEls[b.getAttribute("data-pid")]=b; });
+  $$("#mtMeans .mt-item").forEach(function(b){ mEls[b.getAttribute("data-pid")]=b; });
+
+  function clearSel(){
+    $$(".mt-item.sel").forEach(function(b){ b.classList.remove("sel"); });
+    sel={ side:null, pid:null };
+  }
+  function updateTop(){
+    $("#mtFound").textContent="PAIRS "+found+" / "+MATCH_PAIRS.length;
+    $("#mtTries").textContent="ATTEMPTS "+attempts;
+  }
+  root.addEventListener("click",function(e){
+    var el=e.target.closest(".mt-item");
+    if(!el||el.classList.contains("locked")) return;
+    var side=el.getAttribute("data-side");
+    var pid=el.getAttribute("data-pid");
+    if(sel.side===side && sel.pid===pid){ clearSel(); sClick(); return; }
+    if(sel.side===null){
+      sel={ side:side, pid:pid };
+      el.classList.add("sel");
+      sClick();
+      return;
+    }
+    if(sel.side===side){
+      clearSel();
+      sel={ side:side, pid:pid };
+      el.classList.add("sel");
+      sClick();
+      return;
+    }
+    // opposite side — this is an attempt
+    attempts++;
+    var wPid=(side==="w")?pid:sel.pid;
+    var mPid=(side==="m")?pid:sel.pid;
+    var wEl=wEls[wPid], mEl=mEls[wPid];
+    if(wPid===mPid){
+      wEl.classList.add("locked");
+      mEl.classList.add("locked");
+      var pts=120+(attempts===found+1?40:0); // clean pair bonus
+      run.score+=pts;
+      found++;
+      sMatch();
+      var r=mEl.getBoundingClientRect();
+      popFloat("+"+pts,Math.round(r.left+r.width/2),Math.round(r.top));
+      if(found===MATCH_PAIRS.length){
+        toast("All six pairs locked. Accounting nods once.","ok");
+        sFanfare();
+        var t=setTimeout(endRun,950);
+        setCleanup(function(){ clearTimeout(t); });
+      }
+    }else{
+      run.mistakes++;
+      run.streak=0;
+      run.score=Math.max(0,run.score-10);
+      wEl.classList.add("shake");
+      mEl.classList.add("shake");
+      sWrong();
+      var r2=mEl.getBoundingClientRect();
+      popFloat("−10",Math.round(r2.left+r2.width/2),Math.round(r2.top),true);
+      setTimeout(function(){
+        wEl.classList.remove("shake");
+        mEl.classList.remove("shake");
+      },480);
+    }
+    clearSel();
+    updateTop();
+    updateHUD();
+  });
+};
+
+/* ============================================================
+   12. MINI-GAME · REEL 5 — TIMED BONUS
+      750s master clock, mixed topics, streak × multiplier,
+      red flashing bar at the end.
+   ============================================================ */
+GAMES.bonus=function(sc){
+  var TOTAL=750;
+  var items=shuffle(BONUS_ITEMS);
+  var idx=0, left=TOTAL, locked=false, qShown=0, timer=0, advTimer=0;
+  var root=document.createElement("div");
+  root.className="g-root";
+  root.innerHTML=
+    "<div class='tf-top'><div class='tf-counter' id='boCount'>Q 1 / "+items.length+"</div>"+
+    "<div class='tf-streak' id='boMult'>STREAK 0 · ×1</div></div>"+
+    "<div class='timer' id='boTimer'><div class='timer-bar' id='boBar'></div><div class='timer-label' id='boTime'></div></div>"+
+    "<div class='tf-card' id='boCard'></div>"+
+    "<p class='g-keys'>Speed pays: ≤6s +40 · ≤12s +20 · streak builds ×2…×4. Keys — 1/2/3; ← REAL, → DELUSION on claims.</p>";
+  $("#gameArea").innerHTML="";
+  $("#gameArea").appendChild(root);
+
+  var bar=$("#boBar"), tEl=$("#boTimer"), tLbl=$("#boTime"), card=$("#boCard");
+  function fmt(s){ var m=Math.floor(s/60), r=s%60; return m+":"+(r<10?"0":"")+r; }
+  function multOf(){ return 1+Math.min(Math.floor(Math.max(run.streak-1,0)/3),3); }
+  function renderMult(){ $("#boMult").textContent="STREAK "+run.streak+" · ×"+multOf(); }
+  function startTimer(){
+    left=TOTAL;
+    tEl.classList.remove("warn");
+    bar.style.width="100%";
+    tLbl.textContent=fmt(left);
+    clearInterval(timer);
+    timer=setInterval(tick,1000);
+  }
+  function tick(){
+    left--;
+    bar.style.width=(left/TOTAL*100)+"%";
+    tLbl.textContent=fmt(Math.max(left,0));
+    if(left<=60) tEl.classList.add("warn");
+    if(left<=30 && left>0 && left%2===0) sTick();
+    if(left<=0){ clearInterval(timer); burnOut(); }
+  }
+  function burnOut(){
+    if(!run) return;
+    toast("The master clock burns out — the reel ends here.","err");
+    sWrong();
+    endRun();
+  }
+  function render(){
+    locked=false;
+    var it=items[idx];
+    $("#boCount").textContent="Q "+(idx+1)+" / "+items.length;
+    renderMult();
+    card.classList.remove("flash-good","flash-bad");
+    if(it.t==="tf"){
+      card.innerHTML="<p class='tf-q'>REAL OR DELUSION?</p><p class='tf-s'>"+it.s+"</p>"+
+        "<div class='tf-btns'><button class='btn tf-btn real' type='button' data-pick='real'>REAL</button>"+
+        "<button class='btn tf-btn delu' type='button' data-pick='delu'>DELUSION</button></div>";
+    }else if(it.t==="word"){
+      var oh="";
+      it.opts.forEach(function(w,i){
+        oh+="<button class='btn mc-opt' type='button' data-i='"+i+"'><span class='mc-key'>"+(i+1)+"</span><span>"+w+"</span></button>";
+      });
+      card.innerHTML="<p class='tf-q'>WHICH WORD BELONGS IN THE GAP?</p><p class='tf-s'>"+it.pre+"_____"+it.post+"</p><div class='mc-opts'>"+oh+"</div>";
+    }else{
+      var oh2="";
+      it.opts.forEach(function(w,i){
+        oh2+="<button class='btn mc-opt' type='button' data-i='"+i+"'><span class='mc-key'>"+(i+1)+"</span><span>"+w+"</span></button>";
+      });
+      card.innerHTML="<p class='tf-q'>MEANING?</p><p class='tf-s'>"+it.q+"</p><div class='mc-opts'>"+oh2+"</div>";
+    }
+    qShown=Date.now();
+  }
+  function advance(){
+    idx++;
+    if(idx<items.length){ render(); }
+    else{ clearInterval(timer); endRun(); }
+  }
+  card.addEventListener("click",function(e){
+    var b=e.target.closest(".tf-btn,.mc-opt");
+    if(!b||locked) return;
+    var it=items[idx];
+    var correct;
+    if(it.t==="tf"){ correct=(b.getAttribute("data-pick")==="real")===it.real; }
+    else{ correct=parseInt(b.getAttribute("data-i"),10)===it.ans; }
+    locked=true;
+    if(correct){
+      run.streak++;
+      var el=(Date.now()-qShown)/1000;
+      var sp=el<=6?40:(el<=12?20:0);
+      var m=multOf();
+      var pts=Math.min((60+sp)*m,240);
+      run.score+=pts;
+      b.classList.add("good");
+      card.classList.add("flash-good");
+      sCorrect();
+      var cr=card.getBoundingClientRect();
+      popFloat("+"+pts+(m>1?" ×"+m:""),Math.round(innerWidth/2),Math.round(cr.top+50));
+      renderMult(); updateHUD();
+    }else{
+      run.mistakes++; run.streak=0;
+      run.score=Math.max(0,run.score-15);
+      b.classList.add("bad");
+      if(it.t==="tf"){
+        var goodB=$$("#boCard .tf-btn")[it.real?0:1];
+        if(goodB) goodB.classList.add("good");
+      }else{
+        var opts=$$("#boCard .mc-opt");
+        if(opts[it.ans]) opts[it.ans].classList.add("good");
+      }
+      card.classList.add("flash-bad");
+      sWrong();
+      if(it.why){
+        var note=document.createElement("p");
+        note.className="g-note";
+        note.textContent=it.why;
+        card.appendChild(note);
+      }
+      renderMult(); updateHUD();
+    }
+    advTimer=setTimeout(advance,950);
+  });
+  function onKey(e){
+    if(modalOpen()||locked) return;
+    var it=items[idx];
+    if(it.t==="tf"){
+      if(e.key==="ArrowLeft"){ e.preventDefault(); var b1=$$("#boCard .tf-btn")[0]; if(b1) b1.click(); }
+      else if(e.key==="ArrowRight"){ e.preventDefault(); var b2=$$("#boCard .tf-btn")[1]; if(b2) b2.click(); }
+    }else if(e.key>="1" && e.key<="3"){
+      var bs=$$("#boCard .mc-opt");
+      var b3=bs[parseInt(e.key,10)-1];
+      if(b3) b3.click();
+    }
+  }
+  document.addEventListener("keydown",onKey);
+  setCleanup(function(){
+    clearInterval(timer);
+    clearTimeout(advTimer);
+    document.removeEventListener("keydown",onKey);
+  });
+  startTimer();
+  render();
+};
+
+/* ============================================================
+   13. FINALE — total score, stars, table, rank, rewind
+   ============================================================ */
+function rankFor(total){
+  var r=RANKS[0];
+  RANKS.forEach(function(x){ if(total>=x.min) r=x; });
+  return r;
+}
+function renderFinale(){
+  var ts=totalScore(), tst=totalStars(), done=0, slips=0;
+  SCENES.forEach(function(s){ var r=levelRec(s.id); if(r.done) done++; slips+=r.mistakes||0; });
+  $("#finScore").textContent=String(ts);
+  $("#finStars").textContent=tst+" / 15";
+  $("#finReels").textContent=done+" / 5";
+  var rk=rankFor(ts);
+  $("#finRank").textContent=rk.name;
+  $("#finRankLine").textContent=rk.line;
+  $("#rankSeal").innerHTML=
+    "<circle cx='40' cy='40' r='37' fill='#A64632'/>"+
+    "<circle cx='40' cy='40' r='29' fill='none' stroke='rgba(247,236,217,.5)' stroke-width='1.6' stroke-dasharray='2 3'/>"+
+    "<text x='40' y='45' text-anchor='middle' font-size='15' font-family='Georgia,serif' font-style='italic' fill='#F7ECD9'>F&amp;T</text>"+
+    "<text x='40' y='59' text-anchor='middle' font-size='9' font-family='monospace' fill='rgba(247,236,217,.85)'>"+tst+"/15</text>";
+  var html="";
+  SCENES.forEach(function(s){
+    var r=levelRec(s.id);
+    html+="<tr><td class='num'>"+s.num+" — "+s.title+"</td><td class='num'>F"+s.floor+"</td>"+
+      "<td class='num'>"+r.score+"</td><td><span class='reel-stars' aria-label='"+r.stars+" of 3 stars'>"+starRow(r.stars)+"</span></td>"+
+      "<td class='num'>"+(r.done?r.mistakes:"—")+"</td></tr>";
+  });
+  html+="<tr class='total'><td>TOTAL</td><td></td><td class='num'>"+ts+"</td><td><span class='reel-stars'>"+starRow(tst)+starRow(0)+starRow(0)+starRow(0)+starRow(0)+"</span></td><td class='num'>"+slips+"</td></tr>";
+  $("#finTableBody").innerHTML=html;
+}
+var rewindArmed=false, rewindTimer=0;
+function resetRewindBtn(){
+  $("#rewindBtn").innerHTML="<span class='icn'>"+ICONS.rewind+"</span>REWIND THE TAPE";
+}
+/* ============================================================
+   14. PRELOADER — loading bar, PLAY gate, upward exit
+   ============================================================ */
+function initPreloader(){
+  setTimeout(function(){ $("#preloader").classList.add("ready"); },1200);
+  $("#playBtn").addEventListener("click",function(){
+    var pre=$("#preloader");
+    sClick();
+    sMatch();
+    pre.classList.add("exit");
+    setTimeout(function(){ if(pre.parentNode) pre.parentNode.removeChild(pre); },880);
+    showScreen("intro");
+    renderIntroProgress();
+  });
+}
+
+/* ============================================================
+   15. GLOBAL WIRING — header, map delegation, keys
+   ============================================================ */
+function goIntro(){
+  closeModal();
+  clearCleanup();
+  run=null;
+  updateHUD();
+  renderIntroProgress();
+  showScreen("intro");
+}
+$("#brandBtn").addEventListener("click",function(){ sClick(); goIntro(); });
+$("#mapBtn").addEventListener("click",function(){
+  sClick();
+  if(modalOpen()){ onModalDismiss(); return; }
+  if(curScreen==="scene"){ leaveScene(); }
+  else{ showScreen("map"); renderMap(); }
+});
+$("#hudDots").addEventListener("click",function(e){
+  var d=e.target.closest("[data-dot]");
+  if(!d) return;
+  sClick();
+  if(curScreen==="scene"){ leaveScene(); }
+  else{ showScreen("map"); renderMap(); }
+});
+$("#soundBtn").addEventListener("click",function(){
+  S.sound=!S.sound;
+  saveState();
+  renderSound();
+  toast(S.sound?"Sound on.":"Sound off.", S.sound?"ok":"err");
+  if(S.sound) sClick();
+});
+$("#introCta").addEventListener("click",function(){
+  sClick();
+  showScreen("map");
+  renderMap();
+});
+/* map cards — delegated: every card is always clickable (free order) */
+$("#mapGrid").addEventListener("click",function(e){
+  var card=e.target.closest(".reel");
+  if(!card) return;
+  var id=card.getAttribute("data-scene");
+  SCENES.forEach(function(s){ if(s.id===id) openBriefing(s); });
+});
+$("#finalBtn").addEventListener("click",function(){
+  sCheer();
+  renderFinale();
+  showScreen("finale");
+  spawnConfetti(170);
+});
+$("#btnBackMap").addEventListener("click",function(){ sClick(); leaveScene(); });
+$("#finBack").addEventListener("click",function(){ sClick(); showScreen("map"); renderMap(); });
+/* rewind the tape — two-step confirmation, then full progress reset */
+$("#rewindBtn").addEventListener("click",function(){
+  if(!rewindArmed){
+    rewindArmed=true;
+    $("#rewindBtn").innerHTML="<span class='icn'>"+ICONS.rewind+"</span>SURE? PRESS AGAIN TO ERASE";
+    rewindTimer=setTimeout(function(){ rewindArmed=false; resetRewindBtn(); },3500);
+    sWrong();
+    toast("Rewinding erases every score and star on this device.","err");
+    return;
+  }
+  clearTimeout(rewindTimer);
+  rewindArmed=false;
+  resetRewindBtn();
+  S.levels={};
+  saveState();
+  updateHUD();
+  renderMap();
+  renderIntroProgress();
+  toast("Tape rewound — every reel is blank again.","ok");
+  showScreen("map");
+});
+$("#modalBackdrop").addEventListener("click",onModalDismiss);
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"){
+    if(modalOpen()){ onModalDismiss(); }
+    else if(curScreen==="scene"){
+      toast("Leaving the reel — cleared floors stay on file.");
+      leaveScene();
+    }
+  }
+});
+
+/* ============================================================
+   16. INIT
+   ============================================================ */
+renderLexicon();
+initPreloader();
+sizeFx();
+/* required init sequence */
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+</script>
+</body>
+</html>
