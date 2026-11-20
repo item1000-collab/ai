@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fellowship Arcade — The Fellowship of the Ring (2001) Reading Games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ================= tokens ================= */
+:root{
+  --bg:#1b140a; --bg2:#241b0e;
+  --panel:#2e2413; --panel2:#3a2e18;
+  --parch:#f4ecd6; --parch2:#efe3c6;
+  --ink:#2c2315; --ink-soft:#6f5f45;
+  --gold:#d4a017; --gold-bright:#f5c542; --gold-deep:#8a6d1a;
+  --ok:#3f8a4f; --ok-deep:#2c6b3a; --err:#b0413a; --err-deep:#8a2f2a; --wine:#7d2a20;
+  --f-display:"Cinzel","Times New Roman",serif;
+  --f-body:"EB Garamond",Georgia,serif;
+  --f-mono:"Courier Prime",ui-monospace,Menlo,Consolas,monospace;
+  --hard:0 6px 0 rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; min-height:100vh; overflow-x:hidden;
+  color:var(--parch); font-family:var(--f-body); font-size:17px; line-height:1.6;
+  background:
+    radial-gradient(1000px 560px at 50% -140px, rgba(212,160,23,.18), transparent 60%),
+    radial-gradient(760px 460px at 108% 84%, rgba(125,42,32,.14), transparent 60%),
+    linear-gradient(180deg,#201809,#1b140a 45%,#140e06);
+  background-attachment:fixed;
+}
+/* candle vignette */
+body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:88;
+  background:radial-gradient(120% 90% at 50% 42%, transparent 55%, rgba(8,5,2,.55) 100%);}
+/* film grain */
+body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:89; opacity:.08;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");}
+.app{max-width:980px; margin:0 auto; padding:82px 16px 70px; position:relative; z-index:2}
+img{max-width:100%}
+button{font:inherit}
+button:focus-visible,a:focus-visible{outline:3px solid var(--gold-bright); outline-offset:2px; border-radius:6px}
+kbd{font-family:var(--f-mono); font-size:.8em; background:var(--panel2); border:1px solid rgba(212,160,23,.5); border-bottom-width:2px; border-radius:6px; padding:.1em .45em; color:var(--gold-bright)}
+a{color:var(--gold-bright)}
+
+/* ================= drifting embers ================= */
+#embers{position:fixed; inset:0; z-index:1; overflow:hidden; pointer-events:none}
+.ember{position:absolute; bottom:-14px; width:5px; height:5px; border-radius:50%;
+  background:var(--gold-bright); opacity:0; filter:blur(.4px);
+  animation:rise var(--dur) linear infinite; animation-delay:var(--del)}
+@keyframes rise{
+  0%{transform:translate(0,0); opacity:0}
+  12%{opacity:.55}
+  100%{transform:translate(var(--sway),-108vh); opacity:0}
+}
+
+/* ================= preloader ================= */
+#preloader{position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  text-align:center; padding:24px;
+  background:radial-gradient(900px 520px at 50% 30%, #3a2c14, #171008 72%);
+  transition:transform .8s cubic-bezier(.65,0,.35,1), opacity .8s ease;}
+#preloader.done{transform:translateY(-100%); opacity:.4; pointer-events:none}
+.ring-loader{width:92px; height:92px; color:var(--gold-bright); animation:spin 7s linear infinite; filter:drop-shadow(0 0 14px rgba(245,197,66,.45))}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pre-kicker{font-family:var(--f-mono); font-size:.68rem; letter-spacing:.34em; color:var(--gold); margin:6px 0 0}
+.pre-title{font-family:var(--f-display); font-weight:900; font-size:clamp(1.8rem,6vw,3rem); margin:0; color:var(--gold-bright); letter-spacing:.06em}
+.pre-sub{font-style:italic; color:#cdbd97; margin:0 0 10px}
+.pre-note{font-size:.82rem; color:#9b8a64; margin:4px 0 0}
+
+/* ================= console header ================= */
+.console{position:fixed; top:0; left:0; right:0; z-index:60; background:rgba(24,17,8,.94);
+  border-bottom:2px solid rgba(212,160,23,.4); backdrop-filter:blur(6px)}
+.console-in{max-width:980px; margin:0 auto; display:flex; align-items:center; gap:10px; padding:9px 14px}
+.brand{display:flex; align-items:center; gap:9px; font-family:var(--f-display); font-weight:700;
+  letter-spacing:.12em; font-size:.92rem; color:var(--gold-bright); white-space:nowrap}
+.brand-ring{width:26px; height:26px; display:grid; color:var(--gold-bright)}
+.brand-ring svg{width:26px; height:26px}
+.spacer{flex:1}
+.progress-cells{display:flex; gap:6px; align-items:center}
+.cell{width:30px; height:10px; border-radius:6px; background:#191207; border:1px solid rgba(212,160,23,.45); overflow:hidden}
+.cell .fill{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--gold),var(--gold-bright)); transition:width .5s ease}
+.score-box{font-family:var(--f-mono); font-weight:700; color:var(--gold-bright); background:#191207;
+  border:1px solid rgba(212,160,23,.45); border-radius:10px; padding:5px 12px; font-size:.95rem; white-space:nowrap}
+.icon-btn{width:40px; height:40px; border-radius:11px; background:#191207; border:1px solid rgba(212,160,23,.5);
+  color:var(--gold-bright); cursor:pointer; display:grid; place-items:center; transition:transform .1s, box-shadow .1s; box-shadow:0 3px 0 rgba(0,0,0,.4)}
+.icon-btn:hover{transform:translateY(-1px)}
+.icon-btn:active{transform:translateY(2px); box-shadow:none}
+.icon-btn svg{width:20px; height:20px}
+.icon-btn[aria-pressed="true"]{color:#8f8061}
+
+/* ================= screens ================= */
+.screen{display:none}
+.screen.active{display:block; animation:sceneIn .5s ease both}
+@keyframes sceneIn{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+/* ================= buttons ================= */
+.btn{font-family:var(--f-display); font-weight:700; letter-spacing:.08em; color:#241b0e;
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold) 58%,#b98a12);
+  border:1px solid #b98a12; border-radius:12px; padding:.75rem 1.5rem; font-size:1rem; cursor:pointer;
+  box-shadow:var(--hard), inset 0 1px 0 rgba(255,255,255,.4); transition:transform .08s ease, box-shadow .08s ease, filter .15s ease}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.4)}
+.btn.big{font-size:1.12rem; padding:.95rem 2.1rem}
+.btn-ghost{background:var(--panel2); color:var(--gold-bright); border:1px solid rgba(212,160,23,.55);
+  border-radius:12px; padding:.55rem 1rem; font-family:var(--f-display); font-weight:700; letter-spacing:.08em;
+  font-size:.85rem; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.3); transition:transform .08s ease}
+.btn-ghost:active{transform:translateY(2px); box-shadow:none}
+.btn-warn{background:linear-gradient(180deg,#c25a50,var(--err)); color:#fff2ef; border-color:var(--err-deep)}
+
+/* ================= intro ================= */
+.hero{text-align:center; padding:26px 0 8px}
+.kicker{font-family:var(--f-mono); font-size:.68rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; margin:0 0 10px}
+.hero-title{font-family:var(--f-display); font-weight:900; font-size:clamp(2rem,7vw,3.4rem); margin:0; color:var(--gold-bright); letter-spacing:.05em; text-shadow:0 3px 0 rgba(0,0,0,.4)}
+.hero-sub{font-style:italic; color:#cdbd97; margin:.7rem auto 1.6rem; max-width:40rem}
+.story{max-width:36rem; margin:0 auto 1.8rem; background:var(--panel); border:1px solid rgba(212,160,23,.4);
+  border-radius:18px; padding:22px 26px; text-align:left; box-shadow:var(--hard)}
+.story p{margin:0 0 1rem; color:#e8ddc2}
+.howto{list-style:none; margin:0 0 1rem; padding:0}
+.howto li{padding:.42rem 0; border-bottom:1px dashed rgba(212,160,23,.25); color:#e8ddc2}
+.howto li:last-child{border-bottom:0}
+.kbd-hints{font-size:.88rem; color:#b7a67f; margin:.2rem 0 0}
+.tiny-note{font-size:.82rem; color:#9b8a64; margin-top:1.4rem}
+
+/* ================= level map ================= */
+.map-head{display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:8px; margin:8px 0 18px}
+.map-head h2{font-family:var(--f-display); font-weight:900; font-size:clamp(1.5rem,4.5vw,2.1rem); margin:0; color:var(--gold-bright); letter-spacing:.04em}
+.map-head p{margin:0; font-style:italic; color:#b7a67f}
+.reel-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px}
+@media (max-width:900px){.reel-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:580px){.reel-grid{grid-template-columns:1fr}}
+.reel-card{position:relative; text-align:left; background:var(--parch); color:var(--ink); border:2px solid #100b04;
+  border-radius:16px; padding:8px 10px 14px; cursor:pointer; box-shadow:var(--hard); transition:transform .16s ease, box-shadow .16s ease; display:block; width:100%}
+.reel-card:hover{transform:translateY(-4px); box-shadow:0 10px 0 rgba(0,0,0,.35)}
+.reel-card:active{transform:translateY(1px); box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.sprockets{display:flex; justify-content:space-between; padding:2px 4px 8px}
+.sprocket{width:16px; height:7px; border-radius:3px; background:#100b04; opacity:.9}
+.reel-prev{position:relative; display:block; border-radius:10px; overflow:hidden; border:2px solid #100b04; aspect-ratio:16/9; background:linear-gradient(150deg,var(--lc),#241b0e)}
+.reel-prev img{width:100%; height:100%; object-fit:cover; display:block}
+.reel-num{position:absolute; top:-9px; right:-7px; z-index:2; width:38px; height:38px; border-radius:50%;
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold)); border:2px solid #100b04; display:grid; place-items:center;
+  font-family:var(--f-display); font-weight:900; font-size:1.05rem; color:#241b0e; box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.reel-title{display:block; font-family:var(--f-display); font-weight:700; font-size:1.02rem; margin:.65rem 0 .1rem; color:var(--ink)}
+.reel-tag{display:block; font-family:var(--f-mono); font-size:.6rem; letter-spacing:.16em; color:var(--ink-soft); margin-bottom:.45rem}
+.char-chip{display:inline-flex; align-items:center; gap:7px; font-size:.82rem; background:var(--parch2);
+  border:1px solid rgba(44,35,21,.3); border-radius:999px; padding:2px 11px; color:var(--ink)}
+.char-dot{width:10px; height:10px; border-radius:50%; background:var(--lc); border:1px solid rgba(44,35,21,.4)}
+.stars-row{display:flex; gap:4px; margin-top:.55rem}
+.stars-row .st{width:19px; height:19px; color:#c6b488}
+.stars-row .st.on{color:var(--gold); filter:drop-shadow(0 1px 0 rgba(0,0,0,.25))}
+.stars-row svg{width:19px; height:19px}
+.best{display:block; font-family:var(--f-mono); font-size:.76rem; color:var(--ink-soft); margin-top:.35rem}
+.final-wrap{margin:26px 0 0; text-align:center}
+.final-wrap .btn{animation:pulseGold 2.2s ease infinite}
+@keyframes pulseGold{0%,100%{box-shadow:var(--hard),0 0 0 rgba(245,197,66,0)} 50%{box-shadow:var(--hard),0 0 26px rgba(245,197,66,.5)}}
+
+/* ================= scene ================= */
+.scene-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+.tag-chip{font-family:var(--f-mono); font-size:.64rem; letter-spacing:.18em; background:var(--panel2);
+  color:var(--gold-bright); border:1px solid rgba(212,160,23,.45); padding:.34rem .8rem; border-radius:999px; white-space:nowrap}
+.char-chip-dark{display:inline-flex; align-items:center; gap:7px; font-size:.85rem; background:var(--panel);
+  border:1px solid rgba(212,160,23,.35); border-radius:999px; padding:.3rem 12px; color:var(--parch)}
+.timer-wrap{margin:2px 0 16px}
+.timer-track{height:13px; background:#191207; border:1px solid rgba(212,160,23,.45); border-radius:999px; overflow:hidden}
+.timer-fill{height:100%; width:100%; background:linear-gradient(90deg,var(--gold),var(--gold-bright)); transition:width 1s linear}
+.timer-fill.danger{background:var(--err); animation:blink .55s steps(2) infinite}
+@keyframes blink{50%{opacity:.45}}
+.timer-num{font-family:var(--f-mono); font-size:.85rem; color:var(--gold-bright); margin-top:6px; text-align:right}
+.stage{background:var(--panel); border:1px solid rgba(212,160,23,.4); border-radius:18px; padding:22px; box-shadow:var(--hard)}
+.stage-hint{margin:0 0 14px; font-style:italic; color:#b7a67f; font-size:.94rem}
+.statement{font-size:1.25rem; background:var(--parch); color:var(--ink); padding:18px 20px; border-radius:12px;
+  border-left:5px solid var(--gold); margin:0 0 16px; font-weight:500}
+.judge-meta{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+.counter{font-family:var(--f-mono); font-size:.85rem; color:var(--gold-bright); letter-spacing:.06em}
+.verdicts{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+@media (max-width:520px){.verdicts{grid-template-columns:1fr}}
+.verdict{font-family:var(--f-display); font-weight:700; letter-spacing:.05em; padding:1rem; font-size:1.05rem;
+  border-radius:12px; cursor:pointer; border:2px solid #100b04; background:var(--parch); color:var(--ink); box-shadow:0 5px 0 rgba(0,0,0,.35); transition:transform .08s}
+.verdict:active:not(:disabled){transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.verdict:disabled{cursor:default; opacity:.85}
+.verdict.good{background:#dff0e0; border-color:var(--ok); color:#1e4d28}
+.verdict.bad{background:#f6dfdd; border-color:var(--err); color:#5e1d19}
+.feedback{margin-top:16px; background:var(--parch2); border:1px solid rgba(138,109,26,.5); border-radius:12px; padding:14px 16px; color:var(--ink)}
+.feedback[hidden]{display:none}
+.expl{font-style:italic; margin:0}
+.fb-actions{margin-top:12px; display:flex; justify-content:flex-end}
+.opts{display:grid; gap:10px}
+.opt{text-align:left; background:var(--parch); color:var(--ink); border:2px solid #100b04; border-radius:12px;
+  padding:.7rem 1rem; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.3); transition:transform .08s}
+.opt:active:not(:disabled){transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.3)}
+.opt:disabled{cursor:default}
+.opt.good{background:#dff0e0; border-color:var(--ok)}
+.opt.good::after{content:" ✓"; font-weight:700; color:var(--ok-deep)}
+.opt.bad{background:#f6dfdd; border-color:var(--err)}
+.reaction{display:flex; gap:12px; align-items:flex-start; margin-top:16px; background:var(--parch2);
+  border:1px solid rgba(138,109,26,.5); border-radius:12px; padding:13px 15px; color:var(--ink)}
+.reaction[hidden]{display:none}
+.avatar{flex:0 0 46px; width:46px; height:46px; border-radius:50%; background:linear-gradient(160deg,var(--lc),#241b0e);
+  color:var(--gold-bright); display:grid; place-items:center; font-family:var(--f-display); font-weight:900; font-size:1.05rem; border:2px solid #100b04}
+.react-line{font-style:italic}
+.react-name{font-family:var(--f-mono); font-size:.64rem; letter-spacing:.16em; color:var(--gold-deep); text-transform:uppercase}
+/* fill blanks */
+.sentences{margin:0}
+.sentence{margin:0 0 14px; font-size:1.12rem; color:#e8ddc2}
+.gap{display:inline-block; min-width:120px; text-align:center; background:#191207; border:2px dashed rgba(212,160,23,.55);
+  color:var(--gold-bright); border-radius:10px; padding:.2rem .7rem; cursor:pointer; font-family:var(--f-body); font-size:1rem; transition:background .15s}
+.gap.sel{border-style:solid; background:rgba(212,160,23,.22)}
+.gap.filled{border-style:solid; background:#dff0e0; color:#1e4d28; border-color:var(--ok); cursor:default}
+.bank{display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; background:var(--panel2); padding:14px; border-radius:12px; border:1px dashed rgba(212,160,23,.45)}
+.chip{background:var(--parch); color:var(--ink); border:1.5px solid #100b04; border-radius:999px; padding:.38rem .95rem;
+  font-size:.98rem; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.3); transition:transform .08s}
+.chip:active:not(:disabled){transform:translateY(2px); box-shadow:none}
+.chip.sel{outline:3px solid var(--gold-bright)}
+.chip.used{opacity:.32; text-decoration:line-through; cursor:default}
+.shake{animation:shake .38s ease}
+@keyframes shake{0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(3px)}}
+/* match */
+.example{background:var(--parch2); color:var(--ink); border:1px solid rgba(138,109,26,.5); border-radius:12px;
+  padding:10px 14px; font-family:var(--f-mono); font-size:.85rem; margin-bottom:14px}
+.match-wrap{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+@media (max-width:580px){.match-wrap{grid-template-columns:1fr}}
+.m-col{display:flex; flex-direction:column; gap:10px}
+.m-item{background:var(--parch); color:var(--ink); border:1.5px solid #100b04; border-radius:10px; padding:.6rem .9rem;
+  cursor:pointer; text-align:left; box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.m-item.sel{outline:3px solid var(--gold-bright)}
+.m-item.locked{background:#dff0e0; border-color:var(--ok); cursor:default}
+.m-pos{font-family:var(--f-mono); font-size:.62rem; letter-spacing:.12em; color:var(--ink-soft); text-transform:uppercase; margin-left:.4rem}
+
+/* ================= modal ================= */
+#overlay{position:fixed; inset:0; z-index:80; display:none; place-items:center; background:rgba(12,8,3,.74); padding:18px}
+#overlay.open{display:grid}
+.modal{width:min(580px,100%); max-height:88vh; overflow:auto; background:var(--parch); color:var(--ink);
+  border-radius:18px; border:2px solid #100b04; box-shadow:0 12px 0 rgba(0,0,0,.45); padding:24px; animation:popIn .32s ease}
+@keyframes popIn{from{opacity:0; transform:scale(.93) translateY(10px)} to{opacity:1; transform:none}}
+.modal-title{font-family:var(--f-display); font-weight:900; font-size:1.45rem; margin:.5rem 0 .2rem; color:var(--ink)}
+.modal-tag{margin-bottom:.4rem}
+.brief-grid{display:flex; gap:14px; align-items:center; margin:.9rem 0; background:var(--parch2); border:1px solid rgba(138,109,26,.4); border-radius:12px; padding:12px}
+.brief-grid img{width:150px; border-radius:9px; border:2px solid #100b04; display:block}
+.brief-meta{font-size:.92rem}
+.brief-obj{margin:.6rem 0; color:#3a2f1c}
+.brief-tip{font-style:italic; color:#5c4d31; margin:.4rem 0}
+.brief-flavor{border-left:4px solid var(--gold); padding:.4rem .9rem; margin:.9rem 0; font-style:italic; background:var(--parch2); border-radius:8px}
+.modal-actions{display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; margin-top:1.1rem}
+.stars-big{display:flex; gap:10px; justify-content:center; margin:.8rem 0}
+.stars-big .st{width:44px; height:44px; color:#c6b488}
+.stars-big .st.on{color:var(--gold); animation:starPop .5s ease both}
+.stars-big .st.on:nth-child(2){animation-delay:.15s}
+.stars-big .st.on:nth-child(3){animation-delay:.3s}
+.stars-big svg{width:44px; height:44px}
+@keyframes starPop{0%{transform:scale(.3) rotate(-30deg); opacity:0} 70%{transform:scale(1.25) rotate(8deg); opacity:1} 100%{transform:scale(1) rotate(0)}}
+.result-score{font-family:var(--f-mono); font-weight:700; font-size:2.4rem; text-align:center; color:var(--gold-deep); margin:.2rem 0}
+.result-line{text-align:center; color:#5c4d31; font-size:.95rem; margin:.2rem 0}
+
+/* ================= finale ================= */
+.finale-head{text-align:center; margin-bottom:18px}
+.finale-crown{display:inline-grid; width:56px; height:56px; color:var(--gold-bright); filter:drop-shadow(0 0 12px rgba(245,197,66,.5))}
+.finale-crown svg{width:56px; height:56px}
+.finale-score{font-family:var(--f-mono); font-weight:700; font-size:clamp(3rem,10vw,4.6rem); color:var(--gold-bright); text-shadow:0 4px 0 rgba(0,0,0,.4); line-height:1}
+.rank-banner{display:inline-block; font-family:var(--f-display); font-weight:700; font-size:clamp(1.05rem,3.4vw,1.5rem);
+  color:#241b0e; background:linear-gradient(180deg,var(--gold-bright),var(--gold)); border:2px solid #100b04;
+  border-radius:999px; padding:.55rem 1.6rem; margin:.6rem 0 1.2rem; box-shadow:var(--hard)}
+.results-table{width:100%; border-collapse:collapse; background:var(--panel); border:1px solid rgba(212,160,23,.4); border-radius:14px; overflow:hidden}
+.results-table th,.results-table td{padding:.65rem .8rem; text-align:left; border-bottom:1px solid rgba(212,160,23,.22); font-size:.95rem}
+.results-table th{font-family:var(--f-mono); font-size:.66rem; letter-spacing:.18em; color:var(--gold); text-transform:uppercase}
+.results-table td .st{display:inline-block; width:16px; height:16px; color:#5c4d31}
+.results-table td .st.on{color:var(--gold)}
+.results-table svg{width:16px; height:16px; vertical-align:middle}
+.finale-actions{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:22px}
+
+/* ================= toast / fx ================= */
+#toast-zone{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:96; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none}
+.toast{background:#191207; color:var(--parch); border:1px solid rgba(212,160,23,.55); padding:.55rem 1.15rem;
+  border-radius:999px; font-size:.93rem; box-shadow:0 8px 22px rgba(0,0,0,.45); animation:toastIn .28s ease}
+.toast.ok{border-color:var(--ok)}
+.toast.err{border-color:var(--err)}
+@keyframes toastIn{from{opacity:0; transform:translateY(10px)}}
+.pop-float{position:fixed; z-index:97; transform:translate(-50%,0); font-family:var(--f-mono); font-weight:700;
+  background:#191207; color:var(--gold-bright); border:1px solid var(--gold); padding:.22rem .6rem; border-radius:8px;
+  pointer-events:none; animation:floatUp .85s ease forwards}
+@keyframes floatUp{from{opacity:0; transform:translate(-50%,8px)} 18%{opacity:1} to{opacity:0; transform:translate(-50%,-48px)}}
+.spark{position:fixed; z-index:98; width:9px; height:9px; border-radius:2px; pointer-events:none; animation:sparkFly .95s ease-out forwards}
+@keyframes sparkFly{from{opacity:1; transform:translate(0,0) rotate(0deg)} to{opacity:0; transform:translate(var(--dx),var(--dy)) rotate(var(--rot))}}
+#fx-layer{position:fixed; inset:0; pointer-events:none; z-index:98}
+
+/* ================= reduced motion ================= */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
+  #embers{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="embers" aria-hidden="true"></div>
+
+<!-- ================= preloader ================= -->
+<div id="preloader">
+  <div class="ring-loader" data-icon="ring" aria-hidden="true"></div>
+  <p class="pre-kicker">THE PRANCING PIXEL PRESENTS</p>
+  <h1 class="pre-title">FELLOWSHIP ARCADE</h1>
+  <p class="pre-sub">Five trials between the hearth and the shadow</p>
+  <button id="btn-play" class="btn big" aria-label="Play — start the arcade">▶&nbsp;&nbsp;PLAY</button>
+  <p class="pre-note">Every sound is synthesized in your browser — nothing is downloaded.</p>
+</div>
+
+<!-- ================= fixed console ================= -->
+<header class="console">
+  <div class="console-in">
+    <div class="brand"><span class="brand-ring" data-icon="ring" aria-hidden="true"></span><span class="brand-name">FELLOWSHIP&nbsp;ARCADE</span></div>
+    <div class="progress-cells" id="progress-cells" aria-label="Progress by level"></div>
+    <div class="spacer"></div>
+    <div class="score-box" id="hud-score" role="status" aria-label="Total score">★ 0</div>
+    <button id="btn-sound" class="icon-btn" aria-pressed="false" aria-label="Toggle sound"><span id="sound-icon" data-icon="sound"></span></button>
+    <button id="btn-map" class="icon-btn" aria-label="Back to level map"><span data-icon="map"></span></button>
+  </div>
+</header>
+
+<main class="app">
+
+  <!-- ================= intro ================= -->
+  <section id="scr-intro" class="screen" aria-label="Introduction">
+    <div class="hero">
+      <p class="kicker">A reading arcade built on the lesson deck</p>
+      <h1 class="hero-title">FELLOWSHIP ARCADE</h1>
+      <p class="hero-sub">Fifteen frames of film · sixteen words of power · five trials between the hearth and the shadow</p>
+      <div class="story">
+        <p>A small golden ring leaves a warm hole in the ground and drags nine companions across a cold, wide world. The lesson deck traced that journey frame by frame; this arcade lets you walk it in mini-games drawn from the very same lines.</p>
+        <ul class="howto">
+          <li>🕹️ Play the levels in <strong>any order</strong> — the whole map is open from the start.</li>
+          <li>⭐ A flawless level earns <strong>3 stars</strong>; one or two mistakes earn 2; more earn 1.</li>
+          <li>💾 Best scores are saved in your browser — leave a level at any moment, nothing is lost.</li>
+          <li>🔊 Sound is synthesized live with the Web Audio API — mute it from the console above.</li>
+        </ul>
+        <p class="kbd-hints">Keyboard: <kbd>Tab</kbd> move · <kbd>Enter</kbd> confirm · <kbd>←</kbd> REAL · <kbd>→</kbd> DELUSION · <kbd>Esc</kbd> back to map</p>
+      </div>
+      <button id="btn-begin" class="btn big">BEGIN THE QUEST ⚔️</button>
+      <p class="tiny-note">Source deck: <a href="the-lord-of-the-rings-1.pdf" target="_blank" rel="noopener noreferrer">the-lord-of-the-rings-1.pdf</a> (opens in a new tab)</p>
+    </div>
+  </section>
+
+  <!-- ================= level map ================= -->
+  <section id="scr-map" class="screen" aria-label="Level map">
+    <div class="map-head">
+      <h2>THE REEL MAP</h2>
+      <p>Any order. Any time. The road is yours.</p>
+    </div>
+    <div class="reel-grid" id="reel-grid"></div>
+    <div class="final-wrap" id="final-wrap" hidden>
+      <button id="btn-final" class="btn big">🔥 THE FINAL CHALLENGE — SEE THE TAPE</button>
+    </div>
+  </section>
+
+  <!-- ================= scene ================= -->
+  <section id="scr-scene" class="screen" aria-label="Level scene">
+    <div class="scene-head">
+      <button id="btn-back" class="btn-ghost">⟵ MAP</button>
+      <span class="tag-chip" id="scene-tag">LEVEL</span>
+      <span class="char-chip-dark" id="scene-char"></span>
+      <span class="spacer"></span>
+      <span class="score-box" id="scene-score" role="status" aria-label="Level score">0</span>
+    </div>
+    <div class="timer-wrap" id="timer-slot" hidden>
+      <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+      <div class="timer-num" id="timer-num" aria-live="off"></div>
+    </div>
+    <div id="scene-body"></div>
+  </section>
+
+  <!-- ================= finale ================= -->
+  <section id="scr-finale" class="screen" aria-label="Finale">
+    <div id="finale-body"></div>
+  </section>
+
+</main>
+
+<!-- ================= modal ================= -->
+<div id="overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Dialog">
+  <div class="modal"><div id="modal-body"></div></div>
+</div>
+
+<div id="toast-zone" aria-live="polite"></div>
+<div id="fx-layer" aria-hidden="true"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===== tiny utilities ===== */
+var $ = function(sel, ctx){ return (ctx || document).querySelector(sel); };
+var $$ = function(sel, ctx){ return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
+var clamp = function(v, a, b){ return Math.max(a, Math.min(b, v)); };
+var shuffle = function(arr){
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+};
+var RM = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ===== inline SVG icon set (no external libraries) ===== */
+var ICONS = {
+  ring: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='9'/><circle cx='12' cy='12' r='4.6'/><path d='M7.5 5.6l1 1.6M16.5 5.6l-1 1.6' stroke-linecap='round'/></svg>",
+  star: "<svg viewBox='0 0 24 24' fill='currentColor'><path d='M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 16.9 6.1 20.2l1.3-6.6L2.5 9l6.6-.8z'/></svg>",
+  map: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linejoin='round'><path d='M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z'/><path d='M9 4v14M15 6v14'/></svg>",
+  sound: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 9v6h4l5 4V5L8 9H4z' fill='currentColor' stroke='none'/><path d='M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12'/></svg>",
+  mute: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><path d='M4 9v6h4l5 4V5L8 9H4z' fill='currentColor' stroke='none'/><path d='M16 9l6 6M22 9l-6 6'/></svg>",
+  check: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M4 12.5l5 5L20 6.5'/></svg>",
+  cross: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round'><path d='M5 5l14 14M19 5L5 19'/></svg>",
+  crown: "<svg viewBox='0 0 24 24' fill='currentColor'><path d='M3 8l4.5 4L12 5l4.5 7L21 8l-1.6 11H4.6L3 8z'/></svg>",
+  flame: "<svg viewBox='0 0 24 24' fill='currentColor'><path d='M12 2c1 4-3 5.5-3 9a3.5 3.5 0 007 0c0-1.2-.6-2-.6-2 2 1 3.6 3 3.6 5.5A7 7 0 115 14.5C5 9 10 7.5 12 2z'/></svg>"
+};
+function refreshIcons(root){
+  $$("[data-icon]", root).forEach(function(el){
+    el.innerHTML = ICONS[el.getAttribute("data-icon")] || "";
+  });
+}
+
+/* ===== toasts / floating pops / confetti ===== */
+function toast(msg, kind){
+  var zone = $("#toast-zone");
+  var el = document.createElement("div");
+  el.className = "toast" + (kind ? " " + kind : "");
+  el.textContent = msg;
+  zone.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 2600);
+}
+function popFloat(text, x, y){
+  if (RM) return;
+  var el = document.createElement("div");
+  el.className = "pop-float";
+  el.textContent = text;
+  el.style.left = clamp(x, 40, window.innerWidth - 40) + "px";
+  el.style.top = clamp(y, 40, window.innerHeight - 20) + "px";
+  document.body.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 900);
+}
+function popFloatAt(el, text){
+  var r = el.getBoundingClientRect();
+  popFloat(text, r.left + r.width / 2, Math.max(20, r.top - 10));
+}
+var SPARK_COLORS = ["#f5c542", "#d4a017", "#3f8a4f", "#f4ecd6", "#b0413a"];
+function spawnConfetti(n){
+  if (RM) return;
+  var layer = $("#fx-layer");
+  n = n || 90;
+  for (var i = 0; i < n; i++){
+    (function(){
+      var s = document.createElement("span");
+      s.className = "spark";
+      s.style.left = (45 + Math.random() * 10) + "%";
+      s.style.top = (48 + Math.random() * 8) + "%";
+      s.style.background = SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)];
+      s.style.setProperty("--dx", (Math.random() * 560 - 280) + "px");
+      s.style.setProperty("--dy", (-(Math.random() * 380 + 70)) + "px");
+      s.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
+      if (Math.random() > 0.6) s.style.borderRadius = "50%";
+      layer.appendChild(s);
+      setTimeout(function(){ s.remove(); }, 1100);
+    })();
+  }
+}
+
+/* ===== audio engine (Web Audio API, all synthesized) ===== */
+var ctx = null, master = null;
+function initAudio(){
+  if (ctx) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ctx = new AC();
+    master = ctx.createGain();
+    master.gain.value = 0.5;
+    master.connect(ctx.destination);
+  } catch (e) { ctx = null; }
+}
+function tone(freq, dur, type, vol, when){
+  if (!ctx || muted) return;
+  try {
+    var t = ctx.currentTime + (when || 0);
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = type || "sine";
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.2, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.15));
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + (dur || 0.15) + 0.06);
+  } catch (e) {}
+}
+function noiseBurst(dur, vol, when){
+  if (!ctx || muted) return;
+  try {
+    var t = ctx.currentTime + (when || 0);
+    var len = Math.floor(ctx.sampleRate * (dur || 0.3));
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    var g = ctx.createGain();
+    g.gain.value = vol || 0.22;
+    src.connect(g); g.connect(master);
+    src.start(t);
+  } catch (e) {}
+}
+var SFX = {
+  click: function(){ tone(660, 0.06, "triangle", 0.16); },
+  flip: function(){ tone(420, 0.06, "triangle", 0.14); tone(560, 0.07, "triangle", 0.12, 0.05); },
+  correct: function(){ tone(523, 0.1, "triangle", 0.2); tone(659, 0.1, "triangle", 0.2, 0.09); tone(784, 0.16, "triangle", 0.2, 0.18); },
+  wrong: function(){ tone(200, 0.16, "sawtooth", 0.16); tone(150, 0.22, "sawtooth", 0.14, 0.1); },
+  match: function(){ tone(784, 0.1, "sine", 0.2); tone(1046, 0.16, "sine", 0.2, 0.09); },
+  fanfare: function(){ tone(523, 0.12, "triangle", 0.22); tone(659, 0.12, "triangle", 0.22, 0.11); tone(784, 0.12, "triangle", 0.22, 0.22); tone(1046, 0.28, "triangle", 0.24, 0.33); },
+  tick: function(){ tone(880, 0.03, "square", 0.07); },
+  cheer: function(){ noiseBurst(0.45, 0.16); tone(523, 0.12, "triangle", 0.2, 0.05); tone(659, 0.12, "triangle", 0.2, 0.16); tone(784, 0.2, "triangle", 0.22, 0.27); noiseBurst(0.5, 0.12, 0.35); }
+};
+
+/* ===== target vocabulary (16 words of power) ===== */
+var WORDS = [
+  { w: "forge",     pos: "verb",      d: "to shape metal with fire — or create something lasting through effort" },
+  { w: "visceral",  pos: "adjective", d: "felt deep in the gut; raw and physical" },
+  { w: "evasion",   pos: "noun",      d: "the act of escaping or dodging; a false promise of escape" },
+  { w: "wrath",     pos: "noun",      d: "extreme, punishing rage" },
+  { w: "ethereal",  pos: "adjective", d: "extremely light and delicate; otherworldly" },
+  { w: "humility",  pos: "noun",      d: "a modest view of your own importance" },
+  { w: "fragile",   pos: "adjective", d: "easily broken or shattered" },
+  { w: "legacy",    pos: "noun",      d: "what the past hands down to you" },
+  { w: "conquest",  pos: "noun",      d: "taking control of something by force" },
+  { w: "domination",pos: "noun",      d: "total control over others" },
+  { w: "siege",     pos: "noun",      d: "an army surrounding a place to capture it" },
+  { w: "corruption",pos: "noun",      d: "the slow poisoning of something good" },
+  { w: "resilient", pos: "adjective", d: "able to spring back; hard to break" },
+  { w: "redeem",    pos: "verb",      d: "to make up for a failure by paying a price" },
+  { w: "loyalty",   pos: "noun",      d: "faithfulness to a person or cause" },
+  { w: "deaden",    pos: "verb",      d: "to make weaker, duller, or numb" }
+];
+
+/* ===== scenes (levels): id, num, title, char, color, slide, tag, obj, tip, flavor ===== */
+var SCENES = [
+  { id: "shire", num: 1, title: "Hearth & Home", char: "Frodo", color: "#3f6b4f", slide: "slide-003.jpg", tag: "FILL THE BLANKS",
+    obj: "Six lines from the journey have lost their words. Fill every gap with the right term from the bank. A wrong word bounces back with a shake — and each bounce costs points.",
+    tip: "Tap a gap first, then a word — or pick a word first and then its gap.",
+    flavor: "“The burden found small hands without asking if they were ready. Let it find them ready now.”" },
+  { id: "prologue", num: 2, title: "The Nature of Power", char: "Gandalf", color: "#7d2a20", slide: "slide-002.jpg", tag: "REAL OR DELUSION",
+    obj: "Eight claims about the Ring, read aloud by a wizard. Judge each one REAL or DELUSION before the timer bar runs dry. The tape only moves forward when you press NEXT — read every explanation first.",
+    tip: "Use ← for REAL and → for DELUSION. Streaks of three correct answers raise your multiplier.",
+    flavor: "“A wizard is never late — and neither, with any luck, is a correct answer.”" },
+  { id: "haven", num: 3, title: "The Haven of Elves", char: "Galadriel", color: "#c9a227", slide: "slide-006.jpg", tag: "THE WIZARD'S CHOICE",
+    obj: "Six questions stand between you and the golden wood. Three options each, and only one attempt per question — think the way the Council thinks. The Lady of Light will react to every answer.",
+    tip: "There is no second attempt. Read the reaction after you answer; it often whispers the lesson.",
+    flavor: "“Even the smallest person can change the course of the future.”" },
+  { id: "temptation", num: 4, title: "Architecture of Temptation", char: "Boromir", color: "#a03328", slide: "slide-007.jpg", tag: "MATCH THE MEANING",
+    obj: "Six words of power have drifted apart from their meanings. Reunite every pair: tap a word, then tap its meaning. Correct pairs lock green; wrong picks shake loose and cost points.",
+    tip: "The example shows the trick in one glance: WORD · boasts → MEANING · proudly has.",
+    flavor: "“It is a gift — a chance to prove your vocabulary against Gondor's need.”" },
+  { id: "bonus", num: 5, title: "The Stubborn Courage", char: "Sam", color: "#41608a", slide: "slide-015.jpg", tag: "BONUS ROUND",
+    obj: "Everything you have learned, against the clock: seven hundred and fifty seconds of mixed questions from every trial on the map. Build a streak of three and your points are doubled.",
+    tip: "Three right in a row doubles your points. Guard the streak with your attention.",
+    flavor: "“I made a promise, Mr. Frodo: don't you leave him. And I won't leave these words either.”" }
+];
+
+/* ===== level 1 data: fill in the blanks ===== */
+var FILL = {
+  items: [
+    { before: "In the film's first minutes, Isildur keeps the weapon ", after: " for conquest — and the shadow endures.", key: "forged",
+      why: "“…the weapon forged for conquest” — hammered into being, made to dominate." },
+    { before: "Desiring only gardens, food, and gossip, hobbits stay uniquely ", after: " against a weapon of total domination.", key: "resilient",
+      why: "No imperial ambition for the Ring to amplify — nothing to work with." },
+    { before: "The Ring's promise of ", after: " is a lie: putting it on drags the bearer into the wraith-world.", key: "evasion",
+      why: "“The Ring's promise of evasion is a lie.” Escape that exposes you is not escape." },
+    { before: "Pushed off the surface by Saruman's ", after: ", the Fellowship is forced underground.", key: "wrath",
+      why: "Wrath is anger with the volume raised — rage that moves mountains." },
+    { before: "The alliance is incredibly ", after: ", and the Extreme Long Shots make us feel it.", key: "fragile",
+      why: "Nine thin figures against the malice of the world — porcelain on a ridge." },
+    { before: "Sam plunging into the water proves that while the formal Fellowship is broken, unbreakable ", after: " remains.", key: "loyalty",
+      why: "A hobbit who cannot swim wades into deep water for a friend." }
+  ],
+  decoys: ["ethereal", "siege", "legacy", "deaden"]
+};
+
+/* ===== level 2 data: REAL or DELUSION ===== */
+var JUDGE_TIME = 600; /* seconds per statement card */
+var JUDGE = [
+  { s: "The Ring commands everyone with exactly the same force.", a: "d",
+    why: "The deck teaches the opposite: “The Ring does not command everyone equally; it reveals, amplifies, and isolates.”" },
+  { s: "The Ring exploits what a person is already tempted to desire.", a: "r",
+    why: "The core insight verbatim: “It exploits what a person is already tempted to desire.”" },
+  { s: "Isildur's great strength protected him from the Ring's corruption.", a: "d",
+    why: "“Isildur's fateful choice… proves that physical strength is no defense against spiritual corruption.”" },
+  { s: "Simple desires — gardens, food, gossip — make hobbits uniquely resilient to the Ring.", a: "r",
+    why: "The Ring amplifies ambition; a hobbit's heart offers it almost nothing to amplify." },
+  { s: "Bilbo kept the Ring hidden for decades because he dreamed of empire.", a: "d",
+    why: "“The absence of imperial ambition allows Bilbo to keep the ring for decades without the enemy finding him.”" },
+  { s: "Putting the Ring on gives its bearer a reliable escape.", a: "d",
+    why: "“The Ring's promise of evasion is a lie. Putting it on does not provide escape…”" },
+  { s: "The burden of the world falls onto small hands without asking if they are ready.", a: "r",
+    why: "The deck states it verbatim: responsibility lands like weather, uninvited." },
+  { s: "The film's colors grow darker from the very moment the inscription burns in the fire.", a: "r",
+    why: "“The revelation of the Ring's fiery Tengwar inscription marks the exact moment the film's Digital Intermediate color grading darkens.”" }
+];
+
+/* ===== level 3 data: the wizard's choice (multiple choice) ===== */
+var CHOICE = [
+  { q: "What does Rivendell offer Frodo?",
+    opts: ["Healing, but not absolute restoration", "A full erasure of every wound", "An army to carry the Ring"], a: 0,
+    yes: "The light agrees. Healing is not erasure.", no: "Even the Elves cannot erase every scar — reread the haven slide." },
+  { q: "What does the broken sword Narsil symbolize?",
+    opts: ["Galadriel's mirror", "The fractured lineage Aragorn must decide to carry", "Sauron's lost crown"], a: 1,
+    yes: "Well judged. The shards wait on their plinth for a claimant.", no: "The sword speaks of inheritance, not of mirrors or crowns." },
+  { q: "Which vector of corruption does the deck assign to Saruman?",
+    opts: ["Humility", "Patriotism", "Knowledge and order"], a: 2,
+    yes: "Wisdom bent into justification — exactly the wizard's door.", no: "Saruman's door is knowledge; Boromir carries patriotism." },
+  { q: "What does Galadriel ultimately recognize at her test?",
+    opts: ["That to save the world, the time of the Elves must end", "That she must join the winning side", "That the Ring holds no power over the wise"], a: 0,
+    yes: "“Beautiful and terrible” — you listened to her refusal.", no: "Her vision was tempting precisely because it was good." },
+  { q: "What does the Extreme Long Shot visualize across the film?",
+    opts: ["The cozy interiors of the Shire", "The sheer discrepancy between the characters and the malice of the world", "The speed of the horses"], a: 1,
+    yes: "Small figures, immense world — the thin ink line on the ridge.", no: "The wide shot argues scale, never comfort." },
+  { q: "In Moria, “the stone deadens sound.” What does DEADEN mean here?",
+    opts: ["Makes louder", "Makes weaker or duller", "Echoes forever"], a: 1,
+    yes: "Stone that swallows sound — until one careless noise.", no: "To deaden is to dull and dampen, never to amplify." }
+];
+
+/* ===== level 4 data: match the meaning ===== */
+var PAIRS = [
+  { key: "forge",    word: "forge",    pos: "verb",      mean: "to shape metal with fire — or to create something lasting" },
+  { key: "wrath",    word: "wrath",    pos: "noun",      mean: "extreme, punishing rage" },
+  { key: "ethereal", word: "ethereal", pos: "adjective", mean: "light, delicate, otherworldly" },
+  { key: "fragile",  word: "fragile",  pos: "adjective", mean: "easily broken or shattered" },
+  { key: "legacy",   word: "legacy",   pos: "noun",      mean: "what the past hands down to you" },
+  { key: "humility", word: "humility", pos: "noun",      mean: "a modest view of your own importance" }
+];
+
+/* ===== level 5 data: bonus round (mixed from all trials) ===== */
+var BONUS_TIME = 750; /* seconds for the whole round */
+var BONUS = [
+  { q: "The Ring's true power is that it…", opts: ["commands all equally", "reveals, amplifies, and isolates", "destroys ambition"], a: 1 },
+  { q: "Complete the line: “The Ring's promise of ______ is a lie.”", opts: ["mercy", "evasion", "silence"], a: 1 },
+  { q: "Physical strength is a full defense against the Ring's corruption.", opts: ["REAL", "DELUSION"], a: 1 },
+  { q: "“Pushed off the surface by Saruman's ______, the Fellowship is forced underground.”", opts: ["wrath", "mercy", "wisdom"], a: 0 },
+  { q: "Rivendell completely erases the wound of the Morgul blade.", opts: ["REAL", "DELUSION"], a: 1 },
+  { q: "The broken sword Narsil symbolizes…", opts: ["the fractured lineage Aragorn must decide to carry", "the end of the Elves", "Saruman's machines"], a: 0 },
+  { q: "Sam's plunge into the water proves that unbreakable ______ remains.", opts: ["loyalty", "legacy", "wrath"], a: 0 },
+  { q: "“Even the ______ person can change the course of the future.”", opts: ["smallest", "strongest", "wealthiest"], a: 0 }
+];
+
+/* ===== state & storage (versioned keys, private-mode safe) ===== */
+var STORE_KEY = "fellowshipArcade.v1.progress";
+var SOUND_KEY = "fellowshipArcade.v1.sound";
+var progress = {};
+var muted = false;
+function loadProgress(){
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { return {}; }
+}
+function saveProgress(){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(progress)); } catch (e) {}
+}
+function loadSound(){
+  try { return localStorage.getItem(SOUND_KEY) === "off"; } catch (e) { return false; }
+}
+function saveSound(){
+  try { localStorage.setItem(SOUND_KEY, muted ? "off" : "on"); } catch (e) {}
+}
+progress = loadProgress();
+muted = loadSound();
+
+var sceneActive = false;   /* a level is being played */
+var currentLevel = null;   /* id of the open level */
+var cleanupFn = null;
+function setCleanup(fn){ cleanupFn = fn; }
+function runCleanup(){
+  if (cleanupFn) { try { cleanupFn(); } catch (e) {} }
+  cleanupFn = null;
+}
+var levelScore = 0, levelMistakes = 0;
+
+function setSceneScore(v){
+  levelScore = v;
+  $("#scene-score").textContent = String(v);
+}
+function setSceneMistakes(v){ levelMistakes = v; }
+function totalScore(){
+  return SCENES.reduce(function(sum, sc){
+    var p = progress[sc.id];
+    return sum + (p ? p.score : 0);
+  }, 0);
+}
+function totalStars(){
+  return SCENES.reduce(function(sum, sc){
+    var p = progress[sc.id];
+    return sum + (p ? p.stars : 0);
+  }, 0);
+}
+function allDone(){
+  return SCENES.every(function(sc){ return !!progress[sc.id]; });
+}
+function starsFor(mistakes){ return mistakes === 0 ? 3 : (mistakes <= 2 ? 2 : 1); }
+
+/* ===== screens ===== */
+function showScreen(id){
+  $$(".screen").forEach(function(s){ s.classList.remove("active"); });
+  $("#scr-" + id).classList.add("active");
+  try { window.scrollTo({ top: 0, behavior: RM ? "auto" : "smooth" }); } catch (e) { window.scrollTo(0, 0); }
+}
+
+/* ===== HUD (console header) ===== */
+function updateHUD(){
+  $("#hud-score").textContent = "★ " + totalScore();
+  var cells = SCENES.map(function(sc){
+    var p = progress[sc.id];
+    var w = p ? Math.round(p.stars / 3 * 100) : 0;
+    return '<span class="cell" title="Level ' + sc.num + " · " + sc.title + (p ? " · " + p.stars + "★" : "") + '"><span class="fill" style="width:' + w + '%"></span></span>';
+  }).join("");
+  $("#progress-cells").innerHTML = cells;
+}
+
+/* ===== level map (reel cards; free order, nothing locked) ===== */
+function starSpans(n){
+  var out = "";
+  for (var i = 0; i < 3; i++){
+    out += '<span class="st' + (i < n ? " on" : "") + '">' + ICONS.star + "</span>";
+  }
+  return out;
+}
+function renderMap(){
+  var html = "";
+  SCENES.forEach(function(sc){
+    var p = progress[sc.id];
+    html += '<button class="reel-card" data-level="' + sc.id + '" style="--lc:' + sc.color + '" aria-label="Level ' + sc.num + ': ' + sc.title + ' — ' + sc.tag + '. Open level">' +
+      '<span class="sprockets" aria-hidden="true"><span class="sprocket"></span><span class="sprocket"></span><span class="sprocket"></span><span class="sprocket"></span><span class="sprocket"></span><span class="sprocket"></span><span class="sprocket"></span></span>' +
+      '<span class="reel-prev"><span class="reel-num" aria-hidden="true">' + sc.num + "</span>" +
+      '<img src="' + sc.slide + '" alt="Still from level ' + sc.num + " — " + sc.title + '" loading="lazy"></span>' +
+      '<span class="reel-title">' + sc.title + "</span>" +
+      '<span class="reel-tag">' + sc.tag + " · " + sc.char.toUpperCase() + "</span>" +
+      '<span class="char-chip"><span class="char-dot" aria-hidden="true"></span>' + sc.char + "</span>" +
+      '<span class="stars-row" data-stars-of="' + sc.id + '" aria-label="Stars earned">' + starSpans(p ? p.stars : 0) + "</span>" +
+      '<span class="best" data-best-of="' + sc.id + '">' + (p ? "BEST " + p.score + " PTS" : "Not yet attempted") + "</span>" +
+      "</button>";
+  });
+  $("#reel-grid").innerHTML = html;
+  $("#final-wrap").hidden = !allDone();
+  updateHUD();
+}
+
+/* ===== modal (briefing / results / rewind confirm) ===== */
+var lastFocus = null;
+var modalOnClose = null;
+function openModal(html, onClose){
+  var body = $("#modal-body");
+  body.innerHTML = html;
+  refreshIcons(body);
+  modalOnClose = onClose || null;
+  $("#overlay").classList.add("open");
+  $("#overlay").setAttribute("aria-hidden", "false");
+  lastFocus = document.activeElement;
+  var f = body.querySelector("button");
+  if (f) f.focus();
+}
+function closeModal(){
+  var overlay = $("#overlay");
+  if (!overlay.classList.contains("open")) return;
+  overlay.classList.remove("open");
+  overlay.setAttribute("aria-hidden", "true");
+  var cb = modalOnClose;
+  modalOnClose = null;
+  if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} }
+  if (cb) cb();
+}
+/* minimal focus trap inside the modal */
+$("#overlay").addEventListener("keydown", function(e){
+  if (e.key !== "Tab") return;
+  var items = $$("#modal-body button, #modal-body a").filter(function(el){ return !el.disabled; });
+  if (!items.length) return;
+  var first = items[0], last = items[items.length - 1];
+  if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+});
+
+/* ===== level runner (briefing → play → results) ===== */
+function byId(id){
+  for (var i = 0; i < SCENES.length; i++) if (SCENES[i].id === id) return SCENES[i];
+  return null;
+}
+function openLevel(id){
+  currentLevel = id;
+  sceneActive = false;
+  showScreen("scene");
+  renderBriefing(byId(id));
+}
+function renderBriefing(sc){
+  var html =
+    '<span class="tag-chip modal-tag">' + sc.tag + "</span>" +
+    '<h3 class="modal-title">REEL ' + sc.num + " · " + sc.title + "</h3>" +
+    '<div class="brief-grid">' +
+      '<img src="' + sc.slide + '" alt="Still from level ' + sc.num + " — " + sc.title + '">' +
+      '<div class="brief-meta"><div class="char-chip" style="--lc:' + sc.color + '"><span class="char-dot" aria-hidden="true"></span>' + sc.char + "</div>" +
+      '<p class="brief-obj">' + sc.obj + "</p></div>" +
+    "</div>" +
+    '<p class="brief-tip">💡 ' + sc.tip + "</p>" +
+    '<p class="brief-flavor">' + sc.flavor + "</p>" +
+    '<div class="modal-actions">' +
+      '<button class="btn-ghost" data-act="tomap">LATER — BACK TO MAP</button>' +
+      '<button class="btn" data-act="begin:' + sc.id + '">▶ BEGIN</button>' +
+    "</div>";
+  openModal(html, null);
+}
+function beginLevel(id){
+  runCleanup();
+  var sc = byId(id);
+  currentLevel = id;
+  sceneActive = true;
+  setSceneScore(0);
+  setSceneMistakes(0);
+  $("#scene-tag").textContent = "REEL " + sc.num + " · " + sc.tag;
+  $("#scene-char").innerHTML = '<span class="char-dot" style="--lc:' + sc.color + '" aria-hidden="true"></span>' + sc.char;
+  $("#timer-slot").hidden = true;
+  $("#timer-fill").classList.remove("danger");
+  $("#scene-body").innerHTML = "";
+  refreshIcons($("#scene-body"));
+  GAMES[id]($("#scene-body"), finishLevel);
+}
+function finishLevel(score, mistakes){
+  runCleanup();
+  sceneActive = false;
+  $("#timer-slot").hidden = true;
+  var sc = byId(currentLevel);
+  var stars = starsFor(mistakes);
+  var prev = progress[sc.id] || { score: 0, stars: 0 };
+  var isFirstBest = score > (prev.score || 0);
+  progress[sc.id] = { score: Math.max(score, prev.score || 0), stars: Math.max(stars, prev.stars || 0) };
+  saveProgress();
+  updateHUD();
+  renderMap();
+  renderResults(sc, score, mistakes, stars, isFirstBest);
+}
+function renderResults(sc, score, mistakes, stars, isFirstBest){
+  var msg = stars === 3 ? "Flawless. The bards will sing of this run."
+          : stars === 2 ? "Strong work — one or two slips on the road."
+          : "The road is long; walk it again and polish the stars.";
+  var all = allDone();
+  var html =
+    '<span class="tag-chip modal-tag">' + sc.tag + " · REEL " + sc.num + "</span>" +
+    '<h3 class="modal-title">' + sc.title + " — COMPLETE</h3>" +
+    '<div class="stars-big" aria-label="' + stars + ' of 3 stars">' + starSpans(stars) + "</div>" +
+    '<div class="result-score">' + score + " PTS</div>" +
+    '<p class="result-line">' + msg + "</p>" +
+    '<p class="result-line">Mistakes: ' + mistakes + (isFirstBest ? " · New personal best!" : "") + "</p>" +
+    '<p class="result-line">Best for this reel: <strong>' + progress[sc.id].score + " pts · " + progress[sc.id].stars + "★</strong></p>" +
+    '<div class="modal-actions">' +
+      '<button class="btn-ghost" data-act="tomap">BACK TO MAP</button>' +
+      '<button class="btn" data-act="replay:' + sc.id + '">↻ REPLAY</button>' +
+    "</div>";
+  openModal(html, goToMap);
+  if (stars === 3) SFX.cheer(); else SFX.fanfare();
+  spawnConfetti(stars === 3 ? 130 : 70);
+  if (all) toast("All five reels complete — the Final Challenge is open on the map!", "ok");
+}
+function goToMap(){
+  runCleanup();
+  sceneActive = false;
+  currentLevel = null;
+  showScreen("map");
+}
+
+/* ===== mini-game 1: fill in the blanks (The Shire) ===== */
+function gameFill(host, done){
+  var items = FILL.items;
+  var bankWords = shuffle(items.map(function(it){ return it.key; }).concat(FILL.decoys));
+  var score = 0, mistakes = 0, filled = 0;
+  var selWordEl = null;
+  var timers = [];
+  function later(fn, ms){ var t = setTimeout(fn, ms); timers.push(t); return t; }
+
+  host.innerHTML =
+    '<div class="stage">' +
+      '<p class="stage-hint">Tap a gap, then a word — or pick a word first, then its gap. A bounced word costs points.</p>' +
+      '<div class="sentences">' +
+        items.map(function(it, i){
+          return '<p class="sentence">' + it.before +
+            '<button class="gap" data-gap="' + i + '" aria-label="Gap ' + (i + 1) + " of " + items.length + ', choose a word">______</button>' +
+            it.after + "</p>";
+        }).join("") +
+      "</div>" +
+      '<div class="bank" id="fill-bank" aria-label="Word bank">' +
+        bankWords.map(function(w){ return '<button class="chip" data-word="' + w + '">' + w + "</button>"; }).join("") +
+      "</div>" +
+    "</div>";
+
+  function clearSel(){
+    if (selWordEl) selWordEl.classList.remove("sel");
+    selWordEl = null;
+    $$(".gap.sel", host).forEach(function(g){ g.classList.remove("sel"); });
+  }
+  function attempt(gi, chipEl){
+    var gapEl = host.querySelector('.gap[data-gap="' + gi + '"]');
+    var word = chipEl.getAttribute("data-word");
+    clearSel();
+    if (word === items[gi].key){
+      gapEl.textContent = word;
+      gapEl.classList.add("filled");
+      gapEl.disabled = true;
+      chipEl.classList.add("used");
+      chipEl.disabled = true;
+      score += 12;
+      setSceneScore(score);
+      SFX.correct();
+      popFloatAt(gapEl, "+12");
+      filled++;
+      if (filled === items.length) later(function(){ done(score, mistakes); }, 700);
+    } else {
+      mistakes++;
+      setSceneMistakes(mistakes);
+      score = Math.max(0, score - 6);
+      setSceneScore(score);
+      SFX.wrong();
+      popFloatAt(gapEl, "−6");
+      toast("It bounces back — that costs 6 points.", "err");
+      chipEl.classList.add("shake");
+      gapEl.classList.add("shake");
+      later(function(){
+        chipEl.classList.remove("shake");
+        gapEl.classList.remove("shake");
+      }, 430);
+    }
+  }
+  function onClick(e){
+    var gap = e.target.closest(".gap");
+    var chip = e.target.closest(".chip");
+    if (gap && !gap.disabled){
+      if (selWordEl) attempt(Number(gap.getAttribute("data-gap")), selWordEl);
+      else {
+        $$(".gap.sel", host).forEach(function(g){ g.classList.remove("sel"); });
+        gap.classList.add("sel");
+        SFX.click();
+      }
+      return;
+    }
+    if (chip && !chip.disabled){
+      var selGap = $$(".gap.sel", host)[0];
+      if (selGap) attempt(Number(selGap.getAttribute("data-gap")), chip);
+      else {
+        if (selWordEl) selWordEl.classList.remove("sel");
+        chip.classList.add("sel");
+        selWordEl = chip;
+        SFX.flip();
+      }
+    }
+  }
+  host.addEventListener("click", onClick);
+  setCleanup(function(){
+    host.removeEventListener("click", onClick);
+    timers.forEach(clearTimeout);
+    timers = [];
+  });
+}
+
+/* ===== mini-game 2: REAL or DELUSION (the prologue) ===== */
+function gameJudge(host, done){
+  var TOTAL = JUDGE.length;
+  var score = 0, mistakes = 0, streak = 0, idx = 0;
+  var tLeft = JUDGE_TIME, tInt = null, locked = false;
+  var timerIds = [];
+
+  host.innerHTML =
+    '<div class="stage">' +
+      '<div class="judge-meta">' +
+        '<span class="counter" id="j-prog"></span>' +
+        '<span class="counter" id="j-mult">MULTIPLIER ×1</span>' +
+      "</div>" +
+      '<blockquote class="statement" id="j-statement"></blockquote>' +
+      '<div class="verdicts">' +
+        '<button class="verdict" data-v="r" aria-label="Judge this claim real — left arrow key">← REAL</button>' +
+        '<button class="verdict" data-v="d" aria-label="Judge this claim a delusion — right arrow key">DELUSION →</button>' +
+      "</div>" +
+      '<div class="feedback" id="j-fb" hidden>' +
+        '<p class="expl" id="j-expl"></p>' +
+        '<div class="fb-actions"><button class="btn" id="j-next">NEXT →</button></div>' +
+      "</div>" +
+    "</div>";
+  var stEl = $("#j-statement"), progEl = $("#j-prog"), multEl = $("#j-mult"),
+      fbEl = $("#j-fb"), explEl = $("#j-expl"), nextEl = $("#j-next");
+  var verdicts = $$(".verdict", host);
+  $("#timer-slot").hidden = false;
+
+  function multNow(){ return streak >= 6 ? 2 : (streak >= 3 ? 1.5 : 1); }
+  function updateTimerUI(){
+    var fill = $("#timer-fill");
+    fill.style.width = clamp(tLeft / JUDGE_TIME * 100, 0, 100) + "%";
+    fill.classList.toggle("danger", tLeft <= 60);
+    var m = Math.floor(Math.max(0, tLeft) / 60), s = Math.max(0, tLeft) % 60;
+    $("#timer-num").textContent = "This card: " + m + ":" + (s < 10 ? "0" : "") + s + " — the tape waits while you read.";
+  }
+  function stopTimer(){ if (tInt){ clearInterval(tInt); tInt = null; } }
+  function startTimer(){
+    stopTimer();
+    tLeft = JUDGE_TIME;
+    updateTimerUI();
+    tInt = setInterval(function(){
+      tLeft--;
+      updateTimerUI();
+      if (tLeft <= 10 && tLeft > 0) SFX.tick();
+      if (tLeft <= 0){ stopTimer(); answer(null); }
+    }, 1000);
+    timerIds.push(tInt);
+  }
+  function showCard(){
+    locked = false;
+    var q = JUDGE[idx];
+    progEl.textContent = "STATEMENT " + (idx + 1) + " / " + TOTAL;
+    multEl.textContent = "MULTIPLIER ×" + multNow();
+    stEl.textContent = "“" + q.s + "”";
+    verdicts.forEach(function(b){ b.disabled = false; b.classList.remove("good", "bad"); });
+    fbEl.hidden = true;
+    startTimer();
+  }
+  function answer(side){
+    if (locked) return;
+    locked = true;
+    stopTimer();
+    var q = JUDGE[idx];
+    var ok = side === q.a;
+    if (ok){
+      streak++;
+      var pts = Math.round(10 * multNow());
+      score += pts;
+      setSceneScore(score);
+      if (side !== null) popFloatAt(verdicts[side === "r" ? 0 : 1], "+" + pts);
+      SFX.correct();
+    } else {
+      mistakes++;
+      setSceneMistakes(mistakes);
+      streak = 0;
+      score = Math.max(0, score - 4);
+      setSceneScore(score);
+      SFX.wrong();
+    }
+    multEl.textContent = "MULTIPLIER ×" + multNow();
+    verdicts.forEach(function(b){
+      b.disabled = true;
+      if (b.getAttribute("data-v") === q.a) b.classList.add("good");
+      else if (side !== null && b.getAttribute("data-v") === side) b.classList.add("bad");
+    });
+    var truth = q.a === "r" ? "REAL" : "DELUSION";
+    explEl.textContent = (side === null ? "THE TAPE RAN OUT — " : truth + " — ") + q.why;
+    nextEl.textContent = idx === TOTAL - 1 ? "SEE RESULTS ✓" : "NEXT →";
+    fbEl.hidden = false;
+    nextEl.focus();
+  }
+  function next(){
+    idx++;
+    if (idx >= TOTAL) done(score, mistakes);
+    else showCard();
+  }
+  verdicts.forEach(function(b){
+    b.addEventListener("click", function(){
+      SFX.click();
+      if (!locked) answer(b.getAttribute("data-v"));
+    });
+  });
+  nextEl.addEventListener("click", function(){ SFX.click(); next(); });
+  var hostEl = host;
+  function onKey(e){
+    if (e.key === "ArrowLeft" && !locked) answer("r");
+    else if (e.key === "ArrowRight" && !locked) answer("d");
+    else if (e.key === "Enter" && !fbEl.hidden) next();
+  }
+  document.addEventListener("keydown", onKey);
+  setCleanup(function(){
+    stopTimer();
+    timerIds.forEach(clearInterval);
+    timerIds = [];
+    document.removeEventListener("keydown", onKey);
+  });
+  showCard();
+}
+
+/* ===== mini-game 3: the wizard's choice (multiple choice) ===== */
+function gameChoice(host, done){
+  var TOTAL = CHOICE.length;
+  var score = 0, mistakes = 0, idx = 0, locked = false;
+  var timers = [];
+  function later(fn, ms){ var t = setTimeout(fn, ms); timers.push(t); return t; }
+
+  function renderQ(){
+    locked = false;
+    var q = CHOICE[idx];
+    host.innerHTML =
+      '<div class="stage">' +
+        '<div class="judge-meta">' +
+          '<span class="counter">QUESTION ' + (idx + 1) + " / " + TOTAL + "</span>" +
+          '<span class="counter">ONE ATTEMPT</span>' +
+        "</div>" +
+        '<p class="statement">' + q.q + "</p>" +
+        '<div class="opts">' +
+          q.opts.map(function(o, i){ return '<button class="opt" data-o="' + i + '">' + o + "</button>"; }).join("") +
+        "</div>" +
+        '<div class="reaction" id="c-react" hidden>' +
+          '<span class="avatar" aria-hidden="true">G</span>' +
+          "<span><span class='react-name'>Galadriel of Lórien</span><br>" +
+          '<span class="react-line" id="c-line"></span></span>' +
+        "</div>" +
+        '<div class="fb-actions"><button class="btn" id="c-next" hidden>' +
+          (idx === TOTAL - 1 ? "SEE RESULTS ✓" : "CONTINUE →") + "</button></div>" +
+      "</div>";
+  }
+  function onClick(e){
+    var opt = e.target.closest(".opt");
+    if (opt && !locked){
+      locked = true;
+      var q = CHOICE[idx];
+      var oi = Number(opt.getAttribute("data-o"));
+      var ok = oi === q.a;
+      $$(".opt", host).forEach(function(b, j){
+        b.disabled = true;
+        if (j === q.a) b.classList.add("good");
+        else if (b === opt) b.classList.add("bad");
+      });
+      if (ok){
+        score += 12;
+        setSceneScore(score);
+        SFX.correct();
+        popFloatAt(opt, "+12");
+      } else {
+        mistakes++;
+        setSceneMistakes(mistakes);
+        score = Math.max(0, score - 4);
+        setSceneScore(score);
+        SFX.wrong();
+        popFloatAt(opt, "−4");
+      }
+      $("#c-line").textContent = ok ? q.yes : q.no;
+      $("#c-react").hidden = false;
+      var nb = $("#c-next");
+      nb.hidden = false;
+      nb.focus();
+    }
+    else if (e.target.closest("#c-next")){
+      SFX.click();
+      idx++;
+      if (idx >= TOTAL) later(function(){ done(score, mistakes); }, 30);
+      else renderQ();
+    }
+  }
+  host.addEventListener("click", onClick);
+  setCleanup(function(){
+    host.removeEventListener("click", onClick);
+    timers.forEach(clearTimeout);
+    timers = [];
+  });
+  renderQ();
+}
+
+/* ===== mini-game 4: match the meaning (the temptation table) ===== */
+function gameMatch(host, done){
+  var score = 0, mistakes = 0, found = 0, attempts = 0;
+  var sel = null; /* {el, key, type} — type "w" or "m" */
+  var timers = [];
+  function later(fn, ms){ var t = setTimeout(fn, ms); timers.push(t); return t; }
+
+  var wordsHtml = PAIRS.map(function(p){
+    return '<button class="m-item m-word" data-key="' + p.key + '">' + p.word + '<span class="m-pos">' + p.pos + "</span></button>";
+  }).join("");
+  var meansHtml = shuffle(PAIRS).map(function(p){
+    return '<button class="m-item m-mean" data-key="' + p.key + '">' + p.mean + "</button>";
+  }).join("");
+
+  host.innerHTML =
+    '<div class="stage">' +
+      '<div class="example">WORD · <strong>boasts</strong> → MEANING · <em>proudly has</em> — tap a word, then tap its meaning.</div>' +
+      '<div class="judge-meta">' +
+        '<span class="counter" id="m-found">PAIRS 0/' + PAIRS.length + "</span>" +
+        '<span class="counter" id="m-att">ATTEMPTS 0</span>' +
+      "</div>" +
+      '<div class="match-wrap">' +
+        '<div class="m-col" aria-label="Words">' + wordsHtml + "</div>" +
+        '<div class="m-col" aria-label="Meanings">' + meansHtml + "</div>" +
+      "</div>" +
+    "</div>";
+
+  function updateMeta(){
+    $("#m-found").textContent = "PAIRS " + found + "/" + PAIRS.length;
+    $("#m-att").textContent = "ATTEMPTS " + attempts;
+  }
+  function clearSel(){
+    if (sel) sel.el.classList.remove("sel");
+    sel = null;
+  }
+  function onClick(e){
+    var el = e.target.closest(".m-item");
+    if (!el || el.classList.contains("locked")) return;
+    var item = { el: el, key: el.getAttribute("data-key"), type: el.classList.contains("m-word") ? "w" : "m" };
+    if (sel && sel.el === el){ clearSel(); SFX.click(); return; }
+    if (sel && sel.type !== item.type){
+      attempts++;
+      if (sel.key === item.key){
+        found++;
+        score += 12;
+        setSceneScore(score);
+        SFX.match();
+        popFloatAt(el, "+12");
+        sel.el.classList.remove("sel");
+        sel.el.classList.add("locked");
+        sel.el.disabled = true;
+        el.classList.add("locked");
+        el.disabled = true;
+        sel = null;
+        updateMeta();
+        if (found === PAIRS.length) later(function(){ done(score, mistakes); }, 650);
+      } else {
+        mistakes++;
+        setSceneMistakes(mistakes);
+        score = Math.max(0, score - 6);
+        setSceneScore(score);
+        SFX.wrong();
+        popFloatAt(el, "−6");
+        var a = sel.el;
+        a.classList.add("shake");
+        el.classList.add("shake");
+        later(function(){
+          a.classList.remove("shake", "sel");
+          el.classList.remove("shake");
+        }, 430);
+        sel = null;
+        updateMeta();
+        toast("No match — the pair shakes apart. That costs 6 points.", "err");
+      }
+      return;
+    }
+    clearSel();
+    sel = item;
+    el.classList.add("sel");
+    SFX.click();
+  }
+  host.addEventListener("click", onClick);
+  setCleanup(function(){
+    host.removeEventListener("click", onClick);
+    timers.forEach(clearTimeout);
+    timers = [];
+  });
+  updateMeta();
+}
+
+/* ===== mini-game 5: timed bonus round (the stubborn courage) ===== */
+function gameBonus(host, done){
+  var qs = shuffle(BONUS);
+  var TOTAL = qs.length;
+  var score = 0, mistakes = 0, streak = 0, idx = 0, tLeft = BONUS_TIME;
+  var tInt = null, lock = false, ended = false;
+  var timers = [];
+  function later(fn, ms){ var t = setTimeout(fn, ms); timers.push(t); return t; }
+
+  $("#timer-slot").hidden = false;
+  function multNow(){ return streak >= 3 ? 2 : 1; }
+  function updateTimerUI(){
+    var fill = $("#timer-fill");
+    fill.style.width = clamp(tLeft / BONUS_TIME * 100, 0, 100) + "%";
+    fill.classList.toggle("danger", tLeft <= 90);
+    $("#timer-num").textContent = "Round clock: " + Math.max(0, tLeft) + "s — streak multiplier ×" + multNow();
+  }
+  function stopTimer(){ if (tInt){ clearInterval(tInt); tInt = null; } }
+  function startTimer(){
+    tInt = setInterval(function(){
+      tLeft--;
+      updateTimerUI();
+      if (tLeft <= 10 && tLeft > 0) SFX.tick();
+      if (tLeft <= 0) finish();
+    }, 1000);
+  }
+  function finish(){
+    if (ended) return;
+    ended = true;
+    stopTimer();
+    $("#timer-slot").hidden = true;
+    later(function(){ done(score, mistakes); }, 30);
+  }
+  function renderQ(){
+    lock = false;
+    var q = qs[idx];
+    host.innerHTML =
+      '<div class="stage">' +
+        '<div class="judge-meta">' +
+          '<span class="counter">BONUS ' + (idx + 1) + " / " + TOTAL + "</span>" +
+          '<span class="counter" id="b-mult">MULTIPLIER ×' + multNow() + "</span>" +
+        "</div>" +
+        '<p class="statement">' + q.q + "</p>" +
+        '<div class="opts">' +
+          q.opts.map(function(o, i){ return '<button class="opt" data-o="' + i + '">' + o + "</button>"; }).join("") +
+        "</div>" +
+      "</div>";
+  }
+  function onClick(e){
+    var opt = e.target.closest(".opt");
+    if (!opt || lock || ended) return;
+    lock = true;
+    var q = qs[idx];
+    var oi = Number(opt.getAttribute("data-o"));
+    var ok = oi === q.a;
+    $$(".opt", host).forEach(function(b, j){
+      b.disabled = true;
+      if (j === q.a) b.classList.add("good");
+      else if (b === opt) b.classList.add("bad");
+    });
+    if (ok){
+      streak++;
+      var pts = 10 * multNow();
+      score += pts;
+      setSceneScore(score);
+      SFX.correct();
+      popFloatAt(opt, "+" + pts);
+    } else {
+      mistakes++;
+      setSceneMistakes(mistakes);
+      streak = 0;
+      score = Math.max(0, score - 4);
+      setSceneScore(score);
+      SFX.wrong();
+      popFloatAt(opt, "−4");
+    }
+    setSceneScore(score);
+    var mEl = $("#b-mult");
+    if (mEl) mEl.textContent = "MULTIPLIER ×" + multNow();
+    later(function(){
+      idx++;
+      if (idx >= TOTAL) finish();
+      else renderQ();
+    }, 1000);
+  }
+  host.addEventListener("click", onClick);
+  setCleanup(function(){
+    host.removeEventListener("click", onClick);
+    stopTimer();
+    timers.forEach(clearTimeout);
+    timers = [];
+  });
+  startTimer();
+  updateTimerUI();
+  renderQ();
+}
+
+var GAMES = { shire: gameFill, prologue: gameJudge, haven: gameChoice, temptation: gameMatch, bonus: gameBonus };
+
+/* ===== finale ===== */
+function rankFor(t){
+  if (t >= 400) return "Bearer of the Contained Star";
+  if (t >= 280) return "Ranger of the North";
+  if (t >= 150) return "Elf-friend of the Golden Wood";
+  return "Hobbit of the Shire";
+}
+function openFinale(){
+  showScreen("finale");
+  var t = totalScore(), st = totalStars();
+  var rows = SCENES.map(function(sc){
+    var p = progress[sc.id] || { score: 0, stars: 0 };
+    return "<tr><td>" + sc.num + "</td><td>" + sc.title + "</td><td>" + sc.char + "</td><td>" + p.score + " pts</td><td>" + starSpans(p.stars) + "</td></tr>";
+  }).join("");
+  $("#finale-body").innerHTML =
+    '<div class="stage finale-head">' +
+      '<span data-icon="crown" class="finale-crown" aria-hidden="true"></span>' +
+      '<p class="kicker">The tape runs out</p>' +
+      '<h2 class="hero-title" style="font-size:clamp(1.7rem,5vw,2.6rem)">THE JOURNEY IS TOLD</h2>' +
+      '<div class="finale-score">' + t + "</div>" +
+      '<p class="result-line" style="color:#cdbd97">total score · <strong style="color:var(--gold-bright)">★ ' + st + " / 15</strong> stars</p>" +
+      '<div><span class="rank-banner">' + rankFor(t) + "</span></div>" +
+      '<table class="results-table"><thead><tr><th>Reel</th><th>Title</th><th>Guide</th><th>Best</th><th>Stars</th></tr></thead><tbody>' + rows + "</tbody></table>" +
+      '<div class="finale-actions">' +
+        '<a class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center" href="the-lord-of-the-rings-1.pdf" target="_blank" rel="noopener noreferrer">📖 THE ORIGINAL DECK</a>' +
+        '<button class="btn-ghost" data-act="tomap">↩ BACK TO THE MAP</button>' +
+        '<button class="btn btn-warn" data-act="rewind">⏪ REWIND THE TAPE</button>' +
+      "</div>" +
+    "</div>";
+  refreshIcons($("#finale-body"));
+  SFX.fanfare();
+  spawnConfetti(140);
+}
+function openRewindConfirm(){
+  openModal(
+    '<span class="tag-chip modal-tag">HANDLE WITH CARE</span>' +
+    '<h3 class="modal-title">Rewind the tape?</h3>' +
+    '<p class="brief-obj">This erases every star and every best score saved in this browser. The map returns to its empty state, and the Final Challenge closes until all five reels are finished again.</p>' +
+    '<div class="modal-actions">' +
+      '<button class="btn-ghost" data-act="tomap">KEEP MY PROGRESS</button>' +
+      '<button class="btn btn-warn" data-act="rewind-yes">⏪ REWIND ANYWAY</button>' +
+    "</div>",
+    null);
+}
+
+/* ===== global wiring (delegation for dynamic areas) ===== */
+$("#reel-grid").addEventListener("click", function(e){
+  var card = e.target.closest(".reel-card");
+  if (card){
+    SFX.click();
+    openLevel(card.getAttribute("data-level"));
+  }
+});
+document.addEventListener("click", function(e){
+  var el = e.target.closest("[data-act]");
+  if (!el) return;
+  var parts = el.getAttribute("data-act").split(":");
+  var key = parts[0], param = parts[1];
+  if (key === "begin"){
+    modalOnClose = null;
+    SFX.click();
+    closeModal();
+    beginLevel(param);
+  } else if (key === "replay"){
+    modalOnClose = null;
+    SFX.click();
+    closeModal();
+    beginLevel(param);
+  } else if (key === "tomap"){
+    modalOnClose = null;
+    closeModal();
+    SFX.click();
+    goToMap();
+  } else if (key === "rewind"){
+    SFX.click();
+    openRewindConfirm();
+  } else if (key === "rewind-yes"){
+    progress = {};
+    saveProgress();
+    updateHUD();
+    renderMap();
+    modalOnClose = null;
+    closeModal();
+    showScreen("map");
+    toast("The tape rewinds — every star and score is erased.", "ok");
+  }
+});
+$("#overlay").addEventListener("click", function(e){
+  if (e.target === $("#overlay")){
+    closeModal();
+    if (sceneActive) goToMap();
+  }
+});
+
+$("#btn-play").addEventListener("click", function(){
+  initAudio();
+  SFX.fanfare();
+  var pl = $("#preloader");
+  pl.classList.add("done");
+  setTimeout(function(){ pl.remove(); }, 900);
+});
+$("#btn-begin").addEventListener("click", function(){
+  SFX.click();
+  showScreen("map");
+});
+$("#btn-map").addEventListener("click", function(){
+  SFX.click();
+  goToMap();
+});
+$("#btn-back").addEventListener("click", function(){
+  SFX.click();
+  goToMap();
+});
+$("#btn-sound").addEventListener("click", function(){
+  muted = !muted;
+  saveSound();
+  renderSound();
+  if (!muted) SFX.click();
+  toast(muted ? "Sound muted." : "Sound on.", "ok");
+});
+$("#btn-final").addEventListener("click", function(){
+  SFX.click();
+  openFinale();
+});
+document.addEventListener("keydown", function(e){
+  if (e.key !== "Escape") return;
+  if ($("#overlay").classList.contains("open")) closeModal();
+  else if (sceneActive) goToMap();
+});
+
+/* ===== sound button state ===== */
+function renderSound(){
+  $("#sound-icon").innerHTML = ICONS[muted ? "mute" : "sound"];
+  var b = $("#btn-sound");
+  b.setAttribute("aria-pressed", muted ? "true" : "false");
+  b.setAttribute("aria-label", muted ? "Sound off — click to unmute" : "Sound on — click to mute");
+}
+
+/* ===== warm drifting embers ===== */
+(function spawnEmbers(){
+  if (RM) return;
+  var layer = $("#embers");
+  for (var i = 0; i < 16; i++){
+    var el = document.createElement("span");
+    el.className = "ember";
+    el.style.left = (Math.random() * 100) + "%";
+    el.style.setProperty("--dur", (9 + Math.random() * 10) + "s");
+    el.style.setProperty("--del", (-Math.random() * 15) + "s");
+    el.style.setProperty("--sway", (Math.random() * 120 - 60) + "px");
+    layer.appendChild(el);
+  }
+})();
+
+/* ===== boot ===== */
+showScreen("intro");
+updateHUD();
+renderMap();
+renderSound();
+refreshIcons();
+
+})();
+
+
+</script>
+
+</body>
+</html>
