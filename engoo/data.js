@@ -1,5 +1,6 @@
 const LESSONS = [
   { date: '2026-01-01', host: '', title: 'Mind Your Language (104)', url: './20260101-mind-104/index.html' },
+  { date: '2026-01-01', host: '', title: 'Harry Potter 1', url: './20260101-harry-potter-1/index.html' },
   { date: '2026-01-01', host: '', title: 'Roman Holiday', url: './20260101-roman-holiday/index.html' },
   { date: '2026-01-01', host: '', title: 'Priceless', url: './20260101-priceless/index.html' },
   { date: '2026-01-01', host: '', title: 'Love Actually', url: './20260101-love-actually/index.html' },
