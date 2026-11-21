@@ -5,6 +5,8 @@ const LESSONS = [
   { date: '2024-02-28', host: 'Anatoly', title: 'Cuba', url: './20240228-cuba/index.html' },
   { date: '2026-01-01', host: 'AI', title: 'American Graffiti', url: './20260101-american-graffiti/index.html' },
   { date: '2026-01-01', host: 'AI', title: 'Fear And Trembling', url: './20260101-fear-and-trembling/index.html' },
+  { date: '2026-01-01', host: 'AI', title: 'War and Peace', url: './20260101-war-and-peace/index.html' },
+  { date: '2026-01-01', host: 'AI', title: 'The Great Gatsby', url: './20260101-the-great-gatsby/index.html' },
   { date: '2026-01-01', host: 'AI', title: 'Vincent Starry Starry Night', url: './20260101-vincent-starry-starry-night/index.html' },
   { date: '2026-01-01', host: 'AI', title: 'Red Joan', url: './20260101-red-joan/index.html' },
   { date: '2026-01-01', host: 'AI', title: 'Nowhere Boy', url: './20260101-nowhere-boy/index.html' },
