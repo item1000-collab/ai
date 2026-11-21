@@ -76,6 +76,6 @@ const LESSONS = [
   { date: '2026-09-27', host: 'Peter', title: 'AI Cult - Article $ Radio & Audio', url: './20260927-ai-cult/index.html' },
   { date: '2026-10-07', host: 'AI', title: 'AI & Arabok', url: './20261007-ar1/index.html' },
   { date: '2026-10-16', host: 'Hernan', title: 'LEN Debates · Penthesilea: When the Cure Becomes the Curse', url: './20261016-len-debates/index.html' },
-  { date: '2026-10-23', host: 'Hernan', title: 'LEN Debates · The Blood of Troy', url: './20261023-len-debates/index.html' } 
+  { date: '2026-10-23', host: 'Hernan', title: 'LEN Debates · The Blood of Troy', url: './20261023-len-debates/index.html' },
   { date: '2026-11-21', host: 'Anatoly', title: 'Hurgada 2026', url: './20261121-hurgada-2026/index.html' }
 ];
