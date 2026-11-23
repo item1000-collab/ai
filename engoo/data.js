@@ -1,5 +1,4 @@
 const LESSONS = [
-  { date: '2026-01-01', host: '', title: 'Mind Your Language (104)', url: './20260101-mind-104/index.html' },
   { date: '2026-01-01', host: '', title: 'Harry Potter 1', url: './20260101-harry-potter-1/index.html' },
   { date: '2026-01-01', host: '', title: 'The Lord of The Rings 1', url: './20260101-the-lord-of-the-rings-1/index.html' },
   { date: '2026-01-01', host: '', title: 'Roman Holiday', url: './20260101-roman-holiday/index.html' },
@@ -136,5 +135,6 @@ const LESSONS = [
   { date: '2026-11-10', host: 'Rosie', title: 'Friends (S3E14)', url: './20261110-friends-314/index.html' },
   { date: '2026-11-11', host: 'Rosie', title: 'Friends (S3E15)', url: './20261111-friends-315/index.html' },
   { date: '2026-11-12', host: 'Katarina', title: 'Friends (S3E16)', url: './20261112-friends-316/index.html' },
-  { date: '2026-11-22', host: '', title: 'Friends (S3E17)', url: './20261122-friends-317/index.html' }
+  { date: '2026-11-22', host: '', title: 'Friends (S3E17)', url: './20261122-friends-317/index.html' },
+  { date: '2026-11-24', host: 'Katarina', title: 'Mind Your Language (104)', url: './20261124-mind-104/index.html' }
 ];
