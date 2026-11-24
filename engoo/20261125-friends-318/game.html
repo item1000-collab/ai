@@ -1,1 +1,2032 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friends Vocab Arcade: The One with the Hypnosis Tape</title>
+<meta name="description" content="A retro arcade of five mini-games built from the English-through-TV lesson on sitcom storytelling, idioms, and persuasion.">
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --bg: #241A15;
+  --bg-deep: #140D0A;
+  --console: #170F0B;
+  --paper: #FBF3E4;
+  --paper-2: #F3E6CC;
+  --light: #FFF9EE;
+  --ink: #3A2A22;
+  --ink-soft: #6B5447;
+  --coral: #D9573B;
+  --coral-text: #F28B6E;
+  --teal: #2F7F7A;
+  --mustard: #E8A93A;
+  --plum: #7A4A7E;
+  --sage: #5F8A5B;
+  --ok: #4E9A5F;
+  --ok-deep: #1E5A2B;
+  --bad: #C0392B;
+  --f-display: Impact, "Haettenschweiler", "Arial Narrow Bold", sans-serif;
+  --f-body: Georgia, "Times New Roman", serif;
+  --f-mono: "Courier New", Courier, monospace;
+  --f-hand: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --r: 4px;
+}
 
+/* ===== BASE ===== */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { background: var(--bg); }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding-top: 76px;
+  overflow-x: hidden;
+  color: var(--paper);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.6;
+  background: radial-gradient(ellipse at 50% 0%, #4a3024 0%, var(--bg) 55%, var(--bg-deep) 100%);
+}
+
+button { font: inherit; }
+
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--mustard);
+  outline-offset: 3px;
+}
+
+#bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bg-texture {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.14;
+}
+
+/* Film grain and CRT scanlines over the whole page (below modals) */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  pointer-events: none;
+  opacity: 0.09;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 299;
+  pointer-events: none;
+  opacity: 0.35;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.14) 0 1px, transparent 1px 3px);
+}
+
+.kicker {
+  font-family: var(--f-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--coral-text);
+  margin: 0 0 8px;
+}
+
+.display {
+  font-family: var(--f-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.05;
+  margin: 0 0 12px;
+  color: var(--mustard);
+}
+
+h1.display { font-size: clamp(2.2rem, 6vw, 3.8rem); }
+h2.display { font-size: clamp(1.7rem, 4vw, 2.5rem); }
+
+p { margin: 0 0 14px; }
+
+.ico { display: inline-flex; width: 1.1em; height: 1.1em; flex: 0 0 auto; }
+
+[data-icon] svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  font-family: var(--f-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 12px 20px;
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 6px 0 var(--ink);
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.2s ease;
+}
+
+.btn:hover:not(:disabled) { background: var(--light); }
+.btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
+.btn:disabled { cursor: default; }
+.btn.primary { background: var(--coral); color: var(--paper); }
+.btn.gold { background: var(--mustard); }
+.btn.danger { background: var(--bad); color: #fff; }
+.btn.dark {
+  background: #2a1d16;
+  color: var(--paper);
+  border-color: var(--paper);
+  box-shadow: 0 6px 0 #000;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 2px solid var(--paper);
+  border-radius: var(--r);
+  background: #2a1d16;
+  color: var(--paper);
+  font-family: var(--f-mono);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.icon-btn:active { transform: translateY(2px); }
+.icon-btn [data-icon] { width: 22px; height: 22px; }
+.icon-btn[aria-pressed="true"] { border-color: var(--coral-text); color: var(--coral-text); }
+
+/* ===== PRELOADER ===== */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 30%, #3f2b20 0%, var(--bg-deep) 80%);
+  transition: transform 0.8s cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+.preloader.is-exit { transform: translateY(-100%); }
+
+.pre-inner { width: min(440px, 88vw); text-align: center; }
+
+.pre-kicker {
+  font-family: var(--f-mono);
+  letter-spacing: 0.3em;
+  color: var(--paper-2);
+  margin: 0 0 6px;
+}
+
+.pre-title {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: clamp(2.4rem, 8vw, 4rem);
+  letter-spacing: 0.05em;
+  color: var(--mustard);
+  margin: 0 0 26px;
+}
+
+.pre-bar {
+  height: 22px;
+  border: 3px solid var(--paper);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--bg-deep);
+}
+
+.pre-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, var(--coral) 0 14px, var(--mustard) 14px 28px);
+  transition: width 0.1s linear;
+}
+
+.pre-status {
+  font-family: var(--f-mono);
+  font-size: 0.9rem;
+  color: var(--paper-2);
+  min-height: 1.6em;
+  margin: 12px 0 24px;
+}
+
+.play-btn {
+  font-family: var(--f-display);
+  font-size: 2.2rem;
+  letter-spacing: 0.05em;
+  padding: 16px 44px;
+  color: var(--ink);
+  background: var(--mustard);
+  border: 3px solid #000;
+  border-radius: var(--r);
+  box-shadow: 0 8px 0 #000;
+  cursor: pointer;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.play-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #000; }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+/* ===== HEADER CONSOLE ===== */
+.console {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 22px;
+  background: var(--console);
+  border-bottom: 3px solid var(--mustard);
+  box-shadow: 0 4px 0 #000;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--f-display);
+  font-size: 1.35rem;
+  letter-spacing: 0.06em;
+  color: var(--mustard);
+  white-space: nowrap;
+}
+
+.brand [data-icon] { width: 30px; height: 30px; }
+
+.progress-wrap { display: flex; flex-direction: column; gap: 2px; }
+
+.progress { display: flex; gap: 8px; }
+
+.cell {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--paper);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--paper);
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.cell.is-done { background: var(--mustard); border-color: var(--mustard); color: var(--ink); }
+.cell.is-current { box-shadow: 0 0 0 3px var(--coral); }
+
+.progress-meta {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: #CDB89B;
+}
+
+.score-box {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--f-mono);
+  line-height: 1;
+}
+
+.score-box span {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: #CDB89B;
+}
+
+.score-box strong {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: 1.7rem;
+  color: var(--mustard);
+}
+
+.console-btns { display: flex; gap: 8px; }
+
+/* ===== SCREENS ===== */
+.screen {
+  display: none;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 26px 20px 70px;
+}
+
+.screen.active {
+  display: block;
+  animation: screenIn 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+.paper-card {
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 8px 0 #000;
+  padding: 22px;
+}
+
+/* ===== INTRO ===== */
+.intro-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 34px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.frame {
+  background: var(--paper);
+  padding: 12px;
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 8px 0 #000;
+  transform: rotate(-1.2deg);
+}
+
+.frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--ink);
+}
+
+.how {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 24px;
+  display: grid;
+  gap: 8px;
+}
+
+.how li {
+  background: rgba(251, 243, 228, 0.08);
+  border-left: 4px solid var(--mustard);
+  padding: 8px 12px;
+  border-radius: var(--r);
+}
+
+.intro-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* ===== MAP ===== */
+.map-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.map-head p { max-width: 560px; margin: 0; }
+
+.reel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 22px;
+}
+
+.reel {
+  position: relative;
+  padding: 0;
+  text-align: left;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 8px 0 #000;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.reel::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 90px;
+  height: 20px;
+  z-index: 2;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(232, 169, 58, 0.85);
+  border: 1px dashed rgba(58, 42, 34, 0.4);
+}
+
+.reel:hover { transform: translateY(-4px); }
+.reel:active { transform: translateY(2px); }
+
+.reel-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-bottom: 2px solid var(--ink);
+}
+
+.reel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px 16px;
+  border-top: 8px solid var(--accent);
+}
+
+.reel-num {
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+.reel-title {
+  font-family: var(--f-display);
+  font-size: 1.35rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.reel-char { font-style: italic; color: var(--ink-soft); }
+
+.reel-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.reel-best { font-family: var(--f-mono); font-size: 0.8rem; font-weight: 700; }
+
+.stars { display: inline-flex; gap: 2px; }
+.star { width: 18px; height: 18px; }
+.stars.mini .star { width: 14px; height: 14px; }
+.star path { stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.star.on path { fill: var(--mustard); }
+.star.off path { fill: #E8DCC4; stroke: #9C8A77; }
+
+/* ===== SCENE ===== */
+.scene-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+  margin-bottom: 16px;
+}
+
+.scene-art {
+  width: 150px;
+  flex: 0 0 150px;
+  border: 2px solid var(--paper);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: 0 6px 0 #000;
+}
+
+.scene-img { display: block; width: 100%; height: auto; }
+
+.scene-meta { flex: 1; min-width: 200px; }
+.scene-meta .display { margin-bottom: 0; }
+
+.scene-stats { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.stat {
+  background: var(--console);
+  border: 2px solid var(--mustard);
+  border-radius: var(--r);
+  padding: 6px 12px;
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  color: var(--paper);
+}
+
+.stat b {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: 1.3rem;
+  color: var(--mustard);
+  margin-left: 6px;
+}
+
+.scene-obj {
+  background: var(--light);
+  color: var(--ink);
+  border-left: 6px solid var(--mustard);
+  border-radius: var(--r);
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 6px 0 #000;
+}
+
+.scene-obj p { margin: 0 0 6px; }
+.scene-tip { font-size: 0.95rem; color: var(--ink-soft); }
+
+.stage {
+  position: relative;
+  min-height: 380px;
+  padding: 26px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 8px 0 #000;
+}
+
+.next-slot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 22px;
+  min-height: 2px;
+}
+
+.feedback { margin-top: 14px; }
+
+.verdict {
+  font-family: var(--f-display);
+  font-size: 1.6rem;
+  letter-spacing: 0.05em;
+  margin: 14px 0 4px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.verdict.ok { color: var(--ok); }
+.verdict.bad { color: var(--bad); }
+
+.explain {
+  background: #EAF4EA;
+  border-left: 5px solid var(--ok);
+  border-radius: var(--r);
+  padding: 12px 16px;
+  margin: 0;
+  color: var(--ink);
+  animation: fadeUp 0.45s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ===== SHARED MINI-GAME PARTS ===== */
+.fill-hint {
+  font-family: var(--f-mono);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 0 0 12px;
+}
+
+.fill-list { list-style: decimal; padding-left: 1.6em; margin: 0; }
+
+.fill-line {
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(58, 42, 34, 0.25);
+  font-size: 1.12rem;
+  line-height: 2.2;
+}
+
+.blank {
+  display: inline-block;
+  min-width: 150px;
+  margin: 0 4px;
+  padding: 4px 10px;
+  font-family: var(--f-mono);
+  font-size: 1rem;
+  color: var(--ink);
+  background: #FFF0C7;
+  border: 2px dashed var(--ink);
+  border-radius: var(--r);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.blank.selected,
+.blank[aria-pressed="true"] {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+  background: #D7ECE8;
+}
+
+.blank.is-filled {
+  background: #D5EBD9;
+  border: 2px solid var(--ok);
+  color: var(--ok-deep);
+  font-weight: 700;
+  cursor: default;
+}
+
+.bank-label {
+  font-family: var(--f-mono);
+  letter-spacing: 0.14em;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin: 18px 0 6px;
+}
+
+.bank { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.chip {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: 0.98rem;
+  padding: 9px 14px;
+  color: var(--ink);
+  background: var(--light);
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 4px 0 var(--ink);
+  cursor: pointer;
+}
+
+.chip:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+
+.chip.is-used {
+  opacity: 0.25;
+  text-decoration: line-through;
+  cursor: default;
+}
+
+.chip-label { font-family: var(--f-mono); font-weight: 700; letter-spacing: 0.12em; }
+
+.mult-badge {
+  font-family: var(--f-display);
+  font-size: 1.1rem;
+  padding: 2px 10px;
+  color: var(--paper);
+  background: var(--teal);
+  border-radius: var(--r);
+}
+
+.streak-badge { font-family: var(--f-mono); font-size: 0.85rem; }
+
+.timer {
+  height: 20px;
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  background: #E6D6B6;
+  overflow: hidden;
+}
+
+.timer-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--teal);
+  transition: width 0.25s linear;
+}
+
+.timer.is-flash .timer-fill {
+  background: var(--bad);
+  animation: flashRed 0.5s steps(2, start) infinite;
+}
+
+@keyframes flashRed {
+  50% { background: #FF6A5B; }
+}
+
+.timer-label {
+  font-family: var(--f-mono);
+  font-size: 0.95rem;
+  margin: 6px 0 16px;
+  text-align: right;
+}
+
+.timer-label.is-flash { color: var(--bad); font-weight: 700; }
+
+.statement-card {
+  position: relative;
+  min-height: 140px;
+  padding: 28px 26px;
+  background: var(--light);
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 6px 0 var(--ink);
+}
+
+.statement { font-size: 1.4rem; line-height: 1.5; margin: 0; }
+
+.answer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 20px 0 10px;
+}
+
+.answer-btn { font-size: 1.35rem; padding: 18px; }
+
+/* Match board */
+.match-example {
+  font-family: var(--f-mono);
+  font-size: 0.92rem;
+  background: #2A1F18;
+  color: var(--paper);
+  padding: 10px 14px;
+  border-radius: var(--r);
+  margin-bottom: 14px;
+}
+
+.match-example span { color: var(--mustard); font-weight: 700; }
+
+.match-counter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-family: var(--f-mono);
+  margin-bottom: 14px;
+}
+
+.match-counter b { font-family: var(--f-display); font-weight: 400; font-size: 1.2rem; color: var(--coral); }
+
+.match-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.col { display: grid; gap: 10px; align-content: start; }
+
+.match-btn {
+  text-align: left;
+  font-size: 1.03rem;
+  padding: 12px 14px;
+  color: var(--ink);
+  background: var(--light);
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 4px 0 var(--ink);
+  cursor: pointer;
+}
+
+.match-word { font-family: var(--f-mono); font-weight: 700; }
+
+/* Multiple choice and bonus */
+.mc-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.portrait { margin: 0; text-align: center; }
+
+.portrait-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 6px 0 var(--ink);
+  background: var(--paper-2);
+}
+
+.portrait figcaption {
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  margin-top: 8px;
+  color: var(--ink-soft);
+}
+
+.mc-count, .bonus-topic {
+  font-family: var(--f-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  color: var(--teal);
+  margin: 0 0 6px;
+}
+
+.mc-q {
+  font-family: var(--f-display);
+  font-size: 1.45rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: 0 0 14px;
+}
+
+.opt-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--f-body);
+  font-size: 1.06rem;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  color: var(--ink);
+  background: var(--light);
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 4px 0 var(--ink);
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.opt-btn:disabled { cursor: default; }
+
+.bubble {
+  background: #FFFFFF;
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 0 var(--ink);
+}
+
+.bubble-text {
+  font-family: var(--f-hand);
+  font-size: 1.2rem;
+  margin: 0;
+  color: var(--ink);
+}
+
+.bonus-hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-bottom: 8px;
+}
+
+.big-time {
+  font-family: var(--f-display);
+  font-size: 1.7rem;
+  color: var(--ink);
+}
+
+/* Shared state colours, placed after components so they win the cascade */
+.is-correct { background: var(--ok) !important; color: #fff !important; border-color: var(--ok-deep) !important; box-shadow: 0 4px 0 var(--ok-deep) !important; }
+.is-wrong { background: var(--bad) !important; color: #fff !important; border-color: #7b2119 !important; }
+.is-dim { opacity: 0.4; }
+.is-selected { background: #D7ECE8 !important; outline: 3px solid var(--teal); }
+.is-matched { background: var(--ok) !important; color: #fff !important; border-color: var(--ok-deep) !important; cursor: default; }
+
+.shake { animation: shake 0.45s ease; }
+.bounce { animation: bounceBack 0.55s ease; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-9px); }
+  40% { transform: translateX(9px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(4px); }
+}
+
+@keyframes bounceBack {
+  0% { transform: none; }
+  15% { transform: translateX(-10px) rotate(-3deg); background: #F6C7BD; }
+  35% { transform: translateX(10px) rotate(3deg); }
+  55% { transform: translateX(-7px); }
+  75% { transform: translateX(5px); }
+  100% { transform: none; }
+}
+
+/* ===== TOASTS, FLOATS, CONFETTI ===== */
+.toasts {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 450;
+  display: grid;
+  gap: 10px;
+}
+
+.toast {
+  max-width: 320px;
+  padding: 10px 14px;
+  font-family: var(--f-mono);
+  font-size: 0.9rem;
+  color: var(--paper);
+  background: var(--console);
+  border: 2px solid var(--mustard);
+  border-left-width: 8px;
+  border-radius: var(--r);
+  box-shadow: 0 6px 0 #000;
+  animation: fadeUp 0.3s ease both;
+  transition: opacity 0.3s ease;
+}
+
+.toast.warn { border-color: var(--coral); }
+.toast.is-out { opacity: 0; }
+
+.pop-float {
+  position: fixed;
+  z-index: 460;
+  transform: translate(-50%, -100%);
+  font-family: var(--f-display);
+  font-size: 1.5rem;
+  pointer-events: none;
+  text-shadow: 0 3px 0 #000;
+  animation: popUp 0.9s ease-out both;
+}
+
+.pop-float.good { color: var(--mustard); }
+.pop-float.bad { color: #FF8A7A; }
+
+@keyframes popUp {
+  0% { opacity: 0; transform: translate(-50%, -100%) scale(0.6); }
+  20% { opacity: 1; transform: translate(-50%, -110%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -190%) scale(1); }
+}
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 350;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(720deg); }
+}
+
+/* ===== MODAL ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(20, 12, 8, 0.78);
+}
+
+.modal {
+  width: min(520px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 26px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 10px 0 #000;
+  animation: modalIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+.modal h2 {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: 1.9rem;
+  text-transform: uppercase;
+  color: var(--coral);
+  margin: 0 0 12px;
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.brief-tip { color: var(--ink-soft); }
+.brief-flavor { font-style: italic; }
+.brief-best { font-family: var(--f-mono); font-size: 0.92rem; }
+.result-stars { display: flex; justify-content: center; gap: 10px; margin: 6px 0 14px; }
+.result-line { font-family: var(--f-mono); font-size: 0.95rem; margin: 0 0 8px; }
+
+.star-big {
+  width: 64px;
+  height: 64px;
+  animation: starPop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+.star-big path { stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; }
+.star-big.on path { fill: var(--mustard); }
+.star-big.off path { fill: #E8DCC4; stroke: #9C8A77; }
+
+@keyframes starPop {
+  0% { transform: scale(0) rotate(-200deg); }
+  100% { transform: none; }
+}
+
+/* ===== FINALE ===== */
+.finale-hero {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.finale-label {
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.finale-number {
+  font-family: var(--f-display);
+  font-size: clamp(3.2rem, 11vw, 6rem);
+  line-height: 1;
+  color: var(--coral);
+  margin: 0;
+}
+
+.rank-stars { font-family: var(--f-display); font-size: 1.8rem; margin: 0 0 8px; }
+.rank { font-family: var(--f-display); font-size: 1.9rem; text-transform: uppercase; margin: 0; color: var(--ink); }
+.rank-msg { margin: 6px 0 0; }
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  box-shadow: 0 8px 0 #000;
+  margin: 24px 0;
+}
+
+.results-table caption {
+  caption-side: top;
+  text-align: left;
+  font-family: var(--f-display);
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  color: var(--coral);
+}
+
+.results-table th,
+.results-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 2px dashed rgba(58, 42, 34, 0.3);
+}
+
+.results-table th {
+  font-family: var(--f-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--paper-2);
+}
+
+.finale-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .intro-grid { grid-template-columns: 1fr; }
+  .frame { max-width: 560px; }
+}
+
+@media (max-width: 720px) {
+  .console { gap: 10px; padding: 0 12px; }
+  .brand span { display: none; }
+  .progress-meta { display: none; }
+  .cell { width: 26px; height: 26px; }
+  .score-box strong { font-size: 1.3rem; }
+  .mc-layout { grid-template-columns: 1fr; }
+  .portrait { max-width: 160px; margin: 0 auto; }
+  .match-board { grid-template-columns: 1fr; }
+  .answer-row { grid-template-columns: 1fr; }
+  .scene-art { display: none; }
+  .finale-hero { grid-template-columns: 1fr; }
+  .stage { padding: 18px; }
+  .console-btns .icon-btn span.btn-text { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .play-btn { animation: none; }
+  .timer.is-flash .timer-fill { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="bg-layer" aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ===== PRELOADER ===== -->
+<div class="preloader" id="preloader">
+  <div class="pre-inner">
+    <p class="pre-kicker">NOW LOADING</p>
+    <h1 class="pre-title">VOCAB ARCADE</h1>
+    <div class="pre-bar" aria-hidden="true"><span id="pre-fill"></span></div>
+    <p class="pre-status" id="pre-status" role="status">Rewinding the tape...</p>
+    <button type="button" class="play-btn" id="play-btn" data-action="play" hidden aria-label="Play, start the arcade">PLAY &#9654;</button>
+  </div>
+</div>
+
+<!-- ===== HEADER CONSOLE ===== -->
+<header class="console" id="console">
+  <div class="brand"><span data-icon="tape" aria-hidden="true"></span><span>VOCAB ARCADE</span></div>
+  <div class="progress-wrap">
+    <div class="progress" id="progress" role="group" aria-label="Level progress"></div>
+    <p class="progress-meta"><span id="progress-count">0/5</span> CLEARED</p>
+  </div>
+  <div class="score-box">
+    <span id="hud-label">SCORE</span>
+    <strong id="hud-score">0</strong>
+  </div>
+  <div class="console-btns">
+    <button type="button" class="icon-btn" id="btn-sound" data-action="sound" aria-label="Mute sound" aria-pressed="false"><span data-icon="soundOn" aria-hidden="true"></span></button>
+    <button type="button" class="icon-btn" data-action="map" aria-label="Open level map"><span data-icon="map" aria-hidden="true"></span><span class="btn-text">MAP</span></button>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- ===== INTRO ===== -->
+  <section class="screen" data-screen="intro" id="screen-intro" aria-labelledby="intro-title">
+    <div class="intro-grid">
+      <div class="frame" id="intro-art"></div>
+      <div class="intro-copy">
+        <p class="kicker">English Through TV · Level Arcade</p>
+        <h1 class="display" id="intro-title">The One with the Hypnosis Tape</h1>
+        <p>Five mini-games built from one sitcom episode. Each level teaches a different skill: idioms in context, sentence judgment, comprehension, meaning matching, and a timed round that mixes everything you have already learned.</p>
+        <ul class="how">
+          <li><strong>Fill in the blanks.</strong> Click a blank, then the word that completes the sentence.</li>
+          <li><strong>True or false.</strong> Ten minutes per card. Use the arrow keys, read the explanation, then press NEXT.</li>
+          <li><strong>Multiple choice.</strong> One attempt per question, then a character reacts.</li>
+          <li><strong>Match the meaning.</strong> Pair each English word with its meaning.</li>
+          <li><strong>Timed bonus.</strong> 750 seconds, questions from every earlier topic.</li>
+        </ul>
+        <p>All levels are open from the start. Play in any order, leave at any time, and replay any reel to raise your stars.</p>
+        <div class="intro-actions">
+          <button type="button" class="btn primary" data-action="map" id="intro-start"><span>OPEN THE MAP</span><span class="ico" data-icon="next" aria-hidden="true"></span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== LEVEL MAP ===== -->
+  <section class="screen" data-screen="map" id="screen-map" aria-labelledby="map-title">
+    <div class="map-head">
+      <div>
+        <p class="kicker">Level Map</p>
+        <h2 class="display" id="map-title">Choose your reel</h2>
+        <p>Every reel is open. Pick any level, in any order. Stars and best scores are saved on each reel.</p>
+      </div>
+      <button type="button" class="btn gold" data-action="finale" id="btn-finale" hidden><span>GO TO THE FINALE</span><span class="ico" data-icon="trophy" aria-hidden="true"></span></button>
+    </div>
+    <div class="reel-grid" id="map-grid" aria-label="Levels"></div>
+  </section>
+
+  <!-- ===== SCENE ===== -->
+  <section class="screen" data-screen="scene" id="screen-scene" aria-labelledby="scene-title">
+    <div class="scene-top">
+      <div class="scene-art" id="scene-art"></div>
+      <div class="scene-meta">
+        <p class="kicker" id="scene-num"></p>
+        <h2 class="display" id="scene-title" tabindex="-1"></h2>
+      </div>
+      <div class="scene-stats">
+        <div class="stat">SCORE<b id="run-score">0</b></div>
+        <div class="stat">MISTAKES<b id="run-mistakes">0</b></div>
+        <div class="stat">STREAK<b data-streak>0</b></div>
+      </div>
+      <button type="button" class="btn dark" data-action="map"><span data-icon="back" aria-hidden="true"></span><span>BACK TO MAP</span></button>
+    </div>
+    <div class="scene-obj" id="scene-obj"></div>
+    <div class="stage" id="stage"></div>
+  </section>
+
+  <!-- ===== FINALE ===== -->
+  <section class="screen" data-screen="finale" id="screen-finale" aria-labelledby="finale-title">
+    <p class="kicker">The Finale</p>
+    <h2 class="display" id="finale-title" tabindex="-1">The tape is complete</h2>
+    <div id="finale-body"></div>
+    <div class="finale-actions">
+      <button type="button" class="btn gold" data-action="rewind"><span data-icon="rewind" aria-hidden="true"></span><span>REWIND THE TAPE</span></button>
+      <button type="button" class="btn dark" data-action="map"><span data-icon="back" aria-hidden="true"></span><span>BACK TO MAP</span></button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== MODAL, TOASTS, CONFETTI ===== -->
+<div class="modal-backdrop" id="modal" hidden>
+  <div class="modal" id="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <h2 id="modal-title"></h2>
+    <div id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ===== CONFIGURATION ===== */
+
+  var STORAGE_KEY = "friends-vocab-arcade:v1";
+  var SAVE_VERSION = 1;
+  var TIMER_TF = 600;            // seconds per true/false card (ten minutes)
+  var TIMER_BONUS = 750;         // seconds for the timed bonus round
+  var BONUS_DANGER = 60;         // bonus timer flashes red below this many seconds
+  var MISTAKE_PENALTY = 25;      // points lost on a wrong answer
+  var RETRY_PENALTY = 20;        // points lost on a bounced word or a wrong match
+  var POINTS = { fill: 50, tf: 100, mc: 100, match: 50, bonus: 80 };
+  var STAR_PATH = "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z";
+  var REDUCE_MOTION = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  /* ===== DATA: SCENES ===== */
+
+  var SCENES = [
+    {
+      id: "fill", num: 1, title: "The Unexpected Engagement", char: "Phoebe", color: "#D9573B",
+      slide: "slide-04.png", tag: "Fill in the blanks",
+      obj: "Click a blank, then click the word that completes the sentence. Wrong words bounce back and cost points.",
+      tip: "Phrasal verbs keep their particles together, so read the whole phrase before you choose: call it off, talk out of, rush into.",
+      flavor: "Phoebe on the age gap: “until it starts sticking its tongue down my little brother’s throat.”"
+    },
+    {
+      id: "tf", num: 2, title: "The Millionaire Customer", char: "Monica", color: "#2F7F7A",
+      slide: "slide-06.png", tag: "True or false",
+      obj: "Decide whether each statement about Pete and the $20,000 tip is true or false. Use the arrow keys for speed. Read each explanation, then press NEXT.",
+      tip: "Each card has ten minutes on the clock. The timer stops while the explanation is on screen.",
+      flavor: "Monica thinks he is trying to ‘buy’ her affection."
+    },
+    {
+      id: "mc", num: 3, title: "The Hypnosis Tape", char: "Chandler", color: "#E8A93A",
+      slide: "slide-08.png", tag: "Multiple choice",
+      obj: "Choose one answer per question. You get a single attempt, then a character reacts to your choice.",
+      tip: "Sleep learning is a belief the lesson asks you to examine critically rather than accept automatically.",
+      flavor: "Joey secretly records over the tape, and Chandler pays the price."
+    },
+    {
+      id: "match", num: 4, title: "Words in Action", char: "Rachel", color: "#7A4A7E",
+      slide: "slide-03.png", tag: "Match the meaning",
+      obj: "Click an English word, then click its meaning. Correct pairs lock green. Wrong picks shake and clear the selection.",
+      tip: "Read each meaning as a complete idea, not as a single translated word.",
+      flavor: "Every phrase in this episode carries a small piece of the story."
+    },
+    {
+      id: "bonus", num: 5, title: "The Dilemma Matrix", char: "Joey", color: "#5F8A5B",
+      slide: "slide-10.png", tag: "Timed bonus round",
+      obj: "Answer questions from every earlier topic before the clock runs out. Streaks multiply your points, and fast answers earn extra points.",
+      tip: "Watch the streak multiplier. Three correct answers in a row double your points.",
+      flavor: "Plot A: an extreme 26-year age gap. Plot B: a $20,000 diner tip. Plot C: a sleep-learning audio cassette."
+    }
+  ];
+
+  /* ===== DATA: FILL IN THE BLANKS ===== */
+
+  var FILL_ITEMS = [
+    { text: "After the argument, the couple decided to ____.", answer: "call it off" },
+    { text: "Phoebe begged Ross and Joey to ____ Frank out of the marriage.", answer: "talk" },
+    { text: "Please don’t ____ marriage just because the news is exciting.", answer: "rush into" },
+    { text: "I don’t want to ____ this behavior, so I will not laugh at the joke.", answer: "encourage" },
+    { text: "After the cassette prank, Rachel’s shirt was in ____.", answer: "disarray" },
+    { text: "“Their love is so pure,” Joey said. “I ____ it.”", answer: "couldn’t help" }
+  ];
+
+  var FILL_DISTRACTORS = ["celebrate", "sprint"];
+
+  /* ===== DATA: TRUE OR FALSE ===== */
+
+  var TF_ITEMS = [
+    { text: "A regular diner customer named Pete leaves Monica a $20,000 tip.", answer: true,
+      explanation: "True. The lesson opens Plot B with exactly this tip, and it is the reason Monica becomes suspicious." },
+    { text: "Pete leaves the tip because he wants to insult Monica’s waitress skills.", answer: false,
+      explanation: "False. Pete admits that he just didn’t know how to ask her on a date." },
+    { text: "Pete is a self-made millionaire who invented computer software called ‘Moss 865’.", answer: true,
+      explanation: "True. The lesson reveals his wealth and his invention in the final section of Plot B." },
+    { text: "After they agree to date, Pete takes Monica to a small pizza place down the street.", answer: false,
+      explanation: "False. He flies her on a private jet all the way to Rome, Italy." },
+    { text: "When Monica tries to pay with Italian lire, Pete says she paid about 60 cents.", answer: true,
+      explanation: "True. The joke depends on the exchange rate between lire and dollars." },
+    { text: "The hypnosis tape was specifically recorded to help women.", answer: true,
+      explanation: "True. The lesson calls this detail ‘The Problem’ in Plot C." },
+    { text: "Frank is 18 years old, and his fiancée, Alice, is 44.", answer: true,
+      explanation: "True. The two ages create the central conflict of Plot A, which the matrix calls an extreme 26-year gap." },
+    { text: "Phoebe completely supports the age difference without any reservations.", answer: false,
+      explanation: "False. She is horrified, and she admits she is fine with it only until a specific scene happens." }
+  ];
+
+  /* ===== DATA: MULTIPLE CHOICE ===== */
+
+  var MC_ITEMS = [
+    {
+      speaker: "Rachel", q: "What does Rachel want to do for Chandler?",
+      options: ["Help him quit smoking", "Help him buy expensive pants", "Help him move to Rome"], answer: 0,
+      right: "Rachel: “Sleep learning, Chandler. Put the tape on every night and let it work.”",
+      wrong: "Chandler: “Pants? I was only trying to quit smoking, Rachel.”",
+      explanation: "Rachel gives Chandler a sleep-learning hypnosis cassette to help him break his heavy smoking habit."
+    },
+    {
+      speaker: "Chandler", q: "Which phrase best describes the message repeated on the hypnosis tape?",
+      options: ["“You are a strong, confident woman who does not need to smoke.”", "“Smoking is a wonderful way to relax.”", "“Cheese sandwiches are good for your health.”"], answer: 0,
+      right: "Chandler: “I am a strong, confident woman. Wait, why am I saying that?”",
+      wrong: "Joey: “Chandler, that is the exact opposite of what the tape says.”",
+      explanation: "The tape repeats the affirmation about a strong, confident woman who does not need to smoke."
+    },
+    {
+      speaker: "Joey", q: "Which word means a state of disorganization or untidiness?",
+      options: ["disarray", "brainwashing", "trope"], answer: 0,
+      right: "Joey: “Disarray is the perfect word for this apartment. Nice work.”",
+      wrong: "Joey: “Brainwashing? Trope? You are mixing up your sitcom vocabulary.”",
+      explanation: "Disarray is a noun that describes disorganization, and the lesson uses it for Rachel’s shirt."
+    },
+    {
+      speaker: "Joey", q: "What does Joey record over the tape at the end of the episode?",
+      options: ["A daily cheese sandwich and expensive pants", "A new episode of a television show", "A wedding speech for Frank"], answer: 0,
+      right: "Joey: “A cheese sandwich every day. It is a beautiful thing.”",
+      wrong: "Rachel: “Joey, you just made him want pants. Please do not do this again.”",
+      explanation: "Joey brainwashes Chandler into wanting a daily cheese sandwich and buying expensive pants, which turns the therapy into a prank."
+    }
+  ];
+
+  /* ===== DATA: MATCH THE MEANING ===== */
+
+  var MATCH_PAIRS = [
+    { word: "call off", meaning: "cancel an event or agreement" },
+    { word: "talk out of", meaning: "persuade someone not to do something" },
+    { word: "rush into", meaning: "do something too quickly without thinking" },
+    { word: "disarray", meaning: "a state of disorganization or untidiness" },
+    { word: "encourage", meaning: "support or make more likely" },
+    { word: "boasts", meaning: "proudly has" }
+  ];
+
+  /* ===== DATA: TIMED BONUS POOL (all earlier topics) ===== */
+
+  var BONUS_POOL = [
+    { topic: "Plot A", q: "Who is Frank’s fiancée?", options: ["Alice", "Monica", "Rachel"], answer: 0,
+      explanation: "Alice is Frank’s fiancée, his former Home Economics teacher." },
+    { topic: "Plot A", q: "How old is Alice in the story?", options: ["26", "44", "18"], answer: 1,
+      explanation: "Alice is 44, while Frank is 18. The matrix calls this an extreme age gap." },
+    { topic: "Plot A", q: "Who asks Ross and Joey to talk Frank out of the marriage?", options: ["Phoebe", "Monica", "Chandler"], answer: 0,
+      explanation: "Phoebe asks her friends to talk Frank out of the marriage, but Frank’s speech changes their minds." },
+    { topic: "Plot B", q: "What does the $20,000 tip make Monica think?", options: ["Pete is trying to buy her affection", "Pete is a famous chef", "Pete wants a job at the diner"], answer: 0,
+      explanation: "Monica thinks he is trying to ‘buy’ her affection, which is why the tip troubles her." },
+    { topic: "Plot B", q: "What is the name of Pete’s software?", options: ["Moss 865", "Pizza Pro", "Central Perk 2.0"], answer: 0,
+      explanation: "Pete invented famous computer software called ‘Moss 865’." },
+    { topic: "Plot B", q: "Where does Pete take Monica for their date?", options: ["Rome, Italy", "Paris, France", "Central Perk"], answer: 0,
+      explanation: "He flies her on a private jet all the way to Rome, Italy." },
+    { topic: "Plot C", q: "What is the catalyst of Plot C?", options: ["A sleep-learning audio cassette", "A diner check", "A wedding ring"], answer: 0,
+      explanation: "The matrix lists a sleep-learning audio cassette as the catalyst for Chandler’s storyline." },
+    { topic: "Plot C", q: "What does the tape tell Chandler he is?", options: ["A strong, confident woman", "A famous chef", "A secret agent"], answer: 0,
+      explanation: "The tape repeats that he is a strong, confident woman who does not need to smoke." },
+    { topic: "Plot C", q: "What does Joey make Chandler want every day?", options: ["A cheese sandwich", "A glass of milk", "A slice of pizza"], answer: 0,
+      explanation: "Joey brainwashes Chandler into wanting a daily cheese sandwich." },
+    { topic: "Vocabulary", q: "Which phrase means to do something too quickly without thinking?", options: ["rush into", "call off", "encourage"], answer: 0,
+      explanation: "Rush into means to do something too quickly and without careful thought." },
+    { topic: "Vocabulary", q: "Which phrase means to persuade someone not to do something?", options: ["talk out of", "rush into", "disarray"], answer: 0,
+      explanation: "Talk someone out of something means to persuade them not to do it." },
+    { topic: "Vocabulary", q: "In “I couldn’t help it,” what does the phrase mean?", options: ["I could not stop myself from reacting", "I was able to fix the problem", "I wanted to help other people"], answer: 0,
+      explanation: "Couldn’t help it means that a person cannot stop himself or herself from feeling or reacting in a certain way." }
+  ];
+
+  /* ===== DATA: RANKS ===== */
+
+  var RANKS = [
+    { min: 2200, name: "The One Who Knows Everything", msg: "Every idiom, every plot twist, and every cheese sandwich. You have earned the full tape." },
+    { min: 1500, name: "Sitcom Scholar", msg: "You read the storylines like a writer and the phrases like a native speaker." },
+    { min: 900, name: "Central Perk Regular", msg: "Your coffee order is ready. Revisit the levels you cleared quickly." },
+    { min: 400, name: "Recurring Guest", msg: "You know the cast now. A few more replays will make you a regular." },
+    { min: 0, name: "Background Extra", msg: "Every regular started as an extra. Rewind the tape and try again." }
+  ];
+
+  /* ===== ICONS (inline SVG, no external libraries) ===== */
+
+  var ICONS = {
+    tape: '<rect x="2.5" y="6" width="19" height="12" rx="1.5"/><circle cx="8" cy="12" r="2.2"/><circle cx="16" cy="12" r="2.2"/><path d="M10.2 12h3.6"/>',
+    play: '<path d="M7 5l12 7-12 7z"/>',
+    soundOn: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/>',
+    soundOff: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>',
+    map: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    back: '<path d="M19 12H6M11 6l-6 6 6 6"/>',
+    next: '<path d="M5 12h12M13 6l6 6-6 6"/>',
+    rewind: '<path d="M11 6L3 12l8 6z"/><path d="M21 6l-8 6 8 6z"/>',
+    trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H4a3 3 0 0 0 3 4M16 6h4a3 3 0 0 1-3 4M12 13v4M8 20h8"/>',
+    replay: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/>'
+  };
+
+  /* ===== UTILITIES ===== */
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+  function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+
+  function shuffle(list) {
+    var copy = list.slice();
+    for (var i = copy.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = copy[i];
+      copy[i] = copy[j];
+      copy[j] = tmp;
+    }
+    return copy;
+  }
+
+  function esc(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function fmtTime(totalSeconds) {
+    var m = Math.floor(totalSeconds / 60);
+    var s = totalSeconds % 60;
+    return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function refreshIcons() {
+    $$("[data-icon]").forEach(function (el) {
+      var name = el.getAttribute("data-icon");
+      if (!ICONS[name] || el.getAttribute("data-rendered") === name) { return; }
+      el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + ICONS[name] + "</svg>";
+      el.setAttribute("data-rendered", name);
+    });
+  }
+
+  function toast(message, kind) {
+    var wrap = $("#toasts");
+    var el = document.createElement("div");
+    el.className = "toast" + (kind ? " " + kind : "");
+    el.textContent = message;
+    wrap.appendChild(el);
+    while (wrap.children.length > 3) { wrap.removeChild(wrap.firstChild); }
+    setTimeout(function () {
+      el.classList.add("is-out");
+      setTimeout(function () { if (el.parentNode) { el.parentNode.removeChild(el); } }, 300);
+    }, 2400);
+  }
+
+  function popFloat(text, anchor, kind) {
+    var x = window.innerWidth / 2;
+    var y = window.innerHeight / 2;
+    if (anchor && anchor.getBoundingClientRect) {
+      var r = anchor.getBoundingClientRect();
+      x = r.left + r.width / 2;
+      y = r.top;
+    }
+    var el = document.createElement("span");
+    el.className = "pop-float " + (kind || "good");
+    el.textContent = text;
+    el.style.left = clamp(x, 40, window.innerWidth - 40) + "px";
+    el.style.top = clamp(y, 40, window.innerHeight - 40) + "px";
+    document.body.appendChild(el);
+    setTimeout(function () { if (el.parentNode) { el.parentNode.removeChild(el); } }, 950);
+  }
+
+  function spawnConfetti() {
+    if (REDUCE_MOTION) { return; }
+    var layer = $("#confetti");
+    var colors = ["#E8A93A", "#D9573B", "#2F7F7A", "#7A4A7E", "#5F8A5B", "#FBF3E4"];
+    var pieces = [];
+    for (var i = 0; i < 70; i++) {
+      pieces.push('<span class="confetti-piece" style="left:' + (Math.random() * 100).toFixed(1) +
+        '%;background:' + colors[i % colors.length] +
+        ';animation-delay:' + (Math.random() * 0.6).toFixed(2) +
+        's;animation-duration:' + (2.2 + Math.random() * 1.4).toFixed(2) + 's"></span>');
+    }
+    layer.innerHTML = pieces.join("");
+    setTimeout(function () { layer.innerHTML = ""; }, 4200);
+  }
+
+  function placeholderSvg(initial, color) {
+    var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='480' height='300' viewBox='0 0 480 300'>" +
+      "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>" +
+      "<stop offset='0' stop-color='" + color + "'/><stop offset='1' stop-color='#241A15'/></linearGradient></defs>" +
+      "<rect width='480' height='300' fill='url(#g)'/>" +
+      "<text x='50%' y='56%' font-family='Georgia,serif' font-size='150' font-weight='700' fill='#FBF3E4' text-anchor='middle' dominant-baseline='middle'>" +
+      esc(initial || "") + "</text></svg>";
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }
+
+  function imgTag(src, alt, initial, color, cls) {
+    return '<img class="' + cls + '" src="' + src + '" alt="' + esc(alt) + '" loading="eager" ' +
+      'data-fallback="' + placeholderSvg(initial, color) + '" ' +
+      'onerror="this.onerror=null;this.src=this.dataset.fallback;console.warn(\'missing asset: ' + src + '\')">';
+  }
+
+  function starRow(count, extraClass) {
+    var html = '<span class="stars ' + (extraClass || "") + '" aria-hidden="true">';
+    for (var i = 0; i < 3; i++) {
+      html += '<svg class="star ' + (i < count ? "on" : "off") + '" viewBox="0 0 24 24"><path d="' + STAR_PATH + '"/></svg>';
+    }
+    return html + "</span>";
+  }
+
+  function flash(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+    later(function () { el.classList.remove(cls); }, 600);
+  }
+
+  function multiplierFor(streak) {
+    if (streak >= 5) { return 3; }
+    if (streak >= 3) { return 2; }
+    return 1;
+  }
+
+  function starsFor(mistakes) {
+    if (mistakes === 0) { return 3; }
+    if (mistakes <= 2) { return 2; }
+    return 1;
+  }
+
+  /* ===== AUDIO (Web Audio API, synthesized) ===== */
+
+  var audio = { ctx: null, master: null };
+
+  function ensureAudio() {
+    if (audio.ctx) {
+      if (audio.ctx.state === "suspended") { audio.ctx.resume(); }
+      return;
+    }
+    var Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) { return; }
+    try {
+      audio.ctx = new Ctor();
+      audio.master = audio.ctx.createGain();
+      audio.master.gain.value = 0.5;
+      audio.master.connect(audio.ctx.destination);
+    } catch (err) {
+      audio.ctx = null;
+      audio.master = null;
+    }
+  }
+
+  function tone(freq, dur, type, vol, when) {
+    if (!audio.ctx || store.muted) { return; }
+    var t0 = audio.ctx.currentTime + (when || 0);
+    var osc = audio.ctx.createOscillator();
+    var gain = audio.ctx.createGain();
+    osc.type = type || "square";
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(vol || 0.2, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain);
+    gain.connect(audio.master);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+  }
+
+  function noiseBurst(dur, vol, when) {
+    if (!audio.ctx || store.muted) { return; }
+    var t0 = audio.ctx.currentTime + (when || 0);
+    var len = Math.floor(audio.ctx.sampleRate * dur);
+    var buffer = audio.ctx.createBuffer(1, len, audio.ctx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < len; i++) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    }
+    var src = audio.ctx.createBufferSource();
+    src.buffer = buffer;
+    var gain = audio.ctx.createGain();
+    gain.gain.setValueAtTime(vol || 0.2, t0);
+    src.connect(gain);
+    gain.connect(audio.master);
+    src.start(t0);
+  }
+
+  var SFX = {
+    click: function () { tone(660, 0.05, "square", 0.12); },
+    flip: function () { tone(520, 0.08, "triangle", 0.15); tone(780, 0.06, "triangle", 0.1, 0.05); },
+    correct: function () { tone(660, 0.12, "square", 0.15); tone(990, 0.18, "square", 0.15, 0.1); },
+    wrong: function () { tone(220, 0.25, "sawtooth", 0.18); tone(160, 0.3, "sawtooth", 0.16, 0.12); },
+    match: function () { tone(880, 0.1, "triangle", 0.16); tone(1320, 0.14, "triangle", 0.14, 0.08); },
+    fanfare: function () {
+      [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.22, "square", 0.14, i * 0.14); });
+    },
+    tick: function () { tone(1200, 0.03, "square", 0.08); },
+    cheer: function () {
+      noiseBurst(0.9, 0.22);
+      tone(784, 0.2, "triangle", 0.12, 0.2);
+      tone(1046, 0.3, "triangle", 0.12, 0.4);
+    }
+  };
+
+  function playSfx(name) {
+    if (store.muted || !audio.ctx || !SFX[name]) { return; }
+    if (audio.ctx.state === "suspended") { audio.ctx.resume(); }
+    SFX[name]();
+  }
+
+  /* ===== STORAGE (versioned, private-mode safe) ===== */
+
+  function defaultLevels() {
+    var levels = {};
+    SCENES.forEach(function (sc) { levels[sc.id] = { done: false, stars: 0, best: 0 }; });
+    return levels;
+  }
+
+  function defaultStore() {
+    return { version: SAVE_VERSION, muted: false, levels: defaultLevels() };
+  }
+
+  function loadStore() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) { return defaultStore(); }
+      var parsed = JSON.parse(raw);
+      if (!parsed || parsed.version !== SAVE_VERSION) { return defaultStore(); }
+      var fresh = defaultStore();
+      fresh.muted = !!parsed.muted;
+      SCENES.forEach(function (sc) {
+        var saved = parsed.levels && parsed.levels[sc.id];
+        if (saved) {
+          fresh.levels[sc.id] = {
+            done: !!saved.done,
+            stars: clamp(Number(saved.stars) || 0, 0, 3),
+            best: Math.max(0, Number(saved.best) || 0)
+          };
+        }
+      });
+      return fresh;
+    } catch (err) {
+      return defaultStore();
+    }
+  }
+
+  function saveStore() {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    } catch (err) {
+      /* Private mode or blocked storage: progress lives in memory for this session. */
+    }
+  }
+
+  /* ===== STATE ===== */
+
+  var store = loadStore();
+  var run = null;                     // current level run: { levelId, score, mistakes, streak, finished }
+  var mech = { onStage: null, onKey: null, onNext: null };
+  var cleanups = [];
+  var timeouts = [];
+  var intervalId = null;
+  var currentScreen = "intro";
+  var modalKind = null;
+  var lastFocus = null;
+
+  /* ===== CLEANUP HELPERS ===== */
+
+  function setCleanup(fn) { cleanups.push(fn); }
+
+  function later(fn, ms) {
+    var id = setTimeout(function () { fn(); }, ms);
+    timeouts.push(id);
+    return id;
+  }
+
+  function startInterval(fn, ms) {
+    stopInterval();
+    intervalId = setInterval(fn, ms);
+  }
+
+  function stopInterval() {
+    if (intervalId !== null) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+  }
+
+  function runCleanup() {
+    stopInterval();
+    timeouts.forEach(function (id) { clearTimeout(id); });
+    timeouts = [];
+    cleanups.forEach(function (fn) { fn(); });
+    cleanups = [];
+    mech = { onStage: null, onKey: null, onNext: null };
+  }
+
+  /* ===== LEVEL DATA HELPERS ===== */
+
+  function sceneById(id) {
+    for (var i = 0; i < SCENES.length; i++) {
+      if (SCENES[i].id === id) { return SCENES[i]; }
+    }
+    return null;
+  }
+
+  function allDone() {
+    return SCENES.every(function (sc) { return store.levels[sc.id].done; });
+  }
+
+  function anyProgress() {
+    return SCENES.some(function (sc) { return store.levels[sc.id].done; });
+  }
+
+  function doneCount() {
+    return SCENES.filter(function (sc) { return store.levels[sc.id].done; }).length;
+  }
+
+  function totalBest() {
+    return SCENES.reduce(function (sum, sc) {
+      var rec = store.levels[sc.id];
+      return sum + (rec.done ? rec.best : 0);
+    }, 0);
+  }
+
+  function totalStars() {
+    return SCENES.reduce(function (sum, sc) { return sum + store.levels[sc.id].stars; }, 0);
+  }
+
+  function rankFor(total) {
+    for (var i = 0; i < RANKS.length; i++) {
+      if (total >= RANKS[i].min) { return RANKS[i]; }
+    }
+    return RANKS[RANKS.length - 1];
+  }
+
+  function resultMessage(stars) {
+    if (stars === 3) { return "Flawless. Not a single mistake, and the whole episode is yours."; }
+    if (stars === 2) { return "Strong work. A couple of slips, nothing a quick rewatch cannot fix."; }
+    return "Level complete. Replay it to tighten up the details and raise your stars.";
+  }
+
+  /* ===== SHELL: SCREENS, HUD, MODAL ===== */
+
+  function showScreen(name) {
+    currentScreen = name;
+    $$(".screen").forEach(function (screen) {
+      var active = screen.getAttribute("data-screen") === name;
+      screen.classList.toggle("active", active);
+      if (active) {
+        var heading = $("h1, h2", screen);
+        if (heading) {
+          heading.setAttribute("tabindex", "-1");
+          heading.focus({ preventScroll: true });
+        }
+      }
+    });
+    window.scrollTo(0, 0);
+  }
+
+  function renderProgressCells() {
+    var cells = SCENES.map(function (sc) {
+      var rec = store.levels[sc.id];
+      var cls = "cell";
+      if (rec.done) { cls += " is-done"; }
+      if (run && run.levelId === sc.id) { cls += " is-current"; }
+      return '<span class="' + cls + '" title="Level ' + sc.num + ': ' + esc(sc.title) + (rec.done ? " (cleared)" : "") + '">' + sc.num + "</span>";
+    }).join("");
+    $("#progress").innerHTML = cells;
+    $("#progress-count").textContent = doneCount() + "/" + SCENES.length;
+  }
+
+  function refreshCounters() {
+    var streak = run ? run.streak : 0;
+    var mult = "x" + multiplierFor(streak);
+    $$("[data-streak]").forEach(function (el) { el.textContent = String(streak); });
+    $$("[data-mult]").forEach(function (el) { el.textContent = mult; });
+  }
+
+  function updateHUD() {
+    var inRun = !!run;
+    $("#hud-label").textContent = inRun ? "RUN" : "SCORE";
+    $("#hud-score").textContent = String(inRun ? run.score : totalBest());
+    $("#run-score").textContent = String(inRun ? run.score : 0);
+    $("#run-mistakes").textContent = String(inRun ? run.mistakes : 0);
+    refreshCounters();
+    renderProgressCells();
+  }
+
+  function openModal(cfg) {
+    lastFocus = document.activeElement;
+    modalKind = cfg.kind;
+    $("#modal-title").textContent = cfg.title;
+    $("#modal-body").innerHTML = cfg.body;
+    $("#modal-actions").innerHTML = cfg.actions;
+    $("#modal").hidden = false;
+    refreshIcons();
+    var first = $("#modal-actions button");
+    if (first) { first.focus(); }
+  }
+
+  function closeModal() {
+    var modal = $("#modal");
+    if (modal.hidden) { return; }
+    modal.hidden = true;
+    modalKind = null;
+    if (lastFocus && document.body.contains(lastFocus) && typeof lastFocus.focus === "function") {
+      lastFocus.focus();
+    }
+    lastFocus = null;
+  }
+
+  function trapFocus(e) {
+    var items = $$("button:not([disabled])", $("#modal-box"));
+    if (!items.length) { return; }
+    var first = items[0];
+    var last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
+  function showNext(label, handler) {
+    mech.onNext = handler;
+    var slot = $("#next-slot");
+    if (!slot) { return; }
+    slot.innerHTML = '<button type="button" class="btn primary next-btn" data-action="next"><span>' + label +
+      '</span><span class="ico" data-icon="next" aria-hidden="true"></span></button>';
+    refreshIcons();
+    var button = $(".next-btn", slot);
+    if (button) { button.focus(); }
+  }
+
+  function nextAction() {
+    var fn = mech.onNext;
+    if (!fn) { return; }
+    mech.onNext = null;
+    var slot = $("#next-slot");
+    if (slot) { slot.innerHTML = ""; }
+    fn();
+  }
+
+  function revealChoices(selector, answer, picked) {
+    $$(selector, $("#stage")).forEach(function (b) {
+      var value = Number(b.getAttribute("data-opt"));
+      b.disabled = true;
+      if (value === answer) {
+        b.classList.add("is-correct");
+      } else if (value === picked) {
+        b.classList.add("is-wrong");
+        flash(b, "shake");
+      } else {
+        b.classList.add("is-dim");
+      }
+    });
+  }
+
+  function reactionMarkup(reaction, correct, explanation) {
+    return '<div class="bubble"><p class="bubble-text">' + esc(reaction) + "</p></div>" +
+      '<p class="verdict ' + (correct ? "ok" : "bad") + '">' + (correct ? "RIGHT ANSWER" : "NOT QUITE") + "</p>" +
+      '<p class="explain">' + esc(explanation) + "</p>";
+  }
+
+  function choiceKey(e) {
+    if (!/^[1-3]$/.test(e.key)) { return; }
+    var buttons = $$(".opt-btn", $("#stage"));
+    var target = buttons[Number(e.key) - 1];
+    if (target && !target.disabled) {
+      e.preventDefault();
+      target.click();
+    }
+  }
+
+  function onGlobalKey(e) {
+    var modalOpen = !$("#modal").hidden;
+    if (e.key === "Escape") {
+      e.preventDefault();
+      if (modalOpen) {
+        if (modalKind === "results") { showMap(); } else { closeModal(); }
+        return;
+      }
+      if (currentScreen === "scene") { showMap(); }
+      return;
+    }
+    if (modalOpen) {
+      if (e.key === "Tab") { trapFocus(e); }
+      return;
+    }
+    if (e.key === "Enter" && mech.onNext) {
+      e.preventDefault();
+      nextAction();
+      return;
+    }
+    if (mech.onKey) { mech.onKey(e); }
+  }
+
+  /* ===== RENDER: BACKGROUND, INTRO, MAP, FINALE ===== */
+
+  function renderBackground() {
+    $("#bg-layer").innerHTML = imgTag("bg-texture.jpg", "", "", "#3A2A22", "bg-texture");
+  }
+
+  function renderIntro() {
+    $("#intro-art").innerHTML = imgTag("slide-01.png", "Title card of The One with the Hypnosis Tape lesson", "F", "#D9573B", "intro-img");
+  }
+
+  function columnCount(cards) {
+    if (!cards.length) { return 1; }
+    var top = cards[0].offsetTop;
+    var count = 0;
+    for (var i = 0; i < cards.length; i++) {
+      if (cards[i].offsetTop !== top) { break; }
+      count++;
+    }
+    return Math.max(1, count);
+  }
+
+  function renderMap() {
+    var cards = SCENES.map(function (sc) {
+      var rec = store.levels[sc.id];
+      var label = rec.done
+        ? "best score " + rec.best + ", " + rec.stars + " of 3 stars"
+        : "not played yet";
+      var best = rec.done ? "BEST " + rec.best : "NEW";
+      return '<button type="button" class="reel" style="--accent:' + sc.color + '" data-action="brief" data-level="' + sc.id +
+        '" aria-label="Level ' + sc.num + ': ' + esc(sc.title) + ', character ' + esc(sc.char) + ', ' + label + '">' +
+        imgTag(sc.slide, "Preview of " + sc.title, sc.char.charAt(0), sc.color, "reel-img") +
+        '<span class="reel-body">' +
+          '<span class="reel-num">LEVEL ' + sc.num + " · " + esc(sc.tag) + "</span>" +
+          '<span class="reel-title">' + esc(sc.title) + "</span>" +
+          '<span class="reel-char">Character: ' + esc(sc.char) + "</span>" +
+          '<span class="reel-foot">' + starRow(rec.stars, "reel-stars") + '<span class="reel-best">' + best + "</span></span>" +
+        "</span></button>";
+    }).join("");
+    $("#map-grid").innerHTML = cards;
+    $("#btn-finale").hidden = !allDone();
+    refreshIcons();
+  }
+
+  function renderFinale() {
+    var total = totalBest();
+    var stars = totalStars();
+    var rank = rankFor(total);
+    var rows = SCENES.map(function (sc) {
+      var rec = store.levels[sc.id];
+      return "<tr><td>" + sc.num + "</td><td>" + esc(sc.title) + "</td><td>" + esc(sc.char) + "</td><td>" +
+        starRow(rec.stars, "mini") + "</td><td>" + (rec.done ? rec.best : "—") + "</td></tr>";
+    }).join("");
+    $("#finale-body").innerHTML =
+      '<div class="finale-hero paper-card">' +
+        "<div><p class=\"finale-label\">TOTAL SCORE</p><p class=\"finale-number\">" + total + "</p></div>" +
+        "<div><p class=\"finale-label\">TOTAL STARS</p><p class=\"rank-stars\">" + stars + " / 15</p>" +
+        "<p class=\"finale-label\">RANK</p><p class=\"rank\">" + esc(rank.name) + "</p>" +
+        '<
