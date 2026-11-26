@@ -110,7 +110,7 @@ body.reduced-motion .term{border-bottom-style:solid}
 @media(max-width:860px){.cards-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.cards-grid{grid-template-columns:1fr}}
 .card{perspective:1200px;height:340px;background:none;border:none;padding:0;cursor:pointer;font:inherit;text-align:left}
-.card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .65s cubic-bezier(.4,.1,.2,1)}
+.card-inner{position:relative;display:block;width:100%;height:100%;transform-style:preserve-3d;transition:transform .65s cubic-bezier(.4,.1,.2,1)}
 .card.flipped .card-inner{transform:rotateY(180deg)}
 .card:focus-visible{outline:3px solid var(--gold-b);outline-offset:4px;border-radius:var(--radius)}
 .card-face{
@@ -119,14 +119,15 @@ body.reduced-motion .term{border-bottom-style:solid}
   box-shadow:0 8px 24px rgba(61,36,16,.16);border:1px solid rgba(0,0,0,.06);
 }
 .card-front{color:#fff}
-.card-front .pos{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;opacity:.85;margin-bottom:10px}
-.card-front .word{font-family:'Fraunces',serif;font-weight:900;font-size:1.9rem;line-height:1.1;margin-bottom:12px}
-.card-front .hook{font-size:1rem;line-height:1.55;opacity:.95}
-.card-front .flip-hint{margin-top:auto;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.card-front .pos{display:block;font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;opacity:.85;margin-bottom:10px}
+.card-front .word{display:block;font-family:'Fraunces',serif;font-weight:900;font-size:1.9rem;line-height:1.1;margin-bottom:12px}
+.card-front .hook{display:block;font-size:1rem;line-height:1.55;opacity:.95}
+.card-front .flip-hint{display:block;margin-top:auto;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
 .card-back{background:var(--paper);color:var(--ink);transform:rotateY(180deg);font-size:.9rem;overflow-y:auto}
-.card-back h4{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-b);margin:10px 0 3px}
-.card-back h4:first-child{margin-top:0}
-.card-back p{margin-bottom:4px;line-height:1.5}
+.card-back .cb-block{display:block;margin-bottom:8px}
+.card-back .cb-h{display:block;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-b);margin:10px 0 3px}
+.card-back .cb-block:first-child .cb-h{margin-top:0}
+.card-back .cb-p{display:block;margin-bottom:4px;line-height:1.5}
 .acc-0 .card-front{background:linear-gradient(155deg,#c98b2e,#8f5c14)}
 .acc-1 .card-front{background:linear-gradient(155deg,#14979a,#0b5f61)}
 .acc-2 .card-front{background:linear-gradient(155deg,#a34a76,#6d2b4e)}
@@ -309,7 +310,7 @@ footer{padding:26px 0 46px;text-align:center;color:var(--muted);font-size:.88rem
     <p style="margin-top:8px">Every key term from this section lives on an interactive card below. Click a card — or tab to it and press Enter — to flip it and reveal the full lesson entry: literal meaning, contextual meaning, a quoted example, and a note on why the word matters.</p>
   </div>
 
-  <div class="cards-toolbar"><button class="flip-all" id="flipAll" aria-pressed="false">⇄ Flip all cards</button></div>
+  <div class="cards-toolbar"><button type="button" class="flip-all" id="flipAll" aria-pressed="false">⇄ Flip all cards</button></div>
   <div class="cards-grid" id="cardsGrid"></div>
 </section>
 
@@ -359,11 +360,11 @@ footer{padding:26px 0 46px;text-align:center;color:var(--muted);font-size:.88rem
     </div>
     <div id="dots" aria-hidden="true"></div>
     <div class="quiz-body" id="quizBody"></div>
-    <div class="quiz-foot" id="quizFoot"><button class="next-btn" id="nextBtn" disabled>Next →</button></div>
+    <div class="quiz-foot" id="quizFoot"><button type="button" class="next-btn" id="nextBtn" disabled>Next →</button></div>
     <div class="result-panel" id="resultPanel" aria-live="polite">
       <div class="big" id="finalScore">0/8</div>
       <p class="msg" id="finalMsg"></p>
-      <button class="again-btn" id="againBtn">🔄 Watch it again</button>
+      <button type="button" class="again-btn" id="againBtn">🔄 Watch it again</button>
     </div>
   </div>
 </section>
@@ -459,47 +460,66 @@ footer{padding:26px 0 46px;text-align:center;color:var(--muted);font-size:.88rem
   var cardsGrid = document.getElementById("cardsGrid");
   var flipAllBtn = document.getElementById("flipAll");
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (m) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m];
+    });
+  }
+
   function renderCards() {
     var html = "";
     for (var i = 0; i < CARDS.length; i++) {
       var c = CARDS[i];
-      html += '<button class="card acc-' + (i % 8) + '" aria-pressed="false" aria-label="Flip card for ' + c.term + '">'
+      html += '<button type="button" class="card acc-' + (i % 8) + '" aria-pressed="false" aria-label="Flip card for ' + escapeHtml(c.term) + '">'
         + '<span class="card-inner">'
         + '<span class="card-face card-front">'
-        + '<span class="pos">' + c.pos + '</span>'
-        + '<span class="word">' + c.term + '</span>'
-        + '<span class="hook">' + c.hook + '</span>'
+        + '<span class="pos">' + escapeHtml(c.pos) + '</span>'
+        + '<span class="word">' + escapeHtml(c.term) + '</span>'
+        + '<span class="hook">' + escapeHtml(c.hook) + '</span>'
         + '<span class="flip-hint">Tap to flip ↻</span>'
         + '</span>'
         + '<span class="card-face card-back">'
-        + '<h4>Literal meaning</h4><p>' + c.literal + '</p>'
-        + '<h4>In context</h4><p>' + c.context + '</p>'
-        + '<h4>Episode example</h4><p>' + c.example + '</p>'
-        + '<h4>Why it matters</h4><p>' + c.why + '</p>'
+        + '<span class="cb-block"><span class="cb-h">Literal meaning</span><span class="cb-p">' + escapeHtml(c.literal) + '</span></span>'
+        + '<span class="cb-block"><span class="cb-h">In context</span><span class="cb-p">' + escapeHtml(c.context) + '</span></span>'
+        + '<span class="cb-block"><span class="cb-h">Episode example</span><span class="cb-p">' + escapeHtml(c.example) + '</span></span>'
+        + '<span class="cb-block"><span class="cb-h">Why it matters</span><span class="cb-p">' + escapeHtml(c.why) + '</span></span>'
         + '</span></span></button>';
     }
     cardsGrid.innerHTML = html;
   }
   renderCards();
 
-  cardsGrid.addEventListener("click", function (e) {
-    var card = e.target.closest ? e.target.closest(".card") : null;
+  function findCard(el) {
+    while (el && el !== cardsGrid) {
+      if (el.classList && el.classList.contains("card")) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+  function toggleCard(card) {
     if (!card) return;
-    card.classList.toggle("flipped");
-    card.setAttribute("aria-pressed", card.classList.contains("flipped") ? "true" : "false");
+    var isFlipped = card.classList.toggle("flipped");
+    card.setAttribute("aria-pressed", isFlipped ? "true" : "false");
+  }
+
+  cardsGrid.addEventListener("click", function (e) {
+    toggleCard(findCard(e.target));
   });
   cardsGrid.addEventListener("keydown", function (e) {
-    if (e.key !== "Enter" && e.key !== " ") return;
-    var card = e.target.closest ? e.target.closest(".card") : null;
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    var card = findCard(e.target);
     if (!card) return;
     e.preventDefault();
-    card.classList.toggle("flipped");
-    card.setAttribute("aria-pressed", card.classList.contains("flipped") ? "true" : "false");
+    toggleCard(card);
   });
+
   flipAllBtn.addEventListener("click", function () {
     var cards = cardsGrid.querySelectorAll(".card");
     var anyDown = false;
-    for (var i = 0; i < cards.length; i++) { if (!cards[i].classList.contains("flipped")) { anyDown = true; break; } }
+    for (var i = 0; i < cards.length; i++) {
+      if (!cards[i].classList.contains("flipped")) { anyDown = true; break; }
+    }
     for (var j = 0; j < cards.length; j++) {
       cards[j].classList.toggle("flipped", anyDown);
       cards[j].setAttribute("aria-pressed", anyDown ? "true" : "false");
@@ -561,13 +581,13 @@ footer{padding:26px 0 46px;text-align:center;color:var(--muted);font-size:.88rem
     nextBtn.disabled = true;
     nextBtn.textContent = (idx === QUIZ.length - 1) ? "See results →" : "Next →";
     var q = QUIZ[idx];
-    var h = '<span class="q-tag">' + q.tag + '</span>'
-      + '<p class="q-text" id="qText">' + (idx + 1) + ". " + q.text + '</p>'
+    var h = '<span class="q-tag">' + escapeHtml(q.tag) + '</span>'
+      + '<p class="q-text" id="qText">' + (idx + 1) + ". " + escapeHtml(q.text) + '</p>'
       + '<div class="opts" role="group" aria-labelledby="qText">';
     for (var i = 0; i < q.options.length; i++) {
-      h += '<button class="opt" data-i="' + i + '">' + q.options[i] + '</button>';
+      h += '<button type="button" class="opt" data-i="' + i + '">' + escapeHtml(q.options[i]) + '</button>';
     }
-    h += '</div><div class="q-explain" id="qExplain"><b>Why</b>' + q.explain + '</div>';
+    h += '</div><div class="q-explain" id="qExplain"><b>Why</b>' + escapeHtml(q.explain) + '</div>';
     quizBody.innerHTML = h;
     var first = quizBody.querySelector(".opt");
     if (first) first.focus();
@@ -577,7 +597,7 @@ footer{padding:26px 0 46px;text-align:center;color:var(--muted);font-size:.88rem
     if (reduced) return;
     pop.textContent = good ? "APPLAUSE!" : "BUZZ!";
     pop.className = "pop " + (good ? "good" : "bad");
-    void pop.offsetWidth; /* restart animation */
+    void pop.offsetWidth;
     pop.classList.add("go");
     if (popTimer) clearTimeout(popTimer);
     popTimer = setTimeout(function () { pop.classList.remove("go"); }, 950);
@@ -599,11 +619,9 @@ footer{padding:26px 0 46px;text-align:center;color:var(--muted);font-size:.88rem
       else if (oi === chosen) { o.classList.add("wrong"); if (!reduced) o.classList.add("shake"); }
       else { o.classList.add("dim"); }
     }
-    if (good) { score++; } else {
-      var d = dotsBox.querySelector('.dot[data-i="' + idx + '"]');
-      if (d) d.classList.add("miss");
-    }
-    if (good) { var dg = dotsBox.querySelector('.dot[data-i="' + idx + '"]'); if (dg) dg.classList.add("hit"); }
+    var d = dotsBox.querySelector('.dot[data-i="' + idx + '"]');
+    if (good) { score++; if (d) d.classList.add("hit"); }
+    else { if (d) d.classList.add("miss"); }
     updateScore();
     showPop(good);
     var ex = document.getElementById("qExplain");
@@ -630,7 +648,7 @@ footer{padding:26px 0 46px;text-align:center;color:var(--muted);font-size:.88rem
     else { msg = "Time to get back at this quiz — rewatch, flip the cards again, and come back for revenge (the healthy, Ross-free kind)."; }
     finalMsg.textContent = msg;
     resultPanel.classList.add("show");
-    resultPanel.focus && resultPanel.focus();
+    if (resultPanel.focus) resultPanel.focus();
   }
 
   againBtn.addEventListener("click", function () {
