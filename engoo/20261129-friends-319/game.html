@@ -1,0 +1,4165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REEL TALK — Friends Vocab Arcade</title>
+  <style>
+    /* ===== Design Tokens & Theme ===== */
+    :root {
+      --paper: #FAF3E4;
+      --paper-deep: #F1E5CC;
+      --card: #FFFDF7;
+      --ink: #271E2E;
+      --muted: #6C5D74;
+      --plum: #3B2846;
+      --red: #D6453A;
+      --red-soft: #FDECEA;
+      --teal: #2E7E7B;
+      --teal-soft: #E5F4F3;
+      --amber: #E8A631;
+      --amber-soft: #FDF4DF;
+      --sage: #388858;
+      --sage-soft: #E6F6EC;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --border: 2.5px solid var(--ink);
+      --shadow-hard: 0 6px 0 var(--ink);
+      --shadow-sm: 0 3px 0 var(--ink);
+      --font-display: "Trebuchet MS", "Arial Black", "Impact", sans-serif;
+      --font-body: "Segoe UI", "Optima", "Candara", system-ui, -apple-system, sans-serif;
+      --font-mono: "Courier New", Consolas, "SFMono-Regular", monospace;
+      --font-hand: "Georgia", "Cambria", "Times New Roman", serif;
+      --header-h: 68px;
+    }
+
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background-color: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-body);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    body {
+      background-image:
+        radial-gradient(circle at 14% 12%, rgba(232, 166, 49, 0.16), transparent 42%),
+        radial-gradient(circle at 86% 22%, rgba(46, 126, 123, 0.12), transparent 44%),
+        radial-gradient(circle at 50% 90%, rgba(214, 69, 58, 0.10), transparent 46%),
+        repeating-linear-gradient(
+          0deg,
+          rgba(39, 30, 46, 0.025) 0px,
+          rgba(39, 30, 46, 0.025) 1px,
+          transparent 1px,
+          transparent 28px
+        );
+      padding-top: var(--header-h);
+    }
+
+    /* Optional local texture overlay */
+    .bg-texture-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.14;
+      mix-blend-mode: multiply;
+    }
+
+    .bg-texture-layer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Atmospheric SVG film grain & warm vignette */
+    .film-grain {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      pointer-events: none;
+      opacity: 0.045;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .warm-vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 58%, rgba(59, 40, 70, 0.16) 100%);
+    }
+
+    /* Accessibility focus styles */
+    :focus-visible {
+      outline: 3px solid var(--amber);
+      outline-offset: 3px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ===== Preloader ===== */
+    .preloader {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background:
+        radial-gradient(circle at 50% 35%, #4F355D 0%, #271E2E 75%);
+      color: var(--paper);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: transform 0.72s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.5s ease;
+    }
+
+    .preloader.exit {
+      transform: translateY(-105%);
+      pointer-events: none;
+    }
+
+    .preloader-deck {
+      width: min(500px, 100%);
+      background: #2E2138;
+      border: 3px solid var(--amber);
+      border-radius: 22px;
+      padding: 32px 28px;
+      text-align: center;
+      box-shadow: 0 14px 0 rgba(16, 10, 20, 0.65), 0 0 40px rgba(232, 166, 49, 0.18);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preloader-deck::before {
+      content: "REC ●  CH-03  VHS HI-FI";
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      color: var(--amber);
+      background: rgba(232, 166, 49, 0.12);
+      border: 1px solid rgba(232, 166, 49, 0.4);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 18px;
+    }
+
+    .cassette-window {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 44px;
+      background: #1C1322;
+      border: 2px solid rgba(250, 243, 228, 0.2);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 0 auto 22px;
+      max-width: 310px;
+      position: relative;
+    }
+
+    .cassette-window::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 66px;
+      height: 10px;
+      transform: translate(-50%, -50%);
+      background: repeating-linear-gradient(90deg, rgba(250, 243, 228, 0.3) 0 4px, transparent 4px 8px);
+      border-radius: 4px;
+    }
+
+    .reel-spool {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 4px dashed var(--paper);
+      box-shadow: inset 0 0 0 6px #3D2B48, 0 0 0 3px var(--amber);
+      animation: spinSlow 3.4s linear infinite;
+    }
+
+    .preloader-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.9rem, 5vw, 2.5rem);
+      letter-spacing: 0.04em;
+      margin: 0 0 8px;
+      color: var(--paper);
+      text-shadow: 0 3px 0 #160F1C;
+    }
+
+    .preloader-sub {
+      font-family: var(--font-hand);
+      font-style: italic;
+      color: #E5D5BC;
+      margin: 0 0 22px;
+      font-size: 1.05rem;
+    }
+
+    .loader-track {
+      height: 10px;
+      background: rgba(250, 243, 228, 0.14);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 22px;
+      border: 1px solid rgba(250, 243, 228, 0.25);
+    }
+
+    .loader-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--amber), var(--red));
+      transition: width 0.35s ease;
+    }
+
+    .btn-play-preloader {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      letter-spacing: 0.08em;
+      background: var(--amber);
+      color: var(--ink);
+      border: 2.5px solid var(--ink);
+      border-radius: 14px;
+      padding: 14px 34px;
+      box-shadow: 0 5px 0 #140D19;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+    }
+
+    .btn-play-preloader:hover {
+      background: #F4BA4E;
+    }
+
+    .btn-play-preloader:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #140D19;
+    }
+
+    /* ===== Fixed Header Console ===== */
+    .console-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-h);
+      z-index: 500;
+      background: var(--plum);
+      color: var(--paper);
+      border-bottom: 3px solid var(--ink);
+      box-shadow: 0 4px 0 rgba(39, 30, 46, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      gap: 12px;
+    }
+
+    .brand-btn {
+      background: transparent;
+      border: none;
+      color: var(--paper);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 10px;
+      text-align: left;
+    }
+
+    .brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--amber);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      box-shadow: 0 2px 0 var(--ink);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.05;
+    }
+
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      letter-spacing: 0.06em;
+    }
+
+    .brand-sub {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: #D8C7E2;
+      letter-spacing: 0.08em;
+    }
+
+    .hud-dots {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(20, 12, 26, 0.38);
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(250, 243, 228, 0.22);
+    }
+
+    .hud-dot {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 2px solid rgba(250, 243, 228, 0.55);
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .hud-dot:hover {
+      transform: scale(1.2);
+    }
+
+    .hud-dot.done {
+      background: var(--amber);
+      border-color: var(--paper);
+      box-shadow: 0 0 8px rgba(232, 166, 49, 0.65);
+    }
+
+    .hud-dot.current {
+      border-color: var(--teal);
+      background: #6CD0CC;
+      transform: scale(1.15);
+    }
+
+    .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .score-pill {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.92rem;
+      background: #23162B;
+      color: var(--amber);
+      border: 2px solid rgba(232, 166, 49, 0.55);
+      border-radius: 10px;
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.04em;
+    }
+
+    .icon-btn {
+      background: var(--paper);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      height: 38px;
+      padding: 0 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #1A1021;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      background: var(--amber-soft);
+    }
+
+    .icon-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #1A1021;
+    }
+
+    .icon-btn.muted {
+      background: #E2D6E6;
+      color: var(--muted);
+    }
+
+    /* ===== Shared Buttons & Cards ===== */
+    .btn {
+      font-family: var(--font-display);
+      font-size: 0.98rem;
+      letter-spacing: 0.04em;
+      border: var(--border);
+      border-radius: 13px;
+      padding: 12px 22px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 0 var(--ink);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover:not(:disabled) {
+      filter: brightness(1.04);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--red);
+      color: #FFFDF7;
+    }
+
+    .btn-teal {
+      background: var(--teal);
+      color: #FFFDF7;
+    }
+
+    .btn-amber {
+      background: var(--amber);
+      color: var(--ink);
+    }
+
+    .btn-paper {
+      background: var(--card);
+      color: var(--ink);
+    }
+
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 0.86rem;
+      border-radius: 10px;
+      box-shadow: 0 3px 0 var(--ink);
+    }
+
+    .panel {
+      background: var(--card);
+      border: var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-hard);
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1.5px solid var(--ink);
+      background: var(--paper-deep);
+      color: var(--ink);
+    }
+
+    /* ===== Main Stage & Screens ===== */
+    .app-main {
+      position: relative;
+      z-index: 10;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 26px 20px 64px;
+    }
+
+    .screen {
+      display: none;
+      opacity: 0;
+    }
+
+    .screen.active {
+      display: block;
+      animation: screenIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* ===== Intro Screen ===== */
+    .intro-hero {
+      display: grid;
+      grid-template-columns: 1.25fr 0.95fr;
+      gap: 26px;
+      align-items: stretch;
+    }
+
+    .intro-story {
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .intro-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--teal);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    .intro-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4.4vw, 3.05rem);
+      line-height: 1.06;
+      margin: 0 0 14px;
+      color: var(--ink);
+    }
+
+    .intro-title span {
+      color: var(--red);
+    }
+
+    .intro-lead {
+      font-size: 1.06rem;
+      color: var(--muted);
+      margin: 0 0 22px;
+      max-width: 52ch;
+    }
+
+    .intro-quote {
+      font-family: var(--font-hand);
+      font-style: italic;
+      font-size: 1.04rem;
+      background: var(--amber-soft);
+      border-left: 4px solid var(--amber);
+      padding: 12px 16px;
+      border-radius: 0 10px 10px 0;
+      margin-bottom: 24px;
+      color: var(--ink);
+    }
+
+    .intro-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .intro-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .intro-cast-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .cast-card {
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--card);
+    }
+
+    .cast-avatar {
+      width: 78px;
+      height: 78px;
+      border-radius: 16px;
+      border: var(--border);
+      box-shadow: 0 3px 0 var(--ink);
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--paper-deep);
+    }
+
+    .cast-role {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--teal);
+    }
+
+    .cast-name {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      margin: 2px 0 4px;
+    }
+
+    .cast-line {
+      font-family: var(--font-hand);
+      font-style: italic;
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .arcade-guide {
+      padding: 18px 20px;
+      background: var(--plum);
+      color: var(--paper);
+      border-radius: var(--radius-lg);
+      border: var(--border);
+      box-shadow: var(--shadow-hard);
+      flex: 1;
+    }
+
+    .arcade-guide h3 {
+      font-family: var(--font-display);
+      font-size: 0.98rem;
+      letter-spacing: 0.06em;
+      color: var(--amber);
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .arcade-guide ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.9rem;
+      color: #EADFF0;
+      display: grid;
+      gap: 6px;
+    }
+
+    /* ===== Level Map Screen ===== */
+    .map-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .map-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 3.6vw, 2.25rem);
+      margin: 0 0 6px;
+    }
+
+    .map-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .map-progress-box {
+      background: var(--card);
+      border: var(--border);
+      border-radius: 14px;
+      padding: 10px 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .progress-bar-wrap {
+      width: 120px;
+      height: 10px;
+      background: var(--paper-deep);
+      border-radius: 999px;
+      border: 1.5px solid var(--ink);
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--teal), var(--amber));
+      transition: width 0.4s ease;
+    }
+
+    .reel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 22px;
+    }
+
+    .reel-card {
+      background: var(--card);
+      border: var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-hard);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      text-align: left;
+      padding: 0;
+      color: var(--ink);
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+      position: relative;
+    }
+
+    .reel-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 0 var(--ink);
+    }
+
+    .reel-card:active {
+      transform: translateY(2px);
+      box-shadow: 0 3px 0 var(--ink);
+    }
+
+    .reel-thumb-wrap {
+      position: relative;
+      height: 168px;
+      background: var(--plum);
+      border-bottom: var(--border);
+      overflow: hidden;
+    }
+
+    .reel-thumb-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.35s ease;
+    }
+
+    .reel-card:hover .reel-thumb-wrap img {
+      transform: scale(1.04);
+    }
+
+    .reel-num-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.78rem;
+      background: var(--ink);
+      color: var(--amber);
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1.5px solid var(--paper);
+      letter-spacing: 0.08em;
+    }
+
+    .reel-status-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 8px;
+      border: 1.5px solid var(--ink);
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    .reel-status-badge.done {
+      background: var(--sage);
+      color: #fff;
+    }
+
+    .reel-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .reel-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .reel-char {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .reel-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .reel-flavor {
+      font-family: var(--font-hand);
+      font-style: italic;
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin: 0;
+      flex: 1;
+    }
+
+    .reel-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 10px;
+      border-top: 1.5px dashed rgba(39, 30, 46, 0.2);
+    }
+
+    .stars-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #D2C6B4;
+    }
+
+    .stars-row .star-filled {
+      color: var(--amber);
+      filter: drop-shadow(0 1px 0 var(--ink));
+    }
+
+    .reel-best {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .finale-banner {
+      margin-top: 28px;
+      padding: 24px 28px;
+      background: linear-gradient(135deg, #3B2846 0%, #593556 100%);
+      color: var(--paper);
+      border: var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-hard);
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .finale-banner.visible {
+      display: flex;
+      animation: screenIn 0.45s ease forwards;
+    }
+
+    .finale-banner h3 {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      color: var(--amber);
+      margin: 0 0 4px;
+    }
+
+    .finale-banner p {
+      margin: 0;
+      color: #EBDFF2;
+    }
+
+    /* ===== Scene Shell ===== */
+    .scene-topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding: 12px 16px;
+      background: var(--card);
+      border: var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .scene-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .scene-heading {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .scene-heading-kicker {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--teal);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .scene-heading-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      line-height: 1.15;
+    }
+
+    .scene-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stat-chip {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+      background: var(--paper-deep);
+      border: 1.5px solid var(--ink);
+      border-radius: 10px;
+      padding: 6px 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-chip.streak-hot {
+      background: var(--amber-soft);
+      border-color: var(--amber);
+      color: #8A5600;
+    }
+
+    .scene-banner-card {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 18px;
+      padding: 14px;
+      margin-bottom: 20px;
+      align-items: center;
+      background: var(--paper-deep);
+    }
+
+    .scene-banner-img {
+      width: 100%;
+      height: 126px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 2px solid var(--ink);
+      display: block;
+    }
+
+    .scene-banner-copy h2 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      margin: 0 0 6px;
+    }
+
+    .scene-banner-copy p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .scene-tip-line {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--ink);
+      background: var(--card);
+      border: 1.5px dashed var(--ink);
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: inline-block;
+    }
+
+    .stage-box {
+      padding: 26px;
+      position: relative;
+    }
+
+    /* ===== Mini-Game 1: Fill in the Blanks ===== */
+    .script-lines {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .script-line {
+      background: var(--paper);
+      border: 2px solid rgba(39, 30, 46, 0.25);
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: 1.05rem;
+      line-height: 1.75;
+    }
+
+    .script-speaker {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-right: 8px;
+      letter-spacing: 0.06em;
+    }
+
+    .blank-slot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 138px;
+      padding: 3px 12px;
+      margin: 0 4px;
+      border-radius: 10px;
+      border: 2px dashed var(--teal);
+      background: #fff;
+      font-family: var(--font-display);
+      font-size: 0.96rem;
+      color: var(--teal);
+      cursor: pointer;
+      vertical-align: middle;
+      transition: all 0.16s ease;
+    }
+
+    .blank-slot.active-slot {
+      border-style: solid;
+      border-color: var(--amber);
+      background: var(--amber-soft);
+      color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(232, 166, 49, 0.35);
+    }
+
+    .blank-slot.filled {
+      border-style: solid;
+      border-color: var(--sage);
+      background: var(--sage-soft);
+      color: var(--sage);
+      cursor: default;
+    }
+
+    .word-bank-label {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .word-bank {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .word-chip {
+      font-family: var(--font-display);
+      font-size: 0.96rem;
+      background: var(--card);
+      color: var(--ink);
+      border: var(--border);
+      border-radius: 12px;
+      padding: 10px 16px;
+      box-shadow: 0 4px 0 var(--ink);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+    }
+
+    .word-chip:hover:not(:disabled) {
+      background: var(--teal-soft);
+      transform: translateY(-2px);
+    }
+
+    .word-chip:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    .word-chip.used {
+      opacity: 0.35;
+      text-decoration: line-through;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .word-chip.bounce-err {
+      background: var(--red-soft);
+      border-color: var(--red);
+      color: var(--red);
+      animation: bounceBack 0.45s ease;
+    }
+
+    /* ===== Mini-Game 2: True/False (REAL vs DELUSION) ===== */
+    .timer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .timer-readout {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1.05rem;
+      background: var(--ink);
+      color: var(--amber);
+      padding: 5px 12px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .timer-readout.urgent {
+      background: var(--red);
+      color: #fff;
+      animation: urgentPulse 0.65s ease-in-out infinite;
+    }
+
+    .timer-bar-track {
+      width: 100%;
+      height: 13px;
+      background: var(--paper-deep);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 22px;
+    }
+
+    .timer-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--teal), var(--amber));
+      transition: width 0.25s linear;
+    }
+
+    .timer-bar-fill.urgent {
+      background: var(--red);
+      animation: urgentPulse 0.65s ease-in-out infinite;
+    }
+
+    .tf-card {
+      background: var(--paper);
+      border: var(--border);
+      border-radius: 16px;
+      padding: 26px 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .tf-term {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: var(--plum);
+      color: var(--amber);
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    .tf-statement {
+      font-family: var(--font-display);
+      font-size: clamp(1.15rem, 2.5vw, 1.48rem);
+      line-height: 1.35;
+      margin: 0;
+    }
+
+    .tf-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .tf-btn {
+      padding: 18px 20px;
+      font-size: 1.08rem;
+      border-radius: 14px;
+    }
+
+    .tf-key-hint {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      opacity: 0.85;
+      background: rgba(0, 0, 0, 0.16);
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+
+    .explain-box {
+      display: none;
+      border: var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-top: 14px;
+      background: var(--card);
+    }
+
+    .explain-box.visible {
+      display: block;
+      animation: screenIn 0.28s ease forwards;
+    }
+
+    .explain-box.ok {
+      border-color: var(--sage);
+      background: var(--sage-soft);
+    }
+
+    .explain-box.bad {
+      border-color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .explain-verdict {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      margin: 0 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .explain-text {
+      margin: 0 0 14px;
+      font-size: 0.98rem;
+      color: var(--ink);
+    }
+
+    .explain-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* ===== Mini-Game 3: Multiple Choice ===== */
+    .mc-prompt-box {
+      background: var(--paper);
+      border: var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    .mc-context {
+      font-family: var(--font-hand);
+      font-style: italic;
+      font-size: 1.12rem;
+      margin: 0 0 10px;
+      color: var(--ink);
+    }
+
+    .mc-question {
+      font-family: var(--font-display);
+      font-size: 1.16rem;
+      margin: 0;
+      color: var(--plum);
+    }
+
+    .mc-options {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .mc-opt {
+      width: 100%;
+      text-align: left;
+      background: var(--card);
+      color: var(--ink);
+      border: var(--border);
+      border-radius: 14px;
+      padding: 15px 18px;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--ink);
+      transition: transform 0.12s ease, background 0.15s ease;
+    }
+
+    .mc-opt:hover:not(:disabled) {
+      background: var(--amber-soft);
+      transform: translateX(3px);
+    }
+
+    .mc-opt-key {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: var(--paper-deep);
+      border: 2px solid var(--ink);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .mc-opt.correct {
+      background: var(--sage-soft);
+      border-color: var(--sage);
+      color: #1B5433;
+    }
+
+    .mc-opt.wrong {
+      background: var(--red-soft);
+      border-color: var(--red);
+      color: #8E1F17;
+      animation: shake 0.38s ease;
+    }
+
+    .char-reaction {
+      display: none;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      border: var(--border);
+      background: var(--amber-soft);
+    }
+
+    .char-reaction.visible {
+      display: flex;
+      flex-wrap: wrap;
+      animation: screenIn 0.28s ease forwards;
+    }
+
+    .char-reaction img {
+      width: 62px;
+      height: 62px;
+      border-radius: 12px;
+      border: 2px solid var(--ink);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .char-reaction-body {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .char-reaction-name {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 3px;
+    }
+
+    .char-reaction-line {
+      font-family: var(--font-hand);
+      font-style: italic;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    /* ===== Mini-Game 4: Match the Meaning ===== */
+    .match-example {
+      background: var(--amber-soft);
+      border: 2px dashed var(--amber);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.9rem;
+    }
+
+    .match-example-demo {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .match-counters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .match-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .match-col-title {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin: 0 0 10px;
+    }
+
+    .match-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .match-tile {
+      width: 100%;
+      text-align: left;
+      background: var(--card);
+      color: var(--ink);
+      border: var(--border);
+      border-radius: 12px;
+      padding: 13px 15px;
+      font-size: 0.96rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--ink);
+      transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .match-tile.word-tile {
+      font-family: var(--font-display);
+      font-size: 1.02rem;
+    }
+
+    .match-tile:hover:not(:disabled) {
+      background: var(--teal-soft);
+    }
+
+    .match-tile.selected {
+      background: var(--teal);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .match-tile.matched {
+      background: var(--sage-soft);
+      border-color: var(--sage);
+      color: #1D5A35;
+      box-shadow: none;
+      cursor: default;
+      opacity: 0.88;
+    }
+
+    .match-tile.wrong-shake {
+      background: var(--red-soft);
+      border-color: var(--red);
+      color: var(--red);
+      animation: shake 0.4s ease;
+    }
+
+    /* ===== Mini-Game 5: Timed Bonus Round ===== */
+    .bonus-hud {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .multiplier-badge {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      background: var(--amber);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      padding: 5px 12px;
+      box-shadow: 0 2px 0 var(--ink);
+    }
+
+    .bonus-card {
+      background: var(--paper);
+      border: var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 16px;
+    }
+
+    .bonus-tag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .bonus-q {
+      font-family: var(--font-display);
+      font-size: 1.24rem;
+      margin: 0;
+      line-height: 1.35;
+    }
+
+    .bonus-choices {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .bonus-feedback {
+      min-height: 28px;
+      margin-top: 14px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    /* ===== Finale Screen ===== */
+    .finale-card {
+      padding: 34px 30px;
+      text-align: center;
+    }
+
+    .finale-rank-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--plum);
+      color: var(--amber);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 7px 16px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      margin-bottom: 14px;
+    }
+
+    .finale-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.9rem, 4vw, 2.7rem);
+      margin: 0 0 8px;
+    }
+
+    .finale-subtitle {
+      font-family: var(--font-hand);
+      font-style: italic;
+      color: var(--muted);
+      font-size: 1.08rem;
+      margin: 0 0 26px;
+    }
+
+    .finale-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      max-width: 680px;
+      margin: 0 auto 28px;
+    }
+
+    .finale-stat {
+      background: var(--paper);
+      border: var(--border);
+      border-radius: 14px;
+      padding: 16px 12px;
+    }
+
+    .finale-stat-val {
+      font-family: var(--font-mono);
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--red);
+      line-height: 1.1;
+    }
+
+    .finale-stat-label {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .results-table-wrap {
+      overflow-x: auto;
+      margin-bottom: 26px;
+      border: var(--border);
+      border-radius: 14px;
+      background: var(--paper);
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.94rem;
+    }
+
+    .results-table th,
+    .results-table td {
+      padding: 12px 14px;
+      border-bottom: 1.5px solid rgba(39, 30, 46, 0.16);
+    }
+
+    .results-table th {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: var(--paper-deep);
+    }
+
+    .results-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .finale-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    /* ===== Modals ===== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1200;
+      background: rgba(25, 16, 32, 0.68);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+      animation: fadeIn 0.2s ease forwards;
+    }
+
+    .modal-box {
+      width: min(560px, 100%);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: var(--card);
+      border: 3px solid var(--ink);
+      border-radius: 20px;
+      box-shadow: 0 10px 0 var(--ink);
+      padding: 24px;
+      animation: modalPop 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .modal-slide {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 13px;
+      border: var(--border);
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      margin: 8px 0 8px;
+    }
+
+    .modal-flavor {
+      font-family: var(--font-hand);
+      font-style: italic;
+      color: var(--muted);
+      margin: 0 0 14px;
+      font-size: 1.02rem;
+    }
+
+    .modal-info-grid {
+      display: grid;
+      gap: 10px;
+      background: var(--paper);
+      border: 2px solid rgba(39, 30, 46, 0.2);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 20px;
+      font-size: 0.93rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .result-stars-big {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 10px 0 14px;
+    }
+
+    .result-star {
+      color: #D4C8B8;
+      display: inline-flex;
+    }
+
+    .result-star.earned {
+      color: var(--amber);
+      filter: drop-shadow(0 3px 0 var(--ink));
+      animation: starPop 0.55s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+    }
+
+    .result-star:nth-child(2).earned { animation-delay: 0.12s; }
+    .result-star:nth-child(3).earned { animation-delay: 0.24s; }
+
+    .result-score-big {
+      font-family: var(--font-mono);
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--red);
+      text-align: center;
+      margin: 0 0 6px;
+    }
+
+    .result-meta {
+      text-align: center;
+      color: var(--muted);
+      margin: 0 0 18px;
+      font-size: 0.94rem;
+    }
+
+    /* ===== Toasts, Floating Popups, Confetti ===== */
+    .toast-stack {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      z-index: 1600;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast-item {
+      background: var(--plum);
+      color: var(--paper);
+      border: 2px solid var(--ink);
+      border-radius: 12px;
+      padding: 11px 16px;
+      box-shadow: 0 4px 0 var(--ink);
+      font-weight: 700;
+      font-size: 0.9rem;
+      max-width: 320px;
+      animation: toastIn 0.28s ease forwards;
+    }
+
+    .toast-item.good { background: var(--sage); color: #fff; }
+    .toast-item.warn { background: var(--red); color: #fff; }
+    .toast-item.gold { background: var(--amber); color: var(--ink); }
+
+    .float-pop {
+      position: fixed;
+      z-index: 1700;
+      pointer-events: none;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1.05rem;
+      padding: 3px 9px;
+      border-radius: 8px;
+      border: 2px solid var(--ink);
+      background: var(--amber);
+      color: var(--ink);
+      animation: floatUp 0.9s ease-out forwards;
+    }
+
+    .float-pop.neg {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .confetti-piece {
+      position: fixed;
+      top: -16px;
+      width: 10px;
+      height: 14px;
+      z-index: 1800;
+      pointer-events: none;
+      border: 1px solid rgba(39, 30, 46, 0.35);
+      animation: confettiFall var(--dur, 2.2s) linear forwards;
+    }
+
+    /* ===== Animations ===== */
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes screenIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.94) translateY(12px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-7px); }
+      45% { transform: translateX(7px); }
+      70% { transform: translateX(-4px); }
+    }
+
+    @keyframes bounceBack {
+      0% { transform: translateY(0); }
+      25% { transform: translateY(-9px) rotate(-3deg); }
+      50% { transform: translateX(-8px); }
+      75% { transform: translateX(6px); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+
+    @keyframes starPop {
+      0% { opacity: 0; transform: scale(0.2) rotate(-38deg); }
+      70% { opacity: 1; transform: scale(1.2) rotate(10deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+
+    @keyframes urgentPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.72; transform: scale(1.03); }
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translate(-50%, 0) scale(0.95); }
+      100% { opacity: 0; transform: translate(-50%, -48px) scale(1.1); }
+    }
+
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(105vh) rotate(680deg); opacity: 0.85; }
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 860px) {
+      .intro-hero {
+        grid-template-columns: 1fr;
+      }
+      .scene-banner-card {
+        grid-template-columns: 1fr;
+      }
+      .scene-banner-img {
+        height: 155px;
+      }
+      .match-columns {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .hud-dots {
+        display: none;
+      }
+      .brand-sub {
+        display: none;
+      }
+      .tf-buttons {
+        grid-template-columns: 1fr;
+      }
+      .finale-summary-grid {
+        grid-template-columns: 1fr;
+      }
+      .stage-box {
+        padding: 18px 15px;
+      }
+    }
+
+    /* ===== Reduced Motion ===== */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Optional local texture & atmospheric overlays -->
+  <div class="bg-texture-layer" aria-hidden="true">
+    <img id="bg-texture-img" src="bg-texture.jpg" alt="" loading="eager">
+  </div>
+  <div class="warm-vignette" aria-hidden="true"></div>
+  <div class="film-grain" aria-hidden="true"></div>
+
+  <!-- ===== Preloader ===== -->
+  <div id="preloader" class="preloader" role="dialog" aria-modal="true" aria-label="Insert VHS Tape to Start">
+    <div class="preloader-deck">
+      <div class="cassette-window" aria-hidden="true">
+        <div class="reel-spool"></div>
+        <div class="reel-spool"></div>
+      </div>
+      <h1 class="preloader-title">REEL TALK</h1>
+      <p class="preloader-sub">Five late-night coffeehouse reels. Eighteen everyday expressions.</p>
+      <div class="loader-track" aria-hidden="true">
+        <div id="loader-fill" class="loader-fill"></div>
+      </div>
+      <button id="btn-preloader-play" class="btn-play-preloader" type="button" aria-label="Play Game">
+        <span>PLAY</span>
+        <span data-icon="play" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== Fixed Header Console ===== -->
+  <header class="console-header">
+    <button id="btn-brand" class="brand-btn" type="button" aria-label="Return to Intro Screen">
+      <span class="brand-badge" data-icon="film" aria-hidden="true"></span>
+      <span class="brand-text">
+        <span class="brand-name">REEL TALK</span>
+        <span class="brand-sub">FRIENDS VOCAB ARCADE</span>
+      </span>
+    </button>
+
+    <nav id="hud-dots" class="hud-dots" aria-label="Reel Progress Indicator"></nav>
+
+    <div class="hud-right">
+      <div class="score-pill" aria-live="polite" title="Total Best Score">
+        <span data-icon="sparkles" aria-hidden="true"></span>
+        <span id="hud-score">0</span>
+      </div>
+      <button id="btn-map" class="icon-btn" type="button" aria-label="Open Level Map">
+        <span data-icon="map" aria-hidden="true"></span>
+        <span>Map</span>
+      </button>
+      <button id="btn-sound" class="icon-btn" type="button" aria-label="Toggle Sound" aria-pressed="false">
+        <span id="sound-icon" data-icon="volume-2" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== Main Application Container ===== -->
+  <main class="app-main">
+    <!-- Screen 1: Intro -->
+    <section id="screen-intro" class="screen active" aria-labelledby="intro-heading">
+      <div class="intro-hero">
+        <div class="panel intro-story">
+          <div>
+            <div class="intro-kicker">
+              <span data-icon="film" aria-hidden="true"></span>
+              <span>VHS Edition · 5 Interactive Reels</span>
+            </div>
+            <h2 id="intro-heading" class="intro-title">
+              Warm Coffee, <span>Sharp Words</span>, Golden-Hour Banter.
+            </h2>
+            <p class="intro-lead">
+              Step into <strong>The Velvet Mug</strong>, a cozy neighborhood café where old friends trade stories,
+              bad alibis, and unforgettable idioms. Pop in any of the five taped reels—in any order you like—and master
+              18 real-world English expressions through five distinct arcade mini-games.
+            </p>
+            <blockquote class="intro-quote">
+              “Every great conversation lives in the little phrases between the lines. Ready to press play?”
+            </blockquote>
+            <div class="intro-meta">
+              <span class="tag-pill"><span data-icon="book-open" aria-hidden="true"></span> 18 Expressions</span>
+              <span class="tag-pill"><span data-icon="zap" aria-hidden="true"></span> 5 Unique Mechanics</span>
+              <span class="tag-pill"><span data-icon="star" aria-hidden="true"></span> Free-Order Map</span>
+            </div>
+          </div>
+          <div class="intro-actions">
+            <button id="btn-start-map" class="btn btn-primary" type="button">
+              <span>OPEN REEL MAP</span>
+              <span data-icon="arrow-right" aria-hidden="true"></span>
+            </button>
+            <button id="btn-intro-finale" class="btn btn-amber" type="button" style="display:none;">
+              <span data-icon="trophy" aria-hidden="true"></span>
+              <span>VIEW FINALE</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="intro-cast-col">
+          <div class="panel cast-card">
+            <img id="intro-char-1" class="cast-avatar" src="char-01.png" alt="Clara, Head Barista" loading="eager">
+            <div>
+              <div class="cast-role">Host · Head Barista</div>
+              <div class="cast-name">Clara Morales</div>
+              <p class="cast-line">“I pour the lattes and catch every half-baked rumor before it hits the booth.”</p>
+            </div>
+          </div>
+
+          <div class="panel cast-card">
+            <img id="intro-char-2" class="cast-avatar" src="char-02.png" alt="Leo, Indie Film Buff" loading="eager">
+            <div>
+              <div class="cast-role">Co-Host · Tape Archivist</div>
+              <div class="cast-name">Leo Bennett</div>
+              <p class="cast-line">“Five reels, zero spoilers—pick whichever tape calls your name first.”</p>
+            </div>
+          </div>
+
+          <div class="arcade-guide">
+            <h3><span data-icon="sparkles" aria-hidden="true"></span> HOW THE ARCADE WORKS</h3>
+            <ul>
+              <li><strong>No locks:</strong> Jump into any of the 5 reels in any order and replay anytime.</li>
+              <li><strong>Earn 1–3 Stars:</strong> 0 mistakes = 3★, 1–2 mistakes = 2★, 3+ mistakes = 1★.</li>
+              <li><strong>Keyboard ready:</strong> Use Arrows, number keys, Enter, and Escape smoothly.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 2: Level Map -->
+    <section id="screen-map" class="screen" aria-labelledby="map-heading">
+      <div class="map-header">
+        <div>
+          <h2 id="map-heading" class="map-title">VHS Reel Shelf</h2>
+          <p class="map-subtitle">Every reel is unlocked from the start. Pick any tape to begin or improve your best score.</p>
+        </div>
+        <div class="map-progress-box">
+          <div>
+            <div style="font-family:var(--font-mono);font-size:0.74rem;font-weight:700;color:var(--muted);">TAPE PROGRESS</div>
+            <div id="map-progress-text" style="font-family:var(--font-display);font-size:1rem;">0 / 5 Reels Complete</div>
+          </div>
+          <div class="progress-bar-wrap" aria-hidden="true">
+            <div id="map-progress-fill" class="progress-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="reel-grid" class="reel-grid" role="list"></div>
+
+      <div id="map-finale-banner" class="finale-banner">
+        <div>
+          <h3>All 5 Reels Archived!</h3>
+          <p>You completed every tape in the collection. Step into the screening room to see your final rank.</p>
+        </div>
+        <button id="btn-go-finale" class="btn btn-amber" type="button">
+          <span data-icon="trophy" aria-hidden="true"></span>
+          <span>ROLL THE FINALE</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Screen 3: Active Scene -->
+    <section id="screen-scene" class="screen" aria-labelledby="scene-title">
+      <div class="scene-topbar">
+        <div class="scene-topbar-left">
+          <button id="btn-back-map" class="btn btn-paper btn-sm" type="button" aria-label="Back to Reel Map">
+            <span data-icon="arrow-left" aria-hidden="true"></span>
+            <span>Back to Map</span>
+          </button>
+          <div class="scene-heading">
+            <span id="scene-kicker" class="scene-heading-kicker">REEL 01</span>
+            <span id="scene-title" class="scene-heading-title">Scene Title</span>
+          </div>
+        </div>
+        <div class="scene-stats">
+          <div class="stat-chip" aria-live="polite">
+            <span data-icon="sparkles" aria-hidden="true"></span>
+            <span>Score: <strong id="scene-score">0</strong></span>
+          </div>
+          <div id="scene-streak-chip" class="stat-chip" aria-live="polite">
+            <span data-icon="flame" aria-hidden="true"></span>
+            <span>Streak: <strong id="scene-streak">0</strong></span>
+          </div>
+          <div class="stat-chip" aria-live="polite">
+            <span>Mistakes: <strong id="scene-mistakes">0</strong></span>
+          </div>
+          <button id="btn-scene-briefing" class="btn btn-paper btn-sm" type="button" aria-label="Show Reel Instructions">
+            <span data-icon="info" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel scene-banner-card">
+        <img id="scene-banner-img" class="scene-banner-img" src="slide-01.png" alt="Scene preview" loading="eager">
+        <div class="scene-banner-copy">
+          <h2 id="scene-obj-title">Objective</h2>
+          <p id="scene-obj-text"></p>
+          <div id="scene-tip-line" class="scene-tip-line"></div>
+        </div>
+      </div>
+
+      <div id="scene-stage" class="panel stage-box"></div>
+    </section>
+
+    <!-- Screen 4: Finale -->
+    <section id="screen-finale" class="screen" aria-labelledby="finale-heading">
+      <div class="panel finale-card">
+        <div id="finale-rank-badge" class="finale-rank-badge">
+          <span data-icon="award" aria-hidden="true"></span>
+          <span id="finale-rank-name">PRIME-TIME ARCHIVIST</span>
+        </div>
+        <h2 id="finale-heading" class="finale-title">That’s a Wrap at The Velvet Mug!</h2>
+        <p id="finale-rank-note" class="finale-subtitle">Every tape is labeled, rewound, and shining on the shelf.</p>
+
+        <div class="finale-summary-grid">
+          <div class="finale-stat">
+            <div id="finale-total-score" class="finale-stat-val">0</div>
+            <div class="finale-stat-label">Total Best Score</div>
+          </div>
+          <div class="finale-stat">
+            <div id="finale-total-stars" class="finale-stat-val">0 / 15</div>
+            <div class="finale-stat-label">Stars Earned</div>
+          </div>
+          <div class="finale-stat">
+            <div id="finale-reels-done" class="finale-stat-val">5 / 5</div>
+            <div class="finale-stat-label">Reels Completed</div>
+          </div>
+        </div>
+
+        <div class="results-table-wrap">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Reel</th>
+                <th>Title</th>
+                <th>Challenge</th>
+                <th>Stars</th>
+                <th>Best Score</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="finale-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="finale-actions">
+          <button id="btn-finale-map" class="btn btn-teal" type="button">
+            <span data-icon="map" aria-hidden="true"></span>
+            <span>BACK TO REEL MAP</span>
+          </button>
+          <button id="btn-rewind-tape" class="btn btn-primary" type="button">
+            <span data-icon="rotate-ccw" aria-hidden="true"></span>
+            <span>REWIND THE TAPE</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Briefing Modal ===== -->
+  <div id="modal-briefing" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="brief-title">
+    <div class="modal-box">
+      <img id="brief-slide" class="modal-slide" src="slide-01.png" alt="Reel preview" loading="eager">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span id="brief-tag" class="tag-pill">MECHANIC</span>
+        <span id="brief-char" style="font-family:var(--font-mono);font-size:0.78rem;font-weight:700;color:var(--muted);">HOST</span>
+      </div>
+      <h3 id="brief-title" class="modal-title">Reel Title</h3>
+      <p id="brief-flavor" class="modal-flavor"></p>
+      <div class="modal-info-grid">
+        <div><strong>Objective:</strong> <span id="brief-obj"></span></div>
+        <div><strong>Arcade Tip:</strong> <span id="brief-tip"></span></div>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-brief-cancel" class="btn btn-paper" type="button">Close</button>
+        <button id="btn-brief-start" class="btn btn-primary" type="button">
+          <span data-icon="play" aria-hidden="true"></span>
+          <span>START REEL</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Level Results Modal ===== -->
+  <div id="modal-results" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="res-title">
+    <div class="modal-box">
+      <div style="text-align:center;">
+        <span id="res-record-pill" class="tag-pill" style="background:var(--amber);display:none;">NEW BEST SCORE!</span>
+        <h3 id="res-title" class="modal-title" style="margin-top:10px;">Reel Complete!</h3>
+      </div>
+      <div id="res-stars" class="result-stars-big" aria-label="Stars earned"></div>
+      <div id="res-score" class="result-score-big">0 pts</div>
+      <p id="res-meta" class="result-meta"></p>
+      <div class="modal-info-grid" style="text-align:center;font-family:var(--font-hand);font-style:italic;">
+        <span id="res-quote"></span>
+      </div>
+      <div class="modal-actions" style="justify-content:center;">
+        <button id="btn-res-replay" class="btn btn-paper" type="button">
+          <span data-icon="rotate-ccw" aria-hidden="true"></span>
+          <span>REPLAY</span>
+        </button>
+        <button id="btn-res-map" class="btn btn-teal" type="button">
+          <span data-icon="map" aria-hidden="true"></span>
+          <span>REEL MAP</span>
+        </button>
+        <button id="btn-res-finale" class="btn btn-amber" type="button" style="display:none;">
+          <span data-icon="trophy" aria-hidden="true"></span>
+          <span>WATCH FINALE</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Rewind Confirmation Modal ===== -->
+  <div id="modal-rewind" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="rewind-title">
+    <div class="modal-box" style="max-width:440px;text-align:center;">
+      <h3 id="rewind-title" class="modal-title">Rewind the Entire Tape?</h3>
+      <p class="modal-flavor">This clears all saved stars and best scores across all five reels so you can play fresh from Reel 01.</p>
+      <div class="modal-actions" style="justify-content:center;">
+        <button id="btn-rewind-cancel" class="btn btn-paper" type="button">Keep Progress</button>
+        <button id="btn-rewind-confirm" class="btn btn-primary" type="button">
+          <span data-icon="rotate-ccw" aria-hidden="true"></span>
+          <span>Yes, Rewind Tape</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Toast Container ===== -->
+  <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* ===== Utilities ===== */
+      const $ = (sel, root = document) => root.querySelector(sel);
+      const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+      const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+
+      function shuffle(list) {
+        const arr = list.slice();
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      const ICONS = {
+        play: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>',
+        "volume-2": '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+        "volume-x": '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>',
+        map: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>',
+        star: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+        "star-lg": '<svg width="42" height="42" viewBox="0 0 24 24" fill="currentColor" stroke="#271E2E" stroke-width="1.4" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+        "arrow-left": '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
+        "arrow-right": '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+        check: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+        x: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        sparkles: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M5 19l.8 2.2L8 22l-2.2.8L5 25l-.8-2.2L2 22l2.2-.8L5 19z" transform="translate(0 -3)"/></svg>',
+        trophy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>',
+        "rotate-ccw": '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
+        clock: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+        flame: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
+        film: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>',
+        zap: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+        award: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
+        info: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        "book-open": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>'
+      };
+
+      function refreshIcons(root = document) {
+        $$("[data-icon]", root).forEach((el) => {
+          const name = el.getAttribute("data-icon");
+          if (ICONS[name]) el.innerHTML = ICONS[name];
+        });
+      }
+
+      function toast(message, tone = "") {
+        const stack = $("#toast-stack");
+        if (!stack) return;
+        const item = document.createElement("div");
+        item.className = "toast-item" + (tone ? " " + tone : "");
+        item.textContent = message;
+        stack.appendChild(item);
+        window.setTimeout(() => {
+          item.style.opacity = "0";
+          item.style.transform = "translateY(8px)";
+          item.style.transition = "all 0.25s ease";
+          window.setTimeout(() => item.remove(), 260);
+        }, 2400);
+      }
+
+      function popFloat(anchorEl, text, isNegative = false) {
+        if (!anchorEl) return;
+        const rect = anchorEl.getBoundingClientRect();
+        const pop = document.createElement("div");
+        pop.className = "float-pop" + (isNegative ? " neg" : "");
+        pop.textContent = text;
+        pop.style.left = rect.left + rect.width / 2 + "px";
+        pop.style.top = Math.max(76, rect.top - 8) + "px";
+        document.body.appendChild(pop);
+        window.setTimeout(() => pop.remove(), 920);
+      }
+
+      function spawnConfetti(count = 38) {
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          return;
+        }
+        const colors = ["#E8A631", "#D6453A", "#2E7E7B", "#388858", "#FAF3E4", "#6B4580"];
+        for (let i = 0; i < count; i++) {
+          const p = document.createElement("div");
+          p.className = "confetti-piece";
+          p.style.left = Math.random() * 100 + "vw";
+          p.style.background = colors[i % colors.length];
+          p.style.setProperty("--dur", (1.6 + Math.random() * 1.4).toFixed(2) + "s");
+          p.style.animationDelay = (Math.random() * 0.35).toFixed(2) + "s";
+          document.body.appendChild(p);
+          window.setTimeout(() => p.remove(), 3300);
+        }
+      }
+
+      function formatClock(totalSeconds) {
+        const s = Math.max(0, Math.ceil(totalSeconds));
+        const mins = Math.floor(s / 60);
+        const secs = s % 60;
+        return String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
+      }
+
+      function makePlaceholderSVG(initial, label, c1, c2) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="${c1}"/>
+              <stop offset="100%" stop-color="${c2}"/>
+            </linearGradient>
+          </defs>
+          <rect width="640" height="360" fill="url(#g)"/>
+          <rect x="20" y="20" width="600" height="320" rx="18" fill="none" stroke="#FAF3E4" stroke-opacity="0.32" stroke-width="3" stroke-dasharray="10 8"/>
+          <circle cx="540" cy="86" r="56" fill="#FAF3E4" fill-opacity="0.1"/>
+          <circle cx="96" cy="276" r="44" fill="#271E2E" fill-opacity="0.18"/>
+          <text x="50%" y="48%" text-anchor="middle" dominant-baseline="middle" font-family="Trebuchet MS, sans-serif" font-size="96" font-weight="900" fill="#FAF3E4" fill-opacity="0.92">${initial}</text>
+          <text x="50%" y="76%" text-anchor="middle" font-family="Courier New, monospace" font-size="22" font-weight="700" letter-spacing="4" fill="#FAF3E4" fill-opacity="0.82">${label}</text>
+        </svg>`;
+        return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+      }
+
+      function attachImageFallback(imgEl, filename, initial, label, c1, c2) {
+        if (!imgEl) return;
+        const applyFallback = () => {
+          if (imgEl.dataset.fallbackApplied === "1") return;
+          imgEl.dataset.fallbackApplied = "1";
+          console.warn("missing asset: " + filename);
+          imgEl.src = makePlaceholderSVG(initial, label, c1, c2);
+        };
+        imgEl.onerror = applyFallback;
+        if (imgEl.complete && imgEl.naturalWidth === 0) {
+          applyFallback();
+        }
+      }
+
+      /* ===== Game Data Constants ===== */
+      const STORAGE_KEY = "reel_talk_vocab_arcade_v1";
+      const SOUND_KEY = "reel_talk_sound_muted_v1";
+
+      const CHARACTERS = {
+        clara: {
+          name: "Clara Morales",
+          role: "Head Barista",
+          img: "char-01.png",
+          initial: "CM",
+          c1: "#C44A3D",
+          c2: "#5C2A3E"
+        },
+        leo: {
+          name: "Leo Bennett",
+          role: "Tape Archivist",
+          img: "char-02.png",
+          initial: "LB",
+          c1: "#2E7E7B",
+          c2: "#283852"
+        }
+      };
+
+      const SCENES = [
+        {
+          id: "fill",
+          num: "01",
+          title: "Opening Credits at the Mug",
+          char: "Clara Morales",
+          color: "#D6453A",
+          color2: "#6F2B3B",
+          slide: "slide-01.png",
+          tag: "Fill in the Blanks",
+          obj: "Restore five missing idioms from the café morning script using the word bank.",
+          tip: "Click any blank, then click the right word. Wrong words bounce back and cost 30 points.",
+          flavor: "“Someone spilled espresso right across the dialogue cue sheet—help us patch the lines!”"
+        },
+        {
+          id: "tf",
+          num: "02",
+          title: "Real Talk or Pure Delusion?",
+          char: "Leo Bennett",
+          color: "#2E7E7B",
+          color2: "#243F4D",
+          slide: "slide-02.png",
+          tag: "Real / Delusion",
+          obj: "Judge six claims about everyday English phrases before the 10-minute card timer runs out.",
+          tip: "Use Left Arrow (REAL) or Right Arrow (DELUSION). Read each explanation, then press Enter or click NEXT.",
+          flavor: "“Half the booth thinks ‘bite the bullet’ means skipping dinner. Set the record straight.”"
+        },
+        {
+          id: "mc",
+          num: "03",
+          title: "Booth Three Dialogue",
+          char: "Clara Morales",
+          color: "#B96B2B",
+          color2: "#4E2B3E",
+          slide: "slide-03.png",
+          tag: "Multiple Choice",
+          obj: "Choose the single best response for six café moments—one shot per question.",
+          tip: "Press keys 1, 2, or 3 to pick quickly and hear Clara or Leo react to your line.",
+          flavor: "“No second takes in live sitcom taping—listen to the vibe and nail the punchline.”"
+        },
+        {
+          id: "match",
+          num: "04",
+          title: "Lost Subtitles",
+          char: "Leo Bennett",
+          color: "#4B6E8C",
+          color2: "#2D2A4A",
+          slide: "slide-04.png",
+          tag: "Match the Meaning",
+          obj: "Pair all six English expressions on the left with their exact meanings on the right.",
+          tip: "Select one word and one meaning. Correct pairs lock green; mismatches shake and reset.",
+          flavor: "“The VHS subtitle track got scrambled in storage. Reconnect every phrase to its real meaning.”"
+        },
+        {
+          id: "bonus",
+          num: "05",
+          title: "Midnight Arcade Marathon",
+          char: "Clara & Leo",
+          color: "#7C3B68",
+          color2: "#2B1E38",
+          slide: "slide-05.png",
+          tag: "Timed Bonus Round",
+          obj: "Clear ten rapid-fire mixed questions from every previous reel within 750 seconds.",
+          tip: "Build streaks for up to a 4× multiplier. Watch out—the timer flashes red in the final minute!",
+          flavor: "“Last call at The Velvet Mug! Show every expression you picked up across the tapes.”"
+        }
+      ];
+
+      const FILL_DATA = {
+        lines: [
+          {
+            speaker: "CLARA",
+            before: "We forgot to rehearse the open-mic intro, so we’ll just have to ",
+            answer: "wing it",
+            after: " once the spotlight turns on."
+          },
+          {
+            speaker: "LEO",
+            before: "Don’t worry—your guess about the mystery guest was ",
+            answer: "spot on",
+            after: "; she literally just walked through the door."
+          },
+          {
+            speaker: "CLARA",
+            before: "Maya and Sam talked for two minutes and immediately ",
+            answer: "hit it off",
+            after: " over vintage jazz records."
+          },
+          {
+            speaker: "LEO",
+            before: "Never ",
+            answer: "cut corners",
+            after: " when calibrating an old projector, or the tape will jam mid-scene."
+          },
+          {
+            speaker: "CLARA",
+            before: "Promise not to ",
+            answer: "spill the beans",
+            after: " about Leo’s surprise birthday screening tonight!"
+          }
+        ],
+        distractors: ["long shot", "call it a day"]
+      };
+
+      const TF_DATA = [
+        {
+          term: "on the fence",
+          statement: "If Clara says she is ‘on the fence’ about opening a second café, she still hasn’t decided which choice to make.",
+          isReal: true,
+          explanation: "REAL! Being ‘on the fence’ means remaining undecided between two options, sitting right in the middle before committing."
+        },
+        {
+          term: "out of the blue",
+          statement: "An event that happens ‘out of the blue’ was carefully scheduled weeks in advance on a wall calendar.",
+          isReal: false,
+          explanation: "DELUSION! ‘Out of the blue’ means something occurs completely unexpectedly, like a bolt from a clear blue sky."
+        },
+        {
+          term: "read between the lines",
+          statement: "To ‘read between the lines’ means noticing a hidden feeling or message that wasn’t stated directly.",
+          isReal: true,
+          explanation: "REAL! When you read between the lines, you sense the unspoken subtext behind someone’s polite words."
+        },
+        {
+          term: "under the weather",
+          statement: "Saying you feel ‘under the weather’ means you are bursting with energy and ready to run a marathon.",
+          isReal: false,
+          explanation: "DELUSION! ‘Under the weather’ means feeling slightly sick, run-down, or unwell—time for tea and rest."
+        },
+        {
+          term: "bite the bullet",
+          statement: "When Leo decides to ‘bite the bullet’ and finally fix his overdue taxes, he is facing an unpleasant task courageously.",
+          isReal: true,
+          explanation: "REAL! ‘Bite the bullet’ means accepting an unavoidable, uncomfortable task and getting it done without delaying further."
+        },
+        {
+          term: "second thoughts",
+          statement: "Having ‘second thoughts’ means you are 100% confident about your plan and feel zero doubt.",
+          isReal: false,
+          explanation: "DELUSION! ‘Second thoughts’ are nagging doubts that appear after you have already made a decision."
+        }
+      ];
+
+      const MC_DATA = [
+        {
+          context: "“After ten hours of editing reels, my eyes are glazing over. Let’s save the last scene for tomorrow.”",
+          question: "Which expression best sums up Leo’s suggestion?",
+          options: ["Call it a day", "Break the ice", "Spill the beans"],
+          correct: 0,
+          char: "leo",
+          reactGood: "Spot on! Calling it a day means wrapping up work before burnout kicks in.",
+          reactBad: "Not quite—when you stop working for the rest of the day, you ‘call it a day.’"
+        },
+        {
+          context: "“Nobody at the trivia table knew each other, so Clara told a terrible coffee pun to get everyone laughing.”",
+          question: "What was Clara trying to do?",
+          options: ["Cut corners", "Break the ice", "Have second thoughts"],
+          correct: 1,
+          char: "clara",
+          reactGood: "Exactly! A goofy joke is my favorite way to break the ice with shy regulars.",
+          reactBad: "Close try, but easing awkward tension in a new group is called ‘breaking the ice.’"
+        },
+        {
+          context: "“Our flight got delayed three hours, yet we ended up discovering the best bakery in the airport.”",
+          question: "What did the friends find inside a frustrating delay?",
+          options: ["A silver lining", "A long shot", "Under the weather"],
+          correct: 0,
+          char: "leo",
+          reactGood: "Yes! A ‘silver lining’ is that bright, unexpected upside hidden inside a cloudy day.",
+          reactBad: "Think of clouds with bright edges—that hopeful upside is a ‘silver lining.’"
+        },
+        {
+          context: "“Submitting our tiny neighborhood film to the international festival probably won’t win, yet it’s worth trying.”",
+          question: "How would Leo describe their festival entry?",
+          options: ["A piece of cake", "Spot on", "A long shot"],
+          correct: 2,
+          char: "leo",
+          reactGood: "You nailed it! A ‘long shot’ has slim odds, yet every iconic story starts with one.",
+          reactBad: "When success is unlikely but still worth a try, we call it a ‘long shot.’"
+        },
+        {
+          context: "“I know finals week feels brutal right now, Sam, just keep going—you’re almost past the finish line.”",
+          question: "Which encouraging phrase fits Clara’s pep talk?",
+          options: ["Hang in there", "Wing it", "On the fence"],
+          correct: 0,
+          char: "clara",
+          reactGood: "Warm and right on target! ‘Hang in there’ tells a friend to stay steady through rough waters.",
+          reactBad: "When cheering someone on to keep enduring a tough stretch, say ‘hang in there.’"
+        },
+        {
+          context: "“Once you learn the grinder settings, steaming silky oat milk takes thirty seconds—zero stress.”",
+          question: "How does Clara describe steaming milk after practice?",
+          options: ["Out of the blue", "A piece of cake", "Biting the bullet"],
+          correct: 1,
+          char: "clara",
+          reactGood: "Boom! If a task feels effortless, it’s a total ‘piece of cake.’",
+          reactBad: "Something remarkably easy to pull off is called a ‘piece of cake.’"
+        }
+      ];
+
+      const MATCH_DATA = [
+        { id: "m1", word: "boasts", meaning: "proudly has or possesses something impressive" },
+        { id: "m2", word: "wing it", meaning: "improvise smoothly without a prepared plan" },
+        { id: "m3", word: "hit it off", meaning: "immediately click and get along warmly" },
+        { id: "m4", word: "silver lining", meaning: "a hopeful upside inside a tough setback" },
+        { id: "m5", word: "cut corners", meaning: "skip vital steps to save time or money" },
+        { id: "m6", word: "out of the blue", meaning: "happening suddenly with zero warning" }
+      ];
+
+      const BONUS_DATA = [
+        {
+          tag: "REEL 01 RECALL",
+          q: "Which phrase means ‘completely accurate or exact’?",
+          choices: ["spot on", "on the fence", "long shot"],
+          correct: 0
+        },
+        {
+          tag: "REEL 04 RECALL",
+          q: "‘The Velvet Mug ____ an authentic 1994 jukebox.’ Pick the best verb:",
+          choices: ["boasts", "wings", "spills"],
+          correct: 0
+        },
+        {
+          tag: "REEL 02 RECALL",
+          q: "If you sense an unspoken meaning in a polite text message, you…",
+          choices: ["cut corners", "read between the lines", "call it a day"],
+          correct: 1
+        },
+        {
+          tag: "REEL 03 RECALL",
+          q: "What do you do when you tell a friendly story to relax strangers at a party?",
+          choices: ["break the ice", "bite the bullet", "hit it off"],
+          correct: 0
+        },
+        {
+          tag: "REEL 02 RECALL",
+          q: "Feeling feverish, tired, and ready for hot soup means you feel…",
+          choices: ["spot on", "under the weather", "piece of cake"],
+          correct: 1
+        },
+        {
+          tag: "REEL 01 RECALL",
+          q: "Accidentally telling everyone about a secret engagement party is to…",
+          choices: ["hang in there", "spill the beans", "wing it"],
+          correct: 1
+        },
+        {
+          tag: "REEL 03 RECALL",
+          q: "‘I know it’s a ____, yet let’s ask the director for an interview anyway.’",
+          choices: ["long shot", "silver lining", "second thought"],
+          correct: 0
+        },
+        {
+          tag: "REEL 02 RECALL",
+          q: "Starting to doubt a decision right after signing a lease means having…",
+          choices: ["second thoughts", "out of the blue", "cut corners"],
+          correct: 0
+        },
+        {
+          tag: "REEL 03 RECALL",
+          q: "‘That espresso quiz was so easy—an absolute ____!’",
+          choices: ["bite the bullet", "piece of cake", "on the fence"],
+          correct: 1
+        },
+        {
+          tag: "ALL-REEL FINALE",
+          q: "Finally making a dreaded dentist appointment because you can’t delay any longer is to…",
+          choices: ["bite the bullet", "break the ice", "call it a day"],
+          correct: 0
+        }
+      ];
+
+      /* ===== Web Audio API Sound Engine ===== */
+      let audioCtx = null;
+      let isMuted = false;
+
+      try {
+        isMuted = localStorage.getItem(SOUND_KEY) === "1";
+      } catch (e) {
+        isMuted = false;
+      }
+
+      function ensureAudio() {
+        if (!audioCtx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) audioCtx = new Ctx();
+        }
+        if (audioCtx && audioCtx.state === "suspended") {
+          audioCtx.resume().catch(() => {});
+        }
+      }
+
+      function tone(freq, dur = 0.12, type = "sine", vol = 0.14, when = 0) {
+        if (isMuted) return;
+        ensureAudio();
+        if (!audioCtx) return;
+        const start = audioCtx.currentTime + when;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(Math.max(0.001, vol), start + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(start);
+        osc.stop(start + dur + 0.02);
+      }
+
+      function noiseBurst(dur = 0.25, vol = 0.09) {
+        if (isMuted) return;
+        ensureAudio();
+        if (!audioCtx) return;
+        const length = Math.floor(audioCtx.sampleRate * dur);
+        const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < length; i++) {
+          data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+        }
+        const src = audioCtx.createBufferSource();
+        src.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.value = 1400;
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        src.start();
+      }
+
+      const SFX = {
+        click() {
+          tone(520, 0.055, "triangle", 0.11, 0);
+        },
+        flip() {
+          tone(360, 0.06, "sine", 0.09, 0);
+          tone(540, 0.07, "sine", 0.08, 0.05);
+        },
+        correct() {
+          tone(523.25, 0.1, "triangle", 0.14, 0);
+          tone(659.25, 0.14, "triangle", 0.15, 0.07);
+        },
+        wrong() {
+          tone(220, 0.14, "sawtooth", 0.11, 0);
+          tone(165, 0.18, "sawtooth", 0.1, 0.1);
+        },
+        match() {
+          tone(440, 0.09, "triangle", 0.13, 0);
+          tone(554.37, 0.1, "triangle", 0.14, 0.06);
+          tone(659.25, 0.15, "triangle", 0.15, 0.13);
+        },
+        tick() {
+          tone(880, 0.035, "square", 0.06, 0);
+        },
+        fanfare() {
+          const notes = [523.25, 659.25, 783.99, 1046.5];
+          notes.forEach((f, idx) => tone(f, 0.22, "triangle", 0.15, idx * 0.09));
+        },
+        cheer() {
+          SFX.fanfare();
+          noiseBurst(0.45, 0.11);
+        }
+      };
+
+      /* ===== State & Storage ===== */
+      let progress = loadProgress();
+      let currentScreen = "intro";
+      let currentSceneId = null;
+      let pendingBriefSceneId = null;
+      let activeCleanup = null;
+
+      let runState = {
+        score: 0,
+        streak: 0,
+        mistakes: 0
+      };
+
+      function loadProgress() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return {};
+          const parsed = JSON.parse(raw);
+          return parsed && typeof parsed === "object" ? parsed : {};
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function saveProgress() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+        } catch (e) {
+          /* Ignore storage errors in private mode */
+        }
+      }
+
+      function setCleanup(fn) {
+        if (typeof activeCleanup === "function") {
+          try {
+            activeCleanup();
+          } catch (e) {
+            /* Safe cleanup */
+          }
+        }
+        activeCleanup = typeof fn === "function" ? fn : null;
+      }
+
+      function getCompletedCount() {
+        return SCENES.filter((s) => progress[s.id] && progress[s.id].done).length;
+      }
+
+      function isAllCompleted() {
+        return getCompletedCount() === SCENES.length;
+      }
+
+      function getTotalBestScore() {
+        return SCENES.reduce((sum, s) => sum + ((progress[s.id] && progress[s.id].best) || 0), 0);
+      }
+
+      function getTotalStars() {
+        return SCENES.reduce((sum, s) => sum + ((progress[s.id] && progress[s.id].stars) || 0), 0);
+      }
+
+      function calcStars(mistakes) {
+        if (mistakes === 0) return 3;
+        if (mistakes <= 2) return 2;
+        return 1;
+      }
+
+      function getRank(totalScore) {
+        if (totalScore >= 5200) {
+          return {
+            name: "GOLDEN REEL LEGEND",
+            note: "Prime-time fluency! Every line landed like a classic season finale."
+          };
+        }
+        if (totalScore >= 3900) {
+          return {
+            name: "SCRIPT DOCTOR",
+            note: "Sharp ear, quick reflexes, and warm coffeehouse command of every idiom."
+          };
+        }
+        if (totalScore >= 2600) {
+          return {
+            name: "VELVET MUG REGULAR",
+            note: "Your booth is permanently reserved—great instincts across all five reels."
+          };
+        }
+        return {
+          name: "ROOKIE TAPE ARCHIVIST",
+          note: "All five reels completed! Replay any tape to chase three stars and higher streaks."
+        };
+      }
+
+      /* ===== HUD & Navigation ===== */
+      function renderSound() {
+        const btn = $("#btn-sound");
+        const icon = $("#sound-icon");
+        if (!btn || !icon) return;
+        btn.classList.toggle("muted", isMuted);
+        btn.setAttribute("aria-pressed", String(isMuted));
+        btn.setAttribute("aria-label", isMuted ? "Unmute Sound" : "Mute Sound");
+        icon.setAttribute("data-icon", isMuted ? "volume-x" : "volume-2");
+        refreshIcons(btn);
+      }
+
+      function updateHUD() {
+        $("#hud-score").textContent = getTotalBestScore().toLocaleString();
+
+        const dotsHtml = SCENES.map((s) => {
+          const done = Boolean(progress[s.id] && progress[s.id].done);
+          const isCurrent = currentScreen === "scene" && currentSceneId === s.id;
+          const cls = "hud-dot" + (done ? " done" : "") + (isCurrent ? " current" : "");
+          const status = done ? "Completed" : "Unplayed";
+          return `<button type="button" class="${cls}" data-dot-scene="${s.id}" title="Reel ${s.num}: ${s.title} (${status})" aria-label="Open Reel ${s.num}: ${s.title}, ${status}"></button>`;
+        }).join("");
+
+        $("#hud-dots").innerHTML = dotsHtml;
+
+        const introFinaleBtn = $("#btn-intro-finale");
+        if (introFinaleBtn) {
+          introFinaleBtn.style.display = isAllCompleted() ? "inline-flex" : "none";
+        }
+      }
+
+      function updateSceneStats() {
+        $("#scene-score").textContent = runState.score.toLocaleString();
+        $("#scene-streak").textContent = String(runState.streak);
+        $("#scene-mistakes").textContent = String(runState.mistakes);
+        const streakChip = $("#scene-streak-chip");
+        if (streakChip) {
+          streakChip.classList.toggle("streak-hot", runState.streak >= 2);
+        }
+      }
+
+      function switchScreen(name) {
+        if (name !== "scene") {
+          setCleanup(null);
+          currentSceneId = null;
+        }
+        currentScreen = name;
+        $$(".screen").forEach((el) => {
+          el.classList.toggle("active", el.id === "screen-" + name);
+        });
+        updateHUD();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      /* ===== Render Map ===== */
+      function renderMap() {
+        const doneCount = getCompletedCount();
+        $("#map-progress-text").textContent = `${doneCount} / ${SCENES.length} Reels Complete`;
+        $("#map-progress-fill").style.width = `${(doneCount / SCENES.length) * 100}%`;
+
+        const cardsHtml = SCENES.map((scene) => {
+          const rec = progress[scene.id];
+          const stars = rec ? rec.stars : 0;
+          const best = rec ? rec.best : null;
+          const done = Boolean(rec && rec.done);
+
+          const starsHtml = [1, 2, 3]
+            .map((n) => `<span class="${n <= stars ? "star-filled" : ""}" data-icon="star" aria-hidden="true"></span>`)
+            .join("");
+
+          return `
+            <button type="button" class="reel-card" data-scene-id="${scene.id}" role="listitem" aria-label="Reel ${scene.num}: ${scene.title}. ${done ? `Best score ${best}, ${stars} stars.` : "Not completed yet."}">
+              <div class="reel-thumb-wrap">
+                <img src="${scene.slide}" alt="Reel ${scene.num}: ${scene.title}" loading="eager" data-fallback-scene="${scene.id}">
+                <span class="reel-num-badge">REEL ${scene.num}</span>
+                <span class="reel-status-badge ${done ? "done" : ""}">${done ? "ARCHIVED" : "OPEN"}</span>
+              </div>
+              <div class="reel-body">
+                <div class="reel-top-row">
+                  <span class="tag-pill">${scene.tag}</span>
+                  <span class="reel-char">${scene.char}</span>
+                </div>
+                <h3 class="reel-title">${scene.title}</h3>
+                <p class="reel-flavor">${scene.flavor}</p>
+                <div class="reel-footer">
+                  <div class="stars-row" aria-label="${stars} out of 3 stars">${starsHtml}</div>
+                  <div class="reel-best">${best !== null ? "BEST: " + best.toLocaleString() : "PLAY NOW ▶"}</div>
+                </div>
+              </div>
+            </button>
+          `;
+        }).join("");
+
+        const grid = $("#reel-grid");
+        grid.innerHTML = cardsHtml;
+
+        SCENES.forEach((scene) => {
+          const img = grid.querySelector(`img[data-fallback-scene="${scene.id}"]`);
+          attachImageFallback(img, scene.slide, "R" + scene.num, "REEL " + scene.num, scene.color, scene.color2);
+        });
+
+        $("#map-finale-banner").classList.toggle("visible", isAllCompleted());
+        refreshIcons(grid);
+      }
+
+      /* ===== Modals ===== */
+      function openBriefing(sceneId, showStartBtn = true) {
+        const scene = SCENES.find((s) => s.id === sceneId);
+        if (!scene) return;
+        pendingBriefSceneId = sceneId;
+
+        const img = $("#brief-slide");
+        img.dataset.fallbackApplied = "0";
+        attachImageFallback(img, scene.slide, "R" + scene.num, "REEL " + scene.num, scene.color, scene.color2);
+        img.src = scene.slide;
+        img.alt = "Reel " + scene.num + ": " + scene.title;
+
+        $("#brief-tag").textContent = "REEL " + scene.num + " · " + scene.tag;
+        $("#brief-char").textContent = "HOST: " + scene.char;
+        $("#brief-title").textContent = scene.title;
+        $("#brief-flavor").textContent = scene.flavor;
+        $("#brief-obj").textContent = scene.obj;
+        $("#brief-tip").textContent = scene.tip;
+
+        const startBtn = $("#btn-brief-start");
+        startBtn.style.display = showStartBtn ? "inline-flex" : "none";
+
+        $("#modal-briefing").classList.add("open");
+        refreshIcons($("#modal-briefing"));
+        (showStartBtn ? startBtn : $("#btn-brief-cancel")).focus();
+      }
+
+      function closeBriefing() {
+        $("#modal-briefing").classList.remove("open");
+      }
+
+      function openResultsModal(scene, score, mistakes, stars, isNewRecord) {
+        const resStarsHtml = [1, 2, 3]
+          .map((n) => `<span class="result-star ${n <= stars ? "earned" : ""}" data-icon="star-lg" aria-hidden="true"></span>`)
+          .join("");
+
+        $("#res-title").textContent = `Reel ${scene.num} Complete!`;
+        $("#res-stars").innerHTML = resStarsHtml;
+        $("#res-score").textContent = score.toLocaleString() + " pts";
+        $("#res-meta").textContent = `Mistakes: ${mistakes}  ·  Earned: ${stars} / 3 Stars`;
+        $("#res-record-pill").style.display = isNewRecord ? "inline-flex" : "none";
+
+        const quotes = {
+          3: "“Flawless tape! Zero mistakes—Clara’s putting your name on the golden mug.”",
+          2: "“Strong take! Only a tiny wobble—one quick replay will lock in all three stars.”",
+          1: "“Tape archived! Every idiom gets sharper on the second spin.”"
+        };
+        $("#res-quote").textContent = quotes[stars];
+
+        $("#btn-res-finale").style.display = isAllCompleted() ? "inline-flex" : "none";
+        $("#modal-results").classList.add("open");
+        refreshIcons($("#modal-results"));
+        $("#btn-res-map").focus();
+      }
+
+      function closeResultsModal() {
+        $("#modal-results").classList.remove("open");
+      }
+
+      /* ===== Scene Completion & Scoring ===== */
+      function completeScene(sceneId) {
+        setCleanup(null);
+        const scene = SCENES.find((s) => s.id === sceneId);
+        if (!scene) return;
+
+        const finalScore = Math.max(0, runState.score);
+        const stars = calcStars(runState.mistakes);
+        const prev = progress[sceneId] || { done: false, best: 0, stars: 0 };
+        const isNewRecord = !prev.done || finalScore > prev.best;
+
+        progress[sceneId] = {
+          done: true,
+          best: Math.max(prev.best, finalScore),
+          stars: Math.max(prev.stars, stars)
+        };
+        saveProgress();
+        updateHUD();
+        renderMap();
+
+        if (stars === 3) {
+          SFX.cheer();
+          spawnConfetti(54);
+        } else {
+          SFX.fanfare();
+          spawnConfetti(28);
+        }
+
+        if (isAllCompleted() && !prev.done) {
+          toast("All 5 reels complete! Finale unlocked!", "gold");
+        } else if (isNewRecord) {
+          toast("New personal best saved!", "good");
+        }
+
+        openResultsModal(scene, finalScore, runState.mistakes, stars, isNewRecord);
+      }
+
+      /* ===== Start Scene ===== */
+      function startScene(sceneId) {
+        const scene = SCENES.find((s) => s.id === sceneId);
+        if (!scene) return;
+
+        closeBriefing();
+        closeResultsModal();
+        setCleanup(null);
+
+        currentSceneId = sceneId;
+        runState = { score: 0, streak: 0, mistakes: 0 };
+        updateSceneStats();
+
+        $("#scene-kicker").textContent = `REEL ${scene.num} · ${scene.tag}`;
+        $("#scene-title").textContent = scene.title;
+        $("#scene-obj-title").textContent = scene.title;
+        $("#scene-obj-text").textContent = scene.obj;
+        $("#scene-tip-line").textContent = "TIP: " + scene.tip;
+
+        const bannerImg = $("#scene-banner-img");
+        bannerImg.dataset.fallbackApplied = "0";
+        attachImageFallback(bannerImg, scene.slide, "R" + scene.num, "REEL " + scene.num, scene.color, scene.color2);
+        bannerImg.src = scene.slide;
+        bannerImg.alt = "Reel " + scene.num + ": " + scene.title;
+
+        switchScreen("scene");
+
+        const stage = $("#scene-stage");
+        stage.innerHTML = "";
+
+        if (sceneId === "fill") mountFillGame(stage);
+        else if (sceneId === "tf") mountTFGame(stage);
+        else if (sceneId === "mc") mountMCGame(stage);
+        else if (sceneId === "match") mountMatchGame(stage);
+        else if (sceneId === "bonus") mountBonusGame(stage);
+
+        refreshIcons(stage);
+      }
+
+      /* ===== Mini-Game 1: Fill in the Blanks ===== */
+      function mountFillGame(stage) {
+        const lines = FILL_DATA.lines;
+        const filled = lines.map(() => false);
+        const bankWords = shuffle(lines.map((l) => l.answer).concat(FILL_DATA.distractors));
+        let activeBlank = 0;
+
+        const linesHtml = lines
+          .map((l, idx) => {
+            return `
+              <div class="script-line">
+                <span class="script-speaker">${l.speaker}:</span>
+                <span>${l.before}</span>
+                <button type="button" class="blank-slot ${idx === 0 ? "active-slot" : ""}" data-blank-idx="${idx}" aria-label="Blank ${idx + 1}, empty">[ blank ${idx + 1} ]</button>
+                <span>${l.after}</span>
+              </div>
+            `;
+          })
+          .join("");
+
+        const bankHtml = bankWords
+          .map((w, i) => `<button type="button" class="word-chip" data-word="${w}" data-chip-idx="${i}">${w}</button>`)
+          .join("");
+
+        stage.innerHTML = `
+          <div class="script-lines">${linesHtml}</div>
+          <div class="word-bank-label">WORD BANK — Select a blank, then pick the matching expression:</div>
+          <div class="word-bank" id="fill-bank">${bankHtml}</div>
+        `;
+
+        function selectBlank(idx) {
+          if (filled[idx]) return;
+          activeBlank = idx;
+          $$(".blank-slot", stage).forEach((el) => {
+            const bi = Number(el.dataset.blankIdx);
+            el.classList.toggle("active-slot", bi === activeBlank && !filled[bi]);
+          });
+        }
+
+        function findNextEmpty() {
+          for (let i = 0; i < filled.length; i++) {
+            if (!filled[i]) return i;
+          }
+          return -1;
+        }
+
+        function onStageClick(e) {
+          const blankBtn = e.target.closest(".blank-slot");
+          if (blankBtn) {
+            const idx = Number(blankBtn.dataset.blankIdx);
+            if (!filled[idx]) {
+              SFX.click();
+              selectBlank(idx);
+            }
+            return;
+          }
+
+          const chip = e.target.closest(".word-chip");
+          if (!chip || chip.disabled) return;
+          if (activeBlank < 0 || filled[activeBlank]) {
+            const next = findNextEmpty();
+            if (next === -1) return;
+            selectBlank(next);
+          }
+
+          const word = chip.dataset.word;
+          const expected = lines[activeBlank].answer;
+          const blankEl = stage.querySelector(`.blank-slot[data-blank-idx="${activeBlank}"]`);
+
+          if (word === expected) {
+            filled[activeBlank] = true;
+            runState.streak += 1;
+            const gained = 120 + (runState.streak - 1) * 25;
+            runState.score += gained;
+            updateSceneStats();
+
+            blankEl.textContent = word;
+            blankEl.classList.remove("active-slot");
+            blankEl.classList.add("filled");
+            blankEl.setAttribute("aria-label", `Blank ${activeBlank + 1}, filled with ${word}`);
+            blankEl.disabled = true;
+
+            chip.classList.add("used");
+            chip.disabled = true;
+
+            SFX.correct();
+            popFloat(blankEl, "+" + gained);
+
+            const next = findNextEmpty();
+            if (next === -1) {
+              window.setTimeout(() => completeScene("fill"), 520);
+            } else {
+              selectBlank(next);
+            }
+          } else {
+            runState.mistakes += 1;
+            runState.streak = 0;
+            runState.score = Math.max(0, runState.score - 30);
+            updateSceneStats();
+
+            SFX.wrong();
+            popFloat(chip, "-30", true);
+            chip.classList.remove("bounce-err");
+            void chip.offsetWidth;
+            chip.classList.add("bounce-err");
+            toast("Bounced back! Try another expression for that line.", "warn");
+            window.setTimeout(() => chip.classList.remove("bounce-err"), 480);
+          }
+        }
+
+        stage.addEventListener("click", onStageClick);
+        setCleanup(() => {
+          stage.removeEventListener("click", onStageClick);
+        });
+      }
+
+      /* ===== Mini-Game 2: True/False Reaction (REAL / DELUSION) ===== */
+      function mountTFGame(stage) {
+        const CARD_SECONDS = 600;
+        const cards = TF_DATA;
+        let idx = 0;
+        let remaining = CARD_SECONDS;
+        let timerId = null;
+        let answered = false;
+
+        stage.innerHTML = `
+          <div class="timer-header">
+            <span class="tag-pill" id="tf-counter">CARD 1 / ${cards.length}</span>
+            <span class="multiplier-badge" id="tf-mult">STREAK ×1</span>
+            <div class="timer-readout" id="tf-clock">
+              <span data-icon="clock" aria-hidden="true"></span>
+              <span id="tf-clock-text">${formatClock(CARD_SECONDS)}</span>
+            </div>
+          </div>
+          <div class="timer-bar-track" aria-hidden="true">
+            <div id="tf-bar" class="timer-bar-fill"></div>
+          </div>
+          <div class="tf-card">
+            <div id="tf-term" class="tf-term"></div>
+            <p id="tf-statement" class="tf-statement"></p>
+          </div>
+          <div class="tf-buttons">
+            <button id="btn-tf-real" class="btn btn-teal tf-btn" type="button">
+              <span data-icon="check" aria-hidden="true"></span>
+              <span>REAL</span>
+              <span class="tf-key-hint">←</span>
+            </button>
+            <button id="btn-tf-delusion" class="btn btn-primary tf-btn" type="button">
+              <span data-icon="x" aria-hidden="true"></span>
+              <span>DELUSION</span>
+              <span class="tf-key-hint">→</span>
+            </button>
+          </div>
+          <div id="tf-explain" class="explain-box" aria-live="polite">
+            <div id="tf-verdict" class="explain-verdict"></div>
+            <p id="tf-explain-text" class="explain-text"></p>
+            <div class="explain-actions">
+              <button id="btn-tf-next" class="btn btn-amber" type="button">
+                <span id="tf-next-label">NEXT</span>
+                <span data-icon="arrow-right" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+        `;
+        refreshIcons(stage);
+
+        const elCounter = $("#tf-counter", stage);
+        const elMult = $("#tf-mult", stage);
+        const elClock = $("#tf-clock", stage);
+        const elClockText = $("#tf-clock-text", stage);
+        const elBar = $("#tf-bar", stage);
+        const elTerm = $("#tf-term", stage);
+        const elStmt = $("#tf-statement", stage);
+        const btnReal = $("#btn-tf-real", stage);
+        const btnDel = $("#btn-tf-delusion", stage);
+        const elExplain = $("#tf-explain", stage);
+        const elVerdict = $("#tf-verdict", stage);
+        const elExpText = $("#tf-explain-text", stage);
+        const btnNext = $("#btn-tf-next", stage);
+        const elNextLabel = $("#tf-next-label", stage);
+
+        function stopTimer() {
+          if (timerId !== null) {
+            window.clearInterval(timerId);
+            timerId = null;
+          }
+        }
+
+        function updateTimerUI() {
+          elClockText.textContent = formatClock(remaining);
+          const pct = clamp((remaining / CARD_SECONDS) * 100, 0, 100);
+          elBar.style.width = pct + "%";
+          const urgent = remaining <= 30;
+          elClock.classList.toggle("urgent", urgent);
+          elBar.classList.toggle("urgent", urgent);
+        }
+
+        function startCardTimer() {
+          stopTimer();
+          remaining = CARD_SECONDS;
+          updateTimerUI();
+          timerId = window.setInterval(() => {
+            remaining -= 0.25;
+            if (remaining <= 0) {
+              remaining = 0;
+              updateTimerUI();
+              stopTimer();
+              if (!answered) evaluateAnswer(null);
+              return;
+            }
+            updateTimerUI();
+          }, 250);
+        }
+
+        function renderCard() {
+          answered = false;
+          const card = cards[idx];
+          const mult = clamp(1 + Math.floor(runState.streak / 2), 1, 4);
+          elCounter.textContent = `CARD ${idx + 1} / ${cards.length}`;
+          elMult.textContent = `STREAK ×${mult}`;
+          elTerm.textContent = `EXPRESSION · ${card.term}`;
+          elStmt.textContent = card.statement;
+
+          btnReal.disabled = false;
+          btnDel.disabled = false;
+          elExplain.className = "explain-box";
+          elNextLabel.textContent = idx === cards.length - 1 ? "SEE RESULTS" : "NEXT";
+
+          startCardTimer();
+        }
+
+        function evaluateAnswer(pickIsReal) {
+          if (answered) return;
+          answered = true;
+          stopTimer();
+
+          btnReal.disabled = true;
+          btnDel.disabled = true;
+
+          const card = cards[idx];
+          const isCorrect = pickIsReal !== null && pickIsReal === card.isReal;
+
+          if (isCorrect) {
+            runState.streak += 1;
+            const mult = clamp(1 + Math.floor((runState.streak - 1) / 2), 1, 4);
+            const speedBonus = remaining > 540 ? 40 : remaining > 300 ? 20 : 10;
+            const gained = (110 + speedBonus) * mult;
+            runState.score += gained;
+            updateSceneStats();
+
+            SFX.correct();
+            popFloat(pickIsReal ? btnReal : btnDel, `+${gained} (×${mult})`);
+            elExplain.className = "explain-box visible ok";
+            elVerdict.textContent = `✓ Correct! (+${gained} pts)`;
+          } else {
+            runState.mistakes += 1;
+            runState.streak = 0;
+            runState.score = Math.max(0, runState.score - 40);
+            updateSceneStats();
+
+            SFX.wrong();
+            popFloat(elStmt, "-40", true);
+            elExplain.className = "explain-box visible bad";
+            elVerdict.textContent = pickIsReal === null
+              ? "⏱ Time expired on this card."
+              : `✕ Not quite! Correct verdict: ${card.isReal ? "REAL" : "DELUSION"}`;
+          }
+
+          elExpText.textContent = card.explanation;
+          elMult.textContent = `STREAK ×${clamp(1 + Math.floor(runState.streak / 2), 1, 4)}`;
+          btnNext.focus();
+        }
+
+        function handleNext() {
+          if (!answered) return;
+          SFX.flip();
+          if (idx === cards.length - 1) {
+            completeScene("tf");
+          } else {
+            idx += 1;
+            renderCard();
+          }
+        }
+
+        function onKeyDown(e) {
+          if ($(".modal-backdrop.open")) return;
+          if (!answered) {
+            if (e.key === "ArrowLeft") {
+              e.preventDefault();
+              evaluateAnswer(true);
+            } else if (e.key === "ArrowRight") {
+              e.preventDefault();
+              evaluateAnswer(false);
+            }
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+            handleNext();
+          }
+        }
+
+        btnReal.addEventListener("click", () => evaluateAnswer(true));
+        btnDel.addEventListener("click", () => evaluateAnswer(false));
+        btnNext.addEventListener("click", handleNext);
+        window.addEventListener("keydown", onKeyDown);
+
+        setCleanup(() => {
+          stopTimer();
+          window.removeEventListener("keydown", onKeyDown);
+        });
+
+        renderCard();
+      }
+
+      /* ===== Mini-Game 3: Multiple Choice ===== */
+      function mountMCGame(stage) {
+        const questions = MC_DATA;
+        let idx = 0;
+        let locked = false;
+
+        stage.innerHTML = `
+          <div class="timer-header">
+            <span class="tag-pill" id="mc-counter">LINE 1 / ${questions.length}</span>
+            <span style="font-family:var(--font-mono);font-size:0.78rem;color:var(--muted);">One attempt per line · Keys 1 / 2 / 3</span>
+          </div>
+          <div class="mc-prompt-box">
+            <p id="mc-context" class="mc-context"></p>
+            <h3 id="mc-question" class="mc-question"></h3>
+          </div>
+          <div id="mc-options" class="mc-options"></div>
+          <div id="mc-reaction" class="char-reaction" aria-live="polite">
+            <img id="mc-char-img" src="char-01.png" alt="Character portrait" loading="eager">
+            <div class="char-reaction-body">
+              <div id="mc-char-name" class="char-reaction-name"></div>
+              <p id="mc-char-line" class="char-reaction-line"></p>
+            </div>
+            <button id="btn-mc-next" class="btn btn-amber" type="button">
+              <span id="mc-next-label">NEXT LINE</span>
+              <span data-icon="arrow-right" aria-hidden="true"></span>
+            </button>
+          </div>
+        `;
+        refreshIcons(stage);
+
+        const elCounter = $("#mc-counter", stage);
+        const elContext = $("#mc-context", stage);
+        const elQuestion = $("#mc-question", stage);
+        const elOptions = $("#mc-options", stage);
+        const elReaction = $("#mc-reaction", stage);
+        const elCharImg = $("#mc-char-img", stage);
+        const elCharName = $("#mc-char-name", stage);
+        const elCharLine = $("#mc-char-line", stage);
+        const btnNext = $("#btn-mc-next", stage);
+        const elNextLabel = $("#mc-next-label", stage);
+
+        function renderQ() {
+          locked = false;
+          const q = questions[idx];
+          elCounter.textContent = `LINE ${idx + 1} / ${questions.length}`;
+          elContext.textContent = q.context;
+          elQuestion.textContent = q.question;
+          elReaction.classList.remove("visible");
+
+          elOptions.innerHTML = q.options
+            .map((opt, i) => `
+              <button type="button" class="mc-opt" data-opt-idx="${i}">
+                <span class="mc-opt-key">${i + 1}</span>
+                <span>${opt}</span>
+              </button>
+            `)
+            .join("");
+
+          elNextLabel.textContent = idx === questions.length - 1 ? "SEE RESULTS" : "NEXT LINE";
+        }
+
+        function pickOption(choiceIdx) {
+          if (locked) return;
+          locked = true;
+
+          const q = questions[idx];
+          const buttons = $$(".mc-opt", elOptions);
+          buttons.forEach((b) => { b.disabled = true; });
+
+          const chosenBtn = buttons[choiceIdx];
+          const rightBtn = buttons[q.correct];
+          const isCorrect = choiceIdx === q.correct;
+
+          if (isCorrect) {
+            chosenBtn.classList.add("correct");
+            runState.streak += 1;
+            const gained = 140 + (runState.streak - 1) * 25;
+            runState.score += gained;
+            updateSceneStats();
+            SFX.correct();
+            popFloat(chosenBtn, "+" + gained);
+          } else {
+            chosenBtn.classList.add("wrong");
+            rightBtn.classList.add("correct");
+            runState.mistakes += 1;
+            runState.streak = 0;
+            runState.score = Math.max(0, runState.score - 35);
+            updateSceneStats();
+            SFX.wrong();
+            popFloat(chosenBtn, "-35", true);
+          }
+
+          const ch = CHARACTERS[q.char];
+          elCharImg.dataset.fallbackApplied = "0";
+          attachImageFallback(elCharImg, ch.img, ch.initial, ch.name.toUpperCase(), ch.c1, ch.c2);
+          elCharImg.src = ch.img;
+          elCharImg.alt = ch.name;
+          elCharName.textContent = ch.name + " · " + ch.role;
+          elCharLine.textContent = isCorrect ? q.reactGood : q.reactBad;
+          elReaction.classList.add("visible");
+          btnNext.focus();
+        }
+
+        function handleNext() {
+          if (!locked) return;
+          SFX.flip();
+          if (idx === questions.length - 1) {
+            completeScene("mc");
+          } else {
+            idx += 1;
+            renderQ();
+          }
+        }
+
+        function onOptionsClick(e) {
+          const btn = e.target.closest(".mc-opt");
+          if (!btn || btn.disabled) return;
+          pickOption(Number(btn.dataset.optIdx));
+        }
+
+        function onKeyDown(e) {
+          if ($(".modal-backdrop.open")) return;
+          if (!locked && (e.key === "1" || e.key === "2" || e.key === "3")) {
+            e.preventDefault();
+            pickOption(Number(e.key) - 1);
+          } else if (locked && e.key === "Enter") {
+            e.preventDefault();
+            handleNext();
+          }
+        }
+
+        elOptions.addEventListener("click", onOptionsClick);
+        btnNext.addEventListener("click", handleNext);
+        window.addEventListener("keydown", onKeyDown);
+
+        setCleanup(() => {
+          elOptions.removeEventListener("click", onOptionsClick);
+          window.removeEventListener("keydown", onKeyDown);
+        });
+
+        renderQ();
+      }
+
+      /* ===== Mini-Game 4: Match the Meaning ===== */
+      function mountMatchGame(stage) {
+        const leftItems = shuffle(MATCH_DATA);
+        const rightItems = shuffle(MATCH_DATA);
+        const matchedIds = new Set();
+        let selectedWordId = null;
+        let selectedMeaningId = null;
+        let attempts = 0;
+        let lockClick = false;
+
+        const wordsHtml = leftItems
+          .map((item) => `<button type="button" class="match-tile word-tile" data-side="word" data-id="${item.id}">${item.word}</button>`)
+          .join("");
+
+        const meaningsHtml = rightItems
+          .map((item) => `<button type="button" class="match-tile meaning-tile" data-side="meaning" data-id="${item.id}">${item.meaning}</button>`)
+          .join("");
+
+        stage.innerHTML = `
+          <div class="match-example">
+            <div class="match-example-demo">HOW TO PLAY: WORD · boasts → MEANING · proudly has</div>
+            <div class="match-counters">
+              <span class="tag-pill" id="match-pairs">PAIRS: 0/${MATCH_DATA.length}</span>
+              <span class="tag-pill" id="match-attempts">ATTEMPTS: 0</span>
+            </div>
+          </div>
+          <div class="match-columns" id="match-board">
+            <div>
+              <div class="match-col-title">English Expressions</div>
+              <div class="match-list">${wordsHtml}</div>
+            </div>
+            <div>
+              <div class="match-col-title">Meanings</div>
+              <div class="match-list">${meaningsHtml}</div>
+            </div>
+          </div>
+        `;
+
+        const board = $("#match-board", stage);
+        const elPairs = $("#match-pairs", stage);
+        const elAttempts = $("#match-attempts", stage);
+
+        function clearSelections() {
+          selectedWordId = null;
+          selectedMeaningId = null;
+          $$(".match-tile.selected", board).forEach((t) => t.classList.remove("selected"));
+        }
+
+        function checkPair() {
+          if (!selectedWordId || !selectedMeaningId) return;
+          attempts += 1;
+          elAttempts.textContent = `ATTEMPTS: ${attempts}`;
+
+          const wBtn = board.querySelector(`.match-tile[data-side="word"][data-id="${selectedWordId}"]`);
+          const mBtn = board.querySelector(`.match-tile[data-side="meaning"][data-id="${selectedMeaningId}"]`);
+
+          if (selectedWordId === selectedMeaningId) {
+            matchedIds.add(selectedWordId);
+            wBtn.classList.remove("selected");
+            mBtn.classList.remove("selected");
+            wBtn.classList.add("matched");
+            mBtn.classList.add("matched");
+            wBtn.disabled = true;
+            mBtn.disabled = true;
+
+            runState.streak += 1;
+            const gained = 130 + (runState.streak - 1) * 20;
+            runState.score += gained;
+            updateSceneStats();
+
+            elPairs.textContent = `PAIRS: ${matchedIds.size}/${MATCH_DATA.length}`;
+            SFX.match();
+            popFloat(mBtn, "+" + gained);
+
+            selectedWordId = null;
+            selectedMeaningId = null;
+
+            if (matchedIds.size === MATCH_DATA.length) {
+              window.setTimeout(() => completeScene("match"), 520);
+            }
+          } else {
+            lockClick = true;
+            runState.mistakes += 1;
+            runState.streak = 0;
+            runState.score = Math.max(0, runState.score - 25);
+            updateSceneStats();
+
+            SFX.wrong();
+            popFloat(mBtn, "-25", true);
+            wBtn.classList.add("wrong-shake");
+            mBtn.classList.add("wrong-shake");
+
+            window.setTimeout(() => {
+              wBtn.classList.remove("wrong-shake", "selected");
+              mBtn.classList.remove("wrong-shake", "selected");
+              selectedWordId = null;
+              selectedMeaningId = null;
+              lockClick = false;
+            }, 440);
+          }
+        }
+
+        function onBoardClick(e) {
+          if (lockClick) return;
+          const tile = e.target.closest(".match-tile");
+          if (!tile || tile.disabled) return;
+
+          const side = tile.dataset.side;
+          const id = tile.dataset.id;
+          SFX.click();
+
+          if (side === "word") {
+            if (selectedWordId === id) {
+              tile.classList.remove("selected");
+              selectedWordId = null;
+              return;
+            }
+            $$('.match-tile[data-side="word"].selected', board).forEach((t) => t.classList.remove("selected"));
+            selectedWordId = id;
+            tile.classList.add("selected");
+          } else {
+            if (selectedMeaningId === id) {
+              tile.classList.remove("selected");
+              selectedMeaningId = null;
+              return;
+            }
+            $$('.match-tile[data-side="meaning"].selected', board).forEach((t) => t.classList.remove("selected"));
+            selectedMeaningId = id;
+            tile.classList.add("selected");
+          }
+
+          if (selectedWordId && selectedMeaningId) {
+            checkPair();
+          }
+        }
+
+        function onKeyDown(e) {
+          if (e.key === "Escape" && !$(".modal-backdrop.open")) {
+            clearSelections();
+          }
+        }
+
+        board.addEventListener("click", onBoardClick);
+        window.addEventListener("keydown", onKeyDown);
+
+        setCleanup(() => {
+          board.removeEventListener("click", onBoardClick);
+          window.removeEventListener("keydown", onKeyDown);
+        });
+      }
+
+      /* ===== Mini-Game 5: Timed Bonus Round (750s) ===== */
+      function mountBonusGame(stage) {
+        const TOTAL_SECONDS = 750;
+        const questions = shuffle(BONUS_DATA);
+        let idx = 0;
+        let remaining = TOTAL_SECONDS;
+        let lastWholeSec = TOTAL_SECONDS;
+        let timerId = null;
+        let advanceTimeout = null;
+        let locked = false;
+
+        stage.innerHTML = `
+          <div class="bonus-hud">
+            <span class="tag-pill" id="bonus-counter">QUESTION 1 / ${questions.length}</span>
+            <span class="multiplier-badge" id="bonus-mult">MULTIPLIER ×1</span>
+            <div class="timer-readout" id="bonus-clock">
+              <span data-icon="clock" aria-hidden="true"></span>
+              <span id="bonus-clock-text">${formatClock(TOTAL_SECONDS)}</span>
+            </div>
+          </div>
+          <div class="timer-bar-track" aria-hidden="true">
+            <div id="bonus-bar" class="timer-bar-fill"></div>
+          </div>
+          <div class="bonus-card">
+            <span id="bonus-tag" class="bonus-tag"></span>
+            <h3 id="bonus-q" class="bonus-q"></h3>
+          </div>
+          <div id="bonus-choices" class="bonus-choices"></div>
+          <div id="bonus-feedback" class="bonus-feedback" aria-live="polite"></div>
+        `;
+        refreshIcons(stage);
+
+        const elCounter = $("#bonus-counter", stage);
+        const elMult = $("#bonus-mult", stage);
+        const elClock = $("#bonus-clock", stage);
+        const elClockText = $("#bonus-clock-text", stage);
+        const elBar = $("#bonus-bar", stage);
+        const elTag = $("#bonus-tag", stage);
+        const elQ = $("#bonus-q", stage);
+        const elChoices = $("#bonus-choices", stage);
+        const elFeedback = $("#bonus-feedback", stage);
+
+        function stopAllTimers() {
+          if (timerId !== null) {
+            window.clearInterval(timerId);
+            timerId = null;
+          }
+          if (advanceTimeout !== null) {
+            window.clearTimeout(advanceTimeout);
+            advanceTimeout = null;
+          }
+        }
+
+        function updateTimer() {
+          elClockText.textContent = formatClock(remaining);
+          elBar.style.width = clamp((remaining / TOTAL_SECONDS) * 100, 0, 100) + "%";
+          const urgent = remaining <= 60;
+          elClock.classList.toggle("urgent", urgent);
+          elBar.classList.toggle("urgent", urgent);
+          const whole = Math.ceil(remaining);
+          if (whole <= 10 && whole > 0 && whole !== lastWholeSec) {
+            SFX.tick();
+          }
+          lastWholeSec = whole;
+        }
+
+        function renderQ() {
+          locked = false;
+          const q = questions[idx];
+          const mult = clamp(1 + Math.floor(runState.streak / 2), 1, 4);
+          elCounter.textContent = `QUESTION ${idx + 1} / ${questions.length}`;
+          elMult.textContent = `MULTIPLIER ×${mult}`;
+          elTag.textContent = q.tag;
+          elQ.textContent = q.q;
+          elFeedback.textContent = "";
+
+          elChoices.innerHTML = q.choices
+            .map((choice, i) => `
+              <button type="button" class="mc-opt" data-b-idx="${i}">
+                <span class="mc-opt-key">${i + 1}</span>
+                <span>${choice}</span>
+              </button>
+            `)
+            .join("");
+        }
+
+        function answerBonus(choiceIdx) {
+          if (locked) return;
+          locked = true;
+          const q = questions[idx];
+          const btns = $$(".mc-opt", elChoices);
+          btns.forEach((b) => { b.disabled = true; });
+
+          const chosen = btns[choiceIdx];
+          const right = btns[q.correct];
+
+          if (choiceIdx === q.correct) {
+            chosen.classList.add("correct");
+            runState.streak += 1;
+            const mult = clamp(1 + Math.floor((runState.streak - 1) / 2), 1, 4);
+            const gained = 100 * mult;
+            runState.score += gained;
+            updateSceneStats();
+
+            SFX.correct();
+            popFloat(chosen, `+${gained} (×${mult})`);
+            elFeedback.style.color = "var(--sage)";
+            elFeedback.textContent = `✓ Sharp! Streak ${runState.streak} · +${gained} pts`;
+          } else {
+            chosen.classList.add("wrong");
+            right.classList.add("correct");
+            runState.mistakes += 1;
+            runState.streak = 0;
+            runState.score = Math.max(0, runState.score - 30);
+            updateSceneStats();
+
+            SFX.wrong();
+            popFloat(chosen, "-30", true);
+            elFeedback.style.color = "var(--red)";
+            elFeedback.textContent = `✕ Right answer: "${q.choices[q.correct]}"`;
+          }
+
+          advanceTimeout = window.setTimeout(() => {
+            idx += 1;
+            if (idx >= questions.length) {
+              stopAllTimers();
+              const timeBonus = Math.min(200, Math.floor(remaining / 5));
+              if (timeBonus > 0) {
+                runState.score += timeBonus;
+                updateSceneStats();
+                toast(`Speed bonus +${timeBonus} pts!`, "gold");
+              }
+              completeScene("bonus");
+            } else {
+              renderQ();
+            }
+          }, 760);
+        }
+
+        function onChoiceClick(e) {
+          const btn = e.target.closest(".mc-opt");
+          if (!btn || btn.disabled) return;
+          answerBonus(Number(btn.dataset.bIdx));
+        }
+
+        function onKeyDown(e) {
+          if ($(".modal-backdrop.open") || locked) return;
+          if (e.key === "1" || e.key === "2" || e.key === "3") {
+            e.preventDefault();
+            answerBonus(Number(e.key) - 1);
+          }
+        }
+
+        timerId = window.setInterval(() => {
+          remaining -= 0.25;
+          if (remaining <= 0) {
+            remaining = 0;
+            updateTimer();
+            stopAllTimers();
+            toast("Time’s up! Tallying your marathon score.", "warn");
+            completeScene("bonus");
+            return;
+          }
+          updateTimer();
+        }, 250);
+
+        elChoices.addEventListener("click", onChoiceClick);
+        window.addEventListener("keydown", onKeyDown);
+
+        setCleanup(() => {
+          stopAllTimers();
+          elChoices.removeEventListener("click", onChoiceClick);
+          window.removeEventListener("keydown", onKeyDown);
+        });
+
+        updateTimer();
+        renderQ();
+      }
+
+      /* ===== Finale Screen ===== */
+      function renderFinale() {
+        const totalScore = getTotalBestScore();
+        const totalStars = getTotalStars();
+        const doneCount = getCompletedCount();
+        const rank = getRank(totalScore);
+
+        $("#finale-rank-name").textContent = rank.name;
+        $("#finale-rank-note").textContent = rank.note;
+        $("#finale-total-score").textContent = totalScore.toLocaleString();
+        $("#finale-total-stars").textContent = `${totalStars} / ${SCENES.length * 3}`;
+        $("#finale-reels-done").textContent = `${doneCount} / ${SCENES.length}`;
+
+        const rowsHtml = SCENES.map((scene) => {
+          const rec = progress[scene.id] || { done: false, best: 0, stars: 0 };
+          const starIcons = [1, 2, 3]
+            .map((n) => `<span class="${n <= rec.stars ? "star-filled" : ""}" data-icon="star" aria-hidden="true"></span>`)
+            .join("");
+          return `
+            <tr>
+              <td style="font-family:var(--font-mono);font-weight:700;">REEL ${scene.num}</td>
+              <td style="font-weight:700;">${scene.title}</td>
+              <td><span class="tag-pill">${scene.tag}</span></td>
+              <td><div class="stars-row" aria-label="${rec.stars} stars">${starIcons}</div></td>
+              <td style="font-family:var(--font-mono);font-weight:700;">${rec.best.toLocaleString()}</td>
+              <td><button type="button" class="btn btn-paper btn-sm" data-replay-scene="${scene.id}">Replay</button></td>
+            </tr>
+          `;
+        }).join("");
+
+        const tbody = $("#finale-table-body");
+        tbody.innerHTML = rowsHtml;
+        refreshIcons(tbody);
+      }
+
+      function openFinale() {
+        renderFinale();
+        switchScreen("finale");
+        SFX.cheer();
+        spawnConfetti(60);
+      }
+
+      /* ===== Asset Fallbacks for Static Images ===== */
+      function bindStaticAssets() {
+        attachImageFallback($("#bg-texture-img"), "bg-texture.jpg", "", "", "#FAF3E4", "#F1E5CC");
+
+        attachImageFallback(
+          $("#intro-char-1"),
+          CHARACTERS.clara.img,
+          CHARACTERS.clara.initial,
+          "CLARA",
+          CHARACTERS.clara.c1,
+          CHARACTERS.clara.c2
+        );
+        attachImageFallback(
+          $("#intro-char-2"),
+          CHARACTERS.leo.img,
+          CHARACTERS.leo.initial,
+          "LEO",
+          CHARACTERS.leo.c1,
+          CHARACTERS.leo.c2
+        );
+      }
+
+      /* ===== Preloader Boot ===== */
+      function initPreloader() {
+        const fill = $("#loader-fill");
+        const preloader = $("#preloader");
+        const playBtn = $("#btn-preloader-play");
+
+        window.setTimeout(() => { if (fill) fill.style.width = "65%"; }, 140);
+        window.setTimeout(() => { if (fill) fill.style.width = "100%"; }, 480);
+
+        function dismissPreloader() {
+          ensureAudio();
+          SFX.fanfare();
+          preloader.classList.add("exit");
+          window.setTimeout(() => {
+            preloader.style.display = "none";
+          }, 760);
+        }
+
+        playBtn.addEventListener("click", dismissPreloader);
+        preloader.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            dismissPreloader();
+          }
+        });
+      }
+
+      /* ===== Global Event Listeners ===== */
+      function bindEvents() {
+        $("#btn-brand").addEventListener("click", () => {
+          SFX.click();
+          switchScreen("intro");
+        });
+
+        $("#btn-map").addEventListener("click", () => {
+          SFX.click();
+          renderMap();
+          switchScreen("map");
+        });
+
+        $("#btn-sound").addEventListener("click", () => {
+          isMuted = !isMuted;
+          try {
+            localStorage.setItem(SOUND_KEY, isMuted ? "1" : "0");
+          } catch (e) {
+            /* Ignore */
+          }
+          renderSound();
+          if (!isMuted) SFX.click();
+          toast(isMuted ? "Sound muted" : "Sound enabled");
+        });
+
+        $("#hud-dots").addEventListener("click", (e) => {
+          const dot = e.target.closest("[data-dot-scene]");
+          if (!dot) return;
+          SFX.click();
+          openBriefing(dot.dataset.dotScene, true);
+        });
+
+        $("#btn-start-map").addEventListener("click", () => {
+          SFX.flip();
+          renderMap();
+          switchScreen("map");
+        });
+
+        $("#btn-intro-finale").addEventListener("click", () => {
+          openFinale();
+        });
+
+        $("#reel-grid").addEventListener("click", (e) => {
+          const card = e.target.closest(".reel-card");
+          if (!card) return;
+          SFX.click();
+          openBriefing(card.dataset.sceneId, true);
+        });
+
+        $("#btn-go-finale").addEventListener("click", () => {
+          openFinale();
+        });
+
+        $("#btn-back-map").addEventListener("click", () => {
+          SFX.click();
+          renderMap();
+          switchScreen("map");
+        });
+
+        $("#btn-scene-briefing").addEventListener("click", () => {
+          if (!currentSceneId) return;
+          SFX.click();
+          openBriefing(currentSceneId, false);
+        });
+
+        $("#btn-brief-cancel").addEventListener("click", () => {
+          SFX.click();
+          closeBriefing();
+        });
+
+        $("#btn-brief-start").addEventListener("click", () => {
+          if (!pendingBriefSceneId) return;
+          SFX.flip();
+          startScene(pendingBriefSceneId);
+        });
+
+        $("#modal-briefing").addEventListener("click", (e) => {
+          if (e.target.id === "modal-briefing") closeBriefing();
+        });
+
+        $("#btn-res-replay").addEventListener("click", () => {
+          if (!currentSceneId) return;
+          SFX.click();
+          startScene(currentSceneId);
+        });
+
+        $("#btn-res-map").addEventListener("click", () => {
+          SFX.click();
+          closeResultsModal();
+          renderMap();
+          switchScreen("map");
+        });
+
+        $("#btn-res-finale").addEventListener("click", () => {
+          closeResultsModal();
+          openFinale();
+        });
+
+        $("#btn-finale-map").addEventListener("click", () => {
+          SFX.click();
+          renderMap();
+          switchScreen("map");
+        });
+
+        $("#finale-table-body").addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-replay-scene]");
+          if (!btn) return;
+          SFX.click();
+          openBriefing(btn.dataset.replayScene, true);
+        });
+
+        $("#btn-rewind-tape").addEventListener("click", () => {
+          SFX.click();
+          $("#modal-rewind").classList.add("open");
+          $("#btn-rewind-cancel").focus();
+        });
+
+        $("#btn-rewind-cancel").addEventListener("click", () => {
+          SFX.click();
+          $("#modal-rewind").classList.remove("open");
+        });
+
+        $("#btn-rewind-confirm").addEventListener("click", () => {
+          progress = {};
+          saveProgress();
+          $("#modal-rewind").classList.remove("open");
+          SFX.flip();
+          toast("Tape rewound! All reels are fresh again.", "gold");
+          updateHUD();
+          renderMap();
+          switchScreen("map");
+        });
+
+        $("#modal-rewind").addEventListener("click", (e) => {
+          if (e.target.id === "modal-rewind") $("#modal-rewind").classList.remove("open");
+        });
+
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            if ($("#modal-briefing").classList.contains("open")) {
+              closeBriefing();
+            } else if ($("#modal-rewind").classList.contains("open")) {
+              $("#modal-rewind").classList.remove("open");
+            }
+          }
+        });
+      }
+
+      /* ===== Boot Application ===== */
+      bindStaticAssets();
+      initPreloader();
+      bindEvents();
+      updateHUD();
+      renderMap();
+      renderSound();
+      refreshIcons();
+    })();
+  </script>
+
+  <!--
+    LOCAL ASSETS REFERENCED BY THIS FILE (place in the same folder as index.html):
+    - slide-01.png
+    - slide-02.png
+    - slide-03.png
+    - slide-04.png
+    - slide-05.png
+    - char-01.png
+    - char-02.png
+    - bg-texture.jpg
+  -->
+</body>
+</html>
