@@ -1,0 +1,836 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Wards of the World: a folk protection vocabulary arcade">
+<title>Wards of the World · Folk Protection Arcade</title>
+<style>
+/* ===== Aesthetic: warm folk-tapestry arcade. Carved-wood console, parchment cards with
+   stitched borders, hard ink shadows (0 5px 0), film grain overlay, golden haze. ===== */
+
+/* ===== Design tokens ===== */
+:root {
+  --ink: #3A2316;
+  --ink-soft: #6B4A31;
+  --paper: #F5E6C3;
+  --paper-hi: #FFF8E6;
+  --wood: #5A3520;
+  --wood-dk: #2A1A10;
+  --red: #B3362B;
+  --teal: #2E6E6A;
+  --gold: #D9A23A;
+  --ok: #4E8A3E;
+  --bad: #C2412D;
+  --blue: #3E6F8E;
+  --f-display: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --f-body: "Trebuchet MS", "Segoe UI", Helvetica, Arial, sans-serif;
+  --f-mono: "Courier New", Courier, monospace;
+  --hud-h: 66px;
+}
+
+/* ===== Base ===== */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: radial-gradient(ellipse at 50% -10%, #FBE7B5 0%, #F1D39A 45%, #D9AE73 100%) fixed;
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.45;
+  padding-top: var(--hud-h);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+/* Film grain over everything (SVG feTurbulence, no external resource) */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.16'/></svg>");
+}
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.15; }
+h2 { font-size: clamp(26px, 4vw, 38px); margin: 0; text-shadow: 0 2px 0 rgba(255, 248, 230, .6); }
+h3 { margin: 0; }
+p { margin: 0 0 10px; }
+img { max-width: 100%; }
+.mono { font-family: var(--f-mono); }
+.label { font-family: var(--f-mono); font-size: 12px; letter-spacing: .2em; color: var(--ink-soft); margin: 0; }
+.small { font-size: 14px; color: var(--ink-soft); }
+.sub { font-family: var(--f-mono); font-size: 14px; color: var(--ink-soft); margin: 0; }
+.ico { display: inline-flex; width: 18px; height: 18px; }
+.ico svg, .btn svg, .icon-btn svg { width: 100%; height: 100%; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip-link { position: fixed; left: 12px; top: -60px; z-index: 300; background: var(--paper-hi); color: var(--ink); padding: 8px 12px; border: 2px solid var(--ink); border-radius: 6px; }
+.skip-link:focus { top: 12px; }
+
+:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+.hud :focus-visible { outline-color: var(--gold); }
+
+/* ===== Preloader (upward exit) ===== */
+.preloader {
+  position: fixed; inset: 0; z-index: 200;
+  display: grid; place-items: center;
+  background: var(--wood-dk); color: var(--paper-hi);
+  overflow: hidden;
+  transition: transform .9s cubic-bezier(.7, 0, .2, 1);
+}
+.preloader.exit { transform: translateY(-100%); }
+.preloader.gone { display: none; }
+.pre-bg { position: absolute; inset: 0; }
+.pre-bg img { width: 100%; height: 100%; object-fit: cover; opacity: .35; filter: blur(2px) saturate(1.1); }
+.pre-inner { position: relative; text-align: center; display: grid; gap: 16px; justify-items: center; padding: 24px; }
+.pre-kicker { font-family: var(--f-mono); letter-spacing: .3em; color: var(--gold); font-size: 13px; margin: 0; }
+.pre-title { font-family: var(--f-display); font-size: clamp(34px, 7vw, 64px); margin: 0; text-shadow: 0 4px 0 #1E120A; }
+.pre-bar { width: min(440px, 80vw); height: 16px; border: 3px solid var(--gold); border-radius: 6px; overflow: hidden; background: rgba(0, 0, 0, .35); }
+.pre-bar span { display: block; height: 100%; width: 0; background: repeating-linear-gradient(90deg, var(--gold) 0 12px, #E8B957 12px 16px); transition: width .25s; }
+.pre-pct { font-family: var(--f-mono); font-size: 14px; margin: 0; }
+
+/* ===== Buttons ===== */
+.btn {
+  font-family: var(--f-display); font-weight: 700; font-size: 16px; letter-spacing: .05em;
+  color: var(--ink); background: var(--paper-hi);
+  border: 3px solid var(--ink); border-radius: 8px;
+  padding: 10px 18px; box-shadow: 0 5px 0 var(--ink);
+  cursor: pointer; text-transform: uppercase;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform .08s ease, box-shadow .08s ease, filter .15s ease;
+}
+.btn:hover:not(:disabled) { filter: brightness(1.05); }
+.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--red); color: var(--paper-hi); }
+.btn-gold { background: var(--gold); }
+.btn-teal { background: var(--teal); color: var(--paper-hi); }
+.btn-red { background: var(--bad); color: var(--paper-hi); }
+.btn-big { font-size: 20px; padding: 14px 26px; }
+.btn-play { animation: glow 1.4s ease-in-out infinite; }
+@keyframes glow {
+  0%, 100% { box-shadow: 0 5px 0 var(--ink), 0 0 0 0 rgba(217, 162, 58, 0); }
+  50% { box-shadow: 0 5px 0 var(--ink), 0 0 0 12px rgba(217, 162, 58, .25); }
+}
+.icon-btn {
+  width: 42px; height: 42px; padding: 9px;
+  display: grid; place-items: center;
+  background: var(--paper); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 8px;
+  box-shadow: 0 3px 0 var(--ink); cursor: pointer;
+}
+.icon-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+
+/* ===== HUD header ===== */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--hud-h);
+  display: flex; align-items: center; gap: 14px; padding: 0 16px;
+  background: var(--wood-dk); color: var(--paper-hi);
+  border-bottom: 3px solid #1E120A;
+  box-shadow: 0 4px 0 rgba(58, 35, 22, .35);
+  z-index: 50;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 700; letter-spacing: .06em; line-height: 1; }
+.logo {
+  width: 38px; height: 38px; display: grid; place-items: center;
+  background: var(--red); border: 2px solid var(--gold); border-radius: 6px;
+  transform: rotate(-6deg); color: var(--paper-hi); padding: 6px;
+}
+.logo svg { width: 100%; height: 100%; }
+.brand-text small { display: block; font-size: 10px; letter-spacing: .3em; color: var(--gold); font-family: var(--f-mono); }
+.cells { list-style: none; margin: 0 auto; padding: 0; display: flex; gap: 8px; }
+.cells li { width: 20px; height: 20px; border: 2px solid var(--gold); border-radius: 4px; background: transparent; }
+.cells li.done { background: var(--gold); }
+.cells li.cur { box-shadow: 0 0 0 3px rgba(217, 162, 58, .45); }
+.score { font-family: var(--f-mono); display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+.score span { font-size: 10px; letter-spacing: .2em; color: #E9CB8B; }
+.score b { font-size: 20px; }
+.hud-btns { display: flex; gap: 8px; }
+
+/* ===== Screens ===== */
+.screen { display: none; position: relative; max-width: 1120px; margin: 0 auto; padding: 22px 18px 60px; }
+.screen.active { display: block; animation: screenIn .55s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes screenIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.scene-wrap { position: relative; z-index: 1; }
+.scene-bg, .map-bg, .fin-bg {
+  position: absolute; inset: 0; overflow: hidden; z-index: 0; pointer-events: none;
+}
+.scene-bg img, .map-bg img, .fin-bg img { width: 100%; height: 100%; object-fit: cover; opacity: .2; filter: blur(3px) saturate(1.05); }
+.map-bg img { opacity: .16; }
+.fin-bg img { opacity: .22; }
+.page-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.map-hint { font-family: var(--f-mono); font-size: 14px; color: var(--ink-soft); margin: 4px 0 16px; }
+
+/* ===== Intro ===== */
+.intro { display: grid; grid-template-columns: 1.25fr 1fr; gap: 26px; align-items: start; }
+.frame { border: 4px solid var(--ink); border-radius: 10px; overflow: hidden; box-shadow: 0 8px 0 var(--ink); background: var(--wood); }
+.frame img { display: block; width: 100%; height: auto; }
+.intro h1 { font-size: clamp(30px, 4.6vw, 48px); margin: 0 0 8px; text-shadow: 0 2px 0 rgba(255, 248, 230, .6); }
+.lede { font-size: 18px; margin-bottom: 14px; }
+.how { padding-left: 20px; margin: 0 0 18px; }
+.how li { margin-bottom: 6px; }
+.mini-h { font-size: 20px; margin: 22px 0 8px; }
+.filmstrip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.filmstrip img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border: 2px solid var(--ink); border-radius: 4px; background: var(--wood); }
+
+/* ===== Level map ===== */
+.map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+.chapter {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 14px;
+  padding: 8px 12px; border: 2px dashed var(--ink-soft); border-radius: 10px;
+  background: rgba(255, 248, 230, .55);
+}
+.chapter img { width: 120px; height: 68px; object-fit: cover; border: 2px solid var(--ink); border-radius: 6px; flex: 0 0 auto; }
+.chapter h3 { font-size: 20px; letter-spacing: .05em; }
+.reel {
+  position: relative; text-align: left; cursor: pointer;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px; color: var(--ink);
+  background: var(--paper-hi); border: 3px solid var(--ink); border-radius: 10px;
+  box-shadow: 0 6px 0 var(--ink);
+  transition: transform .12s ease, box-shadow .12s ease;
+  font: inherit;
+}
+.reel::before {
+  content: ""; position: absolute; inset: 5px; pointer-events: none;
+  border: 1px dashed rgba(58, 35, 22, .3); border-radius: 6px;
+}
+.reel:hover { transform: translateY(-3px); }
+.reel:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
+.reel.is-done { border-color: var(--gold); }
+.reel-img { position: relative; display: block; aspect-ratio: 16 / 10; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; background: var(--wood); }
+.reel-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.reel-num { position: absolute; left: 8px; top: 8px; font-family: var(--f-mono); font-weight: 700; background: var(--ink); color: var(--paper-hi); padding: 2px 8px; border-radius: 4px; font-size: 14px; }
+.reel-title { font-family: var(--f-display); font-size: 19px; font-weight: 700; line-height: 1.2; }
+.reel-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink-soft); }
+.reel-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+.reel-best { font-family: var(--f-mono); font-size: 13px; }
+.reel-best b { font-size: 16px; color: var(--ink); }
+.stars { display: inline-flex; gap: 3px; }
+.star { width: 20px; height: 20px; fill: #CBB58A; stroke: var(--ink); stroke-width: 1.4; }
+.star.on { fill: var(--gold); }
+.finale-cta { margin-top: 26px; display: grid; justify-items: center; gap: 12px; text-align: center; }
+
+/* ===== Scene ===== */
+.scene-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 12px; }
+.scene-titles { display: flex; flex-direction: column; gap: 2px; }
+.scene-titles h2 { font-size: clamp(20px, 3vw, 30px); }
+.tag { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; background: var(--ink); color: var(--gold); padding: 3px 10px; border-radius: 4px; display: inline-block; align-self: flex-start; }
+.live { margin-left: auto; display: flex; gap: 16px; font-family: var(--f-mono); font-size: 14px; }
+.live b { font-size: 18px; }
+.char-box { display: flex; gap: 16px; align-items: center; margin: 6px 0 16px; }
+.avatar {
+  flex: 0 0 auto; width: 72px; height: 72px; border-radius: 50%;
+  border: 3px solid var(--ink); background: var(--c, #7A4A2A); color: var(--paper-hi);
+  display: grid; place-items: center; overflow: hidden;
+  font-family: var(--f-display); font-size: 30px; font-weight: 700;
+  box-shadow: 0 4px 0 var(--ink);
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar.sm { width: 46px; height: 46px; font-size: 18px; box-shadow: none; }
+.bubble {
+  position: relative; flex: 1; margin: 0;
+  background: var(--paper-hi); border: 3px solid var(--ink); border-radius: 10px;
+  padding: 12px 16px; box-shadow: 0 4px 0 var(--ink); font-size: 17px;
+}
+.bubble::before { content: ""; position: absolute; left: -14px; top: 22px; border: 9px solid transparent; border-right: 12px solid var(--ink); border-left: 0; }
+.bubble::after { content: ""; position: absolute; left: -10px; top: 25px; border: 6px solid transparent; border-right: 9px solid var(--paper-hi); border-left: 0; }
+.bubble.pop { animation: pop .35s ease; }
+@keyframes pop { 0% { transform: scale(.97); } 50% { transform: scale(1.015); } 100% { transform: none; } }
+.stage {
+  position: relative; background: rgba(255, 248, 230, .9);
+  border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 6px 0 var(--ink);
+  padding: 20px; min-height: 360px;
+}
+.stage::before { content: ""; position: absolute; inset: 6px; border: 1px dashed rgba(58, 35, 22, .3); border-radius: 8px; pointer-events: none; }
+.card-in { animation: cardIn .4s ease both; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+.shake { animation: shake .45s; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+.explain {
+  margin-top: 16px; padding: 14px; border: 2px solid var(--ink); border-radius: 10px;
+  background: var(--paper); display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  animation: cardIn .35s ease both;
+}
+.explain p { margin: 0; flex: 1 1 300px; font-size: 16px; }
+
+/* ===== Fill in the blanks ===== */
+.hint-line { margin: 0 0 12px; font-family: var(--f-mono); font-size: 14px; color: var(--ink-soft); }
+.sentences { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sentence { background: var(--paper); border: 2px solid var(--ink-soft); border-radius: 8px; padding: 10px 14px; }
+.sentence.done { border-color: var(--ok); background: #E8F0DA; }
+.sent-text { margin: 0; font-size: 17px; }
+.blank {
+  font: inherit; font-weight: 700; min-width: 110px; padding: 2px 10px; margin: 0 4px;
+  background: transparent; border: 0; border-bottom: 3px dashed var(--red); color: var(--red); cursor: pointer;
+}
+.blank.sel { background: var(--gold); color: var(--ink); border-bottom-color: var(--ink); border-radius: 4px; box-shadow: 0 0 0 3px var(--gold); }
+.blank.ok { color: var(--ok); border-bottom: 3px solid var(--ok); cursor: default; }
+.blank.shake { animation: shake .45s; }
+.fact { margin: 6px 0 0; font-size: 14px; color: var(--ink-soft); font-style: italic; }
+.bank { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.chip {
+  font-family: var(--f-display); font-weight: 700; font-size: 16px;
+  padding: 8px 14px; background: var(--paper-hi); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 8px; box-shadow: 0 3px 0 var(--ink); cursor: pointer;
+}
+.chip.bounce { animation: bounceBack .55s; }
+.chip.used { opacity: .35; text-decoration: line-through; box-shadow: none; cursor: default; }
+@keyframes bounceBack {
+  0% { transform: translateY(0); }
+  25% { transform: translateY(-10px) rotate(-4deg); }
+  50% { transform: translateY(0) rotate(3deg); }
+  75% { transform: translateY(-4px) rotate(-1deg); }
+  100% { transform: none; }
+}
+
+/* ===== True / False ===== */
+.tf-top { display: flex; justify-content: space-between; align-items: center; font-family: var(--f-mono); font-size: 14px; margin-bottom: 10px; }
+.mult { background: var(--ink); color: var(--gold); padding: 3px 10px; border-radius: 6px; font-weight: 700; }
+.tbar { height: 16px; border: 3px solid var(--ink); border-radius: 6px; background: #E9D7AE; overflow: hidden; }
+.tbar span { display: block; height: 100%; width: 100%; transform-origin: 0 50%; background: var(--teal); transition: background .3s ease; }
+.tbar.warn span { background: var(--red); }
+.tf-time { font-size: 14px; margin: 6px 0 14px; text-align: right; }
+.statement {
+  background: var(--paper-hi); border: 3px dashed var(--ink-soft); border-radius: 10px;
+  padding: 22px; min-height: 130px; display: grid; place-items: center; text-align: center;
+  font-family: var(--f-display); font-size: clamp(20px, 3vw, 26px); margin: 0;
+}
+.statement p { margin: 0; }
+.statement.shake { animation: shake .45s; }
+.tf-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+.tf-btn { font-size: 20px; padding: 16px; }
+.tf-false { background: var(--paper); }
+.tf-true { background: var(--teal); color: var(--paper-hi); }
+.tf-btn:disabled { opacity: .55; }
+.tf-btn.right { opacity: 1; outline: 4px solid var(--ok); outline-offset: 2px; }
+.tf-btn.wrong { opacity: 1; background: var(--bad); color: var(--paper-hi); }
+
+/* ===== Multiple choice ===== */
+.mc-q { font-family: var(--f-display); font-size: clamp(20px, 3vw, 26px); margin: 8px 0 4px; }
+.opts { display: grid; gap: 10px; margin-top: 12px; }
+.opt {
+  text-align: left; font-family: var(--f-body); font-size: 17px; font-weight: 700;
+  padding: 12px 16px; background: var(--paper-hi); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 8px; box-shadow: 0 4px 0 var(--ink); cursor: pointer;
+}
+.opt:disabled { opacity: .7; cursor: default; }
+.opt.right { background: #D7EBC4; opacity: 1; }
+.opt.wrong { background: #F3C9BE; opacity: 1; animation: shake .45s; }
+.opt .k { font-family: var(--f-mono); margin-right: 10px; color: var(--ink-soft); }
+
+/* ===== Match the meaning ===== */
+.ex {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  background: var(--ink); color: var(--paper-hi); padding: 8px 12px; border-radius: 8px;
+  font-family: var(--f-mono); font-size: 14px;
+}
+.ex .ex-label { color: var(--gold); letter-spacing: .15em; }
+.match-stats { display: flex; gap: 18px; font-family: var(--f-mono); margin: 12px 0; }
+.match-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.col h4 { font-family: var(--f-mono); letter-spacing: .2em; margin: 0 0 8px; font-size: 13px; color: var(--ink-soft); }
+.col-list { display: grid; gap: 10px; }
+.mword, .mdef {
+  font: inherit; font-size: 16px; font-weight: 700; text-align: left; color: var(--ink);
+  padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px;
+  background: var(--paper-hi); box-shadow: 0 3px 0 var(--ink); cursor: pointer;
+}
+.mdef small { display: block; font-weight: 400; font-size: 14px; color: var(--ink-soft); }
+.mword.picked { background: var(--gold); }
+.mword.locked, .mdef.locked {
+  background: #CFE5B8; border-color: var(--ok); color: #1F4A17;
+  box-shadow: 0 3px 0 var(--ok); cursor: default;
+}
+.mword.locked:disabled, .mdef.locked:disabled { opacity: 1; }
+.mword.shake, .mdef.shake { animation: shake .45s; }
+
+/* ===== Bonus round ===== */
+.bonus-top { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+.bonus-bar-wrap { flex: 1 1 220px; display: grid; gap: 6px; }
+.bonus-time { font-size: clamp(26px, 4vw, 40px); font-weight: 700; margin: 0; letter-spacing: .04em; }
+.bonus-time.danger { color: var(--bad); animation: flash .5s steps(2, start) infinite; }
+@keyframes flash { 50% { opacity: .2; } }
+
+/* ===== Modal ===== */
+.modal { position: fixed; inset: 0; z-index: 150; display: grid; place-items: center; padding: 16px; background: rgba(42, 26, 16, .6); }
+.modal-box {
+  width: min(780px, 100%); max-height: calc(100vh - 32px); overflow: auto;
+  background: var(--paper-hi); border: 4px solid var(--ink); border-radius: 12px;
+  box-shadow: 0 8px 0 var(--ink); padding: 22px; position: relative;
+}
+.modal.open .modal-box { animation: modalIn .3s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes modalIn { from { opacity: 0; transform: translateY(-18px) scale(.97); } to { opacity: 1; transform: none; } }
+.modal-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+.modal-title { font-family: var(--f-display); font-size: clamp(24px, 4vw, 34px); margin: 8px 0 8px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.brief { display: grid; grid-template-columns: 1fr 1.1fr; gap: 18px; align-items: start; }
+.brief-frame img { width: 100%; display: block; aspect-ratio: 16 / 10; object-fit: cover; }
+.brief-char { display: flex; gap: 10px; align-items: center; }
+.flavor { font-family: var(--f-display); font-style: italic; color: var(--ink-soft); }
+.best-line { font-family: var(--f-mono); font-size: 14px; }
+.results { text-align: center; }
+.results .modal-actions { justify-content: center; }
+.res-stars { display: flex; justify-content: center; gap: 12px; margin: 10px 0 6px; }
+.res-stars .star { width: 58px; height: 58px; }
+.pop-star { display: inline-block; animation: starPop .7s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes starPop {
+  0% { transform: scale(0) rotate(-200deg); opacity: 0; }
+  70% { transform: scale(1.25) rotate(20deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.res-line { font-family: var(--f-mono); }
+.res-best { font-weight: 700; color: var(--teal); }
+.res-char { display: flex; gap: 10px; align-items: center; justify-content: center; text-align: left; }
+
+/* ===== Toasts, floats, confetti ===== */
+.toasts { position: fixed; right: 16px; bottom: 16px; z-index: 170; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; pointer-events: none; }
+.toast {
+  background: var(--ink); color: var(--paper-hi); padding: 10px 14px; border-radius: 8px;
+  border: 2px solid var(--gold); box-shadow: 0 4px 0 #1E120A; font-weight: 700; max-width: 340px;
+  animation: toastIn .3s ease both;
+}
+.toast.good { border-color: var(--ok); }
+.toast.bad { border-color: var(--bad); }
+.toast.out { opacity: 0; transform: translateY(8px); transition: opacity .3s ease, transform .3s ease; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+.fx { position: fixed; inset: 0; pointer-events: none; z-index: 160; overflow: hidden; }
+.float {
+  position: fixed; transform: translate(-50%, -100%);
+  font-family: var(--f-mono); font-weight: 700; font-size: 20px; color: var(--ok);
+  text-shadow: 0 2px 0 var(--ink); animation: floatUp .95s ease-out forwards;
+}
+.float.bad { color: var(--bad); }
+@keyframes floatUp { from { opacity: 1; margin-top: 0; } to { opacity: 0; margin-top: -50px; } }
+.confetti { position: absolute; top: -14px; width: 10px; height: 14px; border-radius: 2px; animation: fall 2.4s linear forwards; }
+@keyframes fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: .6; } }
+
+/* ===== Finale ===== */
+.fin-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 14px 0 18px; }
+.fin-card { background: var(--paper-hi); border: 3px solid var(--ink); border-radius: 10px; box-shadow: 0 5px 0 var(--ink); padding: 14px; text-align: center; }
+.fin-big { font-size: 30px; font-weight: 700; margin: 6px 0 0; }
+.fin-rank { font-family: var(--f-display); font-size: 22px; font-weight: 700; margin: 6px 0 2px; }
+.fin-table { width: 100%; border-collapse: collapse; background: var(--paper-hi); border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink); }
+.fin-table th, .fin-table td { padding: 10px 12px; border-bottom: 1px dashed var(--ink-soft); text-align: left; }
+.fin-table th { background: var(--wood); color: var(--paper-hi); font-family: var(--f-display); }
+.fin-table td.num { font-family: var(--f-mono); text-align: right; }
+.fin-table tr.sum td { font-weight: 700; background: var(--paper); }
+.stars-cell { white-space: nowrap; }
+.stars-cell .star { width: 18px; height: 18px; }
+.blessing { font-family: var(--f-display); font-style: italic; text-align: center; font-size: 19px; margin: 22px 0; padding: 14px; border-top: 2px dashed var(--ink-soft); border-bottom: 2px dashed var(--ink-soft); }
+.fin-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* ===== Responsive ===== */
+@media (max-width: 860px) {
+  .intro { grid-template-columns: 1fr; }
+  .fin-cards { grid-template-columns: 1fr; }
+  .brief { grid-template-columns: 1fr; }
+  .filmstrip { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 720px) {
+  .brand-text { display: none; }
+  .cells li { width: 16px; height: 16px; }
+  .score b { font-size: 16px; }
+  .live { margin-left: 0; width: 100%; justify-content: space-between; }
+  .match-cols { grid-template-columns: 1fr; }
+  .tf-btns { grid-template-columns: 1fr; }
+  .map-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+  .stage { padding: 14px; }
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn-play { animation: none; }
+  .bonus-time.danger { opacity: 1; }
+}
+</style>
+</head>
+<body data-screen="intro">
+<a class="skip-link" href="#app">Skip to game</a>
+
+<!-- ===== Preloader ===== -->
+<div class="preloader" id="preloader" role="region" aria-label="Loading the tape">
+  <div class="pre-bg" id="preBg" aria-hidden="true"></div>
+  <div class="pre-inner">
+    <p class="pre-kicker">A FOLK PROTECTION ARCADE</p>
+    <h1 class="pre-title">Wards of the World</h1>
+    <div class="pre-bar" aria-hidden="true"><span id="preFill"></span></div>
+    <p class="pre-pct" id="prePct" role="status">LOADING 0%</p>
+    <button type="button" class="btn btn-play btn-gold btn-big" id="preStart" hidden>PLAY &#9654;</button>
+  </div>
+</div>
+
+<!-- ===== Shell: fixed header console ===== -->
+<header class="hud" id="hud">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 7-7 11-7-11z"/><circle cx="12" cy="10" r="2.2" fill="currentColor"/></svg>
+    </span>
+    <span class="brand-text">WARDS<small>FOLK ARCADE</small></span>
+  </div>
+  <ol class="cells" id="cells" aria-label="Level progress"></ol>
+  <div class="score" aria-live="polite"><span>SCORE</span><b id="hudScore">00000</b></div>
+  <div class="hud-btns">
+    <button type="button" class="icon-btn" id="btnSound" aria-label="Mute sound" aria-pressed="false"></button>
+    <button type="button" class="icon-btn" id="btnMap" aria-label="Open level map"><span class="ico" data-icon="map"></span></button>
+  </div>
+</header>
+
+<main id="app" tabindex="-1">
+
+  <!-- ===== Screen 1: Intro ===== -->
+  <section class="screen active" id="screen-intro" aria-labelledby="introTitle">
+    <div class="intro">
+      <div class="frame" id="introHero"></div>
+      <div class="intro-side">
+        <h1 id="introTitle" tabindex="-1">The Folk Protection Arcade</h1>
+        <p class="lede">Six reels, one tape, every ward explained. Play in any order. Your progress is kept on this device.</p>
+        <ul class="how">
+          <li><b>Reels</b> are open from the start. Choose any of them.</li>
+          <li><b>Stars</b> reward clean play: no mistakes earns three.</li>
+          <li><b>Back to map</b> is always one click away, and nothing is lost.</li>
+          <li><b>The finale</b> opens once every reel is complete.</li>
+        </ul>
+        <button type="button" class="btn btn-primary btn-big" id="btnStart"><span class="ico" data-icon="play"></span>START THE TAPE</button>
+        <h2 class="mini-h">The tape</h2>
+        <div class="filmstrip" id="filmstrip" aria-label="All twelve slides of the tape"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Screen 2: Level map ===== -->
+  <section class="screen" id="screen-map" aria-labelledby="mapTitle">
+    <div class="map-bg" id="mapBg" aria-hidden="true"></div>
+    <div class="scene-wrap">
+      <div class="page-head">
+        <h2 id="mapTitle" tabindex="-1">The Level Map</h2>
+        <p class="sub" id="mapSummary"></p>
+      </div>
+      <p class="map-hint">Every reel is open. Play them in any order. Leave at any time and progress is kept.</p>
+      <div class="map-grid" id="mapGrid"></div>
+      <div class="finale-cta" id="finaleWrap" hidden>
+        <p>All six reels are complete. The last tape is waiting.</p>
+        <button type="button" class="btn btn-gold btn-big" id="btnFinale">OPEN THE FINALE &#9654;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Screen 3: Scene (mini-game host) ===== -->
+  <section class="screen" id="screen-scene" aria-labelledby="sceneTitle">
+    <div class="scene-bg" id="sceneBg" aria-hidden="true"></div>
+    <div class="scene-wrap">
+      <div class="scene-bar">
+        <button type="button" class="btn" id="btnBack" aria-label="Back to level map"><span class="ico" data-icon="back"></span>MAP</button>
+        <div class="scene-titles">
+          <span class="tag" id="sceneTag"></span>
+          <h2 id="sceneTitle" tabindex="-1"></h2>
+        </div>
+        <div class="live">
+          <span>SCORE <b id="liveScore">00000</b></span>
+          <span>STREAK <b id="liveStreak">0 · ×1</b></span>
+        </div>
+      </div>
+      <div class="char-box" id="charBox"></div>
+      <div class="stage" id="stage"></div>
+    </div>
+  </section>
+
+  <!-- ===== Screen 4: Finale ===== -->
+  <section class="screen" id="screen-finale" aria-labelledby="finTitle">
+    <div class="fin-bg" id="finBg" aria-hidden="true"></div>
+    <div class="scene-wrap">
+      <h2 id="finTitle" tabindex="-1">The True Magic</h2>
+      <p class="sub">A tally of every ward you have learned.</p>
+      <div class="fin-cards">
+        <div class="fin-card"><p class="label">TOTAL SCORE</p><p class="fin-big mono" id="finScore">00000</p></div>
+        <div class="fin-card"><p class="label">TOTAL STARS</p><p class="fin-big mono" id="finStars">0 / 18</p></div>
+        <div class="fin-card"><p class="label">RANK</p><p class="fin-rank" id="finRank"></p><p class="small" id="finRankNote"></p></div>
+      </div>
+      <table class="fin-table">
+        <caption class="sr-only">Results by level</caption>
+        <thead><tr><th scope="col">#</th><th scope="col">Reel</th><th scope="col">Best</th><th scope="col">Stars</th></tr></thead>
+        <tbody id="finRows"></tbody>
+      </table>
+      <blockquote class="blessing">May your thresholds be swept, your energy harmonious, and your luck always golden.</blockquote>
+      <div class="fin-actions">
+        <button type="button" class="btn btn-red" id="btnRewind"><span class="ico" data-icon="rewind"></span>REWIND THE TAPE</button>
+        <button type="button" class="btn" id="btnFinBack"><span class="ico" data-icon="back"></span>BACK TO MAP</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== Modal (briefing and results) ===== -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-box" id="modalBox" role="dialog" aria-modal="true" tabindex="-1"></div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="fx" id="fx" aria-hidden="true"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===== Constants: storage keys, timings, ranks ===== */
+const STORE_KEY = "wards-arcade-progress-v1";
+const SOUND_KEY = "wards-arcade-sound-v1";
+const TF_TIME_MS = 600000;      /* ten minutes per statement */
+const BONUS_TIME_MS = 750000;   /* bonus round length */
+const MAX_MULT = 4;
+const RANKS = [
+  { min: 4200, name: "Grand Keeper of Wards" },
+  { min: 2800, name: "Hearth Warden" },
+  { min: 1400, name: "Village Apprentice" },
+  { min: 0, name: "Curious Wanderer" }
+];
+const PARTS = {
+  1: { label: "Part I · Wards of the Body", slide: "slide-003.jpg" },
+  2: { label: "Part II · Guardians of the Hearth", slide: "slide-007.jpg" }
+};
+const REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+/* ===== Utilities ===== */
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+function shuffle(list){
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function randOf(list){ return list[Math.floor(Math.random() * list.length)]; }
+function esc(value){
+  return String(value).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+function pad(n, len){ return String(Math.max(0, Math.round(n))).padStart(len || 5, "0"); }
+function fmtTime(ms){
+  const s = Math.ceil(Math.max(0, ms) / 1000);
+  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+
+/* ===== Local SVG placeholders and image helpers ===== */
+function placeholderURI(initial, c1, c2){
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">'
+    + '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/></linearGradient></defs>'
+    + '<rect width="640" height="360" fill="url(#g)"/>'
+    + '<rect x="18" y="18" width="604" height="324" fill="none" stroke="#F5E6C3" stroke-opacity=".5" stroke-dasharray="8 8" stroke-width="3"/>'
+    + '<text x="320" y="230" text-anchor="middle" font-family="Georgia,serif" font-size="180" font-weight="700" fill="#FFF8E6">' + initial + '</text></svg>';
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg).replace(/'/g, "%27");
+}
+/* Inline onerror: swaps to an SVG placeholder and logs the missing file */
+function errAttr(file, initial, c1, c2){
+  return "this.onerror=null;this.src='" + placeholderURI(esc(initial), c1, c2)
+    + "';console.warn('missing asset: " + file + "');";
+}
+function img(file, alt, cls, initial, c1, c2, eager){
+  return '<img src="' + file + '" alt="' + esc(alt || "") + '" class="' + (cls || "")
+    + '" loading="' + (eager ? "eager" : "lazy") + '" onerror="'
+    + errAttr(file, initial || "?", c1 || "#7A4A2A", c2 || "#2A1A10") + '">';
+}
+function avatarHTML(ch, size){
+  const cls = "avatar" + (size ? " " + size : "");
+  const inner = ch.img ? img(ch.img, "", "avatar-img", ch.initial, ch.color, "#2A1A10") : esc(ch.initial);
+  return '<span class="' + cls + '" style="--c:' + ch.color + '" aria-hidden="true">' + inner + "</span>";
+}
+
+/* ===== Icons (inline SVG, drawn locally) ===== */
+const ICONS = {
+  sound: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/>',
+  mute: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>',
+  map: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
+  play: '<path d="M7 4l13 8-13 8z"/>',
+  next: '<path d="M5 4l10 8-10 8z"/><path d="M18 4v16"/>',
+  rewind: '<path d="M11 6l-7 6 7 6V6z"/><path d="M20 6l-7 6 7 6V6z"/>',
+  restart: '<path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v5h5"/>'
+};
+function icon(name){
+  return '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (ICONS[name] || "") + "</svg>";
+}
+function starSVG(on){
+  return '<svg class="star' + (on ? " on" : "") + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.5l2.9 6.4 7 .7-5.3 4.7 1.6 6.9L12 17.6l-6.2 3.6 1.6-6.9L2.1 9.6l7-.7z"/></svg>';
+}
+function refreshIcons(){
+  $$("[data-icon]").forEach(el => { el.innerHTML = icon(el.getAttribute("data-icon")); });
+}
+
+/* ===== Data: scenes (six reels, two chapters) ===== */
+const SCENES = [
+  { id: "red-string", num: 1, title: "The Red String", char: "leela", color: "#B3362B", slide: "slide-004.jpg",
+    tag: "FILL THE BLANKS", part: 1, mech: "fill",
+    obj: "Complete six sentences about the red string with the right words from the bank.",
+    tip: "Pick a blank first, then a word. Wrong words bounce back and cost points.",
+    flavor: "Tied on by a loved one, never by the wearer." },
+  { id: "cornicello", num: 2, title: "Cornicello", char: "serafina", color: "#B3362B", slide: "slide-005.jpg",
+    tag: "REAL OR DELUSION", part: 1, mech: "tf",
+    obj: "Judge six folk claims as REAL or DELUSION. Each card has ten minutes. Read the explanation before you move on.",
+    tip: "Arrow keys: left for DELUSION, right for REAL. Enter moves on after the explanation.",
+    flavor: "A horn holds no power if you bought it for yourself." },
+  { id: "omamori", num: 3, title: "Omamori", char: "okada", color: "#2E6E6A", slide: "slide-006.jpg",
+    tag: "MATCH THE MEANING", part: 1, mech: "match",
+    obj: "Pair six English words with their meanings. Correct pairs lock green.",
+    tip: "Click a word, then its meaning. Wrong picks shake and clear the selection.",
+    flavor: "Keep the pouch sealed. Never look inside." },
+  { id: "besom", num: 4, title: "The Besom", char: "agnes", color: "#7A4A2A", slide: "slide-008.jpg",
+    tag: "MULTIPLE CHOICE", part: 2, mech: "mc",
+    obj: "Answer five questions about the witch's broom. One attempt per question.",
+    tip: "Keys 1, 2 and 3 choose an answer quickly.",
+    flavor: "The straws keep the spirits counting until sunrise." },
+  { id: "salt-bamboo", num: 5, title: "Salt & Bamboo", char: "mei", color: "#3E6F8E", slide: "slide-009.jpg",
+    tag: "FILL THE BLANKS", part: 2, mech: "fill",
+    obj: "Complete six sentences about salt purifications and bamboo wind chimes.",
+    tip: "Each correct word reveals a short fact about the tradition.",
+    flavor: "Salt preserves. Bamboo sings softly." },
+  { id: "rules", num: 6, title: "The Rules of Activation", char: "keeper", color: "#D9A23A", slide: "slide-011.jpg",
+    tag: "TIMED BONUS", part: 2, mech: "bonus",
+    obj: "750 seconds. Questions from every earlier reel. Build a streak to raise your multiplier.",
+    tip: "Keys 1 to 3 answer. CASH IN ends the round early and keeps your score.",
+    flavor: "Across all cultures, protection requires strict adherence to tradition." }
+];
+
+/* ===== Data: characters (voice lines for reactions) ===== */
+const CHARS = {
+  keeper: { name: "The Keeper", role: "Narrator of the tape", initial: "K", color: "#2E6E6A", img: "char-01.png",
+    intro: "Welcome, child. Any reel, any order. The tape will wait for you.",
+    ok: ["Well read. The thread holds.", "Yes, exactly so."],
+    bad: ["Not quite. Look again.", "The tape remembers that one."],
+    outro: "Every reel you finish adds a little light to the house." },
+  leela: { name: "Auntie Leela", role: "Keeper of the red thread", initial: "L", color: "#B3362B",
+    intro: "Hold out your wrist, sweetheart. Let's begin with the thread.",
+    ok: ["Beautiful! Your grandmother would be proud.", "Exactly. Now the thread can work."],
+    bad: ["Oh no, the thread will not like that.", "Careful, love. Try another word."],
+    outro: "A thread tied with love is never wasted." },
+  serafina: { name: "Nonna Serafina", role: "Collector of cornicelli", initial: "S", color: "#D9A23A", img: "char-02.png",
+    intro: "Ah, you came for the horn! Listen closely, caro.",
+    ok: ["Brava! You have the eye for it.", "Bravissima. The horn approves."],
+    bad: ["Mamma mia, no! Think again.", "Ah, the malocchio smiles at that one."],
+    outro: "A gift is the only good luck." },
+  okada: { name: "Mr. Okada", role: "Shrine-gate sweeper", initial: "O", color: "#4E8A3E",
+    intro: "Omamori are sealed for a reason. Match them with care.",
+    ok: ["Good. Each word finds its meaning.", "Precisely. The shrine approves."],
+    bad: ["Hmm. Not that one. Try again.", "That pairing does not sit well."],
+    outro: "Keep the seal closed, and the blessing stays inside." },
+  agnes: { name: "Gran Agnes", role: "Besom keeper", initial: "A", color: "#7A4A2A",
+    intro: "Sweep well, and let the spirits count the straws.",
+    ok: ["Ha! The spirits are still counting.", "Good sweeping, my dear."],
+    bad: ["Ach, the straws will not forgive that.", "Wrong. Sweep again, love."],
+    outro: "Straw by straw, the night passes into morning." },
+  mei: { name: "Auntie Mei", role: "Salt and chimes", initial: "M", color: "#3E6F8E",
+    intro: "Salt for the corners, bamboo for the breeze. Now fill the blanks.",
+    ok: ["Yes! The room is already calmer.", "Lovely. Soft words, soft wood."],
+    bad: ["Too loud! That one startles.", "Not so. The breeze would frown."],
+    outro: "Gentle things, placed well, are the strongest wards." }
+};
+
+/* ===== Data: question sets (one constant per set) ===== */
+const FILL_RED_STRING = {
+  items: [
+    { pre: "The red string is worn around the", answer: "wrist", post: "as a personal shield.",
+      fact: "Found from the Middle East to Asia, in Kabbalah, Buddhist and Hindu traditions." },
+    { pre: "It is traditionally tied on by someone else, never by the", answer: "wearer", post: ".",
+      fact: "A loved one or spiritual leader ties it on, so the gift is part of the magic." },
+    { pre: "Worn for a long time, it acts like a sponge, silently", answer: "absorbing", post: "jealousy and negative energy.",
+      fact: "Absorbing is the thread's job: it soaks up what would otherwise harm you." },
+    { pre: "When its work is done, it should", answer: "fray", post: "and fall off on its own.",
+      fact: "A frayed, fallen thread is the sign that it absorbed all it could hold." },
+    { pre: "You must never cut it with", answer: "scissors", post: ", because that breaks the ritual.",
+      fact: "Cutting ends the protection before the thread has finished its work." },
+    { pre: "The true power of any charm is the human", answer: "care", post: "woven into it.",
+      fact: "Intention matters more than the material it is made from." }
+  ],
+  decoys: ["silk", "chime"]
+};
+const FILL_SALT_BAMBOO = {
+  items: [
+    { pre: "Because salt naturally", answer: "preserves", post: "food, ancient cultures saw it as pure.",
+      fact: "Preservation was linked with purity, and purity with protection." },
+    { pre: "A thin line of salt is sprinkled across the front", answer: "doorstep", post: "to block negative forces.",
+      fact: "The line is a physical barrier at the threshold of the home." },
+    { pre: "Small bowls of salt placed in room", answer: "corners", post: "cleanse stagnant energy.",
+      fact: "Corners are where still, heavy energy is thought to gather." },
+    { pre: "In Japan, restaurant owners still throw salt near their", answer: "entrances", post: "to welcome good fortune.",
+      fact: "A modern echo of an ancient purification habit, still alive today." },
+    { pre: "Hollow bamboo tubes make a soft, wooden", answer: "clicking", post: "in the breeze.",
+      fact: "The tone of bamboo is earthy and calm, not sharp." },
+    { pre: "Unlike loud metal bells that might", answer: "startle", post: "positive energy away, bamboo calms the space.",
+      fact: "Bamboo invites harmony into the home without shocking it." }
+  ],
+  decoys: ["shatter", "cellar"]
+};
+const TF_CORNICELLO = [
+  { t: "A cornicello holds its power when you buy it for yourself.", real: false,
+    why: "The Rule of the Gift: it must be given by someone who genuinely wishes you good luck." },
+  { t: "Traditional cornicelli are crafted from red coral, gold, or silver.", real: true,
+    why: "Those are the classic materials for the Italian horn." },
+  { t: "A cornicello's twisted shape mimics a chili pepper or an animal horn.", real: true,
+    why: "The form is meant to pierce through bad luck and the malocchio." },
+  { t: "A red string should be cut with scissors once you are ready to be free of it.", real: false,
+    why: "It must fall off naturally. The frayed end shows it absorbed what it could hold." },
+  { t: "An omamori should be opened now and then to check its blessing.", real: false,
+    why: "The Sealed Spell: peeking lets the protective magic escape and cancels its power." },
+  { t: "Bamboo chimes work best in loud metal, to startle bad luck away.", real: false,
+    why: "Soft wood harmonizes energy. Loud metal startles positive energy too." }
+];
+const MATCH_OMAMORI = [
+  { en: "ward", def: "to guard against harm" },
+  { en: "malocchio", def: "the evil eye, a harmful envious gaze" },
+  { en: "besom", def: "a broom of natural twigs" },
+  { en: "stagnant", def: "still and stale, not flowing" },
+  { en: "threshold", def: "the doorway or sill of a house" },
+  { en: "fray", def: "to come apart at the edges" }
+];
+const MC_BESOM = [
+  { q: "Where is the besom traditionally kept?",
+    opts: ["Beside the front door or fireplace", "Under the bed", "Inside a locked chest"], a: 0,
+    why: "Kept at the threshold or hearth, it sweeps negative energy away." },
+  { q: "What do old European tales say evil spirits must do?",
+    opts: ["Count every single straw", "Weave the twigs into rope", "Hide inside the handle"], a: 0,
+    why: "The tedious counting keeps them busy all night." },
+  { q: "When do the spirits finally have to flee?",
+    opts: ["At sunrise", "At midnight", "When the fire goes out"], a: 0,
+    why: "The sunrise forces them to flee." },
+  { q: "Which material is NOT part of a traditional besom?",
+    opts: ["Natural twigs", "A wooden handle", "Polished steel"], a: 2,
+    why: "Natural twigs tied around a wooden handle. No metal." },
+  { q: "What is the besom at the threshold, according to the Folklore Mechanic?",
+    opts: ["A puzzle for negative entities", "A ladder for angels", "A lamp for travelers"], a: 0,
+    why: "Placed at the threshold, it becomes a puzzle that holds them busy." }
+];
+const BONUS_POOL = [
+  { q: "What must never be done to a red string?", opts: ["Cut it with scissors", "Wear it on the wrist", "Let it fall off by itself"], a: 0,
+    why: "It must fall off naturally." },
+  { q: "When does a cornicello lose its power?", opts: ["When it is bought for yourself", "When it is given as a gift", "When it is made of coral"], a: 0,
+    why: "The Rule of the Gift." },
+  { q: "How should an omamori be treated?", opts: ["Keep the pouch sealed", "Open it weekly to check", "Hang it in the sun"], a: 0,
+    why: "Peeking cancels its power." },
+  { q: "Where should salt be placed to cleanse a space?", opts: ["Entryways and room corners", "Inside the kitchen sink", "Under the bed"], a: 0,
+    why: "A line at the doorstep and bowls in the corners." },
+  { q: "Why are bamboo chimes preferred over loud metal bells?", opts: ["Their soft tone does not startle positive energy", "They are cheaper", "They ring louder"], a: 0,
+    why: "Soft wood harmonizes the space." },
+  { q: "What do the besom's straws do?", opts: ["Distract spirits until sunrise", "Feed the fire", "Mark the path"], a: 0,
+    why: "Counting keeps them busy." },
+  { q: "Which tradition gives us bamboo wind chimes?", opts: ["China (Feng Shui)", "Italy", "Russia"], a: 0,
+    why: "Hollow bamboo near windows and balconies." },
+  { q: "Which charm mimics a red chili or an animal horn?", opts: ["Cornicello", "Omamori", "Besom"], a: 0,
+    why: "It pierces through bad luck." },
+  { q: "Which charm is traditionally tied around the wrist?", opts: ["Red string", "Salt line", "Bamboo chime"], a: 0,
+    why: "A personal shield against jealousy." },
+  { q: "Where do Japanese restaurant owners throw small piles of salt?", opts: ["Near the entrance", "Behind the kitchen
