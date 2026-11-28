@@ -1,4 +1,5 @@
 const LESSONS = [
+  { date: '2026-01-01', host: '', title: 'Friends (S3E20)', url: './20260101-friends-320/index.html' },
   { date: '2026-01-01', host: '', title: 'Harry Potter 1', url: './20260101-harry-potter-1/index.html' },
   { date: '2026-01-01', host: '', title: 'The Lord of The Rings 1', url: './20260101-the-lord-of-the-rings-1/index.html' },
   { date: '2026-01-01', host: '', title: 'Roman Holiday', url: './20260101-roman-holiday/index.html' },
